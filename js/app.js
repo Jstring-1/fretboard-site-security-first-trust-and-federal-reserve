@@ -335,10 +335,25 @@
       _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
     };
 
+    // Background color for each chord-link cell = the degree that gives the chord its character
+    const CHORD_CHAR_DEG = {
+      Maj:'_3_',         Min:'_b3_',        aug:'_b6_',        dim:'_b5_',
+      sus2:'_2_',        sus4:'_4_',
+      Maj6:'_6_',        min6:'_6_',
+      dom7:'_b7_',       min7:'_b7_',       aug7:'_b7_',       '7b5':'_b5_',
+      dim7:'_6_',        'half-dim':'_b5_',
+      Maj7:'_7_',        'min-Maj7':'_7_',
+      add9:'_2_',        min9:'_2_',        '6add9':'_2_',
+      '9th':'_2_',       '7b9':'_b2_',      Maj9:'_2_',        '7#9':'_b3_',
+      '11th':'_4_',      min11:'_4_',       '7#11':'_b5_',
+      '13th':'_6_',      min13:'_6_'
+    };
+
     let chordLinksRow = '<tr id="under_chord_grid"><td></td>';
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
-      chordLinksRow += '<td><a href="' + x._hilight_url + GRID[a] + '">' + escHtml(label) + '</a></td>';
+      const idAttr = CHORD_CHAR_DEG[a] ? ' id="' + CHORD_CHAR_DEG[a] + '"' : '';
+      chordLinksRow += '<td' + idAttr + '><a href="' + x._hilight_url + GRID[a] + '">' + escHtml(label) + '</a></td>';
     }
     chordLinksRow += '<td></td></tr>';
 

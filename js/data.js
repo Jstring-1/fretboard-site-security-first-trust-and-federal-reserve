@@ -119,11 +119,21 @@ window.SF_DATA = {
     },
     "scales": {
         "Major": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=6&hl=7",
+        "Dorian": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=6&hl=b7",
+        "Phrygian": "&hl=1&hl=b2&hl=b3&hl=4&hl=5&hl=b6&hl=b7",
+        "Lydian": "&hl=1&hl=2&hl=3&hl=b5&hl=5&hl=6&hl=7",
+        "Mixolydian": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=6&hl=b7",
         "Minor": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=b6&hl=b7",
+        "Locrian": "&hl=1&hl=b2&hl=b3&hl=4&hl=b5&hl=b6&hl=b7",
         "Melodic_Minor": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=6&hl=7",
         "Harmonic_Minor": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=b6&hl=7",
+        "Phrygian_Dominant": "&hl=1&hl=b2&hl=3&hl=4&hl=5&hl=b6&hl=b7",
+        "Hungarian_Minor": "&hl=1&hl=2&hl=b3&hl=b5&hl=5&hl=b6&hl=7",
         "Major_Pentatonic": "&hl=1&hl=2&hl=3&hl=5&hl=6",
-        "Minor_Pentatonic": "&hl=1&hl=b3&hl=4&hl=5&hl=b7"
+        "Minor_Pentatonic": "&hl=1&hl=b3&hl=4&hl=5&hl=b7",
+        "Blues": "&hl=1&hl=b3&hl=4&hl=b5&hl=5&hl=b7",
+        "Whole_Tone": "&hl=1&hl=2&hl=3&hl=b5&hl=b6&hl=b7",
+        "Diminished": "&hl=1&hl=2&hl=b3&hl=4&hl=b5&hl=b6&hl=6&hl=7"
     },
     "chords": {
         "Maj": "&hl=1&hl=3&hl=5",
