@@ -461,6 +461,21 @@
     });
   }
 
+  // ---------- collapsible-section state persistence ----------
+  function bindCollapsibles() {
+    const sections = document.querySelectorAll('details.collapsible');
+    sections.forEach(function (d) {
+      const key = 'sf_collapse_' + d.id;
+      let saved = null;
+      try { saved = window.localStorage.getItem(key); } catch (e) {}
+      if (saved === 'closed') d.removeAttribute('open');
+      else if (saved === 'open') d.setAttribute('open', '');
+      d.addEventListener('toggle', function () {
+        try { window.localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {}
+      });
+    });
+  }
+
   // ---------- init ----------
   function init() {
     const t0 = performance.now();
@@ -473,6 +488,7 @@
     renderTuningsTable(x);
 
     bindAutoSubmit();
+    bindCollapsibles();
 
     // Initialize sortable tables (sortable.js binds on window.load — re-trigger for dynamically added tables)
     const tables = document.querySelectorAll('table.sortable');

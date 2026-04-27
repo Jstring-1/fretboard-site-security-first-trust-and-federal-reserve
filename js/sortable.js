@@ -149,11 +149,13 @@ class SortableTable {
   }
 }
 
-// Initialize sortable table buttons
+// Initialize sortable table buttons (guarded against double-binding by app.js init)
 window.addEventListener('load', function () {
   var sortableTables = document.querySelectorAll('table.sortable');
   for (var i = 0; i < sortableTables.length; i++) {
+    if (sortableTables[i]._sortableInit) continue;
     new SortableTable(sortableTables[i]);
+    sortableTables[i]._sortableInit = true;
   }
 });
 

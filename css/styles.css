@@ -184,3 +184,23 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
 #view_source_modal .vs_close    { position:absolute; top:6px; right:10px; width:32px; height:32px; font-size:24px; line-height:1; background:transparent; border:none; cursor:pointer; color:#111; z-index:1; }
 #view_source_modal .vs_pre      { margin:0; padding:36px 16px 16px 16px; flex:1; overflow:auto; white-space:pre-wrap; word-break:break-word; font-family:Consolas,Menlo,monospace; font-size:.85em; font-weight:normal; color:#111; background:#fff; }
 @media print { #view_source_modal { display:none !important; } }
+
+/*********************************************************************************************************************
+                            COLLAPSIBLE SECTIONS
+*********************************************************************************************************************/
+details.collapsible                       { padding:0;                                                                }
+details.collapsible > summary             { cursor:pointer; user-select:none; list-style:none;
+                                            padding:8px 14px; margin:0;
+                                            font-size:1.2em; font-weight:bold;
+                                            background-color:#92B0BB;
+                                            border-radius:3px;
+                                            text-align:left;                                                          }
+details.collapsible > summary::-webkit-details-marker { display:none; }
+details.collapsible > summary::before     { content:'▼ '; display:inline-block; width:1em; transition:transform .15s; }
+details.collapsible:not([open]) > summary::before { content:'▶ '; }
+details.collapsible:not([open])           { padding-bottom:0; min-width:1000px; width:98%; margin:12px auto;          }
+details.collapsible > summary:hover       { background-color:#a8c2cb;                                                 }
+@media print {
+    details.collapsible > summary         { display:none !important;                                                  }
+    details.collapsible                   { padding:0 !important; margin:0 !important;                                }
+}
