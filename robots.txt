@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /img/
+Disallow: /inc/
+Disallow: /test.php
+Disallow: /stats.cgi
