@@ -516,7 +516,13 @@
       fb.querySelectorAll('select[name^="s"]').forEach(pushSelect);
     }
 
-    window.location.search = '?' + parts.join('&');
+    navigateTo('?' + parts.join('&'));
+  }
+
+  function navigateTo(search) {
+    if (search === window.location.search) return;
+    history.pushState({}, '', search);
+    applyState();
   }
 
   function bindAutoSubmit() {
@@ -525,6 +531,21 @@
       '#options_root select, #options_root input[type="checkbox"], #fretboard_root select'
     ).forEach(function (el) {
       el.addEventListener('change', handler);
+    });
+  }
+
+  // Intercept clicks on any '?...' query-string link so we update via pushState
+  // instead of triggering a full page navigation.
+  function bindLinkInterceptor() {
+    document.body.addEventListener('click', function (e) {
+      const a = e.target.closest && e.target.closest('a');
+      if (!a) return;
+      // Honor modifier-clicks (open in new tab/window) and middle-click
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+      const href = a.getAttribute('href');
+      if (!href || href.charAt(0) !== '?') return;
+      e.preventDefault();
+      navigateTo(href);
     });
   }
 
@@ -556,11 +577,10 @@
     }
   }
 
-  // ---------- init ----------
-  function init() {
-    const t0 = performance.now();
+  // ---------- per-state render ----------
+  function applyState() {
     const x = parseState();
-    window.SF_X = x;  // expose for debugging
+    window.SF_X = x;
     renderTitle(x);
     renderOptions(x);
     renderFretboard(x);
@@ -569,17 +589,24 @@
     renderTuningsTable(x);
 
     bindAutoSubmit();
-    bindCollapsibles();
 
-    // Initialize sortable tables (sortable.js binds on window.load — re-trigger for dynamically added tables)
-    const tables = document.querySelectorAll('table.sortable');
-    for (const t of tables) {
-      if (!t._sortableInit && typeof SortableTable !== 'undefined') {
+    // Sortable tables get rebuilt every render — bind a fresh instance each time
+    document.querySelectorAll('table.sortable').forEach(function (t) {
+      if (typeof SortableTable !== 'undefined') {
         try { new SortableTable(t); t._sortableInit = true; } catch (e) {}
       }
-    }
+    });
+  }
 
-    // Loaded-in blurb
+  // ---------- init ----------
+  function init() {
+    const t0 = performance.now();
+    applyState();
+    bindCollapsibles();
+    bindLinkInterceptor();
+    window.addEventListener('popstate', applyState);
+
+    // Loaded-in blurb (set once on initial load)
     const blurb = document.getElementById('blurb');
     if (blurb) blurb.textContent = 'Loaded in ' + ((performance.now() - t0) / 1000).toFixed(8) + 's';
   }
