@@ -224,31 +224,42 @@
   function renderOptions(x) {
     const root = document.getElementById('options_root');
     const rev = (x.y === 'y') ? 'rev_' : '';
-    let h = '';
-    h += '<div id="tunings_drop" class="inputs">';
+    let h = '<div id="tunings_drop">';
+
+    // Row 1: tuning selector
+    h += '<div class="opt_row opt_row_main">';
     h += '<select class="inputs" name="x">';
-    const redClass = (x.z === 'n') ? "class='red_fg'" : '';
-    h += '<option value="' + escHtml(x.x) + '" ' + redClass + '>(' + x.strs + '-string) ' + escHtml(x.name) + ' - ' + escHtml(x[rev + 'notes']) + ' - (' + escHtml(x[rev + 'dgs']) + ')</option>';
+    h += '<option value="' + escHtml(x.x) + '">(' + x.strs + '-string) ' + escHtml(x.name) + ' — ' + escHtml(x[rev + 'notes']) + ' — (' + escHtml(x[rev + 'dgs']) + ')</option>';
     for (const a in TUNINGS) {
       const b = TUNINGS[a];
-      h += '<option value="' + escHtml(a) + '">(' + b.strs + '-string) ' + escHtml(b.name) + ' - ' + escHtml(b[rev + 'notes']) + ' - (' + escHtml(b[rev + 'dgs']) + ')</option>';
+      h += '<option value="' + escHtml(a) + '">(' + b.strs + '-string) ' + escHtml(b.name) + ' — ' + escHtml(b[rev + 'notes']) + ' — (' + escHtml(b[rev + 'dgs']) + ')</option>';
     }
-    const checkers = (x.z === 'y') ? 'checked="checked"' : '';
-    h += '</select><br/>Display tunings ' + escHtml(x[rev + 'yy']) + ': <input type="checkbox" class="chxbx" name="y" value="y"' + (x.y === 'y' ? ' checked="checked"' : '') + ' /> &nbsp; &nbsp; &nbsp; &nbsp;';
-    h += 'Show custom tuning: <input id="cyo" class="cyo chxbx" type="checkbox" name="z" value="y" ' + checkers + ' /> &nbsp; &nbsp; &nbsp; &nbsp;';
-    h += 'Key: <select class="inputs" name="k">';
+    h += '</select>';
+    h += '</div>';
+
+    // Row 2: toggles + key
+    h += '<div class="opt_row opt_row_toggles">';
+    h += '<label><input type="checkbox" class="chxbx" name="y" value="y"' + (x.y === 'y' ? ' checked="checked"' : '') + '/> Display ' + escHtml(x[rev + 'yy']) + '</label>';
+    h += '<label><input id="cyo" type="checkbox" class="chxbx" name="z" value="y"' + (x.z === 'y' ? ' checked="checked"' : '') + '/> Show custom tuning</label>';
+    h += '<label>Key: <select class="inputs" name="k">';
     h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
     for (const a of ALLNOTES) {
       h += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
     }
-    h += '</select><br/>';
-    h += '<span class="hl_title">Highlight: &nbsp; &nbsp;</span>';
+    h += '</select></label>';
+    h += '</div>';
+
+    // Row 3: highlight degree pickers
+    h += '<div class="opt_row opt_row_highlights">';
+    h += '<span class="hl_title">Highlight:</span>';
     DEGREES.forEach(function (a, i) {
       const ab = flatToB(a);
       const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
-      h += ' &nbsp; &nbsp;' + escHtml(a) + escHtml(EXTENSIONS[i]) + ':<input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '>&nbsp; ';
+      h += '<label class="hl_pill"><input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '/>' + escHtml(a) + escHtml(EXTENSIONS[i]) + '</label>';
     });
-    h += ' &nbsp; &nbsp;<a href="' + x._hilight_url + '" id="clear_hl_btn">Clear</a>';
+    h += '<a href="' + x._hilight_url + '" id="clear_hl_btn">Clear</a>';
+    h += '</div>';
+
     h += '</div>';
     root.innerHTML = h;
   }
@@ -530,6 +541,19 @@
         try { window.localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {}
       });
     });
+
+    // Force the fretboard open during print so collapsed-state doesn't suppress it
+    const fb = document.getElementById('section_2');
+    if (fb) {
+      let restoreClosed = false;
+      window.addEventListener('beforeprint', function () {
+        restoreClosed = !fb.open;
+        if (restoreClosed) fb.open = true;
+      });
+      window.addEventListener('afterprint', function () {
+        if (restoreClosed) fb.open = false;
+      });
+    }
   }
 
   // ---------- init ----------

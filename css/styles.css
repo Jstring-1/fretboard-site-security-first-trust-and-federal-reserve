@@ -41,18 +41,19 @@ table.sortable tbody tr:nth-child(odd)     {  background-color:#92B0BB;         
 /*********************************************************************************************************************
                             FONT FAMILY
 *********************************************************************************************************************/
-body {   font-family:'Arial', sans-serif; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 /*********************************************************************************************************************
                             FONT SIZES
 *********************************************************************************************************************/
-body                                       {  font-size:1.1em;                                                       }
-h1,.slant                                  {  font-size:2em                                                          }
-.finder                                    {  font-size:1.9em;                                                       }
-h2                                         {  font-size:1.6em                                                        }
+body                                       {  font-size:0.95em;                                                      }
+h1,.slant                                  {  font-size:1.85em;                                                      }
+.finder                                    {  font-size:1.75em;                                                      }
+h2                                         {  font-size:1.4em;                                                       }
 .pro                                       {  font-size:.6em;                                                        }
-h3                                         {  font-size:1.4em                                                        }
-#fretnums                                  {  font-size:.8em;                                                        }
-h4                                         {  font-size:1.2em                                                        }
+h3                                         {  font-size:1.05em;                                                      }
+#info_l, #info_r                           {  font-size:1em;                                                         }
+#fretnums                                  {  font-size:.78em;                                                       }
+h4                                         {  font-size:1.05em;                                                      }
 #hl_button, #hl_button_x                   {  line-height:3em;                                                       }
 /*********************************************************************************************************************
                             FONT COLORS
@@ -79,7 +80,7 @@ a:hover                                    {  color:#92B0BB;                    
 /*********************************************************************************************************************
                             FONT WEIGHTS / STYLES / SPACING / ETC
 *********************************************************************************************************************/
-body                                       {  font-weight:bold;                                                      }
+body                                       {  font-weight:500;                                                       }
 a:hover,a,a:link,a:visited,a:active        {  text-decoration:none;                                                  }
 .finder                                    {  font-weight:normal;                                                    }
 .slant                                     {  font-style:oblique;                                                    }
@@ -121,10 +122,12 @@ table td                                   {  vertical-align:middle;            
                             BORDERS / CORNERS
 *********************************************************************************************************************/
 #section_3,#section_4,#section_5, #section_1,#section_2, #view_src, #print_btn, #hl_button, #hl_button_x
-                                           {  border-radius:3px;                                                     }
+                                           {  border-radius:10px;                                                    }
+#fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
+                                           {  border-radius:8px;     overflow:hidden;                                }
 .nut                                       {  border-right:8px solid #111222 !important;                             }
 .nut1                                      {  border-left:8px solid #111222 !important;                              }
-table, table td                            {  border:1px solid #92B0BB;    border-collapse:separate;                 }
+table, table td                            {  border:1px solid rgba(146,176,187,0.45); border-collapse:separate;     }
 #view_src, #print_btn                      {  border:1px solid #ff0000;                                              }
 #hl_button, #hl_button_x                   {  border:1px solid #111222 !important;                                   }
 /*********************************************************************************************************************
@@ -223,3 +226,71 @@ details.collapsible > summary:hover       { background-color:#a8c2cb;           
 @media only screen and (min-width: 769px) and (max-width: 1024px) { #section_6 { width:100%; display:none; }           }
 @media only screen and (min-width: 1025px) and (max-width: 1200px){ #section_6 { width:99%; display:none; }            }
 @media print { #section_6 { display:none !important; }                                                                 }
+
+/*********************************************************************************************************************
+                            STYLE AUDIT — softer corners, polished form, more breathing room
+*********************************************************************************************************************/
+/* More space between sections */
+details.collapsible                        { margin: 18px auto;                                                       }
+details.collapsible > summary              { border-radius: 8px 8px 0 0; padding: 10px 16px; font-size: 1.05em;
+                                             background: linear-gradient(180deg, #9bb6c0, #87a6b1); color: #fff;     }
+details.collapsible > summary:hover        { background: linear-gradient(180deg, #a8c2cb, #95b3bd);                  }
+details.collapsible:not([open]) > summary  { border-radius: 8px;                                                     }
+details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }
+
+/* Form layout: stacked rows with proper gaps */
+#tunings_drop                              { padding: 14px 18px 16px; display: flex; flex-direction: column;
+                                             gap: 12px; align-items: center; font-weight: 500;                      }
+.opt_row                                   { display: flex; flex-wrap: wrap; gap: 10px 16px;
+                                             align-items: center; justify-content: center;                          }
+.opt_row label                             { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+                                             font-size: 0.95em;                                                      }
+.opt_row select.inputs                     { padding: 5px 10px; border: 1px solid #6f8e9c; border-radius: 6px;
+                                             background: #f7f9fa; font-family: inherit; font-size: 0.95em;
+                                             color: #111222; cursor: pointer;                                        }
+.opt_row select.inputs:hover,
+.opt_row select.inputs:focus               { border-color: #4d6c79; outline: none;                                  }
+.opt_row_main select                       { min-width: 540px; max-width: 90vw;                                     }
+
+.opt_row_highlights                        { background: rgba(146,176,187,0.22); padding: 8px 14px;
+                                             border-radius: 8px; gap: 6px 8px;                                       }
+.opt_row_highlights .hl_title              { font-size: 0.95em; opacity: 0.8; padding-right: 4px;                   }
+.hl_pill                                   { padding: 2px 8px; border-radius: 5px;
+                                             background: rgba(255,255,255,0.55); font-size: 0.92em;
+                                             border: 1px solid rgba(146,176,187,0.4); transition: background .12s; }
+.hl_pill:hover                             { background: rgba(255,255,255,0.85);                                    }
+.hl_pill input[type="checkbox"]            { margin: 0;                                                              }
+
+/* Buttons: View Source / Print / Clear */
+#view_src button, #print_btn button        { cursor: pointer; border-radius: 5px; padding: 4px 12px;
+                                             font-size: 0.85em; font-family: inherit; font-weight: 500;
+                                             background: #e3e3e3; border: 1px solid #ff0000; color: #111222;       }
+#view_src button:hover, #print_btn button:hover
+                                           { background: #ffdddd;                                                    }
+#clear_hl_btn                              { padding: 3px 14px; font-size: 0.85em;                                  }
+
+/* Title: tighten the tagline */
+#section_1 h1                              { letter-spacing: -0.02em;                                                }
+
+/* Blurb at the bottom */
+#blurb                                     { font-size: 0.78em; opacity: 0.65; margin: 12px 0;                       }
+
+/* Fretboard info bar */
+#info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
+
+/* Sortable header buttons (slightly tighter) */
+table.sortable th                          { font-size: 0.92em;                                                      }
+
+/* Tunings table padding (was 6px 12px — keeps that, but lighter row separation) */
+#tunings tbody tr                          { transition: background-color .1s;                                       }
+#tunings tbody tr:hover                    { background-color: #b3c9d2 !important;                                   }
+
+/* Print resets so the polish doesn't show in print */
+@media print {
+    details.collapsible > summary          { background: none !important; color: #000 !important;                    }
+    .opt_row_highlights                    { background: none !important;                                            }
+    .hl_pill                               { background: none !important; border: none !important;                  }
+    /* Force the fretboard contents to print whether or not the section is open */
+    details#section_2 > *                  { display: block !important;                                              }
+    details#section_2 > summary            { display: none !important;                                               }
+}
