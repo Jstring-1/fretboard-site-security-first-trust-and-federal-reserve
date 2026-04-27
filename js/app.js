@@ -362,6 +362,57 @@
     root.innerHTML = h;
   }
 
+  function renderScaleGrid(x) {
+    const root = document.getElementById('scale_grid_root');
+    if (!root) return;
+    const i1 = KEYS.indexOf(x.k);
+    const noteLetters = {
+      _1_:  KEYS[i1],     _b2_: KEYS[i1 + 1], _2_:  KEYS[i1 + 2], _b3_: KEYS[i1 + 3],
+      _3_:  KEYS[i1 + 4], _4_:  KEYS[i1 + 5], _b5_: KEYS[i1 + 6], _5_:  KEYS[i1 + 7],
+      _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
+    };
+
+    // Bottom 12 rows of the chord grid — the unison-octave half
+    const ROWS = window.SF_GRID_ROWS.slice(12);
+
+    // Parse SCALES["..."] = "&hl=1&hl=2&hl=b3..." into a Set of degree symbols
+    const scaleDegrees = {};
+    for (const name in SCALES) {
+      const degs = SCALES[name].split('&hl=').slice(1)
+        .map(function (s) { return s.replace(/&/g, ''); })
+        .filter(function (s) { return s.length > 0; })
+        .map(function (s) { return s.replace(/b/g, '♭'); });
+      scaleDegrees[name] = degs;
+    }
+
+    let scaleLinksRow = '<tr id="under_scale_grid"><td></td>';
+    for (const name in SCALES) {
+      const label = name.replace(/_/g, ' ');
+      scaleLinksRow += '<td><a href="' + x._hilight_url + SCALES[name] + '">' + escHtml(label) + '</a></td>';
+    }
+    scaleLinksRow += '<td></td></tr>';
+
+    let h = '<table id="scale_grid">';
+    h += scaleLinksRow;
+    for (const row of ROWS) {
+      const note = noteLetters[row.degId];
+      const degSym = row.intervalLabel.replace(/[()]/g, '');
+      h += '<tr>';
+      h += '<td class="cg_col_left" id="' + row.degId + '">' + escHtml(note) + escHtml(row.intervalLabel) + '</td>';
+      for (const scaleName in SCALES) {
+        if (scaleDegrees[scaleName].indexOf(degSym) !== -1) {
+          h += '<td id="' + row.degId + '">' + escHtml(degSym) + '</td>';
+        } else {
+          h += '<td id="_x_"></td>';
+        }
+      }
+      h += '<td class="cg_col_right" id="' + row.degId + '">' + escHtml(row.intervalLabel) + escHtml(note) + '</td>';
+      h += '</tr>';
+    }
+    h += scaleLinksRow + '</table>';
+    root.innerHTML = h;
+  }
+
   function renderTuningsTable(x) {
     const root = document.getElementById('tunings_root');
     const rev = (x.y === 'y') ? 'rev_' : '';
@@ -488,6 +539,7 @@
     renderOptions(x);
     renderFretboard(x);
     renderChordGrid(x);
+    renderScaleGrid(x);
     renderTuningsTable(x);
 
     bindAutoSubmit();

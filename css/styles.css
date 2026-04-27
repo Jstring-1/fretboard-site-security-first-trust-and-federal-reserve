@@ -204,3 +204,16 @@ details.collapsible > summary:hover       { background-color:#a8c2cb;           
     details.collapsible > summary         { display:none !important;                                                  }
     details.collapsible                   { padding:0 !important; margin:0 !important;                                }
 }
+
+/*********************************************************************************************************************
+                            SCALE BUILDER — inherits chord-grid styling
+*********************************************************************************************************************/
+#section_6                                 { width:98%; min-width:1000px;                                              }
+#section_6, #scale_grid                    { background-color:#C9D2D6;                                                 }
+#section_6                                 { table-layout:fixed; border-radius:3px;                                    }
+#scale_grid                                { margin: 12px auto 12px auto; padding: 0;                                  }
+@media only screen and (max-width: 480px)  { #section_6 { display:none; }                                              }
+@media only screen and (min-width: 481px) and (max-width: 768px)  { #section_6 { display:none; }                       }
+@media only screen and (min-width: 769px) and (max-width: 1024px) { #section_6 { width:100%; display:none; }           }
+@media only screen and (min-width: 1025px) and (max-width: 1200px){ #section_6 { width:99%; display:none; }            }
+@media print { #section_6 { display:none !important; }                                                                 }
