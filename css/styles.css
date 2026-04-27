@@ -162,20 +162,50 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
 
 }
 
-@page { margin:0; size:landscape; }
-@media print {                                                           /*      switch to black & white, readable, & fretboard only for printing   */
-    body, #fretboard, #fretnums, h1, #info_l, #info_r,#_no_highlight_,.slant,.finder,.pro { 
-                                    color:black !important;         letter-spacing:normal; }
-    #section_3,#section_4,#section_5, #blurb, #print_btn, #view_src, table td:first-child, form { 
-                                    background-color:white;         color:white;                 width:0; display:none !important; margin:0; padding:0; } 
-    #fretboard, #_no_highlight_ {     background-color:#fff !important }
-    table tr {                     height:2em; }
-    #fretnums{                         height:2em !important;         font-weight:normal !important; }
-    #fretnums, #f_cyo_dark {         background-color:#ddd !important }
-    h1, #info_l,#info_r {             clear:both !important;             display:block !important;     float:none !important; margin:4px auto; padding: auto;  }
-    body, #section_1,#section_2 {             background:none !important;     border:none !important; }
+@page { margin: 1cm; size: landscape; }
+@media print {
+    /* Strip page chrome — only the title, info bar, and fretboard print */
+    body, #section_1, #section_2,
+    h1, .slant, .finder, .pro,
+    #fretboard, #fretnums, #info_l, #info_r, #_no_highlight_
+                                           {  color:black !important; letter-spacing:normal;                          }
+    body, #section_1, #section_2           {  background:none !important; border:none !important;                     }
+    #fretboard, #_no_highlight_            {  background-color:#fff !important;                                       }
 
-    #fretboard {                     width:99% !important; }
+    /* Hide everything that's not part of the printed fretboard */
+    #section_3, #section_4, #section_5,
+    #blurb, #print_btn, #view_src,
+    #tunings_drop, table td:first-child    {  display:none !important; width:0; margin:0; padding:0;                  }
+
+    /* Layout: title + info above the fretboard */
+    h1, #info_l, #info_r                   {  clear:both !important; display:block !important;
+                                              float:none !important; margin:4px auto; padding:0; text-align:center;   }
+    h1                                     {  font-size:1.4em;                                                        }
+    #info_l, #info_r                       {  font-size:1em; opacity:1;                                               }
+
+    /* Fretboard sizing */
+    #fretboard                             {  width:99% !important; border-radius:0 !important;                       }
+    table tr                               {  height:2em;                                                             }
+    #fretnums                              {  height:2em !important; font-weight:normal !important;                   }
+    #fretnums, #f_cyo_dark                 {  background-color:#ddd !important;                                       }
+
+    /* Force colored highlights to print when the user has opted in */
+    body.print-colors #_1_, body.print-colors #_b2_, body.print-colors #_2_,
+    body.print-colors #_b3_, body.print-colors #_3_, body.print-colors #_4_,
+    body.print-colors #_b5_, body.print-colors #_5_, body.print-colors #_b6_,
+    body.print-colors #_6_,  body.print-colors #_b7_, body.print-colors #_7_ {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
+/* Outside @media print so the property carries into the print render reliably */
+body.print-colors td[id="_1_"],  body.print-colors td[id="_b2_"], body.print-colors td[id="_2_"],
+body.print-colors td[id="_b3_"], body.print-colors td[id="_3_"],  body.print-colors td[id="_4_"],
+body.print-colors td[id="_b5_"], body.print-colors td[id="_5_"],  body.print-colors td[id="_b6_"],
+body.print-colors td[id="_6_"],  body.print-colors td[id="_b7_"], body.print-colors td[id="_7_"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
 
 /*********************************************************************************************************************
@@ -268,6 +298,11 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 #view_src button:hover, #print_btn button:hover
                                            { background: #ffdddd;                                                    }
 #clear_hl_btn                              { padding: 3px 14px; font-size: 0.85em;                                  }
+
+/* Print-color toggle, sits next to the Print button */
+.print_color_toggle                        { display: inline-flex; align-items: center; gap: 5px; margin-right: 10px;
+                                             font-size: 0.85em; cursor: pointer; vertical-align: middle;             }
+.print_color_toggle input                  { margin: 0;                                                              }
 
 /* Title: tighten the tagline */
 #section_1 h1                              { letter-spacing: -0.02em;                                                }

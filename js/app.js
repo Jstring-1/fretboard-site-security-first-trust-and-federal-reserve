@@ -278,7 +278,12 @@
     let h = '';
     h += '<div id="view_src"><button style="background:none;border:none;" type="button" onclick="viewSource()">View Source Message</button></div>';
     h += '<h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
-    h += '<div id="print_btn"><button style="background:none;border:none;" onclick="window.print()">Formatted for Printing</button></div>';
+    let printColors = false;
+    try { printColors = window.localStorage.getItem('sf_print_colors') === 'y'; } catch (e) {}
+    h += '<div id="print_btn">';
+    h += '<label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked' : '') + '/> Color</label>';
+    h += '<button style="background:none;border:none;" onclick="window.print()">Formatted for Printing</button>';
+    h += '</div>';
     h += '<h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
 
     h += '<table id="fretboard">';
@@ -551,6 +556,17 @@
     });
   }
 
+  // ---------- print-colors toggle ----------
+  function bindPrintColorToggle() {
+    const cb = document.getElementById('print_colors_cb');
+    if (!cb) return;
+    document.body.classList.toggle('print-colors', cb.checked);
+    cb.addEventListener('change', function () {
+      document.body.classList.toggle('print-colors', cb.checked);
+      try { window.localStorage.setItem('sf_print_colors', cb.checked ? 'y' : 'n'); } catch (e) {}
+    });
+  }
+
   // ---------- collapsible-section state persistence ----------
   function bindCollapsibles() {
     const sections = document.querySelectorAll('details.collapsible');
@@ -591,6 +607,7 @@
     renderTuningsTable(x);
 
     bindAutoSubmit();
+    bindPrintColorToggle();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
     document.querySelectorAll('table.sortable').forEach(function (t) {
