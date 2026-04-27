@@ -248,20 +248,6 @@
       const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
       h += ' &nbsp; &nbsp;' + escHtml(a) + escHtml(EXTENSIONS[i]) + ':<input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '>&nbsp; ';
     });
-    h += '<br/><br/><h3>Quick Highlight Links</h3><span class="hl_title">Scales: &nbsp; &nbsp;</span>';
-    for (const a in SCALES) {
-      const isActive = (x.hl_n === a.replace(/_/g, ' '));
-      const idSuffix = isActive ? '_x' : '';
-      const link = isActive ? x._hilight_url : (x._hilight_url + SCALES[a]);
-      h += '<a href="' + link + '"><div class="' + a + '" id="hl_button' + idSuffix + '">' + a.replace(/_/g, ' ') + '</div></a>';
-    }
-    h += '<br/><span class="hl_title">Chords: &nbsp; &nbsp;</span>';
-    for (const a in CHORDS) {
-      const isActive = (x.hl_n === a.replace(/_/g, ' '));
-      const idSuffix = isActive ? '_x' : '';
-      const link = isActive ? x._hilight_url : (x._hilight_url + CHORDS[a]);
-      h += '<a href="' + link + '"><div class="' + a + '" id="hl_button' + idSuffix + '">' + a.replace(/_/g, ' ') + '</div></a>';
-    }
     h += '</div>';
     root.innerHTML = h;
   }
