@@ -335,7 +335,15 @@
       _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
     };
 
+    let chordLinksRow = '<tr id="under_chord_grid"><td></td>';
+    for (const a in GRID) {
+      const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
+      chordLinksRow += '<td><a href="' + x._hilight_url + GRID[a] + '">' + escHtml(label) + '</a></td>';
+    }
+    chordLinksRow += '<td></td></tr>';
+
     let h = '<table id="chord_grid">';
+    h += chordLinksRow;
     for (const row of window.SF_GRID_ROWS) {
       const note = noteLetters[row.degId];
       h += '<tr>';
@@ -350,12 +358,7 @@
       h += '<td class="cg_col_right" id="' + row.degId + '">' + escHtml(row.intervalLabel) + escHtml(note) + '</td>';
       h += '</tr>';
     }
-    h += '<tr id="under_chord_grid"><td></td>';
-    for (const a in GRID) {
-      const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
-      h += '<td><a href="' + x._hilight_url + GRID[a] + '">' + escHtml(label) + '</a></td>';
-    }
-    h += '<td></td></tr></table>';
+    h += chordLinksRow + '</table>';
     root.innerHTML = h;
   }
 
