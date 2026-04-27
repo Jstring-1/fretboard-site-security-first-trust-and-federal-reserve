@@ -225,23 +225,23 @@
     const root = document.getElementById('options_root');
     const rev = (x.y === 'y') ? 'rev_' : '';
     let h = '';
-    h += '<form id="tunings_drop" class="inputs" method="get" action="' + x._self + '">';
+    h += '<div id="tunings_drop" class="inputs">';
     h += '<select class="inputs" name="x">';
     const redClass = (x.z === 'n') ? "class='red_fg'" : '';
-    h += '<option value="' + x.url_notes + '" ' + redClass + '>(' + x.strs + '-string) ' + escHtml(x.name) + ' - ' + escHtml(x[rev + 'notes']) + ' - (' + escHtml(x[rev + 'dgs']) + ')</option>';
+    h += '<option value="' + escHtml(x.x) + '" ' + redClass + '>(' + x.strs + '-string) ' + escHtml(x.name) + ' - ' + escHtml(x[rev + 'notes']) + ' - (' + escHtml(x[rev + 'dgs']) + ')</option>';
     for (const a in TUNINGS) {
       const b = TUNINGS[a];
-      h += '<option value="' + b.url_notes + '">(' + b.strs + '-string) ' + escHtml(b.name) + ' - ' + escHtml(b[rev + 'notes']) + ' - (' + escHtml(b[rev + 'dgs']) + ')</option>';
+      h += '<option value="' + escHtml(a) + '">(' + b.strs + '-string) ' + escHtml(b.name) + ' - ' + escHtml(b[rev + 'notes']) + ' - (' + escHtml(b[rev + 'dgs']) + ')</option>';
     }
     const checkers = (x.z === 'y') ? 'checked="checked"' : '';
     h += '</select><br/>Display tunings ' + escHtml(x[rev + 'yy']) + ': <input type="checkbox" class="chxbx" name="y" value="y"' + (x.y === 'y' ? ' checked="checked"' : '') + ' /> &nbsp; &nbsp; &nbsp; &nbsp;';
     h += 'Show custom tuning: <input id="cyo" class="cyo chxbx" type="checkbox" name="z" value="y" ' + checkers + ' /> &nbsp; &nbsp; &nbsp; &nbsp;';
     h += 'Key: <select class="inputs" name="k">';
-    h += '<option value="' + encodeURIComponent(hashToSharp(x.k)) + '">' + escHtml(x.k) + '</option>';
+    h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
     for (const a of ALLNOTES) {
-      h += '<option value="' + encodeURIComponent(hashToSharp(a)) + '">' + escHtml(a) + '</option>';
+      h += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
     }
-    h += '</select> &nbsp; &nbsp; &nbsp; &nbsp;<input class="inputs" type="submit" value="<-- Update Fretboard" /> <br/>';
+    h += '</select><br/>';
     h += '<span class="hl_title">Highlight: &nbsp; &nbsp;</span>';
     DEGREES.forEach(function (a, i) {
       const ab = flatToB(a);
@@ -262,7 +262,7 @@
       const link = isActive ? x._hilight_url : (x._hilight_url + CHORDS[a]);
       h += '<a href="' + link + '"><div class="' + a + '" id="hl_button' + idSuffix + '">' + a.replace(/_/g, ' ') + '</div></a>';
     }
-    h += '</form>';
+    h += '</div>';
     root.innerHTML = h;
   }
 
@@ -302,9 +302,9 @@
 
       h += '<tr>';
       h += '<td id="' + f_cyo + '"><select class="inputs" name="s' + a + '">';
-      h += '<option value="' + encodeURIComponent(hashToSharp(x['s' + a])) + '">' + escHtml(x['s' + a]) + '</option>';
+      h += '<option value="' + escHtml(x['s' + a]) + '">' + escHtml(x['s' + a]) + '</option>';
       for (const note of ALLNOTES) {
-        h += '<option value="' + encodeURIComponent(hashToSharp(note)) + '">' + escHtml(note) + '</option>';
+        h += '<option value="' + escHtml(note) + '">' + escHtml(note) + '</option>';
       }
       h += '</select></td>';
       h += '<td class="nut" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
@@ -392,18 +392,74 @@
     root.innerHTML = h;
   }
 
-  // ---------- view source ----------
+  // ---------- view source modal ----------
+  function closeViewSourceModal() {
+    const m = document.getElementById('view_source_modal');
+    if (m) m.remove();
+    document.removeEventListener('keydown', escClose);
+  }
+  function escClose(e) {
+    if (e.key === 'Escape') closeViewSourceModal();
+  }
   window.viewSource = function () {
-    let source = '<html>';
-    source += document.getElementsByTagName('html')[0].innerHTML;
-    source += '</html>';
-    source = source.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    source = '<pre>' + source + '</pre>';
-    const w = window.open('', 'Source of page', 'height=800,width=1000,scrollbars=1,resizable=1');
-    w.document.write(source);
-    w.document.close();
-    if (window.focus) w.focus();
+    closeViewSourceModal();
+    const source = '<html>' + document.getElementsByTagName('html')[0].innerHTML + '</html>';
+    const escaped = source.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const overlay = document.createElement('div');
+    overlay.id = 'view_source_modal';
+    overlay.innerHTML =
+      '<div class="vs_backdrop"></div>' +
+      '<div class="vs_panel" role="dialog" aria-label="Page source">' +
+        '<button class="vs_close" type="button" aria-label="Close">×</button>' +
+        '<pre class="vs_pre"></pre>' +
+      '</div>';
+    overlay.querySelector('.vs_pre').textContent = source; // textContent avoids re-parsing
+    overlay.querySelector('.vs_backdrop').addEventListener('click', closeViewSourceModal);
+    overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
+    document.body.appendChild(overlay);
+    document.addEventListener('keydown', escClose);
   };
+
+  // ---------- auto-submit on any control change ----------
+  function gatherAndNavigate() {
+    const opt = document.getElementById('options_root');
+    const fb = document.getElementById('fretboard_root');
+    const parts = [];
+
+    function pushSelect(sel) {
+      if (!sel || !sel.name) return;
+      // Encode ♯ as # so URL matches the format parseState expects (single decode + sharpToHash)
+      const v = String(sel.value).replace(/♯/g, '#');
+      parts.push(sel.name + '=' + encodeURIComponent(v));
+    }
+    pushSelect(opt.querySelector('select[name="x"]'));
+    pushSelect(opt.querySelector('select[name="k"]'));
+
+    ['y', 'z'].forEach(function (name) {
+      const cb = opt.querySelector('input[type="checkbox"][name="' + name + '"]');
+      if (cb && cb.checked) parts.push(name + '=' + cb.value);
+    });
+
+    opt.querySelectorAll('input[type="checkbox"][name="hl"]:checked').forEach(function (cb) {
+      // Encode ♭ as b for URL hl values (matches PHP/quick-link convention)
+      parts.push('hl=' + cb.value.replace(/♭/g, 'b'));
+    });
+
+    if (fb) {
+      fb.querySelectorAll('select[name^="s"]').forEach(pushSelect);
+    }
+
+    window.location.search = '?' + parts.join('&');
+  }
+
+  function bindAutoSubmit() {
+    const handler = function () { gatherAndNavigate(); };
+    document.querySelectorAll(
+      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select'
+    ).forEach(function (el) {
+      el.addEventListener('change', handler);
+    });
+  }
 
   // ---------- init ----------
   function init() {
@@ -415,6 +471,8 @@
     renderFretboard(x);
     renderChordGrid(x);
     renderTuningsTable(x);
+
+    bindAutoSubmit();
 
     // Initialize sortable tables (sortable.js binds on window.load — re-trigger for dynamically added tables)
     const tables = document.querySelectorAll('table.sortable');
