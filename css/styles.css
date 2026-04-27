@@ -1,0 +1,176 @@
+/*********************************************************************************************************************
+                            WIDTHS / HEIGHTS
+*********************************************************************************************************************/
+table                                      {  min-width:960px;  width:98%;                                           }                
+#section_3, #section_4, #section_5, #section_1,#section_2
+                                           {  width:98%; min-width:1000px;                                           }
+#view_src, #print_btn                      {  width:100px;                                                           }                
+.cg_col_left, .cg_col_right                {  width:60px !important;                                                 }
+#f0,#f_cyo                                 {  width:5%;                                                              }
+#f1                                        {  width:8.5%;                                                            }            
+#f2,#f3                                    {  width:8.5%;                                                            }
+#f4,#f5                                    {  width:8%;                                                              }
+#f6,#f7                                    {  width:7.5%;                                                            }
+#f8,#f9                                    {  width:7%;                                                              }
+#f10,#f11,#f12                             {  width:6.5%;                                                            }                
+/*********************************************************************************************************************
+                            BG COLORS
+*********************************************************************************************************************/
+body, #hl_button                           {  background-color:#111222 !important;                                   }
+#hl_button_x, #view_src, #print_btn,table  {  background-color:#e3e3e3;                                              }
+#section_3,#section_4,#section_5, #section_1,#section_2, #fretboard 
+                                           {  background-color:#C9D2D6;                                              }
+#_no_highlight_, #chord_grid, #tunings     {  background-color:#C9D2D6;                                              }
+table.sortable                             {  background-color:#C9D2D6;                                              }
+table.sortable tbody tr:nth-child(odd)     {  background-color:#92B0BB;                                              }
+#fretnums, #f_cyo_dark                     {  background-color:#92B0BB;                                              }
+#_x_                                       {  background-color:#C9D2D6;  accent-color:#92B0BB; }
+#red_bg                                    {  background-color:#ff0000 !important;                                   } 
+#_1_                                       {  background-color:#ff0000;  accent-color:#ff0000;                       }
+#_b2_                                      {  background-color:#674ea7;  accent-color:#674ea7;                       } 
+#_2_                                       {  background-color:#9900ff;  accent-color:#9900ff;                       }
+#_b3_                                      {  background-color:#f6b26b;  accent-color:#f6b26b;                       }
+#_3_                                       {  background-color:#ff6d01;  accent-color:#ff6d01;                       }
+#_4_                                       {  background-color:#00ffff;  accent-color:#00ffff;                       }
+#_b5_                                      {  background-color:#3d85c6;  accent-color:#3d85c6;                       }
+#_5_                                       {  background-color:#0000ff;  accent-color:#0000ff;                       }
+#_b6_                                      {  background-color:#6aa84f;  accent-color:#6aa84f;                       }
+#_6_                                       {  background-color:#0cc016;  accent-color:#0cc016;                       }
+#_b7_                                      {  background-color:#a64d79;  accent-color:#a64d79;                       }
+#_7_                                       {  background-color:#ff00ff;  accent-color:#ff00ff;                       }
+/*********************************************************************************************************************
+                            FONT FAMILY
+*********************************************************************************************************************/
+body {   font-family:'Arial', sans-serif; }
+/*********************************************************************************************************************
+                            FONT SIZES
+*********************************************************************************************************************/
+body                                       {  font-size:1.1em;                                                       }
+h1,.slant                                  {  font-size:2em                                                          }
+.finder                                    {  font-size:1.9em;                                                       }
+h2                                         {  font-size:1.6em                                                        }
+.pro                                       {  font-size:.6em;                                                        }
+h3                                         {  font-size:1.4em                                                        }
+#fretnums                                  {  font-size:.8em;                                                        }
+h4                                         {  font-size:1.2em                                                        }
+#hl_button, #hl_button_x                   {  line-height:3em;                                                       }
+/*********************************************************************************************************************
+                            FONT COLORS
+*********************************************************************************************************************/
+body, a,a:link,a:visited,a:active, #f_cyo, #f_cyo_dark 
+                                           {  color:#111222 !important;                                              }                            
+.finder, #red_fg                           {  color:#ff0000 !important;                                              }
+a:hover                                    {  color:#92B0BB;                                                         } 
+#_no_highlight_                            {  color:#373F43;                                                         }                    
+#fretnums, #blurb                          {  color:#373F43;                                                         }                         
+#_5_                                       {  color:#BFBFBF;                                                         }
+._i_                                       {  color:#ff0000;                                                         }
+._ii_                                      {  color:#9900ff;                                                         }    
+._mii_                                     {  color:#674ea7;                                                         }     
+._iii_, .Major, .Maj                       {  color:#ff6d01;                                                         }    
+._miii_, .Minor, .Min, .Min7               {  color:#c5a250;                                                         }    
+._iv_                                      {  color:#00ffff;                                                         }
+._v_                                       {  color:#0000ff;                                                         }    
+._mv_, .Dim, .Dim7, .Major_Pentatonic      {  color:#3d85c6;                                                         }
+._vi_, .Melodic_Minor, .Maj6, .Min6        {  color:#0cc016;                                                         }    
+._mvi_, .Harmonic_Minor, .Aug              {  color:#6aa84f;                                                         }
+._vii_, .Maj7                              {  color:#ff00ff;                                                         }    
+._mvii_, .Minor_Pentatonic, .Dom7          {  color:#a64d79;                                                         }
+/*********************************************************************************************************************
+                            FONT WEIGHTS / STYLES / SPACING / ETC
+*********************************************************************************************************************/
+body                                       {  font-weight:bold;                                                      }
+a:hover,a,a:link,a:visited,a:active        {  text-decoration:none;                                                  }
+.finder                                    {  font-weight:normal;                                                    }
+.slant                                     {  font-style:oblique;                                                    }
+.slant,.finder,.pro                        {  letter-spacing:-.08em;                                                 }
+/*********************************************************************************************************************
+                            PADDING / MARGINS
+*********************************************************************************************************************/
+#fretboard, #chord_grid, #keyboard, #tunings, #section_3,#section_4,#section_5,#section_1,#section_2
+                                           {  margin: 12px auto 12px auto;        padding: 0;                        }
+body                                       {  margin: 0;                          padding: 0;                        }
+.pro                                       {  margin-left:-5px; }
+h1, h2, h3, h4, input                      {  margin: 6px auto 6px auto ; }
+#info_l, #info_r, #view_src, #print_btn    {  margin: .5vmax 3vmax .5vmax 3vmax;  padding: auto;                     }
+#hl_button, #hl_button_x                   {  margin: 6px 14px 6px 10px;          padding: 4px 8px 4px 8px;          }
+#tunings td                                {                                      padding: 6px 12px 6px 12px;        }
+#f_cyo,#f_cyo_dark,#_x_,#_1_,#_b2_,#_2_,#_b3_,#_3_,#_4_,#_b5_,#_5_,#_b6_,#_6_,#_b7_,#_7_
+                                           {                                      padding: 4px;                      }
+/******************************************** ************************************************************************
+                            POSITIONS / ALIGNMENTS / FLOAT / DISPLAY / OVERFLOW / WHITE-SPACE
+*********************************************************************************************************************/
+body, #info_l, #info_r, #view_src, #print_btn, #f_cyo, #f_cyo_dark, #tunings tr 
+                                           {  text-align:center;                                                     }
+.cg_col_right , #tunings td, #blurb        {  text-align:left;                                                       }   
+.cg_col_left, .name                        {  text-align:right;                                                      }               
+
+#hl_button, #hl_button_x, #info_l, #info_r, #view_src, #print_btn
+                                           {  display:inline;                                                        }
+           
+#view_src, #info_l                         {  float:left;                                                            }
+#print_btn, #info_r                        {  float:right;                                                           }
+             
+#keyboard td,#keyboard tr                  {  white-space:nowrap; overflow:hidden;                                   }
+table                                      {  table-layout:fixed; position:inherit;                                  }
+#section_3,#section_4,#section_5, #section_1,#section_2
+                                           {  table-layout:fixed;                                                    }
+table td                                   {  vertical-align:middle;                                                 }
+            
+/*********************************************************************************************************************
+                            BORDERS / CORNERS
+*********************************************************************************************************************/
+#section_3,#section_4,#section_5, #section_1,#section_2, #view_src, #print_btn, #hl_button, #hl_button_x
+                                           {  border-radius:3px;                                                     }
+.nut                                       {  border-right:8px solid #111222 !important;                             }
+.nut1                                      {  border-left:8px solid #111222 !important;                              }
+table, table td                            {  border:1px solid #92B0BB;    border-collapse:separate;                 }
+#view_src, #print_btn                      {  border:1px solid #ff0000;                                              }
+#hl_button, #hl_button_x                   {  border:1px solid #111222 !important;                                   }
+/*********************************************************************************************************************
+                            SORTABLE TUNINGS TABLE AND KEYBOARD
+*********************************************************************************************************************/
+table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padding:4px; margin:1px; background-color:transparent; border:none; display:inline; right:0; left:0; top:0; bottom:0; width:98%; outline:none; cursor:pointer; }table.sortable th button span { right:4px; }table.sortable th[aria-sort='descending'] span::after { content:'▼'; color:currentcolor; top:0; }table.sortable th[aria-sort='ascending'] span::after { content:'▲'; color:currentcolor; top:0; }table.sortable td,table.sortable th { padding:0.125em 0.25em; }table.sortable th:not([aria-sort]) button:focus span::after,table.sortable th:not([aria-sort]) button:hover span::after { content:'▼'; color:currentcolor; top:0; }table.show-unsorted-icon th:not([aria-sort]) button span::after { content:'▲'; color:currentcolor; position:relative; top:-3px; left:-4px; }
+.ritz .waffle a { color:inherit; }.ritz .waffle .s0,.ritz .waffle .s10,.ritz .waffle .s11,.ritz .waffle .s12,.ritz .waffle .s20,.ritz .waffle .s21,.ritz .waffle .s22,.ritz .waffle .s24,.ritz .waffle .s31,.ritz .waffle .s33,.ritz .waffle .s36,.ritz .waffle .s38,.ritz .waffle .s41,.ritz .waffle .s43,.ritz .waffle .s44,.ritz .waffle .s45,.ritz .waffle .s46,.ritz .waffle .s54,.ritz .waffle .s55,.ritz .waffle .s56,.ritz .waffle .s57,.ritz .waffle .s59,.ritz .waffle .s61{ background-color:#111222 !important; }.ritz .waffle .s0,.ritz .waffle .s10,.ritz .waffle .s11,.ritz .waffle .s21,.ritz .waffle .s31,.ritz .waffle .s32,.ritz .waffle .s34,.ritz .waffle .s35,.ritz .waffle .s37,.ritz .waffle .s42,.ritz .waffle .s46{ color:#ffffff; }.ritz .waffle .s0,.ritz .waffle .s1,.ritz .waffle .s2,.ritz .waffle .s3,.ritz .waffle .s4,.ritz .waffle .s5,.ritz .waffle .s6,.ritz .waffle .s7,.ritz .waffle .s8,.ritz .waffle .s9,.ritz .waffle .s10,.ritz .waffle .s11,.ritz .waffle .s12,.ritz .waffle .s13,.ritz .waffle .s14,.ritz .waffle .s15,.ritz .waffle .s16,.ritz .waffle .s17,.ritz .waffle .s18,.ritz .waffle .s19,.ritz .waffle .s20,.ritz .waffle .s21,.ritz .waffle .s23,.ritz .waffle .s24,.ritz .waffle .s25,.ritz .waffle .s26,.ritz .waffle .s27,.ritz .waffle .s28,.ritz .waffle .s29,.ritz .waffle .s30,.ritz .waffle .s31,.ritz .waffle .s46{ font-size:8pt; }.ritz .waffle .s1{ background-color:#34a853; }.ritz .waffle .s1,.ritz .waffle .s2,.ritz .waffle .s3,.ritz .waffle .s4,.ritz .waffle .s5,.ritz .waffle .s6,.ritz .waffle .s7,.ritz .waffle .s8,.ritz .waffle .s9,.ritz .waffle .s13,.ritz .waffle .s14,.ritz .waffle .s15,.ritz .waffle .s16,.ritz .waffle .s17,.ritz .waffle .s18,.ritz .waffle .s19,.ritz .waffle .s20,.ritz .waffle .s23,.ritz .waffle .s24,.ritz .waffle .s25,.ritz .waffle .s26,.ritz .waffle .s27,.ritz .waffle .s28,.ritz .waffle .s29,.ritz .waffle .s30,.ritz .waffle .s39,.ritz .waffle .s40,.ritz .waffle .s47,.ritz .waffle .s48,.ritz .waffle .s49,.ritz .waffle .s50,.ritz .waffle .s51,.ritz .waffle .s52,.ritz .waffle .s53,.ritz .waffle .s54,.ritz .waffle .s55,.ritz .waffle .s56,.ritz .waffle .s57,.ritz .waffle .s58,.ritz .waffle .s59,.ritz .waffle .s60,.ritz .waffle .s61,.ritz .waffle .s62,.ritz .waffle .s63,.ritz .waffle .s64,.ritz .waffle .s65,.ritz .waffle .s66,.ritz .waffle .s67{ color:#111222 !important; }.ritz .waffle .s2{ background-color:#65ae49; }.ritz .waffle .s3{ background-color:#96b53e; }.ritz .waffle .s4{ background-color:#c7bc33; }.ritz .waffle .s5{ background-color:#f8c328; }.ritz .waffle .s6{ background-color:#f5a022; }.ritz .waffle .s7{ background-color:#f17c1b; }.ritz .waffle .s8{ background-color:#ee5915; }.ritz .waffle .s9{ background-color:#ea350e; }.ritz .waffle .s12{ color:#434343; }.ritz .waffle .s13,.ritz .waffle .s25{ background-color:#93c47d; }.ritz .waffle .s14,.ritz .waffle .s23{ background-color:#d5a6bd; }.ritz .waffle .s15,.ritz .waffle .s26{ background-color:#ea9999; }.ritz .waffle .s16,.ritz .waffle .s27{ background-color:#b4a7d6; }.ritz .waffle .s17,.ritz .waffle .s28{ background-color:#f9cb9c; }.ritz .waffle .s18,.ritz .waffle .s29{ background-color:#a2c4c9; }.ritz .waffle .s19,.ritz .waffle .s30,.ritz .waffle .s64{ background-color:#a4c2f4; }.ritz .waffle .s22{ color:#666666; }.ritz .waffle .s22,.ritz .waffle .s54,.ritz .waffle .s55,.ritz .waffle .s56,.ritz .waffle .s57,.ritz .waffle .s58,.ritz .waffle .s59,.ritz .waffle .s60,.ritz .waffle .s61,.ritz .waffle .s62,.ritz .waffle .s63,.ritz .waffle .s64,.ritz .waffle .s65,.ritz .waffle .s66,.ritz .waffle .s67{ font-size:9pt; }.ritz .waffle .s32,.ritz .waffle .s47{ background-color:#0cc016; }.ritz .waffle .s32,.ritz .waffle .s33,.ritz .waffle .s34,.ritz .waffle .s35,.ritz .waffle .s36,.ritz .waffle .s37,.ritz .waffle .s38,.ritz .waffle .s39,.ritz .waffle .s40,.ritz .waffle .s41,.ritz .waffle .s42,.ritz .waffle .s43,.ritz .waffle .s44,.ritz .waffle .s45{ font-size:10pt; }.ritz .waffle .s33{ color:#8e7cc3; }.ritz .waffle .s34,.ritz .waffle .s48{ background-color:#ff00ff; }.ritz .waffle .s35,.ritz .waffle .s49{ background-color:#ff0000; }.ritz .waffle .s36,.ritz .waffle .s45{ color:#674ea7; }.ritz .waffle .s37,.ritz .waffle .s50{ background-color:#9900ff; }.ritz .waffle .s38{ color:#f6b26b; }.ritz .waffle .s39,.ritz .waffle .s51{ background-color:#ff6d01; }.ritz .waffle .s40,.ritz .waffle .s52{ background-color:#00ffff; }.ritz .waffle .s41{ color:#6fa8dc; }.ritz .waffle .s42,.ritz .waffle .s53{ background-color:#0000ff; }.ritz .waffle .s43{ color:#93c47d; }.ritz .waffle .s44{ color:#d5a6bd; }.ritz .waffle .s45,.ritz .waffle .s46{ border-left:none; }.ritz .waffle .s45{ border-right:none; }.ritz .waffle .s47,.ritz .waffle .s48,.ritz .waffle .s49,.ritz .waffle .s50,.ritz .waffle .s51,.ritz .waffle .s52,.ritz .waffle .s53{ font-size:12pt; }.ritz .waffle .s58{ background-color:#6aa84f; }.ritz .waffle .s60{ background-color:#b6d7a8; }.ritz .waffle .s62{ background-color:#6d9eeb; }.ritz .waffle .s63{ background-color:#6fa8dc; }.ritz .waffle .s65{ background-color:#9fc5e8; }.ritz .waffle .s66{ background-color:#cfe2f3; }.ritz .waffle .s67{ background-color:#c9daf8; }
+/*********************************************************************************************************************
+                            ALTERNATE LIVE & BOOTLEG VERSIONS
+*********************************************************************************************************************/
+@media only screen and  (min-width: 320px) and   (max-width: 480px)  {   /*  320px-480px: Mobile devices             */
+    body                                   {  font-size:.9em;                                                        }
+    #section_3,#section_4                  {  display:none;                                                          }
+}
+@media only screen and  (min-width: 481px) and   (max-width: 768px)  {   /*  481px-768px: iPads, Tablets             */
+    body                                   {  font-size:.9em;                                                        }
+    #section_3,#section_4                  {  display:none;                                                          }
+}
+@media only screen and  (min-width: 769px) and   (max-width: 1024px) {   /*  769px-1024px: Small screens, laptops    */
+    #section_1,#section_2,#section_3,#section_4,#section_5, table
+                                           {  width:100%;                                                            }
+    body                                   {  font-size:.9em;                                                        }
+    #section_3,#section_4                  {  display:none;                                                          }
+}
+@media only screen and  (min-width: 1025px) and  (max-width: 1200px) {   /*  1025px-1200px: Desktops, large screens                           */
+    #section_1,#section_2,#section_3,#section_4,#section_5, table 
+                                           {  width:99%;                                                             }
+    body                                   {  font-size:.95em;                                                       }
+    #section_3,#section_4                  {  display:none;                                                          }
+}
+@media only screen and  (min-width: 1201px) {                            /*  1201px+, x-large screens, TV (1920,1080)*/
+
+}
+
+@page { margin:0; size:landscape; }
+@media print {                                                           /*      switch to black & white, readable, & fretboard only for printing   */
+    body, #fretboard, #fretnums, h1, #info_l, #info_r,#_no_highlight_,.slant,.finder,.pro { 
+                                    color:black !important;         letter-spacing:normal; }
+    #section_3,#section_4,#section_5, #blurb, #print_btn, #view_src, table td:first-child, form { 
+                                    background-color:white;         color:white;                 width:0; display:none !important; margin:0; padding:0; } 
+    #fretboard, #_no_highlight_ {     background-color:#fff !important }
+    table tr {                     height:2em; }
+    #fretnums{                         height:2em !important;         font-weight:normal !important; }
+    #fretnums, #f_cyo_dark {         background-color:#ddd !important }
+    h1, #info_l,#info_r {             clear:both !important;             display:block !important;     float:none !important; margin:4px auto; padding: auto;  }
+    body, #section_1,#section_2 {             background:none !important;     border:none !important; }
+
+    #fretboard {                     width:99% !important; }
+}

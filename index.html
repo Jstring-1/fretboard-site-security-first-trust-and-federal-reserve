@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slant Finder.Pro</title>
+<meta name="description" content="Slant Finder.Pro - Fretboard Visualization Tool, Chord Builder, and Tuning Database">
+<meta property="og:title" content="Slant Finder.Pro">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://slantfinder.pro/">
+<meta property="og:description" content="Slant Finder.Pro - Fretboard Visualization Tool, Chord Builder, and Tuning Database">
+<link rel="icon" href="img/favicon.ico">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+<script src="js/data.js"></script>
+<script src="js/sortable.js"></script>
+<script src="js/app.js"></script>
+</head>
+<!--/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
+<body>
+
+<!--////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+  ███████ ██       █████  ███    ██ ████████ ███████ ██ ███    ██ ██████  ███████ ██████
+  ██      ██      ██   ██ ████   ██    ██    ██      ██ ████   ██ ██   ██ ██      ██   ██
+  ███████ ██      ███████ ██ ██  ██    ██    █████   ██ ██ ██  ██ ██   ██ █████   ██████
+       ██ ██      ██   ██ ██  ██ ██    ██    ██      ██ ██  ██ ██ ██   ██ ██      ██   ██
+  ███████ ███████ ██   ██ ██   ████    ██    ██      ██ ██   ████ ██████  ███████ ██   ██ .pro
+
+
+
+  <<<:::-----       SlantFinder.pro       -----:::>>>
+
+
+  This site was created to be as free, accurate, and useful as possible within my coding abilities and music theory knowledge (lacking).
+  It is designed for screen widths > 1024px because fretboards are wide and steel players are old.
+  Requests, corrections, additions, suggestions:  https://bb.steelguitarforum.com/viewtopic.php?t=396088
+
+  SlantFinder.pro fretboard visualization tool for 6-, 8-, 10-, & 12-string steel guitars
+
+  Including:
+    Auto-populate the fretboard with 80+ tunings from dropdown menu
+    Make your own custom Tuning
+    Degrees displayed with notes on fretboard
+    Changable key and highlight-able Degrees with consistent color scheme for degrees
+    Quicklinks for highlighting common scales/chords (preserves tunings/options)
+    Formatted, low-ink fretboard printing, to print degree highlights enable Background Graphics in the print preview window.
+    Chord structure grid, with chord names linked to highlight those corresponding Degrees (visible on screen sizes > 1200 for now )
+    Piano keyboard visualization with octaves, frequencies, and steel gauges (visible on screen sizes > 1200 for now )
+    Sortable and filterable list of 80+ tunings for 6-,8-,10-,& 12-string steel guitars
+      with names linked to highlight the fretboard with that tuning
+    Copyable tunings list formatted for .CSV in the bottom of source code: # of strings, tuning name, tuning, degrees
+
+  Excluding:
+    Ads, pop-ups, sign-ups, tracking, cookies, distractions, copyrights, subscriptions, images, bloat
+
+  Hello? is this thing on?  Oh well.
+
+
+  --MUMBO--JUMBO--
+  This is a static client-side build. URL/Key/Tuning are visible in the address bar.
+  --END--MUMBO--JUMBO--
+
+
+  <<<:::-----       SlantFinder.pro       -----:::>>>
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
+
+<div id="section_1">
+  <h1><a href="?"><span class="slant">Slant</span><span class="finder">Finder</span><span class="pro">.pro</span></a></h1>
+  <div id="options_root"></div>
+  <br/>
+</div>
+
+<div id="section_2"><br/>
+  <div id="fretboard_root"></div>
+  <br/>
+</div>
+
+<div id="section_3"><br/>
+  <div id="chord_grid_root"></div>
+  <br/>
+</div>
+
+<div id="section_4"><br/>
+  <!-- Static piano-roll keyboard (no per-render variability) -->
+  <div class="ritz grid-container" ><table id="keyboard" class="waffle no-grid" cellspacing="0" cellpadding="0"><tbody><tr><td style="height:20px;width:80px;" class="s0" >Octaves</td><td class="s1"  colspan="6">0</td><td class="s2"  colspan="21">1</td><td class="s3"  colspan="21">2</td><td class="s4"  colspan="21">3</td><td class="s5"  colspan="21">4</td><td class="s6"  colspan="21">5</td><td class="s7"  colspan="21">6</td><td class="s8"  colspan="21">7</td><td class="s9"  colspan="3">8</td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s11" >Steel Gauges</td><td class="s12"  colspan="21"></td><td class="s13"  colspan="3">0.072</td><td class="s14"  colspan="3">0.068</td><td class="s15"  colspan="3">0.068</td><td class="s16"  colspan="3">0.060</td><td class="s17"  colspan="3">0.056</td><td class="s18"  colspan="3">0.054</td><td class="s19"  colspan="3">0.048</td><td class="s13"  colspan="3">0.042</td><td class="s14"  colspan="3">0.038</td><td class="s15"  colspan="3">0.036</td><td class="s16"  colspan="3">0.034</td><td class="s17"  colspan="3">0.030</td><td class="s18"  colspan="3">0.028</td><td class="s19"  colspan="3">0.024</td><td class="s13"  colspan="3">0.021</td><td class="s14"  colspan="3">0.018</td><td class="s15"  colspan="3">0.017</td><td class="s16"  colspan="3">0.016</td><td class="s17"  colspan="3">0.014</td><td class="s18"  colspan="3">0.013</td><td class="s19"  colspan="3">0.012</td><td class="s13"  colspan="3">0.011</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s21" ></td></tr><tr><td style="height:20px;" class="s0" >MXR 10-band EQ</td><td class="s22"  colspan="3"></td><td class="s23" colspan="3">31.25</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">62.5</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">125</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">250</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">500</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">1k</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">2k</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">4k</td><td class="s20"  colspan="3"></td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s0" >Frequency Hz</td><td class="s25"  colspan="3">28</td><td class="s23"  colspan="3">31</td><td class="s26"  colspan="3">33</td><td class="s27"  colspan="3">37</td><td class="s28"  colspan="3">41</td><td class="s29"  colspan="3">44</td><td class="s30"  colspan="3">49</td><td class="s25"  colspan="3">55</td><td class="s23"  colspan="3">62</td><td class="s26"  colspan="3">65</td><td class="s27"  colspan="3">73</td><td class="s28"  colspan="3">82</td><td class="s29"  colspan="3">87</td><td class="s30"  colspan="3">98</td><td class="s25"  colspan="3">110</td><td class="s23"  colspan="3">123</td><td class="s26"  colspan="3">131</td><td class="s27"  colspan="3">147</td><td class="s28"  colspan="3">165</td><td class="s29"  colspan="3">175</td><td class="s30"  colspan="3">196</td><td class="s25"  colspan="3">220</td><td class="s23"  colspan="3">247</td><td class="s26"  colspan="3">262</td><td class="s27"  colspan="3">294</td><td class="s28"  colspan="3">330</td><td class="s29"  colspan="3">349</td><td class="s30"  colspan="3">392</td><td class="s25"  colspan="3">440</td><td class="s23"  colspan="3">494</td><td class="s26"  colspan="3">523</td><td class="s27"  colspan="3">587</td><td class="s28"  colspan="3">659</td><td class="s29"  colspan="3">698</td><td class="s30"  colspan="3">784</td><td class="s25"  colspan="3">880</td><td class="s23"  colspan="3">988</td><td class="s26"  colspan="3">1047</td><td class="s27"  colspan="3">1175</td><td class="s28"  colspan="3">1319</td><td class="s29"  colspan="3">1397</td><td class="s30"  colspan="3">1568</td><td class="s25"  colspan="3">1760</td><td class="s23"  colspan="3">1976</td><td class="s26"  colspan="3">2093</td><td class="s27"  colspan="3">2349</td><td class="s28"  colspan="3">2637</td><td class="s29"  colspan="3">2794</td><td class="s30"  colspan="3">3136</td><td class="s25"  colspan="3">3520</td><td class="s23"  colspan="3">3951</td><td class="s26"  colspan="3">4186</td><td class="s10" ></td></tr><tr><td style="height:58px;" class="s31" >Black Keys</td><td class="s32" colspan="2"></td><td class="s33"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s45 softmerge" ><div class="softmerge-inner" style="width:18px;left:-7px">C♯</div></td><td class="s46" ></td></tr><tr><td style="height:58px;" class="s0" >White Keys</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49" colspan="3">C</td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s0"  rowspan="2">Instrument Ranges</td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s55"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s57"  colspan="3"></td><td class="s58"  colspan="66">Guitar</td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s55"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s59"  colspan="3"></td><td class="s60"  colspan="66">Bass</td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s61"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s10" ></td></tr></tbody></table></div>
+  <br/>
+</div>
+
+<div id="section_5"><br/>
+  <div id="tunings_root"></div>
+  <br/>
+</div>
+
+<!--////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  Tunings list (CSV) — view this comment for a copyable list of all tunings.
+  See window.SF_DATA.tunings in the page source for the same data as JSON.
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////-->
+
+<div id="blurb"></div>
+
+</body>
+</html>
