@@ -186,6 +186,12 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
 @media print { #view_source_modal { display:none !important; } }
 
 /*********************************************************************************************************************
+                            CLEAR HIGHLIGHTS BUTTON
+*********************************************************************************************************************/
+#clear_hl_btn { display:inline-block; padding:2px 10px; border:1px solid #ff0000; border-radius:3px; background:#e3e3e3; color:#111222 !important; text-decoration:none; font-size:.9em; }
+#clear_hl_btn:hover { background:#ffdddd; }
+
+/*********************************************************************************************************************
                             COLLAPSIBLE SECTIONS
 *********************************************************************************************************************/
 details.collapsible                       { padding:0;                                                                }

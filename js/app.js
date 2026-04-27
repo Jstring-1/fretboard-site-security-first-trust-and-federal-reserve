@@ -248,6 +248,7 @@
       const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
       h += ' &nbsp; &nbsp;' + escHtml(a) + escHtml(EXTENSIONS[i]) + ':<input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '>&nbsp; ';
     });
+    h += ' &nbsp; &nbsp;<a href="' + x._hilight_url + '" id="clear_hl_btn">Clear</a>';
     h += '</div>';
     root.innerHTML = h;
   }
