@@ -257,7 +257,7 @@
       const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
       h += '<label class="hl_pill"><input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '/>' + escHtml(a) + escHtml(EXTENSIONS[i]) + '</label>';
     });
-    h += '<a href="' + x._hilight_url + '" id="clear_hl_btn">Clear</a>';
+    h += '<a href="?" id="clear_hl_btn">Clear</a>';
     h += '</div>';
 
     h += '</div>';
@@ -521,7 +521,9 @@
 
   function navigateTo(search) {
     if (search === window.location.search) return;
-    history.pushState({}, '', search);
+    // '?' with no params → strip the query entirely so the URL bar isn't littered
+    const target = (search === '?' || search === '') ? window.location.pathname : search;
+    history.pushState({}, '', target);
     applyState();
   }
 
