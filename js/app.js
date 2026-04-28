@@ -245,6 +245,14 @@
     if (typeof fRaw === 'string') {
       x._filter = fRaw.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 64);
     }
+    // String-count quick filters — independent for the Tunings List section
+    // (?fc=) and the fretboard tuning popover (?fcp=). Persisted separately
+    // in the URL so a user who only plays 6-string can pin both filters.
+    function _validStrs(v) {
+      return (v === '6' || v === '8' || v === '10' || v === '12') ? v : '';
+    }
+    x._filterStrs    = _validStrs(params.get('fc'));
+    x._pickerStrs    = _validStrs(params.get('fcp'));
 
     // hl_arr → flags
     if (x.hl === undefined || x.hl === null) x.hl = '';
@@ -349,11 +357,9 @@
       ? 'Tunings displayed High → Low. Click to flip to Low → High.'
       : 'Tunings displayed Low → High. Click to flip to High → Low.';
 
-    // Row 1: y switch + tuning picker (sortable / filterable popover; the
-    // hidden <select name="x"> keeps gatherAndNavigate working when other
-    // form controls change without the user touching the picker).
+    // Row 1: tuning picker + y switch (L→H/H→L now sits to the RIGHT of
+    // the picker and is sized smaller so the picker stays the focal point).
     h += '<div class="opt_row opt_row_main">';
-    h += '<a href="' + escHtml(yToggleHref) + '" class="y_switch y_' + yState + '" title="' + escHtml(yTitle) + '" aria-label="Toggle tuning direction">' + yLabel + '</a>';
     const curLabel = '(' + x.strs + '-string) ' + x.name + ' — ' + x[rev + 'notes'] + ' — (' + x[rev + 'dgs'] + ')';
     h += '<div class="tun_picker" id="tun_picker">';
     h +=   '<button type="button" class="tun_picker_btn inputs" id="tun_picker_btn" aria-haspopup="dialog" aria-expanded="false">';
@@ -365,6 +371,7 @@
     h +=   '</select>';
     h +=   '<div class="tun_pop" id="tun_pop" hidden role="dialog" aria-label="Choose a tuning"></div>';
     h += '</div>';
+    h += '<a href="' + escHtml(yToggleHref) + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escHtml(yTitle) + '" aria-label="Toggle tuning direction">' + yLabel + '</a>';
     h += '</div>';
 
     // (Key dropdown + Clear live in the section title bars now, not in the form.)
@@ -499,6 +506,9 @@
     const btn = document.getElementById('tun_picker_btn');
     const pop = document.getElementById('tun_pop');
     if (!btn || !pop) return;
+    // Seed the popover's quick-filter from URL state on each render so
+    // the persisted ?fcp=… choice stays selected across reloads.
+    _tunPickerStrFilter = x._pickerStrs || '';
 
     function open() {
       pop.hidden = false;
@@ -547,7 +557,14 @@
     pop.addEventListener('click', function (e) {
       const strBtn = e.target.closest && e.target.closest('.tun_pop_str_btn');
       if (strBtn) {
-        _tunPickerStrFilter = strBtn.getAttribute('data-strs') || '';
+        const want = strBtn.getAttribute('data-strs') || '';
+        _tunPickerStrFilter = want;
+        // Persist popover string-count choice to ?fcp= so a user who only
+        // plays 6-string can pin "6-string" once and keep it across reloads.
+        const params = new URLSearchParams(window.location.search);
+        if (want) params.set('fcp', want); else params.delete('fcp');
+        const qs = params.toString();
+        history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
         renderTuningPicker(x);
         return;
       }
@@ -971,10 +988,23 @@
     const tunUrl = x._self + x.url_k + x.url_y + x.url_z + x.url_s + x.url_hl;
 
     let h = '';
-    h += '<input type="text" id="filter" class="inputs" placeholder="Filter" maxlength="64" value="' + escHtml(x._filter || '') + '">';
+    // Filter bar: text input + quick-string-count buttons. Both fold into
+    // the URL via ?f=… and ?fc=… so a filtered view is bookmarkable.
+    h += '<div class="tunings_filter_bar">';
+    h += '  <input type="search" id="filter" class="tunings_filter_input" placeholder="Filter — name, notes, info…" maxlength="64" value="' + escHtml(x._filter || '') + '" autocomplete="off" spellcheck="false">';
+    h += '  <div class="tunings_strs" role="radiogroup" aria-label="Filter by string count">';
+    ['', '6', '8', '10', '12'].forEach(function (v) {
+      const active = (x._filterStrs === v) ? ' active' : '';
+      const label = v === '' ? 'All' : v + '-string';
+      h += '<button type="button" class="tunings_str_btn' + active + '" '
+        +  'data-strs="' + v + '" role="radio" aria-checked="' + (x._filterStrs === v) + '">'
+        +  escHtml(label) + '</button>';
+    });
+    h += '  </div>';
+    h += '</div>';
     h += '<table class="sortable" id="tunings">';
     h += '<thead><tr>';
-    h += '<th width="10%" class="name"><button>Strings<span aria-hidden="true"></span></button></th>';
+    h += '<th width="10%" class="num name"><button>Strings<span aria-hidden="true"></span></button></th>';
     h += '<th width="12%" class="name"><button>Name<span aria-hidden="true"></span></button></th>';
     h += '<th width="20%"><button>Tuning<span aria-hidden="true"></span></button></th>';
     h += '<th width="16%"><button>Degrees<span aria-hidden="true"></span></button></th>';
@@ -1517,36 +1547,88 @@
     });
   }
 
-  function applyTuningsFilter(value) {
+  // Filter the visible tunings table rows by both the text filter (matches
+  // any cell's text, multi-token AND search) and the active string-count
+  // button (6/8/10/12 or All). Either or both may be empty.
+  function applyTuningsFilter(textValue, strsValue) {
     const table = document.getElementById('tunings');
     if (!table) return;
-    const f = String(value || '').toUpperCase();
+    const txt = String(textValue || '').toLowerCase().trim();
+    const toks = txt ? txt.split(/\s+/) : [];
+    const wantStrs = String(strsValue || '');
     table.querySelectorAll('tbody tr').forEach(function (tr) {
-      const td = tr.querySelector('td');
-      if (!td) return;
-      const text = (td.textContent || '').toUpperCase();
-      tr.style.display = (!f || text.indexOf(f) > -1) ? '' : 'none';
+      const cells = tr.querySelectorAll('td');
+      if (!cells.length) { tr.style.display = 'none'; return; }
+      // First cell is the "N-String" label — pull the leading number out.
+      const strsHere = String((cells[0].textContent || '').match(/^\d+/) || '');
+      if (wantStrs && wantStrs !== strsHere) { tr.style.display = 'none'; return; }
+      if (toks.length) {
+        const hay = Array.prototype.map.call(cells, function (td) {
+          return (td.textContent || '').toLowerCase();
+        }).join(' ');
+        const allMatch = toks.every(function (t) { return hay.indexOf(t) !== -1; });
+        if (!allMatch) { tr.style.display = 'none'; return; }
+      }
+      tr.style.display = '';
     });
   }
 
   let _filterDebounce = null;
   function bindTuningsFilter() {
     const input = document.getElementById('filter');
-    if (!input) return;
-    // Apply current filter on render
-    applyTuningsFilter(input.value);
+    const root = document.getElementById('tunings_root');
+    if (!input || !root) return;
+
+    // Read current state from URL on bind so re-renders pick up persisted vals
+    function urlState() {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        text: (p.get('f') || ''),
+        strs: (function () {
+          const v = p.get('fc');
+          return (v === '6' || v === '8' || v === '10' || v === '12') ? v : '';
+        })()
+      };
+    }
+    function persist(text, strs) {
+      const params = new URLSearchParams(window.location.search);
+      if (text) params.set('f', text); else params.delete('f');
+      if (strs) params.set('fc', strs); else params.delete('fc');
+      const qs = params.toString();
+      history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
+    }
+    function refresh() {
+      const s = urlState();
+      applyTuningsFilter(s.text, s.strs);
+      // Sync button active states with URL
+      root.querySelectorAll('.tunings_str_btn').forEach(function (btn) {
+        const v = btn.getAttribute('data-strs') || '';
+        if (v === s.strs) btn.classList.add('active');
+        else btn.classList.remove('active');
+        btn.setAttribute('aria-checked', v === s.strs ? 'true' : 'false');
+      });
+    }
+
+    refresh();
+
     input.addEventListener('input', function () {
-      // Cap length defensively (matches the maxlength attr; user can paste over)
       const value = String(input.value || '').slice(0, 64);
       if (input.value !== value) input.value = value;
-      applyTuningsFilter(value);
+      const s = urlState();
+      applyTuningsFilter(value, s.strs);
       if (_filterDebounce) clearTimeout(_filterDebounce);
-      _filterDebounce = setTimeout(function () {
-        const params = new URLSearchParams(window.location.search);
-        if (value) params.set('f', value); else params.delete('f');
-        const qs = params.toString();
-        history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
-      }, 300);
+      _filterDebounce = setTimeout(function () { persist(value, s.strs); }, 300);
+    });
+
+    root.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.tunings_str_btn');
+      if (!btn) return;
+      e.preventDefault();
+      const want = btn.getAttribute('data-strs') || '';
+      const cur = urlState();
+      const nextStrs = (cur.strs === want) ? '' : want;
+      persist(cur.text, nextStrs);
+      refresh();
     });
   }
 

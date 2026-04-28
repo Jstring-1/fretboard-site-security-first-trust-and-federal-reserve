@@ -2111,7 +2111,7 @@ window.SF_DATA = {
             "dgs": "1 5 1 3 5 1",
             "rev_dgs": "1 5 3 1 5 1",
             "udgs": "1 3 5",
-            "info": "Duane Allman / slide guitar (Open D shape, whole step up)",
+            "info": "Duane Allman / slide guitar",
             "strs": 6
         }
     }

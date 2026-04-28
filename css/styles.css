@@ -481,16 +481,40 @@ details.collapsible > summary { cursor: default; }
 .cyo_on a                                  { color: #000 !important;                                                  }
 .cyo_switch:hover                          { filter: brightness(1.12);                                                }
 
-/* Tuning-direction switch sits just left of the tuning dropdown in the form */
+/* Tuning-direction switch sits to the right of the tuning picker in the
+   form. .y_switch_sm is the compact variant used there (smaller padding,
+   smaller font); plain .y_switch keeps the original size for any place
+   that still uses it. */
 .y_switch                                  { display: inline-flex; align-items: center; padding: 5px 10px;
-                                             margin-right: 8px; border-radius: 5px;
+                                             margin-left: 8px; border-radius: 5px;
                                              font: 600 0.85em/1 inherit; letter-spacing: 0.04em;
                                              text-decoration: none; color: #fff !important;
                                              border: 1px solid transparent; cursor: pointer;                          }
+.y_switch.y_switch_sm                      { padding: 3px 8px; font-size: 0.75em; margin-left: 6px;                   }
 .y_off                                     { background-color: #2e2e2e;                                                }
 .y_on                                      { background-color: var(--accent-hi); color: #000 !important;               }
 .y_switch:hover                            { filter: brightness(1.12); border-color: rgba(255,255,255,0.4);            }
 .opt_row_main                              { gap: 0;                                                                  }
+
+/* Tunings List filter bar — search input + quick-filter buttons in a
+   centered row, persisted via ?f= and ?fc= so a user who only plays
+   6-string can pin "6-string" once and keep it across reloads. */
+.tunings_filter_bar                        { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+                                             padding: 10px 14px; justify-content: center;                              }
+.tunings_filter_input                      { flex: 0 1 auto; width: min(360px, 100%); padding: 6px 10px;
+                                             font: 400 0.95em var(--font); color: var(--accent);
+                                             background: var(--bg-elevated); border: 1px solid #2a2a2a;
+                                             border-radius: 4px; outline: none;                                         }
+.tunings_filter_input:focus                { border-color: var(--accent-hi);                                            }
+.tunings_strs                              { display: flex; flex-wrap: wrap; gap: 4px;                                  }
+.tunings_str_btn                           { padding: 4px 12px; font: 400 0.82em var(--font);
+                                             background: transparent; color: var(--muted);
+                                             border: 1px solid #2a2a2a; border-radius: 999px;
+                                             cursor: pointer;                                                          }
+.tunings_str_btn:hover                     { color: var(--accent-hi); border-color: var(--accent-hi);                  }
+.tunings_str_btn.active                    { background: var(--accent-hi); color: #000;
+                                             border-color: var(--accent-hi); font-weight: 600;                         }
+@media print { .tunings_filter_bar { display: none !important; }                                                       }
 details.collapsible > summary:hover        { background: var(--bg-hover);                                            }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary > .summary_title::before
