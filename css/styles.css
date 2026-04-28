@@ -2,10 +2,10 @@
                             NOIR WHITE THEME — palette tokens
 *********************************************************************************************************************/
 :root {
-  --bg:            #000000;
+  --bg:            #1a1a1a;   /* page background — lifted so sections read as recessed cards */
   --bg-elevated:   #0e0e0e;
   --bg-hover:      #1a1a1a;
-  --surface:       #0a0a0a;
+  --surface:       #0a0a0a;   /* section bg — deeper than the page so the cards stand apart */
   --surface-raised:#1a1a1a;
   --border:        #2e2e2e;
   --border-strong: #5a5a5a;
@@ -711,6 +711,32 @@ select option                              { color: var(--text); background: var
 .tun_pop_empty                             { padding: 14px; text-align: center; color: var(--muted-dim);              }
 
 @media print { .tun_pop, .tun_picker_btn { display: none !important; } }
+
+/* ============================================================
+   Status bar — single sticky banner showing current Key / chord-or-scale /
+   Tuning. Replaces the per-section `.summary_status` echoes, so the info
+   is always visible (sticks at top of viewport when you scroll) and doesn't
+   stagger across section headers.
+   ============================================================ */
+#status_bar                                { position: sticky; top: 0; z-index: 900;
+                                             background: var(--surface);
+                                             border-top: 1px solid #1f1f1f;
+                                             border-bottom: 1px solid #1f1f1f;
+                                             padding: 6px 14px;                                                       }
+#status_bar_inner                          { display: flex; flex-wrap: wrap; align-items: center;
+                                             justify-content: center; gap: 10px;
+                                             max-width: 1240px; margin: 0 auto;
+                                             font: 400 0.85em var(--font); color: var(--text);
+                                             text-align: center; line-height: 1.2;                                   }
+#status_bar_inner .sb_lab                  { color: var(--muted); font-weight: 600;
+                                             text-transform: uppercase; letter-spacing: 0.06em;
+                                             font-size: 0.85em; margin-right: 2px;                                    }
+#status_bar_inner .sb_key                  { color: var(--text);                                                       }
+#status_bar_inner .sb_hl                   { color: var(--accent-hi); font-weight: 600;                                }
+#status_bar_inner .sb_tun                  { color: var(--text);                                                       }
+#status_bar_inner .sb_sep                  { color: var(--muted-dim);                                                  }
+#status_bar_inner:empty                    { display: none;                                                            }
+@media print { #status_bar { display: none !important;                                                                } }
 
 /* The tunings list lives nested inside the Fretboard section; give it some
    breathing room so the Fretboard section's bottom edge doesn't kiss the

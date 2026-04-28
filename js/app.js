@@ -694,21 +694,32 @@
     });
   }
 
-  // Three short stacked lines per section title:
-  //   Key: A
-  //   Maj Chord (1 3 5)        ← blank when no highlight is active
-  //   Fretboard Tuning A6
+  // Single sticky context bar at the top of the page shows current state:
+  //   Key: A · Harmonic Minor Scale (1 2 ♭3 4 5 ♭6 7) · Tuning: A6
+  // (Replaces the per-section `.summary_status` echoes — a single canonical
+  // banner means no alignment hassle and no duplicated info across headers.)
   function renderSummaryStatus(x) {
     const tuningName = (x.z === 'y') ? 'Custom' : x.name;
     const hlText = x.hl_n
       ? x.hl_name.replace(/^Highlighted:\s*/, '')
       : '';
-    const html =
-      '<span class="status_key">Key: ' + escHtml(x.k) + '</span>' +
-      '<span class="status_hl">' + escHtml(hlText) + '</span>' +
-      '<span class="status_tun">Fretboard Tuning ' + escHtml(tuningName) + '</span>';
+    const sep = '<span class="sb_sep" aria-hidden="true">·</span>';
+    const parts = [
+      '<span class="sb_key"><span class="sb_lab">Key</span> ' + escHtml(x.k) + '</span>'
+    ];
+    if (hlText) {
+      parts.push('<span class="sb_hl">' + escHtml(hlText) + '</span>');
+    }
+    parts.push('<span class="sb_tun"><span class="sb_lab">Tuning</span> ' + escHtml(tuningName) + '</span>');
+
+    const inner = document.getElementById('status_bar_inner');
+    if (inner) inner.innerHTML = parts.join(sep);
+
+    // Per-section .summary_status spans stay in the markup as flex spacers
+    // (their `flex: 1` rule keeps the title left and buttons right) but they
+    // no longer carry visible text. Empty them so any old content clears.
     document.querySelectorAll('.summary_status').forEach(function (s) {
-      s.innerHTML = html;
+      s.innerHTML = '';
     });
   }
 
