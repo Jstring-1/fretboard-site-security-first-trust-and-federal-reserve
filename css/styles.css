@@ -580,9 +580,8 @@ select option                              { color: var(--text); background: var
    yellow ring + bold text. */
 #quick_picks                               { padding: 6px 14px 4px; display: flex; flex-direction: column; gap: 4px; }
 #quick_picks .qp_row                       { display: flex; flex-wrap: wrap; align-items: center;
-                                             gap: 4px 4px; line-height: 1;                                            }
-#quick_picks .qp_label                     { font-size: 0.78em; font-weight: 600; color: var(--muted);
-                                             min-width: 56px; text-align: right; padding-right: 6px;                  }
+                                             justify-content: center;
+                                             gap: 4px; line-height: 1;                                                }
 #quick_picks .qp_link                      { display: inline-block; padding: 3px 9px; font-size: 0.85em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;

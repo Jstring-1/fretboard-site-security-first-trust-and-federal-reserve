@@ -213,8 +213,12 @@
       }
       return false;
     }
+    // Check GRID before CHORDS so the chord-name casing matches what the
+    // builder grid + quick-pick chips iterate (GRID has 'aug', 'dim', 'dom7',
+    // etc. — lowercase — while the legacy CHORDS map has 'Aug', 'Dim',
+    // 'Dom7'). With CHORDS first, x.hl_n didn't match the chip names.
     if (!checkSet(SCALES, ' Scale')) {
-      if (!checkSet(CHORDS, ' Chord')) checkSet(GRID, ' Chord');
+      if (!checkSet(GRID, ' Chord')) checkSet(CHORDS, ' Chord');
     }
     x.hl_name += ' (' + x.hl + ')';
 
@@ -307,7 +311,7 @@
     // top rows, parked above the fretboard so the user doesn't have to
     // scroll down to a builder section to apply a chord or scale.
     h += '<div id="quick_picks">';
-    h += '  <div class="qp_row"><span class="qp_label">Chords</span>';
+    h += '  <div class="qp_row">';
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const isSelected = (x.hl_n === a.replace(/_/g, ' '));
@@ -316,7 +320,7 @@
       h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
     }
     h += '  </div>';
-    h += '  <div class="qp_row"><span class="qp_label">Scales</span>';
+    h += '  <div class="qp_row">';
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const isSelected = (x.hl_n === label);
