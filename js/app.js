@@ -145,14 +145,14 @@
       url_s += 's' + a + '=' + encodeURIComponent(hashToSharp(x['s' + a])) + '&';
     }
 
-    // Print-colors toggle (URL > localStorage > 'n')
+    // Print-colors toggle (URL > localStorage > 'y' default)
     const pcRaw = params.get('pc');
     if (pcRaw === 'y' || pcRaw === 'n') {
       x.pc = pcRaw;
     } else {
       let saved = null;
       try { saved = window.localStorage.getItem('sf_print_colors'); } catch (e) {}
-      x.pc = saved === 'y' ? 'y' : 'n';
+      x.pc = saved === 'n' ? 'n' : 'y';
     }
 
     // Tunings table sort: ?sort=<col>:<a|d>

@@ -240,7 +240,8 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
 body.print-colors td[id="_1_"],  body.print-colors td[id="_b2_"], body.print-colors td[id="_2_"],
 body.print-colors td[id="_b3_"], body.print-colors td[id="_3_"],  body.print-colors td[id="_4_"],
 body.print-colors td[id="_b5_"], body.print-colors td[id="_5_"],  body.print-colors td[id="_b6_"],
-body.print-colors td[id="_6_"],  body.print-colors td[id="_b7_"], body.print-colors td[id="_7_"] {
+body.print-colors td[id="_6_"],  body.print-colors td[id="_b7_"], body.print-colors td[id="_7_"],
+body.print-colors .ritz .waffle td {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
 }
