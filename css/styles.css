@@ -542,10 +542,18 @@ select option                              { color: var(--text); background: var
 #view_source_modal.wf_compact .vs_pre      { padding: 28px 32px; text-align: center;
                                              font-family: var(--font); font-size: 1.05em;
                                              white-space: normal; overflow: visible;                                  }
-.wf_link                                   { color: var(--accent-hi) !important; text-decoration: none;
+/* Higher specificity than the body 'a:link / a:visited' rule so the link
+   actually picks up the cyan colour on the white modal panel. */
+#view_source_modal a.wf_link,
+#view_source_modal a.wf_link:link,
+#view_source_modal a.wf_link:visited,
+#view_source_modal a.wf_link:active       { color: var(--accent-hi) !important; text-decoration: none;
                                              font-weight: 600; letter-spacing: 0.02em;
                                              border-bottom: 1px solid rgba(95,232,224,0.45);                          }
-.wf_link:hover                             { border-bottom-color: var(--accent-hi);                                   }
+#view_source_modal a.wf_link:hover         { border-bottom-color: var(--accent-hi);                                   }
+/* Witherfork popup: no close button — click anywhere outside (or press Esc)
+   to dismiss. */
+#view_source_modal.wf_compact .vs_close    { display: none !important;                                                 }
 
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
