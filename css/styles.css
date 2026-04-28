@@ -157,6 +157,17 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:10px;                                                    }
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
+/* Keyboard sits on a white "piano body" inside the dark section frame */
+.ritz                                      {  background-color:#ffffff; padding:6px; border-radius:6px;              }
+/* Override the bulk dark-bg rule from the inline ritz/waffle CSS for chrome
+   cells (labels, separators, range cells). Black-key cells stay dark. */
+.ritz .waffle .s0, .ritz .waffle .s10, .ritz .waffle .s11, .ritz .waffle .s12,
+.ritz .waffle .s20, .ritz .waffle .s21, .ritz .waffle .s22, .ritz .waffle .s24,
+.ritz .waffle .s31, .ritz .waffle .s46, .ritz .waffle .s54, .ritz .waffle .s55,
+.ritz .waffle .s56, .ritz .waffle .s57, .ritz .waffle .s59, .ritz .waffle .s61 {
+    background-color:#ffffff !important;
+    color:#111 !important;
+}
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
@@ -522,8 +533,14 @@ select option                              { color: var(--text); background: var
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
 
-/* Sortable header buttons (slightly tighter) */
-table.sortable th                          { font-size: 0.92em;                                                      }
+/* Sortable header buttons */
+table.sortable thead                       { background-color: rgba(95,232,224,0.06);                                 }
+table.sortable th                          { font-size: 0.92em; font-weight: 600;
+                                             border-bottom: 2px solid var(--border-strong) !important;               }
+table.sortable th button                   { color: var(--text); font-weight: 600;                                    }
+table.sortable th button:hover             { color: var(--accent-hi); cursor: pointer;                               }
+table.sortable th[aria-sort]               { background-color: rgba(95,232,224,0.12);                                 }
+table.sortable th[aria-sort] button        { color: var(--accent-hi);                                                 }
 
 /* Tunings table padding (was 6px 12px — keeps that, but lighter row separation) */
 #tunings tbody tr                          { transition: background-color .1s;                                       }
