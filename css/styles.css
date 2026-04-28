@@ -549,11 +549,16 @@ select option                              { color: var(--text); background: var
 .quiz_next:hover                           { background: #1a1a1a; border-color: #888888;                              }
 @media print { #section_7 { display: none !important; }                                                               }
 
-/* Title: tighten the tagline */
-#section_1 h1                              { letter-spacing: -0.02em;                                                }
+/* Title: bare <h1> at the top of the page, no wrapper section, sits
+   directly on the darkest page bg. */
+#site_title                                { text-align: center; letter-spacing: -0.02em;
+                                             margin: 18px 0 12px; padding: 0;
+                                             background: transparent; border: none; box-shadow: none;                }
+/* Build number lives in the footer below the Witherfork link. Quiet,
+   small, just a timestamp for support / debug reference. */
 #build_num                                 { text-align: center; font: 400 0.7em var(--font);
                                              color: var(--muted-dim); letter-spacing: 0.06em;
-                                             margin: -2px 0 6px; opacity: 0.85;                                       }
+                                             margin: 4px 0 0; opacity: 0.65;                                          }
 
 /* Blurb at the bottom — sits on the light page bg, needs dark text */
 #blurb                                     { font-size: 0.78em; color: #555555; opacity: 0.85; margin: 12px 0;       }
@@ -746,39 +751,23 @@ select option                              { color: var(--text); background: var
 
 @media print { .tun_pop, .tun_picker_btn { display: none !important; } }
 
-/* ============================================================
-   Status bar — single sticky banner showing current Key / chord-or-scale /
-   Tuning. Replaces the per-section `.summary_status` echoes, so the info
-   is always visible (sticks at top of viewport when you scroll) and doesn't
-   stagger across section headers.
-   ============================================================ */
-#status_bar                                { position: sticky; top: 0; z-index: 900;
-                                             background: var(--status-bg);
-                                             border-top: 1px solid #050505;
-                                             border-bottom: 1px solid #1f1f1f;
-                                             box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
-                                                         0 2px 6px rgba(0,0,0,0.5);
-                                             padding: 6px 14px;                                                       }
-#status_bar_inner                          { display: flex; flex-wrap: wrap; align-items: center;
-                                             justify-content: center; gap: 10px;
-                                             max-width: 1240px; margin: 0 auto;
-                                             font: 400 0.85em var(--font); color: var(--text);
-                                             text-align: center; line-height: 1.2;                                   }
-#status_bar_inner .sb_lab                  { color: var(--muted); font-weight: 600;
+/* Tuning indicator on the Fretboard section title — sits inline with the
+   title so users see the loaded tuning at a glance from that one section
+   (the only place it's relevant). Reuses the muted-label / accent-value
+   pattern other status readouts use. */
+.summary_tuning                            { display: inline-flex; align-items: baseline; gap: 6px;
+                                             margin-left: 12px; font: 400 0.82em var(--font);
+                                             color: var(--muted); white-space: nowrap;                               }
+.summary_tuning .st_lab                    { color: var(--muted); font-weight: 600;
                                              text-transform: uppercase; letter-spacing: 0.06em;
-                                             font-size: 0.85em; margin-right: 2px;                                    }
-#status_bar_inner .sb_key                  { color: var(--text);                                                       }
-#status_bar_inner .sb_hl                   { color: var(--accent-hi); font-weight: 600;                                }
-#status_bar_inner .sb_tun                  { color: var(--text);                                                       }
-#status_bar_inner .sb_sep                  { color: var(--muted-dim);                                                  }
-#status_bar_inner:empty                    { display: none;                                                            }
-@media print { #status_bar { display: none !important;                                                                } }
+                                             font-size: 0.85em;                                                       }
+.summary_tuning .st_val                    { color: var(--accent); font-weight: 600;                                  }
+.summary_tuning:empty                      { display: none;                                                            }
 
-/* The tunings list lives nested inside the Fretboard section; give it some
-   breathing room so the Fretboard section's bottom edge doesn't kiss the
-   nested details when collapsed, and so the open list has room to breathe
-   above the next top-level section. */
-#section_5.nested_section                  { margin: 14px 0 22px;                                                    }
+/* The tunings list lives nested inside the Fretboard section; pad it in
+   from the section's left/right edges and keep the top + bottom margins
+   tight so it sits flush against the fretboard above. */
+#section_5.nested_section                  { margin: 4px 18px 8px;                                                   }
 /* Without a .summary_status spacer in this section's summary, the Print + ?
    buttons would sit right next to the title. Push them to the right edge. */
 #section_5.nested_section > summary > .section_print,

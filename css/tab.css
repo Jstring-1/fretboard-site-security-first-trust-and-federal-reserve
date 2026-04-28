@@ -141,10 +141,9 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
                                               margin: 0 !important; width: 100% !important;                          }
   .tab_title_print                           { color: #000 !important; font-size: 0.9em !important; margin: 0 !important; }
   .tab_subtitle_print                        { color: #555 !important; font-size: 0.7em !important; margin: 0 0 2px !important; }
-  /* Aggressive density target: fit ~6 12-string systems on one landscape
-     letter page. With 0.4in margins the printable area is roughly 7.7"
-     tall, so each 12-string system has to come in around 1.2" / ~115px. */
-  #tab_grid                                  { gap: 4px !important;                                                   }
+  /* Density target: fit several 12-string systems on one landscape letter
+     page while keeping enough air between staves that they read clearly. */
+  #tab_grid                                  { gap: 18px !important;                                                  }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
                                               padding: 2px 0 2px !important;                                          }
   .tab_row                                   { height: 9px !important;                                                 }

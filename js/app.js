@@ -694,30 +694,21 @@
     });
   }
 
-  // Single sticky context bar at the top of the page shows current state:
-  //   Key: A · Harmonic Minor Scale (1 2 ♭3 4 5 ♭6 7) · Tuning: A6
-  // (Replaces the per-section `.summary_status` echoes — a single canonical
-  // banner means no alignment hassle and no duplicated info across headers.)
+  // Tuning indicator lives next to the Fretboard section title — that's
+  // the only place it's relevant. Key shows up in every section's header
+  // (key picker), chord/scale shows up in the keyboard + fretboard sections
+  // (highlighted chip), so we don't echo any of that here.
   function renderSummaryStatus(x) {
     const tuningName = (x.z === 'y') ? 'Custom' : x.name;
-    const hlText = x.hl_n
-      ? x.hl_name.replace(/^Highlighted:\s*/, '')
-      : '';
-    const sep = '<span class="sb_sep" aria-hidden="true">·</span>';
-    const parts = [
-      '<span class="sb_key"><span class="sb_lab">Key</span> ' + escHtml(x.k) + '</span>'
-    ];
-    if (hlText) {
-      parts.push('<span class="sb_hl">' + escHtml(hlText) + '</span>');
+    const tunEl = document.getElementById('fretboard_summary_tuning');
+    if (tunEl) {
+      tunEl.innerHTML =
+        '<span class="st_lab">Tuning</span>' +
+        '<span class="st_val">' + escHtml(tuningName) + '</span>';
     }
-    parts.push('<span class="sb_tun"><span class="sb_lab">Tuning</span> ' + escHtml(tuningName) + '</span>');
-
-    const inner = document.getElementById('status_bar_inner');
-    if (inner) inner.innerHTML = parts.join(sep);
-
     // Per-section .summary_status spans stay in the markup as flex spacers
-    // (their `flex: 1` rule keeps the title left and buttons right) but they
-    // no longer carry visible text. Empty them so any old content clears.
+    // (their `flex: 1` rule keeps the title left and buttons right) but no
+    // longer carry visible text. Empty them so any prior content clears.
     document.querySelectorAll('.summary_status').forEach(function (s) {
       s.innerHTML = '';
     });
