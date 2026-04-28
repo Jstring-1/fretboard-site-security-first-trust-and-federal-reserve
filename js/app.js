@@ -122,6 +122,15 @@
       // Hydrate s1..s12 (compact ?s=A.Cs.E.F.G.A.C.E OR legacy ?s1=…&s2=…)
       const cstr = readCustomStrings(params);
       for (const sk in cstr) raw[sk] = [bToFlat(sharpToHash(cstr[sk]))];
+      // Track how many s-strings the URL actually carried (separate from
+      // x.sN, which gets backfilled from DEF_X defaults below). Used to
+      // override the fretboard string count when custom tuning is engaged.
+      let _csCountUrl = 0;
+      for (let i = 1; i <= 12; i++) {
+        if (cstr['s' + i]) _csCountUrl = i;
+        else break;
+      }
+      x._customStrsFromUrl = _csCountUrl;
 
       // Validate x (tuning key)
       if (raw.x && raw.x[0]) {
@@ -203,17 +212,13 @@
     if (x.z === 'y') {
       x.d_name = 'Custom';
       x.d_notes = x.s;
-      // When custom tuning is engaged, the fretboard's string count
-      // follows the populated s1..sN (consecutive from s1) rather than
-      // the main tuning's strs. That lets a 6-string main coexist with,
-      // say, an 8-string custom — toggling z flips between the two
-      // string counts.
-      let customStrs = 0;
-      for (let i = 1; i <= 12; i++) {
-        if (x['s' + i] && KEYS.indexOf(x['s' + i]) !== -1) customStrs = i;
-        else break;
-      }
-      if (customStrs > 0) x.strs = customStrs;
+      // When custom tuning is engaged, the fretboard's string count comes
+      // from how many strings were actually in the URL — NOT from x.sN
+      // (which DEF_X defaults backfill for the unused slots). That way
+      // switching from a 12-string custom to a 6-string custom drops
+      // the visible fretboard down to 6 rows even though x.s7..x.s12
+      // still hold default fallback values.
+      if (x._customStrsFromUrl > 0) x.strs = x._customStrsFromUrl;
     } else {
       x.d_name = x.name;
       x.d_notes = x.notes;
