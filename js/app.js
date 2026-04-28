@@ -723,19 +723,17 @@
     });
   }
 
-  // Restrict the toggle to clicks on the title (and the disclosure arrow
-   // pseudo-element on summary itself). Clicks on the status text, buttons, or
-   // any control inside the summary should NOT collapse/expand the section.
+  // Restrict the toggle to clicks on the .summary_title (which now hosts the
+  // ▼/▶ arrow via ::before, so the arrow stays clickable). Anywhere else on
+  // the summary bar — empty status spacer, button row, or padding around
+  // them — is a no-op. Stops the section from collapsing when the user is
+  // just trying to click a button or pick a key.
   function bindSummaryToggleScope() {
     document.querySelectorAll('details.collapsible > summary').forEach(function (summary) {
       if (summary._toggleScopeBound) return;
       summary._toggleScopeBound = true;
       summary.addEventListener('click', function (e) {
-        // Click on summary itself (the disclosure arrow / padding) — allow toggle
-        if (e.target === summary) return;
-        // Click inside the title — allow toggle
         if (e.target.closest && e.target.closest('.summary_title')) return;
-        // Anything else (status, buttons, key dropdown, clear, print, ?) — block
         e.preventDefault();
       });
     });

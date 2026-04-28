@@ -337,8 +337,15 @@ details.collapsible > summary             { cursor:pointer; user-select:none; li
                                             background-color:#1a1a1a;
                                             text-align:left;                                                          }
 details.collapsible > summary::-webkit-details-marker { display:none; }
-details.collapsible > summary::before     { content:'▼ '; display:inline-block; width:1em; transition:transform .15s; }
-details.collapsible:not([open]) > summary::before { content:'▶ '; }
+/* Disclosure arrow lives on the .summary_title element (not the summary
+   itself) so a click on the arrow registers as a click inside the title.
+   That lets the toggle-scope handler below block clicks on the rest of
+   the summary bar (padding, status spacer, button row) while keeping the
+   arrow + title clickable. */
+details.collapsible > summary > .summary_title::before
+                                          { content:'▼ '; display:inline-block; width:1em; transition:transform .15s; }
+details.collapsible:not([open]) > summary > .summary_title::before
+                                          { content:'▶ '; }
 details.collapsible > summary:hover       { background-color:#1a1a1a;                                                 }
 @media print {
     details.collapsible > summary         { display:none !important;                                                  }
@@ -450,7 +457,8 @@ details.collapsible > summary { cursor: default; }
 .opt_row_main                              { gap: 0;                                                                  }
 details.collapsible > summary:hover        { background: var(--bg-hover);                                            }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
-details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }
+details.collapsible > summary > .summary_title::before
+                                           { color: rgba(255,255,255,0.85);                                          }
 
 /* Form layout: stacked rows with proper gaps */
 #tunings_drop                              { padding: 14px 18px 16px; display: flex; flex-direction: column;
