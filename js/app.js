@@ -200,9 +200,13 @@
     // 's' form for sharps (data.js still has %23-encoded values).
     x.url_notes = urlNote(x.notes);
 
-    // Build x.s from s1..s12 (custom-tuning notes assembled in reverse order)
+    // Build x.s from s1..s12 (custom-tuning notes assembled in reverse order).
+    // Cap at the URL-derived count so a 6-string custom doesn't silently pull
+    // in DEF_X defaults for s7..s12 and become a 12-string string in the
+    // header / display.
+    const _sCount = (x._customStrsFromUrl > 0) ? x._customStrsFromUrl : 12;
     let ess = '';
-    for (let i = 12; i >= 1; i--) {
+    for (let i = _sCount; i >= 1; i--) {
       if (KEYS.indexOf(x['s' + i]) !== -1) ess += x['s' + i] + ' ';
     }
     ess = ess.trim();
@@ -304,9 +308,11 @@
       sdgs[i] = d;
     }
     // implode in 1..12 order? PHP does sdgs[1..12] via loop 12→1, then implode preserves keys 12..1
-    // PHP: $x['sdgs'] = trim( implode( " ", $sdgs ) );  — keys 12,11,...,1
+    // Cap the degree readout at the URL-derived custom-string count, same
+    // as x.s above, so a 6-string custom tuning's degrees aren't padded
+    // out with DEF_X defaults' degrees.
     let sdgsStr = '';
-    for (let i = 12; i >= 1; i--) if (sdgs[i] !== undefined) sdgsStr += sdgs[i] + ' ';
+    for (let i = _sCount; i >= 1; i--) if (sdgs[i] !== undefined) sdgsStr += sdgs[i] + ' ';
     x.sdgs = sdgsStr.trim();
     x.rev_sdgs = reverseSpaceStr(x.sdgs);
 
