@@ -116,7 +116,7 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
 
 /* ---------- Print ---------- */
 @media print {
-  @page                                      { size: letter; margin: 0.5in; }
+  @page                                      { size: letter landscape; margin: 0.4in; }
   body                                       { background: #fff !important; color: #000 !important; }
   #title_bar, #page_sub, #build_num,
   .tab_controls, .tab_help,
@@ -127,8 +127,8 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   details.collapsible > summary              { background: #fff !important; color: #000 !important;
                                               border: none !important; height: auto !important;
                                               padding: 0 !important; pointer-events: none; }
-  details.collapsible > summary .summary_title { font: 700 1.05em var(--font) !important; color: #000 !important;
-                                              text-align: center; width: 100%; margin: 0 0 4px !important;            }
+  details.collapsible > summary .summary_title { font: 700 0.95em var(--font) !important; color: #000 !important;
+                                              text-align: center; width: 100%; margin: 0 0 2px !important;            }
   /* Width safety: clamp every level of the tab DOM to the printable width
      and disable content-box border math, so the right edge of the staves
      can't slip past the page margin. */
@@ -139,30 +139,31 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
                                               overflow: visible !important;                                          }
   #tab_paper                                 { background: #fff !important; padding: 0 !important;
                                               margin: 0 !important; width: 100% !important;                          }
-  .tab_title_print                           { color: #000 !important; font-size: 1em !important; margin: 0 !important; }
-  .tab_subtitle_print                        { color: #555 !important; font-size: 0.8em !important; margin: 0 0 4px !important; }
-  /* Tighten everything for print so more systems fit on a letter page. */
-  #tab_grid                                  { gap: 10px !important;                                                  }
+  .tab_title_print                           { color: #000 !important; font-size: 0.9em !important; margin: 0 !important; }
+  .tab_subtitle_print                        { color: #555 !important; font-size: 0.7em !important; margin: 0 0 2px !important; }
+  /* Aggressive density target: fit ~6 12-string systems on one landscape
+     letter page. With 0.4in margins the printable area is roughly 7.7"
+     tall, so each 12-string system has to come in around 1.2" / ~115px. */
+  #tab_grid                                  { gap: 4px !important;                                                   }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
-                                              padding: 6px 0 2px !important;                                          }
-  .tab_row                                   { height: 14px !important;                                                }
-  .tab_cells                                 { height: 14px !important;                                                }
+                                              padding: 2px 0 2px !important;                                          }
+  .tab_row                                   { height: 9px !important;                                                 }
+  .tab_cells                                 { height: 9px !important;                                                 }
   .tab_row::before                           { border-top-color: #000 !important;                                      }
   .tab_label                                 { color: #000 !important; background: #fff !important;
-                                              font-size: 0.75em !important;                                           }
+                                              font-size: 0.65em !important;                                           }
   .tab_cell.barline                          { border-left-color: #000 !important;                                     }
   /* Empty cells stay transparent in print so the staff line shows through.
      Filled cells get an opaque white bg so the digit punches the line. */
   .tab_cell input                            { background: transparent !important; color: #000 !important;
-                                              font-size: 0.75em !important;
+                                              font-size: 0.65em !important;
                                               -webkit-print-color-adjust: exact; print-color-adjust: exact;            }
   .tab_cell input:not(:placeholder-shown)    { background: #fff !important;                                            }
-  .tab_measure_numbers                       { color: #000 !important; height: 9px !important;
-                                              margin-bottom: 2px !important; font-size: 0.65em !important;            }
+  /* Hide measure numbers in print regardless — they eat ~10px per system,
+     which is the difference between 5 and 6 systems per page at 12 strings. */
+  .tab_measure_numbers                       { display: none !important;                                              }
 
-  /* Print-blank: drop the measure bar-lines AND the measure-number row so
-     the user has a clean handwriting sheet — they can pencil in their own
-     bar-lines / numbering wherever they want them. */
+  /* Print-blank: drop the measure bar-lines too so the user has a clean
+     handwriting sheet — they can pencil in their own bar-lines / counts. */
   #tab_paper.blank .tab_cell.barline         { border-left: 0 !important;                                              }
-  #tab_paper.blank .tab_measure_numbers      { display: none !important;                                              }
 }

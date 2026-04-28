@@ -1511,9 +1511,13 @@
             // Highlighted note: degree-coloured bg + dark label.
             css += sel + ' { background-color: ' + KEYBOARD_DEGREE_COLORS[deg] + ' !important; '
                   +       'color: #000 !important; }\n';
+          } else if (anyHighlighted) {
+            // Some other note is highlighted: keep the plain white bg but
+            // dim the label to a middle grey so the highlighted notes pop.
+            css += sel + ' { background-color: ' + PLAIN_WHITE_BG + ' !important; '
+                  +       'color: ' + DIM_WHITE_TEXT + ' !important; }\n';
           } else {
-            // Anything not actively highlighted reads as a plain piano key.
-            // Used both when no highlights are set and when only some are.
+            // No highlights anywhere: plain piano look.
             css += sel + ' { background-color: ' + PLAIN_WHITE_BG + ' !important; '
                   +       'color: ' + PLAIN_WHITE_TEXT + ' !important; }\n';
           }
@@ -1522,6 +1526,10 @@
           if (inHighlightSet) {
             css += sel + ' { background-color: ' + PLAIN_BLACK_BG + ' !important; '
                   +       'color: ' + KEYBOARD_DEGREE_COLORS[deg] + ' !important; }\n';
+          } else if (anyHighlighted) {
+            // Dim non-highlighted black keys' labels to the same middle grey.
+            css += sel + ' { background-color: ' + PLAIN_BLACK_BG + ' !important; '
+                  +       'color: ' + DIM_BLACK_TEXT + ' !important; }\n';
           } else {
             css += sel + ' { background-color: ' + PLAIN_BLACK_BG + ' !important; '
                   +       'color: ' + PLAIN_BLACK_TEXT + ' !important; }\n';
@@ -1536,9 +1544,13 @@
         const sel = '.ritz .waffle .' + c;
         let degColor;
         if (def.mode === 'bg') {
-          degColor = inHighlightSet ? '#000' : PLAIN_DEG_ON_WHITE;
+          degColor = inHighlightSet     ? '#000'
+                   : anyHighlighted     ? DIM_WHITE_TEXT
+                                        : PLAIN_DEG_ON_WHITE;
         } else {
-          degColor = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : PLAIN_DEG_ON_BLACK;
+          degColor = inHighlightSet     ? KEYBOARD_DEGREE_COLORS[deg]
+                   : anyHighlighted     ? DIM_BLACK_TEXT
+                                        : PLAIN_DEG_ON_BLACK;
         }
         css += sel + '::after { content: "' + escapeCssString(deg) + '"; display: block; '
                   +  'font-size: 0.78em; line-height: 1; opacity: 0.85; '
