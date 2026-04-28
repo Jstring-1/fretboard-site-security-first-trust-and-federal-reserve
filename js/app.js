@@ -1534,7 +1534,13 @@
     if (hlList.length) parts.push('hl=' + hlList.join(','));
 
     // Custom-tuning strings combined into one dot-separated `s=` param.
-    if (fb) {
+    // Only rewrite when custom tuning is engaged (z=y). When z=n the form
+    // still has s-selects showing default fallback values for strings the
+    // user never touched — gathering them all here would overwrite a
+    // 6-string custom set with 12 string slots whenever the user toggled
+    // custom off and changed any other control.
+    const _zIsY = (_curParams.get('z') === 'y');
+    if (fb && _zIsY) {
       const sels = fb.querySelectorAll('select[name^="s"]');
       const sVals = [];
       sels.forEach(function (sel) {
@@ -1544,6 +1550,17 @@
       });
       while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
       if (sVals.length) parts.push('s=' + sVals.map(function (v) { return v || ''; }).join('.'));
+    } else {
+      // Preserve whatever the URL already has so toggling custom off and
+      // back on returns to the same custom tuning.
+      const _curS = _curParams.get('s');
+      if (_curS) parts.push('s=' + _curS);
+      else {
+        for (let i = 1; i <= 12; i++) {
+          const _v = _curParams.get('s' + i);
+          if (_v != null) parts.push('s' + i + '=' + _v);
+        }
+      }
     }
 
     navigateTo('?' + parts.join('&'));
