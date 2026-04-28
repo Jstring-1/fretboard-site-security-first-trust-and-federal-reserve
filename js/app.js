@@ -895,24 +895,31 @@
   // the only place it's relevant. Shows tuning name + notes + degrees; a
   // "(custom)" pill indicates when z=y so users can see the custom path
   // is engaged at a glance.
+  // When custom tuning is engaged, look up the loaded preset by matching
+  // x.s (the assembled custom notes, low-to-high) against TUNINGS[].notes.
+  // Returns the preset's name if found, '' otherwise (manual edit).
+  function findCustomTuningName(x) {
+    const want = String(x.s || '').trim();
+    if (!want) return '';
+    for (const k in TUNINGS) {
+      if (TUNINGS[k].notes === want) return TUNINGS[k].name;
+    }
+    return '';
+  }
+
   function renderSummaryStatus(x) {
     const rev = (x.y === 'y') ? 'rev_' : '';
     const isCustom = (x.z === 'y');
-    const tuningName = isCustom ? 'Custom' : x.name;
+    // For custom tuning, show the name of the loaded preset if the notes
+    // match one in TUNINGS. Falls back to "Custom" for hand-edited tunings.
+    const tuningName = isCustom
+      ? (findCustomTuningName(x) || 'Custom')
+      : x.name;
     const notesStr = isCustom ? x[rev + 's']    : x[rev + 'notes'];
     const dgsStr   = isCustom ? x[rev + 'sdgs'] : x[rev + 'dgs'];
-    // Highlighted chord/scale name, stripped of the "Highlighted: " prefix
-    // and the trailing "(1 3 5)" degree readout that hl_name carries.
-    const chordName = x.hl_n
-      ? x.hl_name.replace(/^Highlighted:\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim()
-      : '';
     const tunEl = document.getElementById('fretboard_summary_tuning');
     if (tunEl) {
       let html = '';
-      if (chordName) {
-        html += '<span class="st_chord">' + escHtml(chordName) + '</span>';
-        html += '<span class="st_sep" aria-hidden="true">·</span>';
-      }
       html += '<span class="st_lab">Tuning</span>';
       html += '<span class="st_val">' + escHtml(tuningName) + '</span>';
       if (notesStr) {
