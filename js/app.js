@@ -37,21 +37,66 @@
   function escHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  // ---------- URL note encoding ----------
+  // We use lowercase 's' for sharp and lowercase 'b' for flat in URLs:
+  //   F♯  ↔  Fs    (was F%23 — saves 4 chars per sharp, no escaping)
+  //   B♭  ↔  Bb
+  // Both old (#-encoded as %23) and new ('s') URLs decode the same way, so
+  // links from before this change keep working.
   function urlNote(s) {
-    // PHP: replace ♭→b, ♯→#, strip space, urlencode
-    return encodeURIComponent(String(s).replace(/♭/g, 'b').replace(/♯/g, '#').replace(/ /g, ''));
+    return String(s)
+      .replace(/♭/g, 'b')
+      .replace(/♯/g, 's')
+      .replace(/ /g, '');
   }
   function urlNoteRaw(s) {
-    // urlencoded but with ♯→# only (keeps b3 / ♭3 distinction handled at value level)
-    return encodeURIComponent(String(s).replace(/♯/g, '#'));
+    return String(s).replace(/♯/g, 's');
   }
   function reverseSpaceStr(s) {
     return String(s).split(' ').reverse().join(' ');
   }
   function bToFlat(s) { return String(s).replace(/b/g, '♭'); }
   function flatToB(s) { return String(s).replace(/♭/g, 'b'); }
-  function sharpToHash(s) { return String(s).replace(/#/g, '♯'); }
-  function hashToSharp(s) { return String(s).replace(/♯/g, '#'); }
+  // sharpToHash is the URL→display path: it accepts BOTH '#' (legacy URLs
+  // that pre-date the 's' encoding) and 's' immediately after a capital
+  // A-G note letter. Either becomes the unicode ♯.
+  function sharpToHash(s) {
+    return String(s)
+      .replace(/#/g, '♯')
+      .replace(/([A-G])s/g, '$1♯');
+  }
+  function hashToSharp(s) { return String(s).replace(/♯/g, 's'); }
+
+  // Read the active highlight degrees from URL params. Accepts both the
+  // legacy multi-key form ?hl=1&hl=b3&hl=5 and the compact comma-separated
+  // form ?hl=1,b3,5 — splits on commas across every hl key seen.
+  function readHlParam(params) {
+    return params.getAll('hl')
+      .flatMap(function (v) { return v.split(','); })
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length; });
+  }
+
+  // Read the custom-tuning strings from URL params. Accepts both legacy
+  // ?s1=A&s2=Cs&… and the compact dot-separated ?s=A.Cs.E.F.G.A.C.E
+  // (positions 0..N-1 correspond to s1..sN; missing slots become null).
+  function readCustomStrings(params) {
+    const single = params.get('s');
+    if (single != null) {
+      const list = single.split('.');
+      const out = {};
+      for (let i = 0; i < list.length && i < 12; i++) {
+        if (list[i]) out['s' + (i + 1)] = list[i];
+      }
+      return out;
+    }
+    const out = {};
+    for (let i = 1; i <= 12; i++) {
+      const v = params.get('s' + i);
+      if (v != null) out['s' + i] = v;
+    }
+    return out;
+  }
 
   // ---------- parse URL → x ----------
   function parseState() {
@@ -62,14 +107,21 @@
     const hasParams = Array.from(params.keys()).length > 0;
 
     if (hasParams) {
-      // Build raw map of key → array (for hl which is multi-valued)
+      // Build raw map of key → array (for hl which is multi-valued).
+      // Skip the multi-value keys here; we hydrate them from helpers below.
       const raw = {};
       for (const [k, v] of params.entries()) {
-        // PHP: $value = str_replace("b","♭",$value); str_replace("#","♯",$value)
+        if (k === 'hl' || k === 's') continue;
         const val = bToFlat(sharpToHash(v));
         if (!raw[k]) raw[k] = [];
         raw[k].push(val);
       }
+      // Hydrate hl (compact ?hl=1,b3,5 OR legacy ?hl=1&hl=b3&hl=5)
+      const hlList = readHlParam(params).map(function (v) { return bToFlat(v); });
+      if (hlList.length) raw.hl = hlList;
+      // Hydrate s1..s12 (compact ?s=A.Cs.E.F.G.A.C.E OR legacy ?s1=…&s2=…)
+      const cstr = readCustomStrings(params);
+      for (const sk in cstr) raw[sk] = [bToFlat(sharpToHash(cstr[sk]))];
 
       // Validate x (tuning key)
       if (raw.x && raw.x[0]) {
@@ -129,6 +181,9 @@
     // Merge in the chosen tuning
     const tun = TUNINGS[x.x];
     for (const k in tun) x[k] = tun[k];
+    // Override the precomputed url_notes so emitted URLs use the new
+    // 's' form for sharps (data.js still has %23-encoded values).
+    x.url_notes = urlNote(x.notes);
 
     // Build x.s from s1..s12 (custom-tuning notes assembled in reverse order)
     let ess = '';
@@ -155,11 +210,15 @@
       x['x' + a] = notesplode[a - 1];
     }
 
-    // url_s: rebuilt s12=...&s11=...&...
-    let url_s = '';
-    for (let a = 12; a >= 1; a--) {
-      url_s += 's' + a + '=' + encodeURIComponent(hashToSharp(x['s' + a])) + '&';
+    // url_s: single dot-separated 's' param holding s1..s12 in order, with
+    // sharps written as 's' (urlNote handles the ♯→s transform). Trailing
+    // empties are trimmed so we don't bloat the URL with unused slots.
+    let _sParts = [];
+    for (let a = 1; a <= 12; a++) {
+      _sParts.push(x['s' + a] ? urlNote(x['s' + a]) : '');
     }
+    while (_sParts.length && !_sParts[_sParts.length - 1]) _sParts.pop();
+    let url_s = _sParts.length ? 's=' + _sParts.join('.') + '&' : '';
 
     // Print colors are always on now — body keeps the .print-colors class
     // permanently so highlight bg's print as colors. Toggle was removed.
@@ -184,9 +243,15 @@
     // hl_arr → flags
     if (x.hl === undefined || x.hl === null) x.hl = '';
     const hlArr = String(x.hl).split(' ').filter(v => v !== '' && v !== 'nothing');
-    let url_hl = '';
-    for (const v of hlArr) url_hl += 'hl=' + flatToB(v) + '&';
-    x.url_hl = url_hl;
+    // Compact single-key form for emitted URLs (?hl=1,b3,5).
+    x.url_hl = hlArr.length ? 'hl=' + hlArr.map(flatToB).join(',') + '&' : '';
+    // Legacy multi-key form, kept ONLY for matching against SCALES / CHORDS /
+    // GRID values in data.js (which are still expressed as &hl=…&hl=…). Not
+    // emitted into any URL. If we later regen data.js with the compact form,
+    // this can collapse onto x.url_hl.
+    let url_hl_match = '';
+    for (const v of hlArr) url_hl_match += 'hl=' + flatToB(v) + '&';
+    x._url_hl_match = url_hl_match;
 
     for (const v of DEGREES) {
       const key = 'hl_' + flatToB(v);
@@ -215,10 +280,11 @@
     x.sdgs = sdgsStr.trim();
     x.rev_sdgs = reverseSpaceStr(x.sdgs);
 
-    // hl_name lookup — match url_hl against scales/chords/grid
+    // hl_name lookup — match against the legacy multi-key form (data.js
+    // SCALES / CHORDS / GRID values still use &hl=…&hl=…).
     x.hl_name = 'Highlighted: ';
     x.hl_n = '';
-    const targetHl = '&' + x.url_hl;
+    const targetHl = '&' + x._url_hl_match;
     function checkSet(set, suffix) {
       for (const a in set) {
         if (targetHl === set[a] + '&') {
@@ -529,7 +595,7 @@
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const isSelected = (x.hl_n === a.replace(/_/g, ' '));
-      const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
       h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
     }
@@ -538,7 +604,7 @@
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const isSelected = (x.hl_n === label);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + SCALES[name]);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
       h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
     }
@@ -563,19 +629,43 @@
   // the fretboard form AND above the keyboard section so the two stay in sync.
   // Each pill flips its own `&hl=<deg>` in the URL, so the link interceptor
   // re-renders in place. On-state pills are coloured to match the degree.
+  // GRID / SCALES / CHORDS values in data.js are still in the legacy
+  // multi-key form (&hl=1&hl=3&hl=5). Convert on the fly so chord/scale
+  // chip URLs land in the same compact comma form as everything else.
+  function hlMultiToCsv(frag) {
+    const matches = (String(frag).match(/&hl=([^&]+)/g) || [])
+      .map(function (s) { return s.slice(4); });
+    if (!matches.length) return frag;
+    const stripped = String(frag).replace(/&hl=[^&]+/g, '');
+    return stripped + '&hl=' + matches.join(',');
+  }
+
+  // Build a URL with the given hl list as a single comma-separated `hl=`
+  // param (preserves every other current param exactly).
+  function buildHlHref(hlList) {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('hl');
+    let qs = p.toString();
+    if (hlList.length) {
+      qs += (qs ? '&' : '') + 'hl=' + hlList.join(',');
+    }
+    return qs ? '?' + qs : '?';
+  }
+
   function highlightPillsLinkHtml(x, rowCls) {
     let h = '<div class="opt_row opt_row_highlights ' + (rowCls || '') + '">';
     h += '<span class="hl_title">Highlight:</span>';
+    const cur = readHlParam(new URLSearchParams(window.location.search));
     DEGREES.forEach(function (a, i) {
       const ab = flatToB(a);
       const on = (x['hl_' + ab] === 'y');
-      const p = new URLSearchParams(window.location.search);
-      const cur = p.getAll('hl');
-      p.delete('hl');
-      cur.forEach(function (d) { if (d !== ab) p.append('hl', d); });
-      if (!on) p.append('hl', ab);
-      const qs = p.toString();
-      const href = qs ? '?' + qs : '?';
+      let next;
+      if (on) {
+        next = cur.filter(function (d) { return d !== ab; });
+      } else {
+        next = cur.filter(function (d) { return d !== ab; }).concat([ab]);
+      }
+      const href = buildHlHref(next);
       const cls = 'hl_pill' + (on ? ' hl_pill_on' : '');
       let style = '';
       if (on) {
@@ -587,15 +677,9 @@
         + escHtml(a) + escHtml(EXTENSIONS[i]) + '</a>';
     });
     const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
-    let allHref;
-    if (allOn) {
-      allHref = clearHlHref();
-    } else {
-      const p = new URLSearchParams(window.location.search);
-      p.delete('hl');
-      DEGREES.forEach(function (d) { p.append('hl', flatToB(d)); });
-      allHref = '?' + p.toString();
-    }
+    const allHref = allOn
+      ? clearHlHref()
+      : buildHlHref(DEGREES.map(flatToB));
     h += '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
     h += '</div>';
     return h;
@@ -791,7 +875,7 @@
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const isSelected = (x.hl_n === a.replace(/_/g, ' '));
-      const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const tdCls = isSelected ? ' class="cg_selected"' : '';
       chordLinksRow += '<td' + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
     }
@@ -847,7 +931,7 @@
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const isSelected = (x.hl_n === label);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + SCALES[name]);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const tdCls = isSelected ? ' class="cg_selected"' : '';
       scaleLinksRow += '<td' + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
     }
@@ -893,7 +977,9 @@
     h += '</tr></thead><tbody>';
     for (const key in TUNINGS) {
       const v = TUNINGS[key];
-      const addUrl = '&x=' + v.url_notes;
+      // Compute fresh in the new 's'-for-sharp format; data.js still ships
+      // the legacy %23-encoded url_notes field.
+      const addUrl = '&x=' + urlNote(v.notes);
       let udgs = String(v.udgs).replace('1 3 5', '(1 3 5)').replace('1 ♭3 5', '(1 ♭3 5)');
       const trCls = (key === x.x) ? ' class="tun_selected"' : '';
       h += '<tr' + trCls + '>';
@@ -924,23 +1010,26 @@
       '  Fretboard visualization tool for 6-, 8-, 10-, and 12-string steel guitars.',
       '',
       '  How to use:',
-      '    • Pick a tuning from the dropdown — the fretboard fills in note names and',
-      '      degrees relative to the chosen Key.',
-      '    • Tick "Show custom tuning" to enable per-string note dropdowns and roll',
-      '      your own tuning.',
-      '    • Tick "Display High to Low" to flip the string order in the indicators',
-      '      and the tunings list.',
-      '    • Tick any of the degree pills (1, ♭2, 2, ..., 7) to highlight those',
-      '      degrees on the fretboard. The Clear link drops every parameter back',
-      '      to defaults.',
-      '    • Print: the Print button formats the fretboard for paper. Tick "Color"',
-      '      next to it to include highlighted-degree colors in the printout',
-      '      (otherwise paper output is black-and-white).',
+      '    • Click the tuning field to open the picker — sortable / filterable',
+      '      table of every preset, with one-tap radios for 6 / 8 / 10 / 12 string.',
+      '    • The Custom Tuning toggle at the top-left of the fretboard turns on',
+      '      per-string note dropdowns so you can roll your own tuning.',
+      '    • The L→H / H→L button next to the tuning field flips the string',
+      '      order shown in the indicators and the tunings list.',
+      '    • Click a degree pill (1, ♭2, 2, ..., 7) above the fretboard or above',
+      '      the keyboard to highlight those degrees. Pills colour themselves to',
+      '      match each degree. Click All to flip every degree on, None / Clear',
+      '      to drop them.',
+      '    • Click any chord or scale chip above the fretboard or keyboard to',
+      '      highlight the degrees for that chord/scale.',
+      '    • Print: each section has its own Print button that prints just',
+      '      that section. Highlight colours are always preserved on paper.',
       '',
       '  URL state:',
       '    Every selection (tuning, key, custom strings, highlights, collapsed',
-      '    sections, sort order, filter, print-color preference) lives in the URL,',
-      '    so any view is bookmarkable and shareable.',
+      '    sections, sort order, filter) lives in the URL, so any view is',
+      '    bookmarkable and shareable. Sharps encode as lowercase "s"',
+      '    (Fs = F♯) and flats as lowercase "b" (Bb = B♭).',
       '',
       '  Designed for screens 1024px+. The chord and scale builders, keyboard,',
       '  and learn quiz hide on smaller viewports because the fretboard is wide',
@@ -1015,16 +1104,19 @@
       '  Keyboard',
       '',
       '  Piano keyboard from A0 to C8, with octave numbers, frequencies in Hz,',
-      '  and steel string gauges that target each note. The MXR 10-band EQ row',
+      '  and steel string gauges that target each note. The 10-band EQ row',
       '  shows which frequency centers each band covers.',
       '',
-      '  Black-key text and white-key backgrounds are colored by their degree',
-      '  relative to the current key. Change the key (top-right of this section)',
-      '  and every note color shifts to match.',
+      '  By default the keyboard reads as a real piano (white keys white,',
+      '  black keys dark) with a small degree label below each note name.',
+      '  When you highlight one or more degrees, only the matching notes pick',
+      '  up their degree colour — every other note keeps the plain piano look',
+      '  with a dim grey label so the chosen notes pop. The full degree-',
+      '  coloured rainbow only appears when every degree is highlighted.',
       '',
-      '  When degrees are highlighted on the fretboard, notes outside the',
-      '  highlight set dim to grey here so the chosen notes stand out across',
-      '  the whole 88-note span.',
+      '  The highlight pills + chord/scale chip rows above the keys mirror',
+      '  the ones above the fretboard, so you can drive selections from this',
+      '  section even when the fretboard is collapsed.',
       ''
     ].join('\n'),
 
@@ -1032,17 +1124,19 @@
       '',
       '  Tunings List',
       '',
-      '  170+ tunings for 6-, 8-, 10-, and 12-string steel guitars.',
+      '  172 tunings for 6-, 8-, 10-, and 12-string steel guitars.',
       '',
       '    • Click any column header to sort. Click the same header again to',
       '      reverse direction.',
-      '    • Type in the filter box to narrow the list (matches the Strings',
-      '      column).',
-      '    • Click a tuning name to load that tuning into the fretboard,',
+      '    • Type in the filter box to narrow the list — matches across name,',
+      '      notes, degrees, info, and string count.',
+      '    • Click a tuning row to load that tuning into the fretboard,',
       '      keeping the current key and highlights.',
+      '    • Click CSV in the section header to download the visible (sorted +',
+      '      filtered) tunings as a comma-separated file.',
       '',
-      '  Sort and filter state are kept in the URL, so a sorted/filtered view',
-      '  is bookmarkable.',
+      '  Sort and filter state live in the URL, so a sorted/filtered view is',
+      '  bookmarkable.',
       ''
     ].join('\n'),
 
@@ -1053,19 +1147,21 @@
       '  In-page tab editor for 4–12 string instruments.',
       '',
       '    • Pick a string count and (optionally) a preset tuning — the',
-      '      tuning dropdown is filtered to presets that match.',
-      '    • String labels on the left edge are editable: type any note,',
-      '      or use ↑/↓ to move between strings; Enter drops into the',
-      '      first cell on the same row.',
-      '    • Type a fret number (0–99) or a symbol (h hammer, p pull,',
-      '      / slide up, \\\\ slide down, ~ vibrato, x mute).',
-      '    • Tab moves right; Enter moves down; arrow keys go any',
-      '      direction.',
+      '      tuning dropdown is filtered to presets that match the count.',
+      '    • String labels on the left edge are editable: type any note',
+      '      directly, or press ↑ / ↓ to move focus to the next string above',
+      '      or below; Enter drops into the first cell on the same row.',
+      '    • Type a fret number (0–99) into a cell, or use a symbol:',
+      '      h hammer, p pull, / slide up, \\\\ slide down, ~ vibrato, x mute.',
+      '    • Cell navigation: Tab moves right, Enter moves down, arrow keys',
+      '      go any direction.',
+      '    • ⇅ flip strings reverses the row order if you prefer the highest',
+      '      pitch on the bottom.',
       '',
-      '  Print outputs whatever you have written. Print blank prints a',
-      '  full sheet of empty staves at the chosen string count for',
-      '  handwriting. Share copies a URL containing the encoded tab so',
-      '  you can paste it anywhere.',
+      '  Print outputs whatever you have written. Print blank ignores the',
+      '  current grid and prints a full landscape sheet of empty staves at',
+      '  the chosen string count for handwriting — no bar-lines, no measure',
+      '  numbers, just blank staves.',
       ''
     ].join('\n'),
 
@@ -1277,9 +1373,10 @@
 
     function pushSelect(sel) {
       if (!sel || !sel.name) return;
-      // Encode ♯ as # so URL matches the format parseState expects (single decode + sharpToHash)
-      const v = String(sel.value).replace(/♯/g, '#');
-      parts.push(sel.name + '=' + encodeURIComponent(v));
+      // Sharps emit as 's' (lowercase), no encoding needed. Flats emit as 'b'.
+      // Decoder accepts both 's' and legacy '%23' so old links still work.
+      const v = urlNote(sel.value);
+      parts.push(sel.name + '=' + v);
     }
     pushSelect(opt.querySelector('select[name="x"]'));
     // Key dropdown lives in each section's title bar (.section_key_picker) since
@@ -1292,15 +1389,24 @@
       if (cb && cb.checked) parts.push(name + '=' + cb.value);
     });
 
-    // Highlight pills are link-driven now (no checkboxes), so the active set
-    // lives entirely in the URL. Carry whatever's currently in `?hl=...` so
-    // changes to other form controls don't drop the highlights.
-    new URLSearchParams(window.location.search).getAll('hl').forEach(function (v) {
-      parts.push('hl=' + v);
-    });
+    // Highlight pills are link-driven; carry whatever's currently in the URL
+    // so other form controls don't drop the active highlights. Emit as a
+    // single comma-separated `hl=` value (parseState accepts the legacy
+    // multi-key form too).
+    const hlList = readHlParam(new URLSearchParams(window.location.search));
+    if (hlList.length) parts.push('hl=' + hlList.join(','));
 
+    // Custom-tuning strings combined into one dot-separated `s=` param.
     if (fb) {
-      fb.querySelectorAll('select[name^="s"]').forEach(pushSelect);
+      const sels = fb.querySelectorAll('select[name^="s"]');
+      const sVals = [];
+      sels.forEach(function (sel) {
+        const m = sel.name && sel.name.match(/^s(\d+)$/);
+        if (!m) return;
+        sVals[parseInt(m[1], 10) - 1] = urlNote(sel.value);
+      });
+      while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
+      if (sVals.length) parts.push('s=' + sVals.map(function (v) { return v || ''; }).join('.'));
     }
 
     navigateTo('?' + parts.join('&'));

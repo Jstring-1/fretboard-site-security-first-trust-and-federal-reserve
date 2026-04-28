@@ -163,7 +163,9 @@
       // string rows
       for (var r = 0; r < state.strings; r++) {
         var label = state.notes[r] || '';
-        html += '<div class="tab_row" style="grid-template-columns: ' + rowTemplate + ';">';
+        var rowExtra = (r === 0 ? ' tab_row_first' : '') +
+                       (r === state.strings - 1 ? ' tab_row_last' : '');
+        html += '<div class="tab_row' + rowExtra + '" style="grid-template-columns: ' + rowTemplate + ';">';
         // Editable string label — lets users write a tuning we don't have a
         // preset for. Preset selection prefills these; manual edits override.
         html += '<input class="tab_label tab_label_input" type="text" maxlength="3" '

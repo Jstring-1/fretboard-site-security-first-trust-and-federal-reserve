@@ -151,7 +151,25 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   .tab_row::before                           { border-top-color: #000 !important;                                      }
   .tab_label                                 { color: #000 !important; background: #fff !important;
                                               font-size: 0.7em !important;                                            }
-  .tab_cell.barline                          { border-left-color: #000 !important;                                     }
+  /* Bar lines: switch from a per-cell border-left to a positioned ::after
+     so we can clip the first row's bar to start at the staff mid-line
+     and the last row's to end there. Otherwise the bar runs the full
+     row padding and visibly extends past the top/bottom staff lines. */
+  .tab_cell.barline                          { border-left: 0 !important; position: relative !important;              }
+  .tab_cell.barline::after                   { content: ""; position: absolute; left: 0;
+                                              top: 0; bottom: 0; width: 1px; background: #000;                       }
+  .tab_row_first .tab_cell.barline::after    { top: 50% !important;                                                   }
+  .tab_row_last  .tab_cell.barline::after    { bottom: 50% !important;                                                }
+  /* System left/right borders get the same treatment so they don't poke
+     past the top and bottom staff lines either. The 8px offset matches
+     the padding-top/-bottom (2px) plus half a row height (6px). */
+  .tab_system                                { border-left: 0 !important; border-right: 0 !important;
+                                              position: relative !important;                                          }
+  .tab_system::before,
+  .tab_system::after                         { content: ""; position: absolute; top: 8px; bottom: 8px;
+                                              width: 1px; background: #000;                                           }
+  .tab_system::before                        { left: 0;                                                                }
+  .tab_system::after                         { right: 0;                                                               }
   /* Empty cells stay transparent in print so the staff line shows through.
      Filled cells get an opaque white bg so the digit punches the line. */
   .tab_cell input                            { background: transparent !important; color: #000 !important;
@@ -165,4 +183,9 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   /* Print-blank: drop the measure bar-lines too so the user has a clean
      handwriting sheet — they can pencil in their own bar-lines / counts. */
   #tab_paper.blank .tab_cell.barline         { border-left: 0 !important;                                              }
+  /* And hide the string-label inputs entirely on blank print — the
+     beforeprint hook fills empties with "—", which would show up as a
+     row of tick marks down the left edge of every system. Blank means
+     blank: no labels, no bar-lines. */
+  #tab_paper.blank input.tab_label_input     { color: transparent !important;                                          }
 }

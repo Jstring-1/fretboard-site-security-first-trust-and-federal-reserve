@@ -833,6 +833,18 @@ select option                              { color: var(--text); background: var
 #keyboard > tbody > tr:nth-last-child(-n+2) > td[class^="s"]
                                            { color: #1a1a1a !important;                                              }
 
+/* Keyboard bookend cells: leftmost label column (s0/s11/s31) and rightmost
+   trailing cells (s10/s21/s46) used to render as black bars framing the
+   keyboard like brackets. Switch them to a white-key fill with dark text
+   so the keyboard reads as one continuous slab of white keys instead. */
+#keyboard > tbody > tr > td.s0,
+#keyboard > tbody > tr > td.s10,
+#keyboard > tbody > tr > td.s11,
+#keyboard > tbody > tr > td.s21,
+#keyboard > tbody > tr > td.s31,
+#keyboard > tbody > tr > td.s46              { background-color: #f4f4f4 !important;
+                                              color: #1a1a1a !important;                                              }
+
 /* Sortable header buttons */
 table.sortable thead                       { background-color: rgba(95,232,224,0.06);                                 }
 table.sortable th                          { font-size: 0.92em; font-weight: 600;
