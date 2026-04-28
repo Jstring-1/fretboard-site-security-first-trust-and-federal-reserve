@@ -316,6 +316,77 @@
     root.innerHTML = h;
   }
 
+  // Quick-pick chord/scale chips. Reused above the fretboard AND above the
+  // keyboard so the user can drive selections from either section without
+  // scrolling to a builder grid.
+  function quickPicksHtml(x, idAttr) {
+    let h = '';
+    h += '<div' + (idAttr ? ' id="' + idAttr + '"' : ' class="quick_picks"') + '>';
+    h += '  <div class="qp_row">';
+    for (const a in GRID) {
+      const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
+      const isSelected = (x.hl_n === a.replace(/_/g, ' '));
+      const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
+      const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
+      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
+    }
+    h += '  </div>';
+    h += '  <div class="qp_row">';
+    for (const name in SCALES) {
+      const label = name.replace(/_/g, ' ');
+      const isSelected = (x.hl_n === label);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + SCALES[name]);
+      const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
+      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
+    }
+    h += '  </div>';
+    h += '</div>';
+    return h;
+  }
+
+  // Highlight degree pills as toggle LINKS (not checkboxes). Used in the
+  // keyboard section's mirror bar — it's outside the fretboard form, so each
+  // pill builds an URL that flips its own degree on/off.
+  function highlightPillsLinkHtml(x) {
+    let h = '<div class="opt_row opt_row_highlights kb_hl_row">';
+    h += '<span class="hl_title">Highlight:</span>';
+    DEGREES.forEach(function (a, i) {
+      const ab = flatToB(a);
+      const on = (x['hl_' + ab] === 'y');
+      const p = new URLSearchParams(window.location.search);
+      const cur = p.getAll('hl');
+      p.delete('hl');
+      cur.forEach(function (d) { if (d !== ab) p.append('hl', d); });
+      if (!on) p.append('hl', ab);
+      const qs = p.toString();
+      const href = qs ? '?' + qs : window.location.pathname;
+      const cls = 'hl_pill' + (on ? ' hl_pill_on' : '');
+      h += '<a class="' + cls + '" href="' + escHtml(href) + '">'
+        + escHtml(a) + escHtml(EXTENSIONS[i]) + '</a>';
+    });
+    const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
+    let allHref;
+    if (allOn) {
+      allHref = clearHlHref();
+    } else {
+      const p = new URLSearchParams(window.location.search);
+      p.delete('hl');
+      DEGREES.forEach(function (d) { p.append('hl', flatToB(d)); });
+      allHref = '?' + p.toString();
+    }
+    h += '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
+    h += '</div>';
+    return h;
+  }
+
+  // Render the highlight pills + chord/scale chips above the keyboard so the
+  // keyboard section is fully usable when the fretboard section is collapsed.
+  function renderKeyboardPicks(x) {
+    const root = document.getElementById('kb_picks_root');
+    if (!root) return;
+    root.innerHTML = highlightPillsLinkHtml(x) + quickPicksHtml(x, 'kb_quick_picks');
+  }
+
   function renderFretboard(x) {
     const root = document.getElementById('fretboard_root');
     const rev = (x.y === 'y') ? 'rev_' : '';
@@ -337,26 +408,7 @@
     // Quick-pick chord/scale links — copies of the chord_grid + scale_grid
     // top rows, parked above the fretboard so the user doesn't have to
     // scroll down to a builder section to apply a chord or scale.
-    h += '<div id="quick_picks">';
-    h += '  <div class="qp_row">';
-    for (const a in GRID) {
-      const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
-      const isSelected = (x.hl_n === a.replace(/_/g, ' '));
-      const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
-      const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
-      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
-    }
-    h += '  </div>';
-    h += '  <div class="qp_row">';
-    for (const name in SCALES) {
-      const label = name.replace(/_/g, ' ');
-      const isSelected = (x.hl_n === label);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + SCALES[name]);
-      const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
-      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
-    }
-    h += '  </div>';
-    h += '</div>';
+    h += quickPicksHtml(x, 'quick_picks');
 
     h += '<table id="fretboard">';
 
@@ -1133,19 +1185,26 @@
   // Map each note to the keyboard cell classes that visually represent it.
   // White-note positions get a background color; black-note positions get a text color
   // (the cell itself stays dark, only the "A♯" / "C♯" / etc. label gets tinted).
+  // `cls`  = every cell that should pick up the bg/color tint for this note
+  //          (white-note columns also tint a small spacer cell on the black-key
+  //          row above so the column reads as one tinted strip).
+  // `lbl`  = the subset of those cells that actually display the note letter
+  //          (e.g. "A", "C♯"). Only these get the `::after` degree label so we
+  //          don't print the degree twice on white keys (once on the spacer
+  //          above and once on the white-key cell below).
   const KEYBOARD_NOTE_CLASSES = {
-    'A':  { mode: 'bg',    cls: ['s32', 's47'] },
-    'B':  { mode: 'bg',    cls: ['s34', 's48'] },
-    'C':  { mode: 'bg',    cls: ['s35', 's49'] },
-    'D':  { mode: 'bg',    cls: ['s37', 's50'] },
-    'E':  { mode: 'bg',    cls: ['s39', 's51'] },
-    'F':  { mode: 'bg',    cls: ['s40', 's52'] },
-    'G':  { mode: 'bg',    cls: ['s42', 's53'] },
-    'A♯': { mode: 'color', cls: ['s33', 's44'] },
-    'C♯': { mode: 'color', cls: ['s36', 's45'] },
-    'D♯': { mode: 'color', cls: ['s38'] },
-    'F♯': { mode: 'color', cls: ['s41'] },
-    'G♯': { mode: 'color', cls: ['s43'] }
+    'A':  { mode: 'bg',    cls: ['s32', 's47'], lbl: ['s47'] },
+    'B':  { mode: 'bg',    cls: ['s34', 's48'], lbl: ['s48'] },
+    'C':  { mode: 'bg',    cls: ['s35', 's49'], lbl: ['s49'] },
+    'D':  { mode: 'bg',    cls: ['s37', 's50'], lbl: ['s50'] },
+    'E':  { mode: 'bg',    cls: ['s39', 's51'], lbl: ['s51'] },
+    'F':  { mode: 'bg',    cls: ['s40', 's52'], lbl: ['s52'] },
+    'G':  { mode: 'bg',    cls: ['s42', 's53'], lbl: ['s53'] },
+    'A♯': { mode: 'color', cls: ['s33', 's44'], lbl: ['s33', 's44'] },
+    'C♯': { mode: 'color', cls: ['s36', 's45'], lbl: ['s36', 's45'] },
+    'D♯': { mode: 'color', cls: ['s38'],        lbl: ['s38'] },
+    'F♯': { mode: 'color', cls: ['s41'],        lbl: ['s41'] },
+    'G♯': { mode: 'color', cls: ['s43'],        lbl: ['s43'] }
   };
   const KEYBOARD_DEGREE_COLORS = {
     '1':  '#ff0000', '♭2': '#674ea7', '2':  '#9900ff',
@@ -1199,9 +1258,13 @@
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
         }
-        // Add the degree (e.g. "1", "♭3") on a second line below the note label.
-        // Black-key cells use s44/s45 in higher octaves and the inline ritz CSS
-        // sets font-size:10pt — keep the degree small and dim-tinted regardless.
+      });
+      // Add the degree (e.g. "1", "♭3") on a second line below the note label.
+      // Only emit on `lbl` cells — the cells that actually carry the note
+      // letter — so white keys don't get a duplicate degree from the spacer
+      // cell that sits above them on the black-key row.
+      (def.lbl || def.cls).forEach(function (c) {
+        const sel = '.ritz .waffle .' + c;
         const degColor = (def.mode === 'bg')
           ? (inHighlightSet ? '#000' : DIM_WHITE_TEXT)
           : (inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT);
@@ -1350,6 +1413,7 @@
     renderScaleGrid(x);
     renderTuningsTable(x);
     applyKeyboardColors(x);
+    renderKeyboardPicks(x);
     applyCollapseFromUrl();
 
     renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding
