@@ -2,10 +2,16 @@
                             NOIR WHITE THEME — palette tokens
 *********************************************************************************************************************/
 :root {
-  --bg:            #1a1a1a;   /* page background — lifted so sections read as recessed cards */
-  --bg-elevated:   #0e0e0e;
-  --bg-hover:      #1a1a1a;
-  --surface:       #0a0a0a;   /* section bg — deeper than the page so the cards stand apart */
+  /* Three-level dark palette so every layer reads distinctly:
+       page  (deepest, almost-black)  →  section body (lifted)  →  section
+       header (brightest of the three, sits like a tab on top of the body).
+     Inputs / popovers reuse --bg-elevated (mid-tone). */
+  --bg:            #050507;   /* page background — deepest */
+  --bg-elevated:   #1c1c1c;   /* inputs / popovers / dropdowns */
+  --bg-hover:      #2a2a2a;
+  --surface:       #141414;   /* section body — lifted from the page */
+  --surface-head:  #232323;   /* section header — top tab, brightest layer */
+  --status-bg:     #0e0e0e;   /* sticky status bar — between page and section body */
   --surface-raised:#1a1a1a;
   --border:        #2e2e2e;
   --border-strong: #5a5a5a;
@@ -27,7 +33,10 @@
 *********************************************************************************************************************/
 table                                      {  min-width:960px;  width:98%;                                           }
 .section                                   {  width:98%; min-width:1000px; margin:9px auto; padding:0;
-                                              border-radius:10px;                                                    }
+                                              border-radius:10px;
+                                              background: var(--surface);
+                                              border: 1px solid #1f1f1f;
+                                              box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;                       }
 #view_src, #print_btn                      {  width:100px;                                                           }                
 .cg_col_left, .cg_col_right                {  width:60px !important;                                                 }
 #f0,#f_cyo,#f_cyo_dark                     {  width:5%;                                                              }
@@ -348,13 +357,17 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
 /*********************************************************************************************************************
                             STYLE AUDIT — softer corners, polished form, more breathing room
 *********************************************************************************************************************/
-/* Section summary header (matches .section's 10px corner radius) */
+/* Section summary header (matches .section's 10px corner radius) — brightest
+   layer in the dark stack, with a thin bottom border separating it from the
+   section body. */
 details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 6px 16px; font-size: 1.05em;
-                                             background: linear-gradient(180deg, #1a1a1a, #0e0e0e); color: #fff;
+                                             background: var(--surface-head); color: #fff;
+                                             border-bottom: 1px solid #1f1f1f;
                                              display: flex; align-items: center; gap: 6px;
                                              /* Pin the height so highlight-text length changes don't grow the bar
-                                                and ripple every section's height. Three stacked status lines fit. */
-                                             height: 60px; box-sizing: border-box;                                    }
+                                                and ripple every section's height. */
+                                             height: 56px; box-sizing: border-box;                                    }
+details.collapsible:not([open]) > summary  { border-bottom-color: transparent;                                       }
 details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
 details.collapsible > summary .summary_title:hover { background: rgba(255,255,255,0.08); }
 /* Outside the title, the cursor stays default — only the title is the toggle. */
@@ -431,7 +444,7 @@ details.collapsible > summary { cursor: default; }
 .y_on                                      { background-color: var(--accent-hi); color: #000 !important;               }
 .y_switch:hover                            { filter: brightness(1.12); border-color: rgba(255,255,255,0.4);            }
 .opt_row_main                              { gap: 0;                                                                  }
-details.collapsible > summary:hover        { background: linear-gradient(180deg, #1a1a1a, #262626);                  }
+details.collapsible > summary:hover        { background: var(--bg-hover);                                            }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }
 
@@ -728,9 +741,11 @@ select option                              { color: var(--text); background: var
    stagger across section headers.
    ============================================================ */
 #status_bar                                { position: sticky; top: 0; z-index: 900;
-                                             background: var(--surface);
-                                             border-top: 1px solid #1f1f1f;
+                                             background: var(--status-bg);
+                                             border-top: 1px solid #050505;
                                              border-bottom: 1px solid #1f1f1f;
+                                             box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                                                         0 2px 6px rgba(0,0,0,0.5);
                                              padding: 6px 14px;                                                       }
 #status_bar_inner                          { display: flex; flex-wrap: wrap; align-items: center;
                                              justify-content: center; gap: 10px;
