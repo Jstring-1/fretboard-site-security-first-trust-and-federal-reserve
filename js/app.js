@@ -133,7 +133,13 @@
       }
 
       // Validate single-value note params (k, s1..s12)
-      const noteOk = /^[A-G♯]+$/;
+      // Allow flats too — custom string-note dropdowns can produce e.g.
+      // B♭ which is a valid note. Without ♭ here, any URL containing a
+      // flat custom string failed validation and triggered the "use
+      // defaults for everything" fallback below, silently dropping z=y
+      // and disengaging custom tuning whenever the user touched any
+      // form control (key, tuning, custom string).
+      const noteOk = /^[A-G♯♭]+$/;
       for (const n of URL_NOTE_CHECK) {
         if (raw[n] && raw[n][0]) {
           if (noteOk.test(raw[n][0])) {
