@@ -167,6 +167,15 @@ table td                                   {  vertical-align:middle;            
 .ritz                                      {  background-color:#cccccc; padding:0; border-radius:6px; margin:0 6px;   }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
+/* Steel Gauges, MXR EQ band, and Frequency Hz rows: drop the multicolor
+   scheme and let the populated cells match the white-key bg below them.
+   Also clears the grey text override on the row's blank/label cells. */
+.ritz .waffle .s13, .ritz .waffle .s14, .ritz .waffle .s15, .ritz .waffle .s16,
+.ritz .waffle .s17, .ritz .waffle .s18, .ritz .waffle .s19,
+.ritz .waffle .s23, .ritz .waffle .s25, .ritz .waffle .s26, .ritz .waffle .s27,
+.ritz .waffle .s28, .ritz .waffle .s29, .ritz .waffle .s30
+                                           {  background-color:#cccccc !important; color:#111 !important;              }
+.ritz .waffle .s12, .ritz .waffle .s22     {  color:#111 !important;                                                   }
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
