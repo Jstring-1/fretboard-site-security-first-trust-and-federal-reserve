@@ -1852,7 +1852,7 @@
                    : anyHighlighted     ? DIM_BLACK_TEXT
                                         : PLAIN_DEG_ON_BLACK;
         }
-        css += sel + '::after { content: "' + escapeCssString(deg) + '"; display: block; '
+        css += sel + '::after { content: "(' + escapeCssString(deg) + ')"; display: block; '
                   +  'font-size: 0.78em; line-height: 1; opacity: 0.85; '
                   +  'color: ' + degColor + '; }\n';
       });
