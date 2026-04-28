@@ -508,10 +508,10 @@
       // exactly one landscape letter page. Fewer strings = taller systems
       // fit fewer; more strings = each system is taller so fewer fit.
       var BLANK_SYSTEMS_BY_STRINGS = {
-        4: 6, 5: 6, 6: 6,
+        4: 8, 5: 7, 6: 6,
         7: 5, 8: 5,
         9: 4, 10: 4,
-        11: 3, 12: 2
+        11: 3, 12: 3
       };
       var BLANK_SYSTEMS = BLANK_SYSTEMS_BY_STRINGS[state.strings] || 5;
       state.cells    = {};
