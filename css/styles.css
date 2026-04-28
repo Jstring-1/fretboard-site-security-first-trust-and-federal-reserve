@@ -311,6 +311,31 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                              background: rgba(255,255,255,0.18); color: #fff;
                                              cursor: pointer;                                                          }
 .section_print:hover                       { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+
+/* Per-section Key dropdown + Clear, in each summary after the Print button */
+.summary_extras                            { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px;
+                                             vertical-align: middle; font-weight: normal;                              }
+.summary_extras .section_key_picker        { display: inline-flex; align-items: center; padding: 0;                   }
+.summary_extras label                      { display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+                                             font-size: 0.85em; color: #fff;                                           }
+.summary_extras select.inputs              { padding: 2px 8px; font-size: 0.85em; border-radius: 4px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff; cursor: pointer;        }
+.summary_extras select.inputs:hover        { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+.summary_extras select.inputs option       { color: #111222; background: #fff;                                         }
+.summary_extras .section_clear             { padding: 2px 12px; font-size: 0.82em; border-radius: 12px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff !important;
+                                             text-decoration: none; cursor: pointer;                                   }
+.summary_extras .section_clear:hover       { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+
+/* Custom Tuning header doubles as a toggle switch (replaces 'Show custom tuning' checkbox) */
+.cyo_switch                                { padding: 0 !important;                                                   }
+.cyo_switch a                              { display: block; padding: 4px 6px; font-size: 0.78em; font-weight: 600;
+                                             text-decoration: none; color: #fff !important; letter-spacing: 0.02em;   }
+.cyo_off                                   { background-color: #6f8e9c !important;                                   }
+.cyo_on                                    { background-color: #6aa84f !important;                                   }
+.cyo_switch:hover                          { filter: brightness(1.12);                                                }
 details.collapsible > summary:hover        { background: linear-gradient(180deg, #a8c2cb, #95b3bd);                  }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }

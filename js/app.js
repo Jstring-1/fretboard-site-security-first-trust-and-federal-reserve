@@ -145,15 +145,8 @@
       url_s += 's' + a + '=' + encodeURIComponent(hashToSharp(x['s' + a])) + '&';
     }
 
-    // Print-colors toggle (URL > localStorage > 'y' default)
-    const pcRaw = params.get('pc');
-    if (pcRaw === 'y' || pcRaw === 'n') {
-      x.pc = pcRaw;
-    } else {
-      let saved = null;
-      try { saved = window.localStorage.getItem('sf_print_colors'); } catch (e) {}
-      x.pc = saved === 'n' ? 'n' : 'y';
-    }
+    // Print colors are always on now — body keeps the .print-colors class
+    // permanently so highlight bg's print as colors. Toggle was removed.
 
     // Tunings table sort: ?sort=<col>:<a|d>
     const sortRaw = params.get('sort');
@@ -264,13 +257,9 @@
     h += '</select>';
     h += '</div>';
 
-    const printColors = x.pc === 'y';
-
     // Row 2: toggles + key + clear
     h += '<div class="opt_row opt_row_toggles">';
     h += '<label><input type="checkbox" class="chxbx" name="y" value="y"' + (x.y === 'y' ? ' checked="checked"' : '') + '/> Display ' + escHtml(x[rev + 'yy']) + '</label>';
-    h += '<label><input id="cyo" type="checkbox" class="chxbx" name="z" value="y"' + (x.z === 'y' ? ' checked="checked"' : '') + '/> Show custom tuning</label>';
-    h += '<label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked="checked"' : '') + '/> Print in color</label>';
     h += '<label>Key: <select class="inputs" name="k">';
     h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
     for (const a of ALLNOTES) {
@@ -314,7 +303,15 @@
 
     h += '<table id="fretboard">';
 
-    const fretnumsTop = '<tr id="fretnums"><td id="f_cyo" class="fb_sm">Custom Tuning</td><td id="f0">X</td><td id="f1"></td><td id="f2"></td><td id="f3">3</td><td id="f4"></td><td id="f5">5</td><td id="f6"></td><td id="f7">7</td><td id="f8"></td><td id="f9">9</td><td id="f10"></td><td id="f11"></td><td id="f12">12</td></tr>';
+    const cyoState = x.z === 'y' ? 'on' : 'off';
+    const cyoNextZ = x.z === 'y' ? 'n' : 'y';
+    // Build a toggle URL that flips just the z param (preserving the rest)
+    const toggleParams = new URLSearchParams(window.location.search);
+    if (cyoNextZ === 'y') toggleParams.set('z', 'y'); else toggleParams.delete('z');
+    const toggleHref = '?' + toggleParams.toString();
+    const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
+      '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">Custom Tuning: ' + cyoState.toUpperCase() + '</a>' +
+      '</td><td id="f0">X</td><td id="f1"></td><td id="f2"></td><td id="f3">3</td><td id="f4"></td><td id="f5">5</td><td id="f6"></td><td id="f7">7</td><td id="f8"></td><td id="f9">9</td><td id="f10"></td><td id="f11"></td><td id="f12">12</td></tr>';
     h += fretnumsTop;
 
     const str = {};
@@ -367,10 +364,34 @@
     return h;
   }
 
-  function renderKeyboardKeyPicker(x) {
-    const root = document.getElementById('keyboard_key_root');
-    if (!root) return;
-    root.innerHTML = keyPickerHtml(x);
+  // Each section's title bar gets its own Key dropdown + Clear link, populated
+  // here on every render so they stay in sync with the URL state.
+  function renderSummaryExtras(x) {
+    const slots = document.querySelectorAll('.summary_extras');
+    if (!slots.length) return;
+    let opts = '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
+    for (const a of ALLNOTES) {
+      opts += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
+    }
+    const html =
+      '<span class="section_key_picker"><label>Key: <select class="inputs" name="k">' +
+        opts +
+      '</select></label></span>' +
+      '<a href="?" class="section_clear">Clear</a>';
+    slots.forEach(function (s) { s.innerHTML = html; });
+  }
+
+  // Stop summary clicks on the dropdown / Clear link from toggling the parent <details>.
+  function bindSummaryExtras() {
+    document.body.addEventListener('mousedown', function (e) {
+      if (e.target.closest && e.target.closest('.summary_extras')) e.stopPropagation();
+    }, true);
+    document.body.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.summary_extras')) {
+        // Don't toggle the section; let the actual control (select/anchor) handle the click
+        e.stopPropagation();
+      }
+    }, true);
   }
 
   function renderChordGrid(x) {
@@ -404,8 +425,7 @@
     }
     chordLinksRow += '<td></td></tr>';
 
-    let h = keyPickerHtml(x);
-    h += '<table id="chord_grid">';
+    let h = '<table id="chord_grid">';
     h += chordLinksRow;
     for (const row of window.SF_GRID_ROWS) {
       const note = noteLetters[row.degId];
@@ -455,8 +475,7 @@
     }
     scaleLinksRow += '<td></td></tr>';
 
-    let h = keyPickerHtml(x);
-    h += '<table id="scale_grid">';
+    let h = '<table id="scale_grid">';
     h += scaleLinksRow;
     for (const row of ROWS) {
       const note = noteLetters[row.degId];
@@ -812,21 +831,9 @@
     });
   }
 
-  // ---------- print-colors toggle ----------
-  function applyPrintColors(x) {
-    document.body.classList.toggle('print-colors', x.pc === 'y');
-  }
-  function bindPrintColorToggle() {
-    const cb = document.getElementById('print_colors_cb');
-    if (!cb) return;
-    cb.addEventListener('change', function () {
-      document.body.classList.toggle('print-colors', cb.checked);
-      try { window.localStorage.setItem('sf_print_colors', cb.checked ? 'y' : 'n'); } catch (e) {}
-      const params = new URLSearchParams(window.location.search);
-      if (cb.checked) params.set('pc', 'y'); else params.delete('pc');
-      const qs = params.toString();
-      history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
-    });
+  // ---------- print colors (always on) ----------
+  function applyPrintColors() {
+    document.body.classList.add('print-colors');
   }
 
   // ---------- tunings sort + filter (URL-backed) ----------
@@ -1170,13 +1177,12 @@
     renderChordGrid(x);
     renderScaleGrid(x);
     renderTuningsTable(x);
-    renderKeyboardKeyPicker(x);
     applyKeyboardColors(x);
     applyCollapseFromUrl();
 
     bindAutoSubmit();
-    bindPrintColorToggle();
-    applyPrintColors(x);
+    applyPrintColors();
+    renderSummaryExtras(x);
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
     document.querySelectorAll('table.sortable').forEach(function (t) {
@@ -1197,6 +1203,7 @@
     bindLinkInterceptor();
     bindHelpButtons();
     bindPrintButtons();
+    bindSummaryExtras();
     renderQuiz();
     window.addEventListener('popstate', applyState);
 
