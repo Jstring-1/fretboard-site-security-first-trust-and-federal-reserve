@@ -357,7 +357,7 @@ details.collapsible > summary .summary_title { font-weight: 700; }
                                              border: 1px solid rgba(255,255,255,0.55);
                                              background: rgba(255,255,255,0.18); color: #fff; cursor: pointer;        }
 .summary_extras select.inputs:hover        { background: rgba(255,255,255,0.4); border-color: #fff;                   }
-.summary_extras select.inputs option       { color: #f0f0f0; background: #fff;                                         }
+.summary_extras select.inputs option       { color: var(--text); background: var(--bg-elevated);                      }
 .summary_extras .section_clear             { padding: 2px 12px; font-size: 0.82em; border-radius: 12px;
                                              border: 1px solid rgba(255,255,255,0.55);
                                              background: rgba(255,255,255,0.18); color: #fff !important;
@@ -413,6 +413,7 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
                                              color: #f0f0f0; cursor: pointer;                                        }
 .opt_row select.inputs:hover,
 .opt_row select.inputs:focus               { border-color: #888888; outline: none;                                  }
+.opt_row select.inputs option              { color: var(--text); background: var(--bg-elevated);                     }
 .opt_row_main select                       { min-width: 540px; max-width: 90vw;                                     }
 
 .opt_row_highlights                        { background: rgba(255,255,255,0.04); padding: 8px 14px;
@@ -446,6 +447,9 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
                                              color: #f0f0f0; cursor: pointer;                                        }
 .section_key_picker select.inputs:hover,
 .section_key_picker select.inputs:focus    { border-color: #888888; outline: none;                                   }
+.section_key_picker select.inputs option   { color: var(--text); background: var(--bg-elevated);                     }
+/* Cover any other selects (per-string custom-tuning dropdowns inside the fretboard) */
+select option                              { color: var(--text); background: var(--bg-elevated);                     }
 
 /*********************************************************************************************************************
                             FRETBOARD HEADER (single stack: key info, tuning info, form)
@@ -495,6 +499,23 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 
 /* Blurb at the bottom */
 #blurb                                     { font-size: 0.78em; opacity: 0.65; margin: 12px 0;                       }
+
+/* Footer "Jimmy Witherfork Strikes Again" — small text, subtle, opens modal */
+#site_footer                               { text-align: center; padding: 24px 16px 32px; margin-top: 16px;            }
+#site_footer #footer_witherfork            { color: var(--muted) !important; font-size: 0.85em; letter-spacing: 0.04em;
+                                             text-decoration: none; cursor: pointer; transition: color .12s;          }
+#site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
+@media print { #site_footer { display: none !important; } }
+
+/* Witherfork modal content (sits inside the existing .vs_panel) */
+.wf_modal                                  { display: flex; flex-direction: column; align-items: center;
+                                             justify-content: center; gap: 18px; padding: 40px 24px;
+                                             font-family: var(--font); color: var(--text);                            }
+.wf_title                                  { font-size: 1.6em; font-weight: 700; letter-spacing: 0.02em; text-align: center; }
+.wf_body                                   { font-size: 1em; opacity: 0.9; text-align: center;                        }
+.wf_link                                   { color: var(--accent-hi) !important; text-decoration: none;
+                                             border-bottom: 1px solid rgba(95,232,224,0.45);                          }
+.wf_link:hover                             { border-bottom-color: var(--accent-hi);                                   }
 
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }

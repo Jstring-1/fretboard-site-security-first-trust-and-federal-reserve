@@ -735,7 +735,7 @@
   function escClose(e) {
     if (e.key === 'Escape') closeViewSourceModal();
   }
-  function showInfoModal(text) {
+  function showInfoModal(content, opts) {
     closeViewSourceModal();
     const overlay = document.createElement('div');
     overlay.id = 'view_source_modal';
@@ -745,11 +745,35 @@
         '<button class="vs_close" type="button" aria-label="Close">×</button>' +
         '<pre class="vs_pre"></pre>' +
       '</div>';
-    overlay.querySelector('.vs_pre').textContent = text; // textContent — no HTML re-parse
+    const pre = overlay.querySelector('.vs_pre');
+    if (opts && opts.html) {
+      // Caller is passing controlled, static HTML (e.g. a link to seadisco.com).
+      pre.innerHTML = content;
+    } else {
+      pre.textContent = content; // textContent — no HTML re-parse
+    }
     overlay.querySelector('.vs_backdrop').addEventListener('click', closeViewSourceModal);
     overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
     document.body.appendChild(overlay);
     document.addEventListener('keydown', escClose);
+  }
+
+  function bindFooterWitherfork() {
+    const link = document.getElementById('footer_witherfork');
+    if (!link || link._wfBound) return;
+    link._wfBound = true;
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      const html =
+        '<div class="wf_modal">' +
+          '<div class="wf_title">Jimmy Witherfork Strikes Again</div>' +
+          '<div class="wf_body">' +
+            'Built by the same hands as ' +
+            '<a class="wf_link" href="https://seadisco.com" target="_blank" rel="noopener">seadisco.com</a>.' +
+          '</div>' +
+        '</div>';
+      showInfoModal(html, { html: true });
+    });
   }
 
   function printSection(sectionId) {
@@ -1244,6 +1268,7 @@
     bindHelpButtons();
     bindPrintButtons();
     bindSummaryExtras();
+    bindFooterWitherfork();
     renderQuiz();
     window.addEventListener('popstate', applyState);
 
