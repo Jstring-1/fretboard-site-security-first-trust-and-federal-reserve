@@ -71,11 +71,13 @@
 /* Staff line: a real DOM element with a single border (foreground stroke)
    so it prints reliably regardless of the browser's "background graphics"
    setting. Positioned absolutely at the row's vertical mid-line, spanning
-   from the label column edge to the right side. */
+   from the label column edge to the right side. The margin-top tweak
+   centres it on the digit's optical mid-line (which sits below the row's
+   raw 50% because of input line-box metrics). */
 .staff_line                                 { position: absolute; left: 36px; right: 0;
                                               top: 50%; height: 0;
                                               border-top: 1px solid #c0c0c0;
-                                              margin-top: 0;
+                                              margin-top: 7px;
                                               z-index: 0; pointer-events: none;                                       }
 .tab_label                                  { z-index: 2; text-align: right; padding-right: 8px;
                                               font: 600 0.85em var(--font); color: var(--accent-hi);
@@ -156,11 +158,10 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
                                               padding: 4px 0 4px !important;                                          }
   .tab_row                                   { height: 14px !important;                                                }
   .tab_cells                                 { height: 14px !important;                                                }
-  /* Bumping the staff line down by 4px in print so it lands on the
-     digit's optical centre — input text in print sits noticeably below
-     the absolute mid-line of the row. */
+  /* Staff line in print sits at the same +7px offset relative to the
+     row top so it lands on the digit's optical centre. */
   .staff_line                                { border-top-color: #000 !important;
-                                              margin-top: 4px !important;                                              }
+                                              margin-top: 7px !important;                                              }
   .tab_label                                 { color: #000 !important; background: #fff !important;
                                               font-size: 0.7em !important;                                            }
   /* Bar lines: switch from a per-cell border-left to a positioned ::after
