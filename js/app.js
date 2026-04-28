@@ -663,15 +663,26 @@
       style.id = 'keyboard_dynamic_style';
       document.head.appendChild(style);
     }
+    // If any highlights are set, dim the notes that aren't in the highlight set.
+    // If nothing is highlighted, show all 12 notes in their key-relative colors.
+    const anyHighlighted = DEGREES.some(function (d) {
+      return x['hl_' + d.replace('♭', 'b')] === 'y';
+    });
+    const DIM_BG    = '#C9D2D6';   // white-key bg when not in highlight set
+    const DIM_TEXT  = '#777';      // black-key text when not in highlight set
+
     const i1 = KEYS.indexOf(x.k);
     let css = '';
     for (const note in KEYBOARD_NOTE_CLASSES) {
       const noteIdx = KEYS.indexOf(note);
       const semi = ((noteIdx - i1) + 12) % 12;
       const deg = DEGREES[semi];
-      const color = KEYBOARD_DEGREE_COLORS[deg];
+      const inHighlightSet = !anyHighlighted || (x['hl_' + deg.replace('♭', 'b')] === 'y');
       const def = KEYBOARD_NOTE_CLASSES[note];
       const prop = def.mode === 'bg' ? 'background-color' : 'color';
+      const color = inHighlightSet
+        ? KEYBOARD_DEGREE_COLORS[deg]
+        : (def.mode === 'bg' ? DIM_BG : DIM_TEXT);
       def.cls.forEach(function (c) {
         css += '.ritz .waffle .' + c + ' { ' + prop + ': ' + color + ' !important; }\n';
       });
