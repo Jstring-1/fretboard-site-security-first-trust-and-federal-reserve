@@ -603,22 +603,61 @@
   }
 
   // ---------- collapsible-section state persistence ----------
+  // URL is the source of truth: ?c=2,3 means sections 2 and 3 are closed.
+  // localStorage is kept as a fallback when the URL has no 'c' param, so a
+  // user who collapses a section then revisits without a query string still
+  // gets their preferred view.
+
+  function applyCollapseFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const cParam = params.get('c');
+    const fromUrl = cParam !== null;
+    const closedSet = fromUrl ? new Set(cParam.split(',').filter(function (s) { return s.length; })) : null;
+
+    document.querySelectorAll('details.collapsible').forEach(function (d) {
+      const num = d.id.replace('section_', '');
+      let isClosed;
+      if (fromUrl) {
+        isClosed = closedSet.has(num);
+      } else {
+        let saved = null;
+        try { saved = window.localStorage.getItem('sf_collapse_' + d.id); } catch (e) {}
+        isClosed = saved === 'closed';
+      }
+      if (isClosed) d.removeAttribute('open'); else d.setAttribute('open', '');
+    });
+  }
+
+  function updateClosedInUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const closed = [];
+    document.querySelectorAll('details.collapsible').forEach(function (d) {
+      if (!d.open) closed.push(d.id.replace('section_', ''));
+    });
+    if (closed.length) params.set('c', closed.join(','));
+    else params.delete('c');
+    const qs = params.toString();
+    const target = qs ? '?' + qs : window.location.pathname;
+    if (target === window.location.pathname + window.location.search) return;
+    if (target === window.location.search) return;
+    // replaceState — don't pollute history with every collapse toggle
+    history.replaceState({}, '', target);
+  }
+
   function bindCollapsibles() {
-    const sections = document.querySelectorAll('details.collapsible');
-    sections.forEach(function (d) {
-      const key = 'sf_collapse_' + d.id;
-      let saved = null;
-      try { saved = window.localStorage.getItem(key); } catch (e) {}
-      if (saved === 'closed') d.removeAttribute('open');
-      else if (saved === 'open') d.setAttribute('open', '');
+    document.querySelectorAll('details.collapsible').forEach(function (d) {
+      if (d._collapseBound) return;
+      d._collapseBound = true;
       d.addEventListener('toggle', function () {
-        try { window.localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {}
+        try { window.localStorage.setItem('sf_collapse_' + d.id, d.open ? 'open' : 'closed'); } catch (e) {}
+        updateClosedInUrl();
       });
     });
 
     // Force the fretboard open during print so collapsed-state doesn't suppress it
     const fb = document.getElementById('section_2');
-    if (fb) {
+    if (fb && !fb._printBound) {
+      fb._printBound = true;
       let restoreClosed = false;
       window.addEventListener('beforeprint', function () {
         restoreClosed = !fb.open;
@@ -828,6 +867,7 @@
     renderTuningsTable(x);
     renderKeyboardKeyPicker(x);
     applyKeyboardColors(x);
+    applyCollapseFromUrl();
 
     bindAutoSubmit();
     bindPrintColorToggle();
