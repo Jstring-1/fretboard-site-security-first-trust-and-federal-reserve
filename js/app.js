@@ -1846,6 +1846,12 @@
     const fromUrl = cParam !== null;
     const closedSet = fromUrl ? new Set(cParam.split(',').filter(function (s) { return s.length; })) : null;
 
+    // Guard the toggle handlers — when applyCollapseFromUrl restores state
+    // from localStorage on page load, removing the `open` attr fires a
+    // <details> "toggle" event that would otherwise write c=… back to
+    // the URL bar immediately. Suppress that during initial restore so a
+    // bare URL stays bare.
+    _suppressCollapseUrl = true;
     document.querySelectorAll('details.collapsible').forEach(function (d) {
       const num = d.id.replace('section_', '');
       let isClosed;
@@ -1865,7 +1871,11 @@
       }
       if (isClosed) d.removeAttribute('open'); else d.setAttribute('open', '');
     });
+    // Clear the guard on the next tick so any user-triggered toggles
+    // dispatched after this microtask still write to the URL normally.
+    setTimeout(function () { _suppressCollapseUrl = false; }, 0);
   }
+  let _suppressCollapseUrl = false;
 
   function updateClosedInUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -1889,7 +1899,10 @@
       d._collapseBound = true;
       d.addEventListener('toggle', function () {
         try { window.localStorage.setItem('sf_collapse_' + d.id, d.open ? 'open' : 'closed'); } catch (e) {}
-        updateClosedInUrl();
+        // Only push c=… to the URL on real user toggles. Suppressed during
+        // applyCollapseFromUrl's initial DOM-attribute restore so bare URLs
+        // don't gain a c=… param the moment the page loads.
+        if (!_suppressCollapseUrl) updateClosedInUrl();
       });
     });
 
