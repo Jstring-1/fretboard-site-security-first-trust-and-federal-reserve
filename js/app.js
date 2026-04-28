@@ -284,6 +284,9 @@
     h += '    <div id="view_src"><button style="background:none;border:none;" type="button" onclick="viewSource()">View Source Message</button></div>';
     h += '    <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
     h += '  </div>';
+    h += '  <div class="fb_middle">';
+    h += '    <div id="options_root"></div>';
+    h += '  </div>';
     h += '  <div class="fb_right">';
     h += '    <div id="print_btn">';
     h += '      <label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked' : '') + '/> Color</label>';
@@ -860,8 +863,8 @@
     const x = parseState();
     window.SF_X = x;
     renderTitle(x);
-    renderOptions(x);
-    renderFretboard(x);
+    renderFretboard(x);     // creates #options_root in the middle column
+    renderOptions(x);       // fills it
     renderChordGrid(x);
     renderScaleGrid(x);
     renderTuningsTable(x);

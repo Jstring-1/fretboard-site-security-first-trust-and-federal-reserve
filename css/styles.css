@@ -310,16 +310,20 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 .section_key_picker select.inputs:focus    { border-color: #4d6c79; outline: none;                                   }
 
 /*********************************************************************************************************************
-                            FRETBOARD HEADER (left column = source btn + tuning, right = print + key)
+                            FRETBOARD HEADER (3 cols: source+tuning | form | print+key)
 *********************************************************************************************************************/
-.fb_header                                 { display: flex; justify-content: space-between; align-items: flex-start;
-                                             padding: 8px 24px 4px; gap: 16px;                                        }
-.fb_left                                   { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; }
+.fb_header                                 { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(540px, 2fr) minmax(180px, 1fr);
+                                             gap: 12px; align-items: start; padding: 8px 16px 4px;                    }
+.fb_left                                   { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;  }
+.fb_middle                                 { display: flex; flex-direction: column;                                                       }
 .fb_right                                  { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
-/* Override the original float-based rules now that we use flex columns */
+/* Override the original float-based rules now that we use a grid */
 .fb_header #view_src, .fb_header #info_l,
 .fb_header #print_btn, .fb_header #info_r { float: none !important; display: block !important; margin: 0 !important; }
-.fb_header #info_l, .fb_header #info_r    { font-size: 1em; opacity: 0.9;                                            }
+.fb_header #info_l, .fb_header #info_r    { font-size: 0.95em; opacity: 0.9;                                          }
+/* Form sits centered inside the middle column with no extra outer padding */
+.fb_middle #tunings_drop                   { padding: 0 6px;                                                          }
+.fb_middle .opt_row_main select            { min-width: 100%;                                                          }
 
 /*********************************************************************************************************************
                             LEARN / QUIZ
