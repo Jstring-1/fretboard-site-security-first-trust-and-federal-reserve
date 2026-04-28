@@ -338,9 +338,12 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
                             STYLE AUDIT — softer corners, polished form, more breathing room
 *********************************************************************************************************************/
 /* Section summary header (matches .section's 10px corner radius) */
-details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 10px 16px; font-size: 1.05em;
+details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 8px 16px; font-size: 1.05em;
                                              background: linear-gradient(180deg, #1a1a1a, #0e0e0e); color: #fff;
-                                             display: flex; align-items: center; gap: 6px;                            }
+                                             display: flex; align-items: center; gap: 6px;
+                                             /* Pin the height so highlight-text length changes don't grow the bar
+                                                and ripple every section's height. */
+                                             height: 48px; box-sizing: border-box;                                    }
 details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
 details.collapsible > summary .summary_title:hover { background: rgba(255,255,255,0.08); }
 /* Outside the title, the cursor stays default — only the title is the toggle. */
@@ -386,7 +389,8 @@ details.collapsible > summary { cursor: default; }
 .summary_status                            { flex: 1 1 auto; min-width: 0; padding: 0 12px;
                                              font: 400 0.78em var(--font); font-weight: normal;
                                              color: rgba(240,240,240,0.75); text-align: center;
-                                             display: flex; flex-direction: column; gap: 2px;                          }
+                                             display: flex; flex-direction: column; gap: 2px;
+                                             height: 32px; overflow: hidden;                                          }
 .summary_status:empty                      { display: none;                                                            }
 .summary_status .status_key,
 .summary_status .status_tun                { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;          }
