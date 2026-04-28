@@ -166,6 +166,12 @@
         var rowExtra = (r === 0 ? ' tab_row_first' : '') +
                        (r === state.strings - 1 ? ' tab_row_last' : '');
         html += '<div class="tab_row' + rowExtra + '" style="grid-template-columns: ' + rowTemplate + ';">';
+        // Staff line — a real DOM element so it renders as a foreground
+        // stroke (border) that prints regardless of the browser's
+        // "background graphics" setting. Positioned absolutely at the
+        // row's vertical centre, spanning from the label column to the
+        // right edge.
+        html += '<div class="staff_line" aria-hidden="true"></div>';
         // Editable string label — lets users write a tuning we don't have a
         // preset for. Preset selection prefills these; manual edits override.
         html += '<input class="tab_label tab_label_input" type="text" maxlength="3" '
