@@ -746,7 +746,15 @@ select option                              { color: var(--text); background: var
                                              border-color: var(--accent-hi); font-weight: 600;                       }
 
 .tun_pop_body                              { flex: 1 1 auto; overflow: auto;                                          }
-.tun_pop_table                             { width: 100%; border-collapse: collapse; font: 400 0.85em var(--font);   }
+/* table-layout: fixed makes the column widths defined on the th's actually
+   stick. Without it, browsers ignore widths and let content drive layout. */
+.tun_pop_table                             { width: 100%; table-layout: fixed; border-collapse: collapse;
+                                             font: 400 0.85em var(--font);                                            }
+.tun_pop_table th[data-col="strs"]         { width: 36px;                                                              }
+.tun_pop_table th[data-col="name"]         { width: 100px;                                                             }
+.tun_pop_table th[data-col="notes"]        { width: 220px;                                                             }
+.tun_pop_table th[data-col="dgs"]          { width: 130px;                                                             }
+/* Info column takes the remaining width via the implicit auto. */
 .tun_pop_table thead th                    { position: sticky; top: 0; z-index: 1;
                                              background: var(--bg-elevated); color: var(--muted);
                                              text-align: left; padding: 6px 10px; border-bottom: 1px solid #2a2a2a;
@@ -802,9 +810,11 @@ select option                              { color: var(--text); background: var
    from the section's left/right edges and keep the top + bottom margins
    tight so it sits flush against the fretboard above. */
 #section_5.nested_section                  { margin: 4px 18px 8px;                                                   }
-/* Without a .summary_status spacer in this section's summary, the Print + ?
-   buttons would sit right next to the title. Push them to the right edge. */
-#section_5.nested_section > summary > .section_print,
+/* Without a .summary_status spacer in this section's summary, the trailing
+   buttons would sit right next to the title. Push the first one (CSV on
+   tunings, ? on tab) to the right with margin-left:auto and the rest
+   follow. */
+#section_5.nested_section > summary > .section_export,
 #section_8 > summary > .section_help       { margin-left: auto;                                                       }
 
 /* Top 4 keyboard rows (Octaves, Steel Gauges, 10-band EQ, Frequency Hz):
