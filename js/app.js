@@ -894,7 +894,10 @@
       parts.push(sel.name + '=' + encodeURIComponent(v));
     }
     pushSelect(opt.querySelector('select[name="x"]'));
-    pushSelect(opt.querySelector('select[name="k"]'));
+    // Key dropdown lives in each section's title bar (.section_key_picker) since
+    // the form no longer has its own. Read from any of them — bindAutoSubmit's
+    // sync handler keeps every section's key picker at the same value.
+    pushSelect(document.querySelector('.section_key_picker select[name="k"]'));
 
     ['y', 'z'].forEach(function (name) {
       const cb = opt.querySelector('input[type="checkbox"][name="' + name + '"]');
@@ -928,11 +931,12 @@
 
   function bindAutoSubmit() {
     const handler = function (e) {
-      // Any key picker outside options_root: sync the master before gathering, so the
-      // form's dropdown carries the new value when gatherAndNavigate reads it.
+      // Sync every section's key picker to whichever one the user just changed,
+      // so gatherAndNavigate picks up the new value no matter which it reads.
       if (e && e.target && e.target.matches && e.target.matches('select[name="k"]')) {
-        const master = document.querySelector('#options_root select[name="k"]');
-        if (master && master !== e.target) master.value = e.target.value;
+        document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
+          if (sel !== e.target) sel.value = e.target.value;
+        });
       }
       gatherAndNavigate();
     };

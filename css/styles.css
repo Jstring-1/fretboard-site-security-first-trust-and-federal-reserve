@@ -165,6 +165,8 @@ table td                                   {  vertical-align:middle;            
 /* Keyboard sits on a grey piano-body inside the dark section frame —
    matches the fretboard's tabletop colour. */
 .ritz                                      {  background-color:#cccccc; padding:0; border-radius:6px; margin:0 6px;   }
+/* Slimmer, lighter internal gridlines for the keyboard table cells. */
+.ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
@@ -323,7 +325,9 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
 /*********************************************************************************************************************
                             SCALE BUILDER — inherits chord-grid styling
 *********************************************************************************************************************/
-#section_6, #scale_grid                    { background-color:#0a0a0a;                                                 }
+/* scale_grid bg is set in the unified rule near the top — keep section_6 dark
+   here and don't repeat #scale_grid (it stays light grey like the fretboard). */
+#section_6                                 { background-color:#0a0a0a;                                                 }
 #section_6                                 { table-layout:fixed;                                                       }
 @media only screen and (max-width: 480px)  { #section_6 { display:none; }                                              }
 @media only screen and (min-width: 481px) and (max-width: 768px)  { #section_6 { display:none; }                       }
