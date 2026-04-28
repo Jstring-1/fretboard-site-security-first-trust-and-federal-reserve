@@ -31,8 +31,6 @@
 .tab_ctl input#ctl_title                    { min-width: 220px;                                                       }
 .tab_ctl input:focus,
 .tab_ctl select:focus                       { outline: none; border-color: var(--accent-hi);                          }
-.tab_ctl_hint                               { font: 400 0.7em var(--font); color: var(--muted-dim);
-                                              letter-spacing: 0.04em; line-height: 1; margin-top: 2px; min-height: 0; }
 .tab_ctl_tuning                             { min-width: 240px;                                                       }
 .ctl_btn                                    { font: 400 0.85em var(--font); padding: 0 12px;
                                               height: 28px; box-sizing: border-box; align-self: flex-end;

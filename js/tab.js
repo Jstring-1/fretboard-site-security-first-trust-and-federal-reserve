@@ -81,14 +81,6 @@
       state.tuning = '';
     }
     ctlTuning.value = state.tuning;
-    // Show the user how many presets the dropdown contains for the chosen
-    // string count, so it's obvious when only "(custom)" is offered.
-    var hint = document.getElementById('ctl_tuning_count');
-    if (hint) {
-      hint.textContent = list.length
-        ? '(' + list.length + ' preset' + (list.length === 1 ? '' : 's') + ' for ' + n + ' strings)'
-        : '(no presets — pick "custom" and write your own)';
-    }
     syncStateNotesFromTuning();
   }
 
