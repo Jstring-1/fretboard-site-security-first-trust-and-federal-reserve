@@ -569,7 +569,8 @@
       const v = TUNINGS[key];
       const addUrl = '&x=' + v.url_notes;
       let udgs = String(v.udgs).replace('1 3 5', '(1 3 5)').replace('1 ♭3 5', '(1 ♭3 5)');
-      h += '<tr>';
+      const trCls = (key === x.x) ? ' class="tun_selected"' : '';
+      h += '<tr' + trCls + '>';
       h += '<td id="pad" class="name">' + v.strs + '-String</td>';
       h += '<td id="pad" class="name"><a href="' + tunUrl + addUrl + '">' + escHtml(v.name) + '</a></td>';
       h += '<td id="pad"><a href="' + tunUrl + addUrl + '">' + escHtml(v[rev + 'notes']) + '</a></td>';
