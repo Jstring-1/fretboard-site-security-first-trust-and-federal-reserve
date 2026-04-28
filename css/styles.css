@@ -661,8 +661,10 @@ select option                              { color: var(--text); background: var
 .tun_btn_caret                             { color: var(--muted); flex: 0 0 auto;                                    }
 .tun_hidden_select                         { display: none !important;                                                }
 
-.tun_pop                                   { position: absolute; top: calc(100% + 4px); left: 0; z-index: 1500;
-                                             width: min(720px, 92vw); max-height: 60vh;
+.tun_pop                                   { position: absolute; top: calc(100% + 4px);
+                                             right: 0; left: auto;
+                                             z-index: 1500;
+                                             width: min(1080px, 96vw); max-height: 60vh;
                                              background: var(--surface); color: var(--accent);
                                              border: 1px solid #2a2a2a; border-radius: 6px;
                                              box-shadow: 0 12px 36px rgba(0,0,0,0.6);
@@ -696,7 +698,11 @@ select option                              { color: var(--text); background: var
                                            { background: rgba(95,232,224,0.18); color: var(--accent-hi);              }
 .tun_pop_table tbody tr:focus              { outline: none; }
 .tun_pop_table tbody tr:focus td           { background: rgba(95,232,224,0.14);                                       }
-.tun_pop_table .c_strs                     { white-space: nowrap; color: var(--muted); width: 1%;                    }
+/* Tight Strings column — just wide enough for "12". */
+.tun_pop_table th.c_strs_h,
+.tun_pop_table .c_strs                     { white-space: nowrap; color: var(--muted);
+                                             width: 36px; min-width: 36px; max-width: 36px;
+                                             padding-left: 8px; padding-right: 8px; text-align: center;              }
 .tun_pop_table .c_name                     { white-space: nowrap; font-weight: 600;                                  }
 .tun_pop_table .c_notes                    { white-space: nowrap;                                                     }
 .tun_pop_table .c_dgs                      { white-space: nowrap; color: var(--muted);                                }

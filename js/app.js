@@ -377,7 +377,8 @@
       const arrow = (_tunPickerSort.col === c.k)
         ? (_tunPickerSort.dir === 'asc' ? ' ▲' : ' ▼')
         : '';
-      h += '<th data-col="' + c.k + '" class="tun_pop_th' + (_tunPickerSort.col === c.k ? ' active' : '') + '">'
+      const colHCls = c.k === 'strs' ? ' c_strs_h' : '';
+      h += '<th data-col="' + c.k + '" class="tun_pop_th' + (_tunPickerSort.col === c.k ? ' active' : '') + colHCls + '">'
         + escHtml(c.label) + '<span class="tun_pop_arrow">' + arrow + '</span></th>';
     });
     h += '</tr></thead><tbody>';
