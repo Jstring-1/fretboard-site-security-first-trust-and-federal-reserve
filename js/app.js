@@ -419,6 +419,24 @@
     });
   }
 
+  // Restrict the toggle to clicks on the title (and the disclosure arrow
+   // pseudo-element on summary itself). Clicks on the status text, buttons, or
+   // any control inside the summary should NOT collapse/expand the section.
+  function bindSummaryToggleScope() {
+    document.querySelectorAll('details.collapsible > summary').forEach(function (summary) {
+      if (summary._toggleScopeBound) return;
+      summary._toggleScopeBound = true;
+      summary.addEventListener('click', function (e) {
+        // Click on summary itself (the disclosure arrow / padding) — allow toggle
+        if (e.target === summary) return;
+        // Click inside the title — allow toggle
+        if (e.target.closest && e.target.closest('.summary_title')) return;
+        // Anything else (status, buttons, key dropdown, clear, print, ?) — block
+        e.preventDefault();
+      });
+    });
+  }
+
   // Stop summary clicks on the dropdown / Clear link from toggling the parent <details>.
   // For the <a> Clear link we ALSO need to drive navigation here, because
   // stopPropagation blocks bindLinkInterceptor from seeing the click.
@@ -1139,14 +1157,14 @@
             css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
           } else {
             // Highlighted: yellow outline (matches chord/scale + fretboard markers)
-            css += sel + ' { box-shadow: inset 0 0 0 2px #ffd400 !important; color: #000 !important; }\n';
+            css += sel + ' { box-shadow: inset 0 0 0 2px #e6ff00 !important; color: #000 !important; }\n';
           }
         } else {
           // Black-key cell: tint label by degree (or near-bg if dimmed)
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
           if (inHighlightSet) {
-            css += sel + ' { box-shadow: inset 0 0 0 2px #ffd400 !important; }\n';
+            css += sel + ' { box-shadow: inset 0 0 0 2px #e6ff00 !important; }\n';
           }
         }
       });
@@ -1317,6 +1335,7 @@
     bindHelpButtons();
     bindPrintButtons();
     bindSummaryExtras();
+    bindSummaryToggleScope();
     bindFooterWitherfork();
     renderQuiz();
     window.addEventListener('popstate', applyState);

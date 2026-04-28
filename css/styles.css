@@ -333,7 +333,10 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
 details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 10px 16px; font-size: 1.05em;
                                              background: linear-gradient(180deg, #1a1a1a, #0e0e0e); color: #fff;
                                              display: flex; align-items: center; gap: 6px;                            }
-details.collapsible > summary .summary_title { font-weight: 700; }
+details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+details.collapsible > summary .summary_title:hover { background: rgba(255,255,255,0.08); }
+/* Outside the title, the cursor stays default — only the title is the toggle. */
+details.collapsible > summary { cursor: default; }
 /* Learn has no status/extras to absorb center space — let the title flex-grow
    so the ? button still anchors to the right edge. */
 #section_7 > summary > .summary_title    { flex: 1 1 auto;                                                            }
@@ -544,7 +547,7 @@ select option                              { color: var(--text); background: var
    ring (matches the highlighted-degree marker on the fretboard and keyboard).
    The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
-#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #ffd400;                                     }
+#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #e6ff00;                                     }
 /* Chord cells already have a bright degree-coloured bg, so dark + bold text
    reads on top. Scale cells have a dark bg, so just bold the link and keep
    its inherited light colour — don't force dark on dark. */
@@ -558,7 +561,7 @@ select option                              { color: var(--text); background: var
 #fretboard td[id="_b3_"], #fretboard td[id="_3_"],  #fretboard td[id="_4_"],
 #fretboard td[id="_b5_"], #fretboard td[id="_5_"],  #fretboard td[id="_b6_"],
 #fretboard td[id="_6_"],  #fretboard td[id="_b7_"], #fretboard td[id="_7_"] {
-    box-shadow: inset 0 0 0 2px #ffd400;
+    box-shadow: inset 0 0 0 2px #e6ff00;
 }
 
 /* Sortable header buttons */
@@ -575,11 +578,11 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 #tunings tbody tr:hover                    { background-color: #1a1a1a !important;                                   }
 /* Currently chosen tuning row: yellow ring around the whole row, drawn via
    per-cell inset box-shadow so it doesn't disturb the table layout. */
-#tunings tbody tr.tun_selected td          { box-shadow: inset 0 2px 0 #ffd400, inset 0 -2px 0 #ffd400;              }
+#tunings tbody tr.tun_selected td          { box-shadow: inset 0 2px 0 #e6ff00, inset 0 -2px 0 #e6ff00;              }
 #tunings tbody tr.tun_selected td:first-child
-                                           { box-shadow: inset 0 2px 0 #ffd400, inset 0 -2px 0 #ffd400, inset 2px 0 0 #ffd400; }
+                                           { box-shadow: inset 0 2px 0 #e6ff00, inset 0 -2px 0 #e6ff00, inset 2px 0 0 #e6ff00; }
 #tunings tbody tr.tun_selected td:last-child
-                                           { box-shadow: inset 0 2px 0 #ffd400, inset 0 -2px 0 #ffd400, inset -2px 0 0 #ffd400; }
+                                           { box-shadow: inset 0 2px 0 #e6ff00, inset 0 -2px 0 #e6ff00, inset -2px 0 0 #e6ff00; }
 
 /* Print resets so the polish doesn't show in print */
 @media print {
