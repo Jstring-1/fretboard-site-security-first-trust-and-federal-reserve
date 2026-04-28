@@ -271,20 +271,24 @@
     }
 
     // url_s: single dot-separated 's' param holding s1..s12 in order, with
-    // sharps written as 's' (urlNote handles the ♯→s transform). Trailing
-    // empties are trimmed so we don't bloat the URL with unused slots.
-    // No-separator format matches the ?x= encoding (e.g. FsACsEFsACsE).
-    // If any internal slot is empty we fall back to dot-separated so the
-    // gap is preserved on decode.
-    let _sParts = [];
-    for (let a = 1; a <= 12; a++) {
-      _sParts.push(x['s' + a] ? urlNote(x['s' + a]) : '');
-    }
-    while (_sParts.length && !_sParts[_sParts.length - 1]) _sParts.pop();
+    // sharps written as 's' (urlNote handles the ♯→s transform). Cap the
+    // build at _customStrsFromUrl so chord/scale chip URLs (which embed
+    // url_s) don't pull in DEF_X defaults for s7..s12 and silently turn
+    // a 6-string custom into a 12-string custom on click. If no s was in
+    // the URL at all, emit nothing — the chip URL has no business
+    // inventing a custom tuning that the user never set up.
     let url_s = '';
-    if (_sParts.length) {
-      const _hasGap = _sParts.some(function (v) { return !v; });
-      url_s = 's=' + _sParts.join(_hasGap ? '.' : '') + '&';
+    if (x._customStrsFromUrl > 0) {
+      const _sLimit = x._customStrsFromUrl;
+      let _sParts = [];
+      for (let a = 1; a <= _sLimit; a++) {
+        _sParts.push(x['s' + a] ? urlNote(x['s' + a]) : '');
+      }
+      while (_sParts.length && !_sParts[_sParts.length - 1]) _sParts.pop();
+      if (_sParts.length) {
+        const _hasGap = _sParts.some(function (v) { return !v; });
+        url_s = 's=' + _sParts.join(_hasGap ? '.' : '') + '&';
+      }
     }
 
     // Print colors are always on now — body keeps the .print-colors class
