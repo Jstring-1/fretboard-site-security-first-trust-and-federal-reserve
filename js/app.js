@@ -1141,20 +1141,20 @@
       def.cls.forEach(function (c) {
         const sel = '.ritz .waffle .' + c;
         if (def.mode === 'bg') {
-          // White-key cell: tint bg by degree (or white if dimmed)
+          // White-key cell: tint bg by degree (or grey if dimmed)
           const bg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_WHITE_BG;
           css += sel + ' { background-color: ' + bg + ' !important; }\n';
           if (!inHighlightSet) {
             css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
-          } else {
-            // Highlighted: yellow outline (matches chord/scale + fretboard markers)
+          } else if (anyHighlighted) {
+            // Only ring when a chord/scale/highlight is actually active
             css += sel + ' { box-shadow: inset 0 0 0 2px #e6ff00 !important; color: #000 !important; }\n';
           }
         } else {
           // Black-key cell: tint label by degree (or near-bg if dimmed)
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
-          if (inHighlightSet) {
+          if (inHighlightSet && anyHighlighted) {
             css += sel + ' { box-shadow: inset 0 0 0 2px #e6ff00 !important; }\n';
           }
         }
