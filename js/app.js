@@ -686,7 +686,10 @@
       '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
     slots.forEach(function (s) {
       const target = s.getAttribute('data-summary-for');
-      if (target === 'section_5') { s.innerHTML = ''; return; }  // tunings list: no key/clear
+      // Sections that don't need the Key picker / Clear button:
+      //   section_5 = nested tunings list (no chord-state context)
+      //   section_8 = tab editor (its own controls bar handles state)
+      if (target === 'section_5' || target === 'section_8') { s.innerHTML = ''; return; }
       s.innerHTML = html;
     });
   }
@@ -1014,6 +1017,29 @@
       '',
       '  Sort and filter state are kept in the URL, so a sorted/filtered view',
       '  is bookmarkable.',
+      ''
+    ].join('\n'),
+
+    tab: [
+      '',
+      '  Tab',
+      '',
+      '  In-page tab editor for 4–12 string instruments.',
+      '',
+      '    • Pick a string count and (optionally) a preset tuning — the',
+      '      tuning dropdown is filtered to presets that match.',
+      '    • String labels on the left edge are editable: type any note,',
+      '      or use ↑/↓ to move between strings; Enter drops into the',
+      '      first cell on the same row.',
+      '    • Type a fret number (0–99) or a symbol (h hammer, p pull,',
+      '      / slide up, \\\\ slide down, ~ vibrato, x mute).',
+      '    • Tab moves right; Enter moves down; arrow keys go any',
+      '      direction.',
+      '',
+      '  Print outputs whatever you have written. Print blank prints a',
+      '  full sheet of empty staves at the chosen string count for',
+      '  handwriting. Share copies a URL containing the encoded tab so',
+      '  you can paste it anywhere.',
       ''
     ].join('\n'),
 

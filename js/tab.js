@@ -24,10 +24,11 @@
   var subPrint    = $('tab_subtitle_print');
   var btnClear    = $('btn_clear');
   var btnFlip     = $('btn_low_high');
-  var btnPrint    = document.querySelector('.btn_print');
-  var btnPrintBl  = document.querySelector('.btn_print_blank');
-  var btnShare    = document.querySelector('.btn_share');
-  var buildEl     = $('build_num');
+  // Scope to #tab_section_root so we don't clash with main-site buttons.
+  var tabRoot     = $('tab_section_root');
+  var btnPrint    = tabRoot && tabRoot.querySelector('.btn_print');
+  var btnPrintBl  = tabRoot && tabRoot.querySelector('.btn_print_blank');
+  var btnShare    = tabRoot && tabRoot.querySelector('.btn_share');
 
   // ---- State ---------------------------------------------------------------
   var state = {
@@ -336,16 +337,18 @@
   }
 
   // ---- URL share -----------------------------------------------------------
+  // Tab state is encoded as `?td=<base64-json>` (separate from the main
+  // site's URL state model so the two don't clobber each other).
   function buildShareUrl() {
     var payload = serialise();
     var json = JSON.stringify(payload);
     var b64 = btoa(unescape(encodeURIComponent(json)));
-    var url = location.origin + location.pathname + '?d=' + b64;
+    var url = location.origin + location.pathname + '?td=' + b64;
     return url;
   }
 
   function loadFromUrl() {
-    var m = location.search.match(/[?&]d=([^&]+)/);
+    var m = location.search.match(/[?&]td=([^&]+)/);
     if (!m) return false;
     try {
       var json = decodeURIComponent(escape(atob(m[1])));
@@ -441,22 +444,48 @@
       saveLocal();
     });
 
+    // Print routing: set body[data-print]="section_8" so the main-site CSS
+    // hides every other section while the tab prints. Restore on afterprint.
+    function _printRouted(blankSnap) {
+      var sec = document.getElementById('section_8');
+      var restoreClosed = false;
+      if (sec && sec.tagName === 'DETAILS' && !sec.open) {
+        restoreClosed = true;
+        sec.open = true;
+      }
+      document.body.setAttribute('data-print', 'section_8');
+      function cleanup() {
+        document.body.removeAttribute('data-print');
+        if (restoreClosed && sec) sec.open = false;
+        if (blankSnap) {
+          paper.classList.remove('blank');
+          state.cells    = blankSnap.cells;
+          state.measures = blankSnap.measures;
+          state.subdiv   = blankSnap.subdiv;
+          state.perLine  = blankSnap.perLine;
+          state.title    = blankSnap.title;
+          titlePrint.textContent = blankSnap.title || '';
+          render();
+        }
+        window.removeEventListener('afterprint', cleanup);
+      }
+      window.addEventListener('afterprint', cleanup);
+      setTimeout(function () { window.print(); }, 50);
+    }
+
     btnPrint.addEventListener('click', function (e) {
       e.preventDefault();
       paper.classList.remove('blank');
-      window.print();
+      _printRouted(null);
     });
 
     btnPrintBl.addEventListener('click', function (e) {
       e.preventDefault();
       // Blank-print formatting modelled on the user's reference layout:
-      //   - no title (handwriting space at top instead)
-      //   - 3 measures per system, ~5 systems on a letter page
-      //   - one cell per beat (subdiv=1) so only measure bar-lines show,
-      //     no eighth-note tick marks cluttering the staves
-      //   - string labels show the chosen tuning's notes if a preset is
-      //     selected; otherwise the labels stay blank for handwriting
-      const snap = {
+      // no title, 3 measures per system, ~5 systems / page, subdiv=1 so only
+      // bar-lines (not beat ticks) show. State is snapped here and restored
+      // by _printRouted's afterprint cleanup.
+      var snap = {
         cells:    state.cells,
         measures: state.measures,
         beats:    state.beats,
@@ -475,18 +504,7 @@
       subPrint.textContent = '';
       paper.classList.add('blank');
       render();
-      window.print();
-      // Restore after the print dialog closes
-      setTimeout(function () {
-        paper.classList.remove('blank');
-        state.cells    = snap.cells;
-        state.measures = snap.measures;
-        state.subdiv   = snap.subdiv;
-        state.perLine  = snap.perLine;
-        state.title    = snap.title;
-        titlePrint.textContent = snap.title || '';
-        render();
-      }, 500);
+      _printRouted(snap);
     });
 
     btnShare.addEventListener('click', function (e) {
@@ -508,17 +526,11 @@
     setTimeout(function () { btnShare.textContent = orig; }, 1400);
   }
 
-  // ---- Build stamp ---------------------------------------------------------
-  function stampBuild() {
-    if (!buildEl) return;
-    // No auto-stamp on this page; show a static placeholder until commit hook
-    // is extended. The pre-commit hook only edits index.html so this stays blank
-    // unless the user wants to add tab.html to the stamp script.
-    buildEl.textContent = 'tab editor — test build';
-  }
-
   // ---- Init ----------------------------------------------------------------
   function init() {
+    // The Tab section is part of the main page now — bail out cleanly if
+    // we're loaded somewhere that doesn't have the tab editor markup.
+    if (!ctlTitle || !grid || !paper) return;
     // priority: URL > localStorage > defaults
     var fromUrl = loadFromUrl();
     if (!fromUrl) loadLocal();
@@ -526,7 +538,6 @@
     syncStateNotesFromTuning();
     render();
     bindControls();
-    stampBuild();
   }
 
   if (document.readyState === 'loading') {

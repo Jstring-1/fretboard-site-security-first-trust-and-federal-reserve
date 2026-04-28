@@ -230,7 +230,8 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_3"] #section_3,
     body[data-print="section_4"] #section_4,
     body[data-print="section_5"] #section_5,
-    body[data-print="section_6"] #section_6 {  display:block !important;                                              }
+    body[data-print="section_6"] #section_6,
+    body[data-print="section_8"] #section_8 {  display:block !important;                                              }
     body[data-print] details > *           {  display:block !important;                                              }
     body[data-print] details > summary     {  display:none !important;                                                }
 
