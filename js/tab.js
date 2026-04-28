@@ -10,25 +10,33 @@
   var TUNINGS = DATA.tunings || {};
 
   // ---- DOM refs ------------------------------------------------------------
+  // Captured inside init() — when this IIFE runs in <head>, the body hasn't
+  // parsed yet so document.getElementById returns null for everything.
   var $ = function (id) { return document.getElementById(id); };
-  var ctlTitle    = $('ctl_title');
-  var ctlStrings  = $('ctl_strings');
-  var ctlTuning   = $('ctl_tuning');
-  var ctlMeasures = $('ctl_measures');
-  var ctlBeats    = $('ctl_beats');
-  var ctlSubdiv   = $('ctl_subdiv');
-  var ctlPerLine  = $('ctl_per_line');
-  var grid        = $('tab_grid');
-  var paper       = $('tab_paper');
-  var titlePrint  = $('tab_title_print');
-  var subPrint    = $('tab_subtitle_print');
-  var btnClear    = $('btn_clear');
-  var btnFlip     = $('btn_low_high');
-  // Scope to #tab_section_root so we don't clash with main-site buttons.
-  var tabRoot     = $('tab_section_root');
-  var btnPrint    = tabRoot && tabRoot.querySelector('.btn_print');
-  var btnPrintBl  = tabRoot && tabRoot.querySelector('.btn_print_blank');
-  var btnShare    = tabRoot && tabRoot.querySelector('.btn_share');
+  var ctlTitle, ctlStrings, ctlTuning, ctlMeasures, ctlBeats, ctlSubdiv,
+      ctlPerLine, grid, paper, titlePrint, subPrint, btnClear, btnFlip,
+      tabRoot, btnPrint, btnPrintBl, btnShare;
+
+  function captureDom() {
+    ctlTitle    = $('ctl_title');
+    ctlStrings  = $('ctl_strings');
+    ctlTuning   = $('ctl_tuning');
+    ctlMeasures = $('ctl_measures');
+    ctlBeats    = $('ctl_beats');
+    ctlSubdiv   = $('ctl_subdiv');
+    ctlPerLine  = $('ctl_per_line');
+    grid        = $('tab_grid');
+    paper       = $('tab_paper');
+    titlePrint  = $('tab_title_print');
+    subPrint    = $('tab_subtitle_print');
+    btnClear    = $('btn_clear');
+    btnFlip     = $('btn_low_high');
+    // Scope to #tab_section_root so we don't clash with main-site buttons.
+    tabRoot     = $('tab_section_root');
+    btnPrint    = tabRoot && tabRoot.querySelector('.btn_print');
+    btnPrintBl  = tabRoot && tabRoot.querySelector('.btn_print_blank');
+    btnShare    = tabRoot && tabRoot.querySelector('.btn_share');
+  }
 
   // ---- State ---------------------------------------------------------------
   var state = {
@@ -507,20 +515,23 @@
       _printRouted(snap);
     });
 
-    btnShare.addEventListener('click', function (e) {
-      e.preventDefault();
-      var url = buildShareUrl();
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(function () {
-          flashShare('Link copied');
-        }, function () { prompt('Copy this link:', url); });
-      } else {
-        prompt('Copy this link:', url);
-      }
-    });
+    if (btnShare) {
+      btnShare.addEventListener('click', function (e) {
+        e.preventDefault();
+        var url = buildShareUrl();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () {
+            flashShare('Link copied');
+          }, function () { prompt('Copy this link:', url); });
+        } else {
+          prompt('Copy this link:', url);
+        }
+      });
+    }
   }
 
   function flashShare(msg) {
+    if (!btnShare) return;
     var orig = btnShare.textContent;
     btnShare.textContent = msg;
     setTimeout(function () { btnShare.textContent = orig; }, 1400);
@@ -528,6 +539,7 @@
 
   // ---- Init ----------------------------------------------------------------
   function init() {
+    captureDom();
     // The Tab section is part of the main page now — bail out cleanly if
     // we're loaded somewhere that doesn't have the tab editor markup.
     if (!ctlTitle || !grid || !paper) return;

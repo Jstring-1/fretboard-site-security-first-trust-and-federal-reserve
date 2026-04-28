@@ -1366,7 +1366,14 @@
       } else {
         let saved = null;
         try { saved = window.localStorage.getItem('sf_collapse_' + d.id); } catch (e) {}
-        isClosed = saved === 'closed';
+        if (saved === null) {
+          // First visit (no URL state, no localStorage memory): every main
+          // section opens, but the nested Tunings List starts collapsed so
+          // the page isn't dominated by the 172-row table on load.
+          isClosed = (d.id === 'section_5');
+        } else {
+          isClosed = saved === 'closed';
+        }
       }
       if (isClosed) d.removeAttribute('open'); else d.setAttribute('open', '');
     });

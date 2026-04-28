@@ -23,6 +23,7 @@
                                               grid-auto-columns: max-content;
                                               column-gap: 16px; row-gap: 4px;
                                               align-items: end;
+                                              justify-content: center;
                                               padding: 14px 18px; background: var(--surface);
                                               border-bottom: 1px solid #222;                                          }
 .tab_ctl                                    { display: contents;                                                       }
