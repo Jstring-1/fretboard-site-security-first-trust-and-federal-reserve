@@ -249,7 +249,7 @@ details.collapsible > summary:hover       { background-color:#a8c2cb;           
 *********************************************************************************************************************/
 #section_6                                 { width:98%; min-width:1000px; margin:12px auto; padding:0;                  }
 #section_6, #scale_grid                    { background-color:#C9D2D6;                                                 }
-#section_6                                 { table-layout:fixed; border-radius:3px;                                    }
+#section_6                                 { table-layout:fixed; border-radius:10px;                                   }
 #scale_grid                                { margin: 12px auto 12px auto; padding: 0;                                  }
 @media only screen and (max-width: 480px)  { #section_6 { display:none; }                                              }
 @media only screen and (min-width: 481px) and (max-width: 768px)  { #section_6 { display:none; }                       }
@@ -307,9 +307,12 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 /*********************************************************************************************************************
                             LEARN / QUIZ
 *********************************************************************************************************************/
-#section_7                                 { width:98%; max-width:900px; min-width:auto; margin:18px auto; padding:0;
-                                             background-color:#C9D2D6;                                                }
-#section_7:not([open])                     { min-width:auto; max-width:900px;                                         }
+#section_7                                 { width:98%; min-width:1000px; margin:12px auto; padding:0;
+                                             background-color:#C9D2D6; border-radius:10px;                            }
+@media only screen and (max-width: 480px)  { #section_7 { display:none; }                                              }
+@media only screen and (min-width: 481px) and (max-width: 768px)  { #section_7 { display:none; }                       }
+@media only screen and (min-width: 769px) and (max-width: 1024px) { #section_7 { width:100%; display:none; }           }
+@media only screen and (min-width: 1025px) and (max-width: 1200px){ #section_7 { width:99%; display:none; }            }
 .quiz_card                                 { padding: 24px 20px 28px; text-align: center;                             }
 .quiz_prompt                               { font-size: 1em; opacity: 0.8; margin-bottom: 4px;                        }
 .quiz_showcase                             { display: inline-block; font-size: 1.7em; font-weight: 600;
