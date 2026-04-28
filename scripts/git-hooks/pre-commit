@@ -1,0 +1,5 @@
+#!/bin/sh
+# Auto-stamp the build number in index.html before each commit.
+# Activated by: git config core.hooksPath scripts/git-hooks
+python scripts/stamp_build.py || exit 0
+git add index.html

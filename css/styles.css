@@ -559,7 +559,7 @@ select option                              { color: var(--text); background: var
    ring (matches the highlighted-degree marker on the fretboard and keyboard).
    The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
-#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #e6ff00;                                     }
+#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 1px #e6ff00;                                     }
 /* Selected chord / scale link: yellow ring only — no font-weight change so
    the chip width stays identical and the row doesn't reflow on click. */
 #chord_grid td.cg_selected a,
@@ -577,7 +577,7 @@ select option                              { color: var(--text); background: var
 #fretboard td[id="_b3_"], #fretboard td[id="_3_"],  #fretboard td[id="_4_"],
 #fretboard td[id="_b5_"], #fretboard td[id="_5_"],  #fretboard td[id="_b6_"],
 #fretboard td[id="_6_"],  #fretboard td[id="_b7_"], #fretboard td[id="_7_"] {
-    box-shadow: inset 0 0 0 2px #e6ff00;
+    box-shadow: inset 0 0 0 1px #e6ff00;
 }
 
 /* Quick-pick chord + scale link strip above the fretboard. Same href logic
@@ -594,7 +594,7 @@ select option                              { color: var(--text); background: var
 #quick_picks .qp_link:hover                { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 /* Yellow ring only — same font-weight as unselected so the chip's width
    stays put when toggled (no row reflow on click). */
-#quick_picks .qp_link.cg_selected          { box-shadow: inset 0 0 0 2px #e6ff00;                                     }
+#quick_picks .qp_link.cg_selected          { box-shadow: inset 0 0 0 1px #e6ff00;                                     }
 @media print { #quick_picks { display: none !important; } }
 
 /* Sortable header buttons */
@@ -611,11 +611,11 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 #tunings tbody tr:hover                    { background-color: #1a1a1a !important;                                   }
 /* Currently chosen tuning row: yellow ring around the whole row, drawn via
    per-cell inset box-shadow so it doesn't disturb the table layout. */
-#tunings tbody tr.tun_selected td          { box-shadow: inset 0 2px 0 #e6ff00, inset 0 -2px 0 #e6ff00;              }
+#tunings tbody tr.tun_selected td          { box-shadow: inset 0 1px 0 #e6ff00, inset 0 -1px 0 #e6ff00;              }
 #tunings tbody tr.tun_selected td:first-child
-                                           { box-shadow: inset 0 2px 0 #e6ff00, inset 0 -2px 0 #e6ff00, inset 2px 0 0 #e6ff00; }
+                                           { box-shadow: inset 0 1px 0 #e6ff00, inset 0 -1px 0 #e6ff00, inset 1px 0 0 #e6ff00; }
 #tunings tbody tr.tun_selected td:last-child
-                                           { box-shadow: inset 0 2px 0 #e6ff00, inset 0 -2px 0 #e6ff00, inset -2px 0 0 #e6ff00; }
+                                           { box-shadow: inset 0 1px 0 #e6ff00, inset 0 -1px 0 #e6ff00, inset -1px 0 0 #e6ff00; }
 
 /* Print resets so the polish doesn't show in print */
 @media print {
