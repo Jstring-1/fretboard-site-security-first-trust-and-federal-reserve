@@ -2,7 +2,7 @@
                             WIDTHS / HEIGHTS
 *********************************************************************************************************************/
 table                                      {  min-width:960px;  width:98%;                                           }
-.section                                   {  width:98%; min-width:1000px; margin:18px auto; padding:0;
+.section                                   {  width:98%; min-width:1000px; margin:9px auto; padding:0;
                                               border-radius:10px;                                                    }
 #view_src, #print_btn                      {  width:100px;                                                           }                
 .cg_col_left, .cg_col_right                {  width:60px !important;                                                 }
