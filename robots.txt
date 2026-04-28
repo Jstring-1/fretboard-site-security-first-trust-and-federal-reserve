@@ -1,5 +1,7 @@
+# Allow all crawlers full access — every URL on the site is a public
+# permalink to a fretboard / chord / scale / tab view.
 User-agent: *
-Disallow: /img/
-Disallow: /inc/
-Disallow: /test.php
-Disallow: /stats.cgi
+Allow: /
+
+# Sitemap index
+Sitemap: https://slantfinder.pro/sitemap.xml
