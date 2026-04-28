@@ -336,6 +336,24 @@
     root.innerHTML = h;
   }
 
+  // Mini key picker for the chord-grid / scale-grid / keyboard sections so the
+  // user can change key without expanding the fretboard section.
+  function keyPickerHtml(x) {
+    let h = '<div class="section_key_picker"><label>Key: <select class="inputs" name="k">';
+    h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
+    for (const a of ALLNOTES) {
+      h += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
+    }
+    h += '</select></label></div>';
+    return h;
+  }
+
+  function renderKeyboardKeyPicker(x) {
+    const root = document.getElementById('keyboard_key_root');
+    if (!root) return;
+    root.innerHTML = keyPickerHtml(x);
+  }
+
   function renderChordGrid(x) {
     const root = document.getElementById('chord_grid_root');
     const i1 = KEYS.indexOf(x.k);
@@ -367,7 +385,8 @@
     }
     chordLinksRow += '<td></td></tr>';
 
-    let h = '<table id="chord_grid">';
+    let h = keyPickerHtml(x);
+    h += '<table id="chord_grid">';
     h += chordLinksRow;
     for (const row of window.SF_GRID_ROWS) {
       const note = noteLetters[row.degId];
@@ -417,7 +436,8 @@
     }
     scaleLinksRow += '<td></td></tr>';
 
-    let h = '<table id="scale_grid">';
+    let h = keyPickerHtml(x);
+    h += '<table id="scale_grid">';
     h += scaleLinksRow;
     for (const row of ROWS) {
       const note = noteLetters[row.degId];
@@ -540,9 +560,17 @@
   }
 
   function bindAutoSubmit() {
-    const handler = function () { gatherAndNavigate(); };
+    const handler = function (e) {
+      // Any key picker outside options_root: sync the master before gathering, so the
+      // form's dropdown carries the new value when gatherAndNavigate reads it.
+      if (e && e.target && e.target.matches && e.target.matches('select[name="k"]')) {
+        const master = document.querySelector('#options_root select[name="k"]');
+        if (master && master !== e.target) master.value = e.target.value;
+      }
+      gatherAndNavigate();
+    };
     document.querySelectorAll(
-      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select'
+      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select, .section_key_picker select[name="k"]'
     ).forEach(function (el) {
       el.addEventListener('change', handler);
     });
@@ -787,6 +815,7 @@
     renderChordGrid(x);
     renderScaleGrid(x);
     renderTuningsTable(x);
+    renderKeyboardKeyPicker(x);
     applyKeyboardColors(x);
 
     bindAutoSubmit();

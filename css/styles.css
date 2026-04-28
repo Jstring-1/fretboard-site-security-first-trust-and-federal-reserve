@@ -299,6 +299,16 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
                                              font-size: 0.85em; cursor: pointer; vertical-align: middle;             }
 .print_color_toggle input                  { margin: 0;                                                              }
 
+/* Mini key picker shown at the top of chord-grid / scale-grid / keyboard sections */
+.section_key_picker                        { display: flex; justify-content: flex-end; padding: 6px 14px 0;
+                                             font-size: 0.9em;                                                       }
+.section_key_picker label                  { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;   }
+.section_key_picker select.inputs          { padding: 4px 10px; border: 1px solid #6f8e9c; border-radius: 5px;
+                                             background: #f7f9fa; font-family: inherit; font-size: 0.95em;
+                                             color: #111222; cursor: pointer;                                        }
+.section_key_picker select.inputs:hover,
+.section_key_picker select.inputs:focus    { border-color: #4d6c79; outline: none;                                   }
+
 /*********************************************************************************************************************
                             FRETBOARD HEADER (left column = source btn + tuning, right = print + key)
 *********************************************************************************************************************/
