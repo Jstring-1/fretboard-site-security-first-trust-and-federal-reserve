@@ -417,7 +417,11 @@ details.collapsible > summary { cursor: default; }
                                              height: 48px; overflow: hidden;
                                              user-select: text; cursor: text;                                         }
 .summary_status > span                     { line-height: 14px; min-height: 14px;                                    }
-.summary_status:empty                      { display: none;                                                            }
+/* The per-section status spans are intentionally empty now that the sticky
+   #status_bar holds the canonical Key/chord/Tuning readout. Keep them
+   visible as flex spacers (display: flex from the parent rule) so the
+   trailing buttons (Key picker, Clear, Print, ?) stay pinned to the right
+   edge of every summary bar. */
 .summary_status .status_key,
 .summary_status .status_tun                { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;          }
 .summary_status .status_sep                { display: none;                                                            }
