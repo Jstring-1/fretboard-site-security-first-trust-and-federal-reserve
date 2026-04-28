@@ -796,8 +796,31 @@
       h += '</tr>';
     }
 
+    // "Load preset into custom" dropdown — sits in the bottom-left empty
+    // cell. Picking a preset populates s1..sN with that tuning's notes
+    // (mapped high → low to match the s1=top-string convention) and
+    // navigates. Doesn't touch x or fcp filters; always shows every
+    // tuning in the database. Visible whether custom tuning is on or
+    // off — users may want to set up a custom tuning before engaging.
+    const _customLoaderRows = Object.keys(TUNINGS).map(function (k) {
+      const t = TUNINGS[k];
+      return { key: k, strs: +t.strs, name: t.name, notes: t.notes };
+    });
+    _customLoaderRows.sort(function (a, b) {
+      if (a.strs !== b.strs) return a.strs - b.strs;
+      if (a.name === b.name) return a.notes.localeCompare(b.notes);
+      return a.name.localeCompare(b.name);
+    });
+    let customLoaderHtml = '<select class="custom_tun_loader" aria-label="Load a preset tuning into custom strings">';
+    customLoaderHtml += '<option value="">Load preset…</option>';
+    for (const t of _customLoaderRows) {
+      const lbl = '(' + t.strs + ') ' + t.name + ' — ' + t.notes;
+      customLoaderHtml += '<option value="' + escAttr(t.key) + '">' + escHtml(lbl) + '</option>';
+    }
+    customLoaderHtml += '</select>';
+
     const fretnumsBot = '<tr id="fretnums">'
-      + '<td id="f_cyo"></td><td id="f0">X</td>'
+      + '<td id="f_cyo">' + customLoaderHtml + '</td><td id="f0">X</td>'
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
@@ -1503,9 +1526,36 @@
       gatherAndNavigate();
     };
     document.querySelectorAll(
-      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select, .section_key_picker select[name="k"]'
+      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select:not(.custom_tun_loader), .section_key_picker select[name="k"]'
     ).forEach(function (el) {
       el.addEventListener('change', handler);
+    });
+  }
+
+  // Wire the custom-tuning preset loader. When the user picks a preset
+  // from this dropdown, we map the preset's notes (low → high in the
+  // data) into s1..sN (high → low — s1 is the topmost / highest string)
+  // and navigate. The main x= tuning is left untouched, so the user can
+  // mix a different preset's notes into a different-string-count main
+  // tuning if they want.
+  function bindCustomTuningLoader() {
+    const sel = document.querySelector('.custom_tun_loader');
+    if (!sel || sel._customLoaderBound) return;
+    sel._customLoaderBound = true;
+    sel.addEventListener('change', function () {
+      const key = sel.value;
+      if (!key || !TUNINGS[key]) return;
+      const preset = TUNINGS[key];
+      const noteList = String(preset.notes).split(/\s+/).reverse(); // high → low
+      const params = new URLSearchParams(window.location.search);
+      // Drop legacy s1..s12 + the compact s= so we can rewrite cleanly.
+      params.delete('s');
+      for (let i = 1; i <= 12; i++) params.delete('s' + i);
+      const sVals = noteList.slice(0, 12).map(function (n) { return urlNote(n); });
+      while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
+      if (sVals.length) params.set('s', sVals.join('.'));
+      const qs = params.toString();
+      navigateTo(qs ? '?' + qs : '?');
     });
   }
 
@@ -2004,6 +2054,7 @@
     renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding
     renderSummaryStatus(x);  // compact key/tuning text in each title bar
     bindAutoSubmit();        // so the change-listener catches them
+    bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
