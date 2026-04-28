@@ -1384,9 +1384,14 @@
     // sync handler keeps every section's key picker at the same value.
     pushSelect(document.querySelector('.section_key_picker select[name="k"]'));
 
+    // y (low/high direction) and z (custom-tuning toggle) are now link-
+    // driven switches, not checkboxes — they live entirely in the URL.
+    // Carry whatever the URL has so changing a string-note dropdown
+    // doesn't accidentally drop "z=y" and disengage custom tuning.
+    const _curParams = new URLSearchParams(window.location.search);
     ['y', 'z'].forEach(function (name) {
-      const cb = opt.querySelector('input[type="checkbox"][name="' + name + '"]');
-      if (cb && cb.checked) parts.push(name + '=' + cb.value);
+      const v = _curParams.get(name);
+      if (v === 'y') parts.push(name + '=y');
     });
 
     // Highlight pills are link-driven; carry whatever's currently in the URL
