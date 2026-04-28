@@ -504,7 +504,16 @@
         title:    state.title
       };
       var BLANK_PER_LINE = 3;
-      var BLANK_SYSTEMS  = 5;
+      // System count per string count, tuned so each string-count fills
+      // exactly one landscape letter page. Fewer strings = taller systems
+      // fit fewer; more strings = each system is taller so fewer fit.
+      var BLANK_SYSTEMS_BY_STRINGS = {
+        4: 6, 5: 6, 6: 6,
+        7: 5, 8: 5,
+        9: 4, 10: 4,
+        11: 3, 12: 2
+      };
+      var BLANK_SYSTEMS = BLANK_SYSTEMS_BY_STRINGS[state.strings] || 5;
       state.cells    = {};
       state.subdiv   = 1;
       state.perLine  = BLANK_PER_LINE;
