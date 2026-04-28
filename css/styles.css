@@ -687,8 +687,9 @@ select option                              { color: var(--text); background: var
 @media print { #quick_picks, #kb_quick_picks, #kb_picks_root { display: none !important; } }
 
 /* ---------- Tuning picker (sortable / filterable popover) ---------- */
-.tun_picker                                { position: relative; display: inline-block; flex: 1 1 auto;
-                                             min-width: 0; max-width: 100%;                                          }
+.tun_picker                                { position: relative; display: inline-block;
+                                             flex: 0 1 auto;
+                                             min-width: 320px; width: min(640px, 80vw); max-width: 100%;             }
 .tun_picker_btn                            { display: flex; width: 100%; align-items: center; gap: 8px;
                                              padding: 4px 10px; min-height: 30px; cursor: pointer; text-align: left;
                                              background: var(--bg-elevated); color: var(--accent);
