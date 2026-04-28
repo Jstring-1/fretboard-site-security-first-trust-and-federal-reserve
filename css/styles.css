@@ -705,6 +705,12 @@ select option                              { color: var(--text); background: var
 
 @media print { .tun_pop, .tun_picker_btn { display: none !important; } }
 
+/* The tunings list lives nested inside the Fretboard section; give it some
+   breathing room so the Fretboard section's bottom edge doesn't kiss the
+   nested details when collapsed, and so the open list has room to breathe
+   above the next top-level section. */
+#section_5.nested_section                  { margin: 14px 0 22px;                                                    }
+
 /* Top 4 keyboard rows (Octaves, Steel Gauges, 10-band EQ, Frequency Hz):
    force dark text so the numbers stay readable on the colored cell bgs the
    inline ritz CSS sets up. Higher specificity beats those .ritz .waffle
