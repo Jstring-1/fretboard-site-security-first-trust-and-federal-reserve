@@ -131,11 +131,20 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   #tab_paper                                 { background: #fff !important; padding: 0 !important; }
   .tab_title_print                           { color: #000 !important; }
   .tab_subtitle_print                        { color: #555 !important; }
-  .tab_system                                { border-color: #000 !important; page-break-inside: avoid; }
-  .tab_row::before                           { border-top-color: #000 !important; }
-  .tab_label                                 { color: #000 !important; background: #fff !important; }
-  .tab_cell.barline                          { border-left-color: #000 !important; }
-  .tab_cell input                            { background: #fff !important; color: #000 !important;
-                                              -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .tab_measure_numbers                       { color: #000 !important; }
+  /* Tighten everything for print so more systems fit on a letter page. */
+  #tab_grid                                  { gap: 14px !important; }
+  .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
+                                              padding: 8px 0 4px !important;                                          }
+  .tab_row                                   { height: 16px !important;                                                }
+  .tab_cells                                 { height: 16px !important;                                                }
+  .tab_row::before                           { border-top-color: #000 !important;                                      }
+  .tab_label                                 { color: #000 !important; background: #fff !important;                    }
+  .tab_cell.barline                          { border-left-color: #000 !important;                                     }
+  /* Empty cells stay transparent in print so the staff line shows through.
+     Filled cells get an opaque white bg so the digit punches the line. */
+  .tab_cell input                            { background: transparent !important; color: #000 !important;
+                                              -webkit-print-color-adjust: exact; print-color-adjust: exact;            }
+  .tab_cell input:not(:placeholder-shown)    { background: #fff !important;                                            }
+  .tab_measure_numbers                       { color: #000 !important; height: 10px !important;
+                                              margin-bottom: 2px !important;                                           }
 }
