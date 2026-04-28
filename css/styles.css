@@ -504,6 +504,9 @@ select option                              { color: var(--text); background: var
 
 /* Title: tighten the tagline */
 #section_1 h1                              { letter-spacing: -0.02em;                                                }
+#build_num                                 { text-align: center; font: 400 0.7em var(--font);
+                                             color: var(--muted-dim); letter-spacing: 0.06em;
+                                             margin: -2px 0 6px; opacity: 0.85;                                       }
 
 /* Blurb at the bottom — sits on the light page bg, needs dark text */
 #blurb                                     { font-size: 0.78em; color: #555555; opacity: 0.85; margin: 12px 0;       }
