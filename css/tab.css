@@ -173,9 +173,15 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   /* Empty cells stay transparent in print so the staff line shows through.
      Filled cells get an opaque white bg so the digit punches the line. */
   .tab_cell input                            { background: transparent !important; color: #000 !important;
+                                              height: 12px !important; line-height: 12px !important;
                                               font-size: 0.7em !important;
                                               -webkit-print-color-adjust: exact; print-color-adjust: exact;            }
   .tab_cell input:not(:placeholder-shown)    { background: #fff !important;                                            }
+  /* Force the editable inputs to match the print row height (12px). On
+     screen the inputs are 18-20px tall — leaving them at that size in
+     print made each input overflow its 12px row by a few pixels both up
+     and down, smearing notes onto adjacent strings. */
+  input.tab_label_input                      { height: 12px !important; line-height: 12px !important;                  }
   /* Hide measure numbers in print regardless — they eat ~10px per system,
      which is the difference between 5 and 6 systems per page at 12 strings. */
   .tab_measure_numbers                       { display: none !important;                                              }
