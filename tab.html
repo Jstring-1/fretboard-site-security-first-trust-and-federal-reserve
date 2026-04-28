@@ -50,9 +50,10 @@
         </select>
       </label>
 
-      <label class="tab_ctl">
+      <label class="tab_ctl tab_ctl_tuning">
         <span>Tuning</span>
         <select id="ctl_tuning"></select>
+        <small id="ctl_tuning_count" class="tab_ctl_hint"></small>
       </label>
 
       <label class="tab_ctl">
@@ -86,14 +87,18 @@
       <button type="button" id="btn_low_high" class="ctl_btn" title="Reverse string order (highest at top)">⇅ flip strings</button>
     </div>
 
-    <p class="tab_help">
-      Type a fret number (0–99) or a symbol (<code>h</code> hammer, <code>p</code> pull,
-      <code>/</code> slide up, <code>\\</code> slide down, <code>~</code> vibrato,
-      <code>x</code> mute) into a cell. <code>Tab</code> moves right, <code>Enter</code>
-      moves down, arrow keys go any direction. <em>Print</em> outputs whatever you've
-      written; <em>Print&nbsp;blank</em> ignores the current grid and prints a full sheet
-      of empty staves at the chosen string count for handwriting.
-    </p>
+    <ul class="tab_help">
+      <li>Type a fret number (0–99) into a cell.</li>
+      <li>Symbols: <code>h</code> hammer, <code>p</code> pull, <code>/</code> slide up,
+          <code>\\</code> slide down, <code>~</code> vibrato, <code>x</code> mute.</li>
+      <li>Cell navigation: <code>Tab</code> moves right, <code>Enter</code> moves down,
+          arrow keys go any direction.</li>
+      <li>String labels (left edge) are editable — type any note, or press
+          <code>↑</code>&nbsp;/&nbsp;<code>↓</code> to cycle through the 12 chromatic notes.</li>
+      <li><em>Print</em> outputs whatever you've written.</li>
+      <li><em>Print&nbsp;blank</em> ignores the current grid and prints a full sheet of
+          empty staves at the chosen string count for handwriting.</li>
+    </ul>
 
     <div id="tab_paper">
       <div id="tab_title_block">

@@ -13,25 +13,27 @@
 #page_sub a:hover                           { text-decoration: underline; }
 
 /* ---------- Controls bar ----------
-   Each field is a label-on-top stack with a fixed total height so rows align
-   vertically even when the label wraps to two lines. Buttons sit on the same
-   baseline as the inputs by giving them the same total height. */
+   Bottom-aligned flex row. Labels are forced to a single line so each
+   .tab_ctl is the same height; align-items: flex-end then makes every input
+   sit on the same baseline regardless of label width. */
 .tab_controls                               { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end;
                                               padding: 14px 18px; background: var(--surface);
                                               border-bottom: 1px solid #222;                                          }
-.tab_ctl                                    { display: flex; flex-direction: column; justify-content: flex-end;
-                                              gap: 4px; height: 56px;
+.tab_ctl                                    { display: flex; flex-direction: column; gap: 4px;
                                               font: 400 0.78em var(--font); color: var(--muted);                     }
 .tab_ctl span                               { letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.95em;
-                                              line-height: 1.1; min-height: 22px; display: flex; align-items: flex-end; }
+                                              line-height: 1.2; white-space: nowrap;                                  }
 .tab_ctl input,
-.tab_ctl select                             { font: 400 0.95em var(--font); padding: 4px 6px; min-width: 70px;
+.tab_ctl select                             { font: 400 0.95em var(--font); padding: 0 6px;
                                               height: 28px; box-sizing: border-box;
                                               background: var(--bg-elevated); color: var(--accent);
                                               border: 1px solid #2a2a2a; border-radius: 3px;                          }
 .tab_ctl input#ctl_title                    { min-width: 220px;                                                       }
 .tab_ctl input:focus,
 .tab_ctl select:focus                       { outline: none; border-color: var(--accent-hi);                          }
+.tab_ctl_hint                               { font: 400 0.7em var(--font); color: var(--muted-dim);
+                                              letter-spacing: 0.04em; line-height: 1; margin-top: 2px; min-height: 0; }
+.tab_ctl_tuning                             { min-width: 240px;                                                       }
 .ctl_btn                                    { font: 400 0.85em var(--font); padding: 0 12px;
                                               height: 28px; box-sizing: border-box; align-self: flex-end;
                                               background: var(--bg-elevated); color: var(--accent);
@@ -90,9 +92,14 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
 #tab_paper.blank .tab_cell input            { color: transparent !important; background: transparent !important; }
 
 /* ---------- Helper / footnote ---------- */
-.tab_help                                   { margin: 18px 4px 0; font: 400 0.8em var(--font); color: var(--muted); line-height: 1.5; }
+.tab_help                                   { margin: 12px 18px 18px; padding: 0 0 0 18px;
+                                              font: 400 0.85em var(--font); color: var(--muted);
+                                              line-height: 1.55; list-style: disc;                                    }
+.tab_help li                                { margin: 2px 0;                                                           }
 .tab_help code                              { background: var(--bg-elevated); color: var(--accent-hi);
-                                              padding: 0 4px; border-radius: 2px; font: 600 0.95em Consolas, Menlo, monospace; }
+                                              padding: 0 4px; border-radius: 2px;
+                                              font: 600 0.95em Consolas, Menlo, monospace;                            }
+.tab_help em                                { color: var(--accent); font-style: normal; font-weight: 600;             }
 
 /* ---------- Print ---------- */
 @media print {

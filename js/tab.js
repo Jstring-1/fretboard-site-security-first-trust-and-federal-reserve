@@ -44,11 +44,20 @@
   };
 
   // ---- Tuning helpers ------------------------------------------------------
+  // Uses loose-equality on `strs` so the filter works whether data.js stores
+  // it as a number or string. Returns every matching preset, sorted by name
+  // then by notes string for stable ordering.
   function tuningsForStringCount(n) {
+    var nNum = +n;
     var out = [];
     for (var key in TUNINGS) {
-      if (TUNINGS[key] && TUNINGS[key].strs === n) {
-        out.push({ key: key, name: TUNINGS[key].name, notes: TUNINGS[key].notes });
+      if (TUNINGS[key] && +TUNINGS[key].strs === nNum) {
+        out.push({
+          key:   key,
+          name:  TUNINGS[key].name  || '',
+          notes: TUNINGS[key].notes || '',
+          info:  TUNINGS[key].info  || ''
+        });
       }
     }
     out.sort(function (a, b) {
@@ -61,18 +70,25 @@
   function populateTuningSelect() {
     var n = state.strings;
     var list = tuningsForStringCount(n);
-    var html = '<option value="">(custom — blank labels)</option>';
+    var html = '<option value="">(custom — write your own)</option>';
     for (var i = 0; i < list.length; i++) {
       var t = list[i];
-      var sel = (t.key === state.tuning) ? ' selected' : '';
-      html += '<option value="' + escAttr(t.key) + '"' + sel + '>'
-            + escHtml(t.name) + ' &mdash; ' + escHtml(t.notes) + '</option>';
+      var label = t.name + ' — ' + t.notes + (t.info ? '  (' + t.info + ')' : '');
+      html += '<option value="' + escAttr(t.key) + '">' + escHtml(label) + '</option>';
     }
     ctlTuning.innerHTML = html;
-    if (state.tuning && (!TUNINGS[state.tuning] || TUNINGS[state.tuning].strs !== n)) {
+    if (state.tuning && (!TUNINGS[state.tuning] || +TUNINGS[state.tuning].strs !== +n)) {
       state.tuning = '';
     }
     ctlTuning.value = state.tuning;
+    // Show the user how many presets the dropdown contains for the chosen
+    // string count, so it's obvious when only "(custom)" is offered.
+    var hint = document.getElementById('ctl_tuning_count');
+    if (hint) {
+      hint.textContent = list.length
+        ? '(' + list.length + ' preset' + (list.length === 1 ? '' : 's') + ' for ' + n + ' strings)'
+        : '(no presets — pick "custom" and write your own)';
+    }
     syncStateNotesFromTuning();
   }
 
@@ -125,7 +141,12 @@
       var measuresThisSystem = lastMeasure - firstMeasure;
       var totalCells = measuresThisSystem * cellsPerMeasure;
       var cellsTemplate = 'repeat(' + totalCells + ', minmax(18px, 1fr))';
-      var rowTemplate   = '36px ' + cellsTemplate;
+      // Outer row: just label-column + everything-else-column. The inner
+      // .tab_cells grid then fans the cells across the full 1fr space.
+      // (Earlier this used the full cellsTemplate at the outer level which
+      // gave us 33 grid slots but only 2 children — so 31 of them ended up
+      // empty and the right half of every system rendered as bare lines.)
+      var rowTemplate   = '36px 1fr';
       var measureGridTemplate = 'repeat(' + measuresThisSystem + ', 1fr)';
 
       html += '<div class="tab_system">';
@@ -169,11 +190,52 @@
     // wire input handlers (delegated)
     grid.querySelectorAll('input.tab_label_input').forEach(function (inp) {
       inp.addEventListener('input', onLabelInput);
+      inp.addEventListener('keydown', onLabelKey);
     });
     grid.querySelectorAll('input:not(.tab_label_input)').forEach(function (inp) {
       inp.addEventListener('input', onCellInput);
       inp.addEventListener('keydown', onCellKey);
     });
+  }
+
+  // The 12 chromatic notes, used by the arrow-cycle on tuning-label inputs.
+  var ALLNOTES = (DATA.allnotes && DATA.allnotes.length === 12)
+    ? DATA.allnotes.slice()
+    : ['A','A♯','B','C','C♯','D','D♯','E','F','F♯','G','G♯'];
+
+  // Normalise whatever a user has typed into an exact ALLNOTES entry, or
+  // return null if it's not a real note. Accepts ascii (#, b) and unicode
+  // (♯, ♭) accidentals interchangeably.
+  function _canonNote(s) {
+    if (!s) return null;
+    var v = String(s).trim()
+      .replace(/^([a-g])/, function (m) { return m.toUpperCase(); })
+      .replace(/#/g, '♯')
+      .replace(/([A-G])b\b/g, '$1♭')
+      .replace(/([A-G])b$/, '$1♭');
+    // Convert flats to enharmonic sharps so we land on an ALLNOTES key
+    var FLAT_TO_SHARP = {
+      'A♭': 'G♯', 'B♭': 'A♯', 'C♭': 'B', 'D♭': 'C♯', 'E♭': 'D♯', 'F♭': 'E', 'G♭': 'F♯'
+    };
+    if (FLAT_TO_SHARP[v]) v = FLAT_TO_SHARP[v];
+    return ALLNOTES.indexOf(v) === -1 ? null : v;
+  }
+
+  // ↑ / ↓ on a tuning-label input cycles through the 12 chromatic notes.
+  // Tab / Enter / arrow-Left/Right defer to the browser default so the user
+  // can move between rows naturally.
+  function onLabelKey(e) {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    var inp = e.target;
+    var r = +inp.getAttribute('data-r');
+    var cur = _canonNote(inp.value);
+    var idx = cur ? ALLNOTES.indexOf(cur) : -1;
+    var step = (e.key === 'ArrowUp') ? 1 : -1;
+    var next = ALLNOTES[((idx === -1 ? 0 : idx + step) + ALLNOTES.length) % ALLNOTES.length];
+    e.preventDefault();
+    inp.value = next;
+    state.notes[r] = next;
+    saveLocal();
   }
 
   // Editable string-label input. Supports plain notes (A, F#, Bb, C♯, D♭).
@@ -383,9 +445,13 @@
 
     btnPrintBl.addEventListener('click', function (e) {
       e.preventDefault();
-      // "Print blank" prints a full page of empty tab staves at the current
-      // string count, regardless of the current notes/measures. We snapshot
-      // state, stamp a generous blank layout, render, print, then restore.
+      // Blank-print formatting modelled on the user's reference layout:
+      //   - no title (handwriting space at top instead)
+      //   - 3 measures per system, ~5 systems on a letter page
+      //   - one cell per beat (subdiv=1) so only measure bar-lines show,
+      //     no eighth-note tick marks cluttering the staves
+      //   - string labels show the chosen tuning's notes if a preset is
+      //     selected; otherwise the labels stay blank for handwriting
       const snap = {
         cells:    state.cells,
         measures: state.measures,
@@ -394,18 +460,15 @@
         perLine:  state.perLine,
         title:    state.title
       };
-      // ~6 systems of 4 measures gives a clean letter-page sheet at the
-      // default per-line. Honour the user's perLine + beats; only force
-      // measure count + clear cells.
+      var BLANK_PER_LINE = 3;
+      var BLANK_SYSTEMS  = 5;
       state.cells    = {};
-      state.subdiv   = 1;                            // one cell per beat is plenty for handwriting
-      state.measures = (state.perLine || 4) * 6;     // ~6 systems
-      state.title    = '';                           // blank sheet — no title
+      state.subdiv   = 1;
+      state.perLine  = BLANK_PER_LINE;
+      state.measures = BLANK_PER_LINE * BLANK_SYSTEMS;
+      state.title    = '';
       titlePrint.textContent = '';
-      subPrint.textContent = state.strings + '-string blank tab —  ' +
-        (state.tuning && TUNINGS[state.tuning]
-          ? (TUNINGS[state.tuning].name + '  ' + TUNINGS[state.tuning].notes)
-          : '');
+      subPrint.textContent = '';
       paper.classList.add('blank');
       render();
       window.print();
