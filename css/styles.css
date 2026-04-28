@@ -336,6 +336,17 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
 .cyo_off                                   { background-color: #6f8e9c !important;                                   }
 .cyo_on                                    { background-color: #6aa84f !important;                                   }
 .cyo_switch:hover                          { filter: brightness(1.12);                                                }
+
+/* Tuning-direction switch sits just left of the tuning dropdown in the form */
+.y_switch                                  { display: inline-flex; align-items: center; padding: 5px 10px;
+                                             margin-right: 8px; border-radius: 5px;
+                                             font: 600 0.85em/1 inherit; letter-spacing: 0.04em;
+                                             text-decoration: none; color: #fff !important;
+                                             border: 1px solid transparent; cursor: pointer;                          }
+.y_off                                     { background-color: #6f8e9c;                                                }
+.y_on                                      { background-color: #6aa84f;                                                }
+.y_switch:hover                            { filter: brightness(1.12); border-color: rgba(255,255,255,0.4);            }
+.opt_row_main                              { gap: 0;                                                                  }
 details.collapsible > summary:hover        { background: linear-gradient(180deg, #a8c2cb, #95b3bd);                  }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }

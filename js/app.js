@@ -246,8 +246,20 @@
     const rev = (x.y === 'y') ? 'rev_' : '';
     let h = '<div id="tunings_drop">';
 
-    // Row 1: tuning selector
+    // y toggle (Low→High vs High→Low) — bg color indicates state
+    const yState = x.y === 'y' ? 'on' : 'off';
+    const yToggleParams = new URLSearchParams(window.location.search);
+    if (x.y !== 'y') yToggleParams.set('y', 'y'); else yToggleParams.delete('y');
+    const yToggleQs = yToggleParams.toString();
+    const yToggleHref = yToggleQs ? '?' + yToggleQs : '?';
+    const yLabel = x.y === 'y' ? 'H→L' : 'L→H';
+    const yTitle = x.y === 'y'
+      ? 'Tunings displayed High → Low. Click to flip to Low → High.'
+      : 'Tunings displayed Low → High. Click to flip to High → Low.';
+
+    // Row 1: y switch + tuning selector
     h += '<div class="opt_row opt_row_main">';
+    h += '<a href="' + escHtml(yToggleHref) + '" class="y_switch y_' + yState + '" title="' + escHtml(yTitle) + '" aria-label="Toggle tuning direction">' + yLabel + '</a>';
     h += '<select class="inputs" name="x">';
     h += '<option value="' + escHtml(x.x) + '">(' + x.strs + '-string) ' + escHtml(x.name) + ' — ' + escHtml(x[rev + 'notes']) + ' — (' + escHtml(x[rev + 'dgs']) + ')</option>';
     for (const a in TUNINGS) {
@@ -257,9 +269,8 @@
     h += '</select>';
     h += '</div>';
 
-    // Row 2: toggles + key + clear
+    // Row 2: key + clear
     h += '<div class="opt_row opt_row_toggles">';
-    h += '<label><input type="checkbox" class="chxbx" name="y" value="y"' + (x.y === 'y' ? ' checked="checked"' : '') + '/> Display ' + escHtml(x[rev + 'yy']) + '</label>';
     h += '<label>Key: <select class="inputs" name="k">';
     h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
     for (const a of ALLNOTES) {
@@ -1180,9 +1191,9 @@
     applyKeyboardColors(x);
     applyCollapseFromUrl();
 
-    bindAutoSubmit();
+    renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding
+    bindAutoSubmit();        // so the change-listener catches them
     applyPrintColors();
-    renderSummaryExtras(x);
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
     document.querySelectorAll('table.sortable').forEach(function (t) {
