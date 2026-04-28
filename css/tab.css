@@ -140,22 +140,22 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   #tab_paper                                 { background: #fff !important; padding: 0 !important;
                                               margin: 0 !important; width: 100% !important;                          }
   .tab_title_print                           { color: #000 !important; font-size: 0.9em !important; margin: 0 !important; }
-  .tab_subtitle_print                        { color: #555 !important; font-size: 0.7em !important; margin: 0 0 2px !important; }
-  /* Density target: fit several 12-string systems on one landscape letter
-     page while keeping enough air between staves that they read clearly. */
-  #tab_grid                                  { gap: 18px !important;                                                  }
+  .tab_subtitle_print                        { display: none !important;                                              }
+  /* Roomy enough between staves that the systems read as discrete blocks,
+     row height a little taller so the digits don't kiss adjacent strings. */
+  #tab_grid                                  { gap: 36px !important;                                                  }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
                                               padding: 2px 0 2px !important;                                          }
-  .tab_row                                   { height: 9px !important;                                                 }
-  .tab_cells                                 { height: 9px !important;                                                 }
+  .tab_row                                   { height: 12px !important;                                                }
+  .tab_cells                                 { height: 12px !important;                                                }
   .tab_row::before                           { border-top-color: #000 !important;                                      }
   .tab_label                                 { color: #000 !important; background: #fff !important;
-                                              font-size: 0.65em !important;                                           }
+                                              font-size: 0.7em !important;                                            }
   .tab_cell.barline                          { border-left-color: #000 !important;                                     }
   /* Empty cells stay transparent in print so the staff line shows through.
      Filled cells get an opaque white bg so the digit punches the line. */
   .tab_cell input                            { background: transparent !important; color: #000 !important;
-                                              font-size: 0.65em !important;
+                                              font-size: 0.7em !important;
                                               -webkit-print-color-adjust: exact; print-color-adjust: exact;            }
   .tab_cell input:not(:placeholder-shown)    { background: #fff !important;                                            }
   /* Hide measure numbers in print regardless — they eat ~10px per system,

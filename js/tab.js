@@ -515,6 +515,27 @@
       _printRouted(snap);
     });
 
+    // Browsers strip placeholder text from <input> elements when printing,
+    // so empty string labels would print as blank cells. Before each print
+    // pass, swap empty label values for "—" (the same character used as
+    // placeholder), then restore on afterprint.
+    window.addEventListener('beforeprint', function () {
+      document.querySelectorAll('input.tab_label_input').forEach(function (inp) {
+        if (!inp.value) {
+          inp.setAttribute('data-print-restore', '1');
+          inp.value = '—';
+        }
+      });
+    });
+    window.addEventListener('afterprint', function () {
+      document.querySelectorAll('input.tab_label_input').forEach(function (inp) {
+        if (inp.getAttribute('data-print-restore') === '1') {
+          inp.value = '';
+          inp.removeAttribute('data-print-restore');
+        }
+      });
+    });
+
     if (btnShare) {
       btnShare.addEventListener('click', function (e) {
         e.preventDefault();
