@@ -890,6 +890,7 @@ select option                              { color: var(--text); background: var
 .summary_tuning .st_notes                  { color: var(--text);                                                       }
 .summary_tuning .st_dgs                    { color: var(--muted);                                                      }
 .summary_tuning .st_sep                    { color: var(--muted-dim);                                                  }
+.summary_tuning .st_chord                  { color: var(--accent-hi); font-weight: 600;                                }
 /* "custom" pill — only renders when z=y, so the user sees at a glance
    that the custom tuning path is active. */
 .summary_tuning .st_custom_pill            { display: inline-flex; align-items: center;

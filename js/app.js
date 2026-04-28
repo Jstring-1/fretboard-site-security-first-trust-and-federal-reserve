@@ -896,9 +896,18 @@
     const tuningName = isCustom ? 'Custom' : x.name;
     const notesStr = isCustom ? x[rev + 's']    : x[rev + 'notes'];
     const dgsStr   = isCustom ? x[rev + 'sdgs'] : x[rev + 'dgs'];
+    // Highlighted chord/scale name, stripped of the "Highlighted: " prefix
+    // and the trailing "(1 3 5)" degree readout that hl_name carries.
+    const chordName = x.hl_n
+      ? x.hl_name.replace(/^Highlighted:\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim()
+      : '';
     const tunEl = document.getElementById('fretboard_summary_tuning');
     if (tunEl) {
       let html = '';
+      if (chordName) {
+        html += '<span class="st_chord">' + escHtml(chordName) + '</span>';
+        html += '<span class="st_sep" aria-hidden="true">·</span>';
+      }
       html += '<span class="st_lab">Tuning</span>';
       html += '<span class="st_val">' + escHtml(tuningName) + '</span>';
       if (notesStr) {
