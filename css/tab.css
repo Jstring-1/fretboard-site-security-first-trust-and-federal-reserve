@@ -127,25 +127,42 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   details.collapsible > summary              { background: #fff !important; color: #000 !important;
                                               border: none !important; height: auto !important;
                                               padding: 0 !important; pointer-events: none; }
-  details.collapsible > summary .summary_title { font: 700 1.1em var(--font) !important; color: #000 !important;
-                                              text-align: center; width: 100%; }
-  #tab_paper                                 { background: #fff !important; padding: 0 !important; }
-  .tab_title_print                           { color: #000 !important; }
-  .tab_subtitle_print                        { color: #555 !important; }
+  details.collapsible > summary .summary_title { font: 700 1.05em var(--font) !important; color: #000 !important;
+                                              text-align: center; width: 100%; margin: 0 0 4px !important;            }
+  /* Width safety: clamp every level of the tab DOM to the printable width
+     and disable content-box border math, so the right edge of the staves
+     can't slip past the page margin. */
+  #section_8, #tab_section_root,
+  #tab_paper, #tab_grid,
+  .tab_system, .tab_row, .tab_cells          { box-sizing: border-box !important;
+                                              max-width: 100% !important; min-width: 0 !important;
+                                              overflow: visible !important;                                          }
+  #tab_paper                                 { background: #fff !important; padding: 0 !important;
+                                              margin: 0 !important; width: 100% !important;                          }
+  .tab_title_print                           { color: #000 !important; font-size: 1em !important; margin: 0 !important; }
+  .tab_subtitle_print                        { color: #555 !important; font-size: 0.8em !important; margin: 0 0 4px !important; }
   /* Tighten everything for print so more systems fit on a letter page. */
-  #tab_grid                                  { gap: 14px !important; }
+  #tab_grid                                  { gap: 10px !important;                                                  }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
-                                              padding: 8px 0 4px !important;                                          }
-  .tab_row                                   { height: 16px !important;                                                }
-  .tab_cells                                 { height: 16px !important;                                                }
+                                              padding: 6px 0 2px !important;                                          }
+  .tab_row                                   { height: 14px !important;                                                }
+  .tab_cells                                 { height: 14px !important;                                                }
   .tab_row::before                           { border-top-color: #000 !important;                                      }
-  .tab_label                                 { color: #000 !important; background: #fff !important;                    }
+  .tab_label                                 { color: #000 !important; background: #fff !important;
+                                              font-size: 0.75em !important;                                           }
   .tab_cell.barline                          { border-left-color: #000 !important;                                     }
   /* Empty cells stay transparent in print so the staff line shows through.
      Filled cells get an opaque white bg so the digit punches the line. */
   .tab_cell input                            { background: transparent !important; color: #000 !important;
+                                              font-size: 0.75em !important;
                                               -webkit-print-color-adjust: exact; print-color-adjust: exact;            }
   .tab_cell input:not(:placeholder-shown)    { background: #fff !important;                                            }
-  .tab_measure_numbers                       { color: #000 !important; height: 10px !important;
-                                              margin-bottom: 2px !important;                                           }
+  .tab_measure_numbers                       { color: #000 !important; height: 9px !important;
+                                              margin-bottom: 2px !important; font-size: 0.65em !important;            }
+
+  /* Print-blank: drop the measure bar-lines AND the measure-number row so
+     the user has a clean handwriting sheet — they can pencil in their own
+     bar-lines / numbering wherever they want them. */
+  #tab_paper.blank .tab_cell.barline         { border-left: 0 !important;                                              }
+  #tab_paper.blank .tab_measure_numbers      { display: none !important;                                              }
 }
