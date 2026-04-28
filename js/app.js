@@ -203,6 +203,17 @@
     if (x.z === 'y') {
       x.d_name = 'Custom';
       x.d_notes = x.s;
+      // When custom tuning is engaged, the fretboard's string count
+      // follows the populated s1..sN (consecutive from s1) rather than
+      // the main tuning's strs. That lets a 6-string main coexist with,
+      // say, an 8-string custom — toggling z flips between the two
+      // string counts.
+      let customStrs = 0;
+      for (let i = 1; i <= 12; i++) {
+        if (x['s' + i] && KEYS.indexOf(x['s' + i]) !== -1) customStrs = i;
+        else break;
+      }
+      if (customStrs > 0) x.strs = customStrs;
     } else {
       x.d_name = x.name;
       x.d_notes = x.notes;
@@ -876,16 +887,32 @@
   }
 
   // Tuning indicator lives next to the Fretboard section title — that's
-  // the only place it's relevant. Key shows up in every section's header
-  // (key picker), chord/scale shows up in the keyboard + fretboard sections
-  // (highlighted chip), so we don't echo any of that here.
+  // the only place it's relevant. Shows tuning name + notes + degrees; a
+  // "(custom)" pill indicates when z=y so users can see the custom path
+  // is engaged at a glance.
   function renderSummaryStatus(x) {
-    const tuningName = (x.z === 'y') ? 'Custom' : x.name;
+    const rev = (x.y === 'y') ? 'rev_' : '';
+    const isCustom = (x.z === 'y');
+    const tuningName = isCustom ? 'Custom' : x.name;
+    const notesStr = isCustom ? x[rev + 's']    : x[rev + 'notes'];
+    const dgsStr   = isCustom ? x[rev + 'sdgs'] : x[rev + 'dgs'];
     const tunEl = document.getElementById('fretboard_summary_tuning');
     if (tunEl) {
-      tunEl.innerHTML =
-        '<span class="st_lab">Tuning</span>' +
-        '<span class="st_val">' + escHtml(tuningName) + '</span>';
+      let html = '';
+      html += '<span class="st_lab">Tuning</span>';
+      html += '<span class="st_val">' + escHtml(tuningName) + '</span>';
+      if (notesStr) {
+        html += '<span class="st_sep" aria-hidden="true">·</span>';
+        html += '<span class="st_notes">' + escHtml(String(notesStr).trim()) + '</span>';
+      }
+      if (dgsStr) {
+        html += '<span class="st_sep" aria-hidden="true">·</span>';
+        html += '<span class="st_dgs">(' + escHtml(String(dgsStr).trim()) + ')</span>';
+      }
+      if (isCustom) {
+        html += '<span class="st_custom_pill" aria-label="custom tuning engaged">custom</span>';
+      }
+      tunEl.innerHTML = html;
     }
     // Per-section .summary_status spans stay in the markup as flex spacers
     // (their `flex: 1` rule keeps the title left and buttons right) but no

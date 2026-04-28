@@ -358,10 +358,26 @@ body.print-colors .ritz .waffle td {
                             VIEW SOURCE MODAL
 *********************************************************************************************************************/
 #view_source_modal { position:fixed; inset:0; z-index:9999; }
-#view_source_modal .vs_backdrop { position:absolute; inset:0; background:rgba(0,0,0,.65); }
-#view_source_modal .vs_panel    { position:absolute; top:5vh; left:5vw; right:5vw; bottom:5vh; background:#fff; color:#111; border-radius:6px; box-shadow:0 12px 48px rgba(0,0,0,.5); display:flex; flex-direction:column; overflow:hidden; }
-#view_source_modal .vs_close    { position:absolute; top:6px; right:10px; width:32px; height:32px; font-size:24px; line-height:1; background:transparent; border:none; cursor:pointer; color:#111; z-index:1; }
-#view_source_modal .vs_pre      { margin:0; padding:36px 16px 16px 16px; flex:1; overflow:auto; white-space:pre-wrap; word-break:break-word; font-family:Consolas,Menlo,monospace; font-size:.85em; font-weight:normal; color:#111; background:#fff; text-align:left; }
+#view_source_modal .vs_backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.7); }
+/* Help / about modal — dark theme, sized to its content (capped at
+   720x80vh), centred on screen. The previous full-screen white panel
+   felt out of place against the rest of the dark UI. */
+#view_source_modal .vs_panel    { position: absolute; top: 50%; left: 50%;
+                                  transform: translate(-50%, -50%);
+                                  width: min(720px, 92vw); max-height: 80vh;
+                                  background: var(--surface); color: var(--accent);
+                                  border: 1px solid #2a2a2a; border-radius: 8px;
+                                  box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+                                  display: flex; flex-direction: column; overflow: hidden; }
+#view_source_modal .vs_close    { position: absolute; top: 4px; right: 8px; width: 28px; height: 28px;
+                                  font-size: 22px; line-height: 1; background: transparent;
+                                  border: none; cursor: pointer; color: var(--muted); z-index: 1; }
+#view_source_modal .vs_close:hover { color: var(--accent-hi); }
+#view_source_modal .vs_pre      { margin: 0; padding: 28px 22px 18px 22px; flex: 1; overflow: auto;
+                                  white-space: pre-wrap; word-break: break-word;
+                                  font-family: Consolas, Menlo, monospace;
+                                  font-size: 0.85em; font-weight: normal;
+                                  color: var(--accent); background: var(--surface); text-align: left; }
 @media print { #view_source_modal { display:none !important; } }
 
 /*********************************************************************************************************************
@@ -871,6 +887,17 @@ select option                              { color: var(--text); background: var
                                              text-transform: uppercase; letter-spacing: 0.06em;
                                              font-size: 0.85em;                                                       }
 .summary_tuning .st_val                    { color: var(--accent); font-weight: 600;                                  }
+.summary_tuning .st_notes                  { color: var(--text);                                                       }
+.summary_tuning .st_dgs                    { color: var(--muted);                                                      }
+.summary_tuning .st_sep                    { color: var(--muted-dim);                                                  }
+/* "custom" pill — only renders when z=y, so the user sees at a glance
+   that the custom tuning path is active. */
+.summary_tuning .st_custom_pill            { display: inline-flex; align-items: center;
+                                             margin-left: 6px; padding: 1px 8px;
+                                             background: var(--accent-hi); color: #000;
+                                             border-radius: 999px; font-size: 0.7em;
+                                             font-weight: 700; letter-spacing: 0.06em;
+                                             text-transform: uppercase;                                               }
 .summary_tuning:empty                      { display: none;                                                            }
 
 /* The tunings list lives nested inside the Fretboard section; pad it in
