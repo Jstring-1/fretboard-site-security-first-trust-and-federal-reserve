@@ -121,7 +121,8 @@ a:hover                                    {  color:var(--accent-hi);           
                                               padding: 4px 6px; font: 400 0.9em var(--font);
                                               background: var(--bg-elevated); color: var(--accent);
                                               border: 1px solid #2a2a2a; border-radius: 3px;
-                                              cursor: pointer;                                                         }
+                                              cursor: pointer; text-align: center;
+                                              -webkit-appearance: none; -moz-appearance: none; appearance: none;       }
 .custom_tun_loader:hover                   {  border-color: var(--accent-hi);                                          }
 .custom_tun_loader:focus                   {  outline: none; border-color: var(--accent-hi);                          }
 .custom_tun_loader option                  {  background: var(--bg-elevated); color: var(--accent);                  }
