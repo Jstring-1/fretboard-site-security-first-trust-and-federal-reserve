@@ -871,13 +871,6 @@ select option                              { color: var(--text); background: var
 #keyboard > tbody > tr > td.s31,
 #keyboard > tbody > tr > td.s46              { background-color: #cccccc !important;
                                               color: #1a1a1a !important;                                              }
-/* Slivers OUTSIDE the keyboard table itself (between the table edge and
-   the section's rounded-corner container) — make them white so the
-   keyboard appears to sit on a piano-style white surround instead of
-   the dark section bg poking through. */
-.ritz.grid-container                         { background: #ffffff;
-                                              padding: 6px 4px;
-                                              border-radius: 0 0 10px 10px;                                          }
 
 /* Sortable header buttons */
 table.sortable thead                       { background-color: rgba(95,232,224,0.06);                                 }
