@@ -520,18 +520,30 @@ select option                              { color: var(--text); background: var
 #site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
 @media print { #site_footer { display: none !important; } }
 
-/* Witherfork modal content (sits inside the existing .vs_panel) */
-.wf_modal                                  { display: flex; flex-direction: column; align-items: center;
-                                             justify-content: center; gap: 18px; padding: 40px 24px;
-                                             font-family: var(--font); color: var(--text);                            }
-.wf_title                                  { font-size: 1.6em; font-weight: 700; letter-spacing: 0.02em; text-align: center; }
-.wf_body                                   { font-size: 1em; opacity: 0.9; text-align: center;                        }
+/* Witherfork modal — tiny, centered, just a link to SeaDisco.com */
+#view_source_modal.wf_compact .vs_panel    { top: 50%; left: 50%; right: auto; bottom: auto;
+                                             transform: translate(-50%, -50%);
+                                             width: auto; height: auto;
+                                             max-width: 280px; max-height: none;                                       }
+#view_source_modal.wf_compact .vs_pre      { padding: 28px 32px; text-align: center;
+                                             font-family: var(--font); font-size: 1.05em;
+                                             white-space: normal; overflow: visible;                                  }
 .wf_link                                   { color: var(--accent-hi) !important; text-decoration: none;
+                                             font-weight: 600; letter-spacing: 0.02em;
                                              border-bottom: 1px solid rgba(95,232,224,0.45);                          }
 .wf_link:hover                             { border-bottom-color: var(--accent-hi);                                   }
 
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
+
+/* Active chord/scale link in the chord_grid + scale_grid title rows. The cell
+   already has its degree-id bg color; the box-shadow inset adds a cyan ring
+   without disturbing layout. The link href flips to the clear-hl URL so a
+   second click clears the highlight. */
+#chord_grid td.cg_selected,
+#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px var(--accent-hi);                            }
+#chord_grid td.cg_selected a,
+#scale_grid td.cg_selected a               { color: #000 !important; font-weight: 700;                                }
 
 /* Sortable header buttons */
 table.sortable thead                       { background-color: rgba(95,232,224,0.06);                                 }

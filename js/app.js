@@ -459,7 +459,10 @@
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const idAttr = CHORD_CHAR_DEG[a] ? ' id="' + CHORD_CHAR_DEG[a] + '"' : '';
-      chordLinksRow += '<td' + idAttr + '><a href="' + x._hilight_url + GRID[a] + '">' + escHtml(label) + '</a></td>';
+      const isSelected = (x.hl_n === a.replace(/_/g, ' '));
+      const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
+      const tdCls = isSelected ? ' class="cg_selected"' : '';
+      chordLinksRow += '<td' + idAttr + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
     }
     chordLinksRow += '<td></td></tr>';
 
@@ -509,7 +512,10 @@
     let scaleLinksRow = '<tr id="under_scale_grid"><td></td>';
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
-      scaleLinksRow += '<td><a href="' + x._hilight_url + SCALES[name] + '">' + escHtml(label) + '</a></td>';
+      const isSelected = (x.hl_n === label);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + SCALES[name]);
+      const tdCls = isSelected ? ' class="cg_selected"' : '';
+      scaleLinksRow += '<td' + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
     }
     scaleLinksRow += '<td></td></tr>';
 
@@ -739,6 +745,7 @@
     closeViewSourceModal();
     const overlay = document.createElement('div');
     overlay.id = 'view_source_modal';
+    if (opts && opts.className) overlay.className = opts.className;
     overlay.innerHTML =
       '<div class="vs_backdrop"></div>' +
       '<div class="vs_panel" role="dialog" aria-label="About">' +
@@ -747,10 +754,9 @@
       '</div>';
     const pre = overlay.querySelector('.vs_pre');
     if (opts && opts.html) {
-      // Caller is passing controlled, static HTML (e.g. a link to seadisco.com).
       pre.innerHTML = content;
     } else {
-      pre.textContent = content; // textContent — no HTML re-parse
+      pre.textContent = content;
     }
     overlay.querySelector('.vs_backdrop').addEventListener('click', closeViewSourceModal);
     overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
@@ -765,14 +771,8 @@
     link.addEventListener('click', function (e) {
       e.preventDefault();
       const html =
-        '<div class="wf_modal">' +
-          '<div class="wf_title">Jimmy Witherfork Strikes Again</div>' +
-          '<div class="wf_body">' +
-            'Built by the same hands as ' +
-            '<a class="wf_link" href="https://seadisco.com" target="_blank" rel="noopener">seadisco.com</a>.' +
-          '</div>' +
-        '</div>';
-      showInfoModal(html, { html: true });
+        '<a class="wf_link" href="https://seadisco.com" target="_blank" rel="noopener noreferrer">SeaDisco.com</a>';
+      showInfoModal(html, { html: true, className: 'wf_compact' });
     });
   }
 
