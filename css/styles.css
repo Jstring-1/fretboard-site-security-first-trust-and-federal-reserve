@@ -712,9 +712,10 @@ select option                              { color: var(--text); background: var
 .tun_hidden_select                         { display: none !important;                                                }
 
 .tun_pop                                   { position: absolute; top: calc(100% + 4px);
-                                             right: 0; left: auto;
+                                             left: 50%; right: auto;
+                                             transform: translateX(-50%);
                                              z-index: 1500;
-                                             width: min(1080px, 96vw); max-height: 60vh;
+                                             width: min(900px, 96vw); max-height: 60vh;
                                              background: var(--surface); color: var(--accent);
                                              border: 1px solid #2a2a2a; border-radius: 6px;
                                              box-shadow: 0 12px 36px rgba(0,0,0,0.6);
@@ -722,7 +723,8 @@ select option                              { color: var(--text); background: var
 .tun_pop[hidden]                           { display: none !important;                                                }
 
 .tun_pop_head                              { display: flex; align-items: center; gap: 10px;
-                                             padding: 8px 10px; border-bottom: 1px solid #1f1f1f; background: var(--bg-elevated); }
+                                             padding: 8px 10px 6px;
+                                             background: var(--bg-elevated);                                          }
 .tun_pop_filter                            { flex: 1 1 auto; padding: 5px 8px; font: 400 0.9em var(--font);
                                              background: var(--bg); color: var(--accent);
                                              border: 1px solid #2a2a2a; border-radius: 3px; outline: none;            }
@@ -765,11 +767,20 @@ select option                              { color: var(--text); background: var
 .tun_pop_table th.c_strs_h,
 .tun_pop_table .c_strs                     { white-space: nowrap; color: var(--muted);
                                              width: 36px; min-width: 36px; max-width: 36px;
-                                             padding-left: 8px; padding-right: 8px; text-align: center;              }
-.tun_pop_table .c_name                     { white-space: nowrap; font-weight: 600;                                  }
-.tun_pop_table .c_notes                    { white-space: nowrap;                                                     }
-.tun_pop_table .c_dgs                      { white-space: nowrap; color: var(--muted);                                }
-.tun_pop_table .c_info                     { color: var(--muted); font-style: italic;                                 }
+                                             padding-left: 8px; padding-right: 8px; text-align: left;                }
+/* All other columns left-align text + cap their widths so the table reads
+   compact. Long content truncates with an ellipsis. */
+.tun_pop_table .c_name                     { white-space: nowrap; font-weight: 600;
+                                             max-width: 100px; overflow: hidden; text-overflow: ellipsis;
+                                             text-align: left;                                                        }
+.tun_pop_table .c_notes                    { white-space: nowrap;
+                                             max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+                                             text-align: left;                                                        }
+.tun_pop_table .c_dgs                      { white-space: nowrap; color: var(--muted);
+                                             max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+                                             text-align: left;                                                        }
+.tun_pop_table .c_info                     { color: var(--muted); font-style: italic;
+                                             text-align: left;                                                        }
 .tun_pop_empty                             { padding: 14px; text-align: center; color: var(--muted-dim);              }
 
 @media print { .tun_pop, .tun_picker_btn { display: none !important; } }
