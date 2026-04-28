@@ -208,13 +208,6 @@ table td                                   {  vertical-align:middle;            
    keys instead of being visually capped by a divider line. */
 #keyboard > tbody > tr:nth-of-type(5) > td   {  border-bottom: none !important;                                       }
 #keyboard > tbody > tr:nth-of-type(6) > td   {  border-top: none !important;                                          }
-
-/* Thin white slivers on the LEFT and RIGHT of the keyboard table only
-   (no white above or below). Drawn with left/right borders on the
-   .ritz wrapper so the strips line up with the keyboard's full height
-   and the section bg shows through above and below. */
-.ritz.grid-container                         { border-left: 6px solid #ffffff;
-                                              border-right: 6px solid #ffffff;                                       }
 /* Steel Gauges, MXR EQ band, and Frequency Hz rows: drop the multicolor
    scheme and let the populated cells match the white-key bg below them.
    Also clears the grey text override on the row's blank/label cells. */
