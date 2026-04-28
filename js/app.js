@@ -520,7 +520,50 @@
     root.innerHTML = h;
   }
 
-  // ---------- view source modal ----------
+  // ---------- view source modal (ASCII-art "About" message) ----------
+  const SF_MESSAGE = [
+    '',
+    '',
+    '  ███████ ██       █████  ███    ██ ████████ ███████ ██ ███    ██ ██████  ███████ ██████',
+    '  ██      ██      ██   ██ ████   ██    ██    ██      ██ ████   ██ ██   ██ ██      ██   ██',
+    '  ███████ ██      ███████ ██ ██  ██    ██    █████   ██ ██ ██  ██ ██   ██ █████   ██████',
+    '       ██ ██      ██   ██ ██  ██ ██    ██    ██      ██ ██  ██ ██ ██   ██ ██      ██   ██',
+    '  ███████ ███████ ██   ██ ██   ████    ██    ██      ██ ██   ████ ██████  ███████ ██   ██ .pro',
+    '',
+    '',
+    '  <<<:::-----       SlantFinder.pro       -----:::>>>',
+    '',
+    '',
+    '  This site was created to be as free, accurate, and useful as possible within my coding abilities and music theory knowledge (lacking).',
+    '  It is designed for screen widths > 1024px because fretboards are wide and steel players are old.',
+    '  Requests, corrections, additions, suggestions:  https://bb.steelguitarforum.com/viewtopic.php?t=396088',
+    '',
+    '  SlantFinder.pro fretboard visualization tool for 6-, 8-, 10-, & 12-string steel guitars',
+    '',
+    '  Including:',
+    '    Auto-populate the fretboard with 80+ tunings from dropdown menu',
+    '    Make your own custom Tuning',
+    '    Degrees displayed with notes on fretboard',
+    '    Changable key and highlight-able Degrees with consistent color scheme for degrees',
+    '    Quicklinks for highlighting common scales/chords (preserves tunings/options)',
+    '    Formatted, low-ink fretboard printing, to print degree highlights enable Background Graphics in the print preview window.',
+    '    Chord structure grid, with chord names linked to highlight those corresponding Degrees (visible on screen sizes > 1200 for now )',
+    '    Piano keyboard visualization with octaves, frequencies, and steel gauges (visible on screen sizes > 1200 for now )',
+    '    Sortable and filterable list of 80+ tunings for 6-,8-,10-,& 12-string steel guitars',
+    '      with names linked to highlight the fretboard with that tuning',
+    '    Copyable tunings list formatted for .CSV in the bottom of source code: # of strings, tuning name, tuning, degrees',
+    '',
+    '  Excluding:',
+    '    Ads, pop-ups, sign-ups, tracking, cookies, distractions, copyrights, subscriptions, images, bloat',
+    '',
+    '  Hello? is this thing on?  Oh well.',
+    '',
+    '',
+    '  <<<:::-----       SlantFinder.pro       -----:::>>>',
+    '',
+    ''
+  ].join('\n');
+
   function closeViewSourceModal() {
     const m = document.getElementById('view_source_modal');
     if (m) m.remove();
@@ -531,17 +574,15 @@
   }
   window.viewSource = function () {
     closeViewSourceModal();
-    const source = '<html>' + document.getElementsByTagName('html')[0].innerHTML + '</html>';
-    const escaped = source.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const overlay = document.createElement('div');
     overlay.id = 'view_source_modal';
     overlay.innerHTML =
       '<div class="vs_backdrop"></div>' +
-      '<div class="vs_panel" role="dialog" aria-label="Page source">' +
+      '<div class="vs_panel" role="dialog" aria-label="About SlantFinder.pro">' +
         '<button class="vs_close" type="button" aria-label="Close">×</button>' +
         '<pre class="vs_pre"></pre>' +
       '</div>';
-    overlay.querySelector('.vs_pre').textContent = source; // textContent avoids re-parsing
+    overlay.querySelector('.vs_pre').textContent = SF_MESSAGE; // textContent — no HTML re-parse
     overlay.querySelector('.vs_backdrop').addEventListener('click', closeViewSourceModal);
     overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
     document.body.appendChild(overlay);
