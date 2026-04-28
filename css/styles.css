@@ -167,6 +167,11 @@ table td                                   {  vertical-align:middle;            
 .ritz                                      {  background-color:#cccccc; padding:0; border-radius:6px; margin:0 6px;   }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
+/* Remove vertical separators between adjacent white-key cells so the
+   piano reads as continuous white keys instead of segmented boxes. */
+.ritz .waffle .s47, .ritz .waffle .s48, .ritz .waffle .s49,
+.ritz .waffle .s50, .ritz .waffle .s51, .ritz .waffle .s52, .ritz .waffle .s53
+                                           {  border-left:none !important; border-right:none !important;              }
 /* Steel Gauges, MXR EQ band, and Frequency Hz rows: drop the multicolor
    scheme and let the populated cells match the white-key bg below them.
    Also clears the grey text override on the row's blank/label cells. */

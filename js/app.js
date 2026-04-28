@@ -1121,7 +1121,7 @@
     'G♯': { mode: 'color', cls: ['s43'] }
   };
   const KEYBOARD_DEGREE_COLORS = {
-    '1':  '#5fe8e0', '♭2': '#674ea7', '2':  '#9900ff',
+    '1':  '#ff0000', '♭2': '#674ea7', '2':  '#9900ff',
     '♭3': '#f6b26b', '3':  '#ff6d01', '4':  '#00ffff',
     '♭5': '#3d85c6', '5':  '#0000ff',
     '♭6': '#6aa84f', '6':  '#0cc016',
@@ -1165,14 +1165,14 @@
             css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
           } else if (anyHighlighted) {
             // Only ring when a chord/scale/highlight is actually active
-            css += sel + ' { box-shadow: inset 0 0 0 2px #e6ff00 !important; color: #000 !important; }\n';
+            css += sel + ' { box-shadow: inset 0 0 0 1px #e6ff00 !important; color: #000 !important; }\n';
           }
         } else {
           // Black-key cell: tint label by degree (or near-bg if dimmed)
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
           if (inHighlightSet && anyHighlighted) {
-            css += sel + ' { box-shadow: inset 0 0 0 2px #e6ff00 !important; }\n';
+            css += sel + ' { box-shadow: inset 0 0 0 1px #e6ff00 !important; }\n';
           }
         }
       });
