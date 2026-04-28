@@ -175,8 +175,11 @@
           var val = state.cells[key] || '';
           var isBar = (c % cellsPerMeasure === 0 && c !== 0);
           html += '<div class="tab_cell' + (isBar ? ' barline' : '') + '">';
+          // The single-space placeholder is what makes :placeholder-shown match
+          // when the input is empty — that's how the CSS keeps the staff line
+          // visible behind unfilled cells. Don't drop it.
           html += '<input type="text" maxlength="3" data-r="' + r + '" data-c="' + globalCol
-                + '" value="' + escAttr(val) + '" autocomplete="off" spellcheck="false">';
+                + '" value="' + escAttr(val) + '" placeholder=" " autocomplete="off" spellcheck="false">';
           html += '</div>';
         }
         html += '</div></div>';

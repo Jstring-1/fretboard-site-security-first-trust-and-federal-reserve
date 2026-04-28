@@ -61,8 +61,12 @@
 .tab_row                                    { position: relative; display: grid;
                                               align-items: center;
                                               height: 22px; }
+/* Use a 1px top-border on a zero-height element instead of a 1px-tall
+   background. Borders are treated as foreground strokes by every browser
+   so they print reliably without needing print-color-adjust hacks. The
+   colour is bumped above --muted so the line reads clearly on screen. */
 .tab_row::before                            { content: ""; position: absolute; left: 36px; right: 0; top: 50%;
-                                              height: 1px; background: var(--muted); z-index: 0; }
+                                              height: 0; border-top: 1px solid #c0c0c0; z-index: 0;                  }
 .tab_label                                  { z-index: 2; text-align: right; padding-right: 8px;
                                               font: 600 0.85em var(--font); color: var(--accent-hi);
                                               background: var(--surface);                                            }
@@ -77,25 +81,28 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
 .tab_cell                                   { position: relative; z-index: 1; text-align: center;
                                               border-left: 1px solid transparent; }
 .tab_cell.barline                           { border-left: 1px solid var(--muted); }
+/* Default input bg is transparent so the staff line shows behind every
+   empty cell. Once a digit is typed, the input picks up the paper-coloured
+   bg so the digit "punches" the line — that's how proper tab notation
+   reads. The whitespace placeholder is what lets :placeholder-shown match
+   on empty inputs (without it, the pseudo-class never matches and every
+   cell would get the opaque bg, hiding the line again). */
 .tab_cell input                             { width: 100%; min-width: 16px; height: 18px; padding: 0; margin: 0;
-                                              border: none; background: var(--surface); color: var(--accent);
+                                              border: none; background: transparent; color: var(--accent);
                                               text-align: center; font: 600 0.9em var(--font); outline: none;
-                                              caret-color: var(--accent-hi); }
-/* Focused cell: keep the dark surface bg so typed digits stay readable
-   (white on dark). Use a thin cyan ring to mark focus instead of swapping
-   to an accent-coloured fill, which previously flipped to black-on-black
-   while the user was still typing. */
+                                              caret-color: var(--accent-hi);                                         }
+.tab_cell input:not(:placeholder-shown)     { background: var(--surface);                                            }
 .tab_cell input:focus                       { box-shadow: inset 0 0 0 1px var(--accent-hi);
                                               color: var(--accent-hi); border-radius: 2px;                          }
 
 /* When showing as "blank" (for printing), hide any typed values */
 #tab_paper.blank .tab_cell input            { color: transparent !important; background: transparent !important; }
 
-/* ---------- Helper / footnote ---------- */
-.tab_help                                   { margin: 12px 18px 18px; padding: 0 0 0 18px;
+/* ---------- Helper / footnote (no bullets, just stacked lines) ---------- */
+.tab_help                                   { margin: 12px 18px 18px; padding: 0;
                                               font: 400 0.85em var(--font); color: var(--muted);
-                                              line-height: 1.55; list-style: disc;                                    }
-.tab_help li                                { margin: 2px 0;                                                           }
+                                              line-height: 1.55;                                                     }
+.tab_help p                                 { margin: 2px 0;                                                          }
 .tab_help code                              { background: var(--bg-elevated); color: var(--accent-hi);
                                               padding: 0 4px; border-radius: 2px;
                                               font: 600 0.95em Consolas, Menlo, monospace;                            }
@@ -120,7 +127,7 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   .tab_title_print                           { color: #000 !important; }
   .tab_subtitle_print                        { color: #555 !important; }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid; }
-  .tab_row::before                           { background: #000 !important; }
+  .tab_row::before                           { border-top-color: #000 !important; }
   .tab_label                                 { color: #000 !important; background: #fff !important; }
   .tab_cell.barline                          { border-left-color: #000 !important; }
   .tab_cell input                            { background: #fff !important; color: #000 !important;
