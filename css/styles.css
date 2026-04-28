@@ -40,7 +40,7 @@ table                                      {  min-width:960px;  width:98%;      
 /*********************************************************************************************************************
                             BG COLORS
 *********************************************************************************************************************/
-body, #hl_button                           {  background-color: var(--text) !important;                              }
+body, #hl_button                           {  background-color: var(--bg) !important;                                }
 #hl_button_x, #view_src, #print_btn,table  {  background-color:#0e0e0e;                                              }
 #section_3,#section_4,#section_5, #section_1,#section_2
                                            {  background-color:#0a0a0a;                                              }
@@ -520,9 +520,9 @@ select option                              { color: var(--text); background: var
     color:#111 !important;
 }
 
-/* Footer "Jimmy Witherfork Strikes Again" — sits on the light page bg */
+/* Footer "Jimmy Witherfork Strikes Again" — sits on the dark page bg */
 #site_footer                               { text-align: center; padding: 8px 16px 12px; margin-top: 4px;              }
-#site_footer #footer_witherfork            { color: #555555 !important; font-size: 0.78em; letter-spacing: 0.04em;
+#site_footer #footer_witherfork            { color: var(--muted) !important; font-size: 0.78em; letter-spacing: 0.04em;
                                              text-decoration: none; cursor: pointer; transition: color .12s;          }
 #site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
 @media print { #site_footer { display: none !important; } }
