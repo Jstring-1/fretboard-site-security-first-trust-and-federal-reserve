@@ -216,21 +216,30 @@
     return ALLNOTES.indexOf(v) === -1 ? null : v;
   }
 
-  // ↑ / ↓ on a tuning-label input cycles through the 12 chromatic notes.
-  // Tab / Enter / arrow-Left/Right defer to the browser default so the user
-  // can move between rows naturally.
+  // Up / Down on a tuning-label input moves focus to the prev / next string's
+  // label so users can chord through the column quickly. Left / Right defer
+  // to the browser so the user can position the caret normally; Enter focuses
+  // the first cell on the same row.
   function onLabelKey(e) {
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     var inp = e.target;
     var r = +inp.getAttribute('data-r');
-    var cur = _canonNote(inp.value);
-    var idx = cur ? ALLNOTES.indexOf(cur) : -1;
-    var step = (e.key === 'ArrowUp') ? 1 : -1;
-    var next = ALLNOTES[((idx === -1 ? 0 : idx + step) + ALLNOTES.length) % ALLNOTES.length];
-    e.preventDefault();
-    inp.value = next;
-    state.notes[r] = next;
-    saveLocal();
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      var dir = (e.key === 'ArrowUp') ? -1 : 1;
+      var next = grid.querySelector('input.tab_label_input[data-r="' + (r + dir) + '"]');
+      if (next) {
+        e.preventDefault();
+        next.focus();
+        next.select();
+      }
+    } else if (e.key === 'Enter') {
+      // Enter from the label drops into the first cell on this string row.
+      var firstCell = grid.querySelector('input[data-r="' + r + '"][data-c="0"]');
+      if (firstCell) {
+        e.preventDefault();
+        firstCell.focus();
+        firstCell.select();
+      }
+    }
   }
 
   // Editable string-label input. Supports plain notes (A, F#, Bb, C♯, D♭).

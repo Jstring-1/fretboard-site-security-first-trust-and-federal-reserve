@@ -13,27 +13,34 @@
 #page_sub a:hover                           { text-decoration: underline; }
 
 /* ---------- Controls bar ----------
-   Bottom-aligned flex row. Labels are forced to a single line so each
-   .tab_ctl is the same height; align-items: flex-end then makes every input
-   sit on the same baseline regardless of label width. */
-.tab_controls                               { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end;
+   Two-row grid: labels in row 1, inputs/buttons in row 2. Every column's
+   row 2 has a fixed 30px height, so every input/select/button bottom edge
+   sits on the same baseline regardless of browser-specific intrinsic
+   heights for native form controls. .tab_ctl uses display:contents so its
+   children participate directly in the parent grid. */
+.tab_controls                               { display: grid; grid-auto-flow: column;
+                                              grid-template-rows: auto 30px;
+                                              grid-auto-columns: max-content;
+                                              column-gap: 16px; row-gap: 4px;
+                                              align-items: end;
                                               padding: 14px 18px; background: var(--surface);
                                               border-bottom: 1px solid #222;                                          }
-.tab_ctl                                    { display: flex; flex-direction: column; gap: 4px;
-                                              font: 400 0.78em var(--font); color: var(--muted);                     }
-.tab_ctl span                               { letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.95em;
-                                              line-height: 1.2; white-space: nowrap;                                  }
-.tab_ctl input,
-.tab_ctl select                             { font: 400 0.95em var(--font); padding: 0 6px;
-                                              height: 28px; box-sizing: border-box;
+.tab_ctl                                    { display: contents;                                                       }
+.tab_ctl > span                             { grid-row: 1; align-self: end;
+                                              font: 600 0.72em var(--font); color: var(--muted);
+                                              letter-spacing: 0.06em; text-transform: uppercase;
+                                              line-height: 14px; white-space: nowrap;                                 }
+.tab_ctl > input,
+.tab_ctl > select                           { grid-row: 2; height: 30px; box-sizing: border-box;
+                                              font: 400 0.95em var(--font); padding: 0 6px; margin: 0;
                                               background: var(--bg-elevated); color: var(--accent);
                                               border: 1px solid #2a2a2a; border-radius: 3px;                          }
-.tab_ctl input#ctl_title                    { min-width: 220px;                                                       }
-.tab_ctl input:focus,
-.tab_ctl select:focus                       { outline: none; border-color: var(--accent-hi);                          }
-.tab_ctl_tuning                             { min-width: 240px;                                                       }
-.ctl_btn                                    { font: 400 0.85em var(--font); padding: 0 12px;
-                                              height: 28px; box-sizing: border-box; align-self: flex-end;
+.tab_ctl > input#ctl_title                  { min-width: 220px;                                                       }
+.tab_ctl_tuning > select                    { min-width: 240px;                                                       }
+.tab_ctl > input:focus,
+.tab_ctl > select:focus                     { outline: none; border-color: var(--accent-hi);                          }
+.ctl_btn                                    { grid-row: 2; height: 30px; box-sizing: border-box;
+                                              font: 400 0.85em var(--font); padding: 0 12px; margin: 0;
                                               background: var(--bg-elevated); color: var(--accent);
                                               border: 1px solid #2a2a2a; border-radius: 3px; cursor: pointer;        }
 .ctl_btn:hover                              { border-color: var(--accent-hi); color: var(--accent-hi);                }
