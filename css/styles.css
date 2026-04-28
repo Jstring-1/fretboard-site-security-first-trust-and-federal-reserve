@@ -30,7 +30,7 @@ table                                      {  min-width:960px;  width:98%;      
                                               border-radius:10px;                                                    }
 #view_src, #print_btn                      {  width:100px;                                                           }                
 .cg_col_left, .cg_col_right                {  width:60px !important;                                                 }
-#f0,#f_cyo                                 {  width:5%;                                                              }
+#f0,#f_cyo,#f_cyo_dark                     {  width:5%;                                                              }
 #f1                                        {  width:8.5%;                                                            }            
 #f2,#f3                                    {  width:8.5%;                                                            }
 #f4,#f5                                    {  width:8%;                                                              }
