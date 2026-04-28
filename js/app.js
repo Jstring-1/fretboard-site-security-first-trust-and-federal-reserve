@@ -595,6 +595,132 @@
     }
   }
 
+  // ---------- learn / quiz ----------
+  let _quizCurrent = null;
+
+  function _qDegList(hl) {
+    return hl.split('&hl=').slice(1).filter(function (s) { return s.length; }).map(function (s) { return s.replace(/b/g, '♭'); });
+  }
+  function _qPrettyChord(s) { return s.replace(/b/g, '♭').replace(/#/g, '♯'); }
+  function _qPrettyScale(s) { return s.replace(/_/g, ' '); }
+  function _qPickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function _qPickN(arr, n) {
+    const copy = arr.slice();
+    const out = [];
+    while (out.length < n && copy.length) {
+      out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+    }
+    return out;
+  }
+  function _qShuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function generateQuizQuestion() {
+    const r = Math.random();
+    if (r < 0.34) return _qScaleByDegrees();
+    if (r < 0.67) return _qChordByDegrees();
+    return _qInKey();
+  }
+
+  function _qScaleByDegrees() {
+    const names = Object.keys(SCALES);
+    const target = _qPickRandom(names);
+    const distractors = _qPickN(names.filter(function (n) { return n !== target; }), 3);
+    const choices = _qShuffle([target].concat(distractors)).map(_qPrettyScale);
+    return {
+      prompt: 'Which scale has these degrees?',
+      showcase: _qDegList(SCALES[target]).join('  '),
+      choices: choices,
+      answer: _qPrettyScale(target)
+    };
+  }
+
+  function _qChordByDegrees() {
+    const names = Object.keys(GRID);
+    const target = _qPickRandom(names);
+    const distractors = _qPickN(names.filter(function (n) { return n !== target; }), 3);
+    const choices = _qShuffle([target].concat(distractors)).map(_qPrettyChord);
+    return {
+      prompt: 'Which chord has these degrees?',
+      showcase: _qDegList(GRID[target]).join('  '),
+      choices: choices,
+      answer: _qPrettyChord(target)
+    };
+  }
+
+  function _qInKey() {
+    const key = _qPickRandom(ALLNOTES);
+    const isScale = Math.random() < 0.5;
+    const pool = isScale ? SCALES : GRID;
+    const names = Object.keys(pool);
+    const target = _qPickRandom(names);
+    const distractors = _qPickN(names.filter(function (n) { return n !== target; }), 3);
+    const fmt = isScale ? _qPrettyScale : _qPrettyChord;
+    const choices = _qShuffle([target].concat(distractors)).map(fmt);
+
+    const i1 = KEYS.indexOf(key);
+    const degs = _qDegList(pool[target]);
+    const notes = degs.map(function (d) {
+      return KEYS[i1 + DEGREES.indexOf(d)];
+    }).join('  ');
+
+    return {
+      prompt: 'In the key of ' + key + ', which ' + (isScale ? 'scale' : 'chord') + ' has these notes?',
+      showcase: notes,
+      choices: choices,
+      answer: fmt(target)
+    };
+  }
+
+  function renderQuiz() {
+    const root = document.getElementById('quiz_root');
+    if (!root) return;
+    const q = generateQuizQuestion();
+    _quizCurrent = q;
+    let h = '<div class="quiz_card">';
+    h += '<div class="quiz_prompt">' + escHtml(q.prompt) + '</div>';
+    h += '<div class="quiz_showcase">' + escHtml(q.showcase) + '</div>';
+    h += '<div class="quiz_choices">';
+    q.choices.forEach(function (c) {
+      h += '<button type="button" class="quiz_choice">' + escHtml(c) + '</button>';
+    });
+    h += '</div>';
+    h += '<div class="quiz_feedback"></div>';
+    h += '</div>';
+    root.innerHTML = h;
+    root.querySelectorAll('.quiz_choice').forEach(function (btn) {
+      btn.addEventListener('click', _quizHandleChoice);
+    });
+  }
+
+  function _quizHandleChoice(e) {
+    const btn = e.currentTarget;
+    const choice = btn.textContent;
+    const correct = choice === _quizCurrent.answer;
+    const feedback = document.querySelector('#quiz_root .quiz_feedback');
+    feedback.innerHTML = '';
+
+    const status = document.createElement('span');
+    status.className = correct ? 'quiz_correct' : 'quiz_wrong';
+    status.textContent = correct ? '✓ Correct' : '✗ Wrong';
+    feedback.appendChild(status);
+
+    document.querySelectorAll('#quiz_root .quiz_choice').forEach(function (b) { b.disabled = true; });
+    btn.classList.add(correct ? 'quiz_correct' : 'quiz_wrong');
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'quiz_next';
+    next.textContent = 'Next →';
+    next.addEventListener('click', renderQuiz);
+    feedback.appendChild(next);
+  }
+
   // ---------- per-state render ----------
   function applyState() {
     const x = parseState();
@@ -623,6 +749,7 @@
     applyState();
     bindCollapsibles();
     bindLinkInterceptor();
+    renderQuiz();
     window.addEventListener('popstate', applyState);
 
     // Loaded-in blurb (set once on initial load)
