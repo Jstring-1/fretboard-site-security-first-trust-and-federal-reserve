@@ -156,7 +156,11 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
                                               padding: 4px 0 4px !important;                                          }
   .tab_row                                   { height: 14px !important;                                                }
   .tab_cells                                 { height: 14px !important;                                                }
-  .staff_line                                { border-top-color: #000 !important;                                      }
+  /* Bumping the staff line down by ~1.5px in print so it lands on the
+     digit's optical centre instead of its line-box centre — input text
+     in print sits a touch lower than the absolute mid-line of the row. */
+  .staff_line                                { border-top-color: #000 !important;
+                                              margin-top: 1px !important;                                              }
   .tab_label                                 { color: #000 !important; background: #fff !important;
                                               font-size: 0.7em !important;                                            }
   /* Bar lines: switch from a per-cell border-left to a positioned ::after
