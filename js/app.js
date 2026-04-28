@@ -77,13 +77,23 @@
       .filter(function (s) { return s.length; });
   }
 
-  // Read the custom-tuning strings from URL params. Accepts both legacy
-  // ?s1=A&s2=Cs&… and the compact dot-separated ?s=A.Cs.E.F.G.A.C.E
-  // (positions 0..N-1 correspond to s1..sN; missing slots become null).
+  // Read the custom-tuning strings from URL params. Accepts:
+  //   - new compact form ?s=ACsEFGACE (note tokens, no separator) — same
+  //     format as ?x=, so tunings encode the same way everywhere
+  //   - legacy dot-separated  ?s=A.Cs.E.F.G.A.C.E
+  //   - legacy individual     ?s1=A&s2=Cs&…
+  // Positions 0..N-1 correspond to s1..sN; missing slots become null.
   function readCustomStrings(params) {
     const single = params.get('s');
     if (single != null) {
-      const list = single.split('.');
+      let list;
+      if (single.indexOf('.') !== -1) {
+        list = single.split('.');
+      } else {
+        // Parse a contiguous run of [A-G][sb]? tokens. If a string has any
+        // gaps the user must use the legacy dot-separated form.
+        list = single.match(/[A-G][sb♯♭]?/g) || [];
+      }
       const out = {};
       for (let i = 0; i < list.length && i < 12; i++) {
         if (list[i]) out['s' + (i + 1)] = list[i];
@@ -239,12 +249,19 @@
     // url_s: single dot-separated 's' param holding s1..s12 in order, with
     // sharps written as 's' (urlNote handles the ♯→s transform). Trailing
     // empties are trimmed so we don't bloat the URL with unused slots.
+    // No-separator format matches the ?x= encoding (e.g. FsACsEFsACsE).
+    // If any internal slot is empty we fall back to dot-separated so the
+    // gap is preserved on decode.
     let _sParts = [];
     for (let a = 1; a <= 12; a++) {
       _sParts.push(x['s' + a] ? urlNote(x['s' + a]) : '');
     }
     while (_sParts.length && !_sParts[_sParts.length - 1]) _sParts.pop();
-    let url_s = _sParts.length ? 's=' + _sParts.join('.') + '&' : '';
+    let url_s = '';
+    if (_sParts.length) {
+      const _hasGap = _sParts.some(function (v) { return !v; });
+      url_s = 's=' + _sParts.join(_hasGap ? '.' : '') + '&';
+    }
 
     // Print colors are always on now — body keeps the .print-colors class
     // permanently so highlight bg's print as colors. Toggle was removed.
@@ -1555,7 +1572,11 @@
         sVals[parseInt(m[1], 10) - 1] = urlNote(sel.value);
       });
       while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
-      if (sVals.length) parts.push('s=' + sVals.map(function (v) { return v || ''; }).join('.'));
+      if (sVals.length) {
+        const _normalized = sVals.map(function (v) { return v || ''; });
+        const _hasGap = _normalized.some(function (v) { return !v; });
+        parts.push('s=' + _normalized.join(_hasGap ? '.' : ''));
+      }
     } else {
       // Preserve whatever the URL already has so toggling custom off and
       // back on returns to the same custom tuning.
@@ -1624,7 +1645,12 @@
       for (let i = 1; i <= 12; i++) params.delete('s' + i);
       const sVals = noteList.slice(0, 12).map(function (n) { return urlNote(n); });
       while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
-      if (sVals.length) params.set('s', sVals.join('.'));
+      if (sVals.length) {
+        // Same encoding as ?x= — note tokens with no separator unless
+        // there's an internal gap (which the loader never produces).
+        const _hasGap = sVals.some(function (v) { return !v; });
+        params.set('s', sVals.join(_hasGap ? '.' : ''));
+      }
       const qs = params.toString();
       navigateTo(qs ? '?' + qs : '?');
     });
