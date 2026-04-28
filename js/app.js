@@ -275,16 +275,23 @@
       ? String(x[rev + 'sdgs']).replace(/ /g, '')
       : String(x[rev + 'dgs']).replace(/ /g, '');
 
-    let h = '';
-    h += '<div id="view_src"><button style="background:none;border:none;" type="button" onclick="viewSource()">View Source Message</button></div>';
-    h += '<h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
     let printColors = false;
     try { printColors = window.localStorage.getItem('sf_print_colors') === 'y'; } catch (e) {}
-    h += '<div id="print_btn">';
-    h += '<label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked' : '') + '/> Color</label>';
-    h += '<button style="background:none;border:none;" onclick="window.print()">Formatted for Printing</button>';
+
+    let h = '';
+    h += '<div class="fb_header">';
+    h += '  <div class="fb_left">';
+    h += '    <div id="view_src"><button style="background:none;border:none;" type="button" onclick="viewSource()">View Source Message</button></div>';
+    h += '    <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
+    h += '  </div>';
+    h += '  <div class="fb_right">';
+    h += '    <div id="print_btn">';
+    h += '      <label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked' : '') + '/> Color</label>';
+    h += '      <button style="background:none;border:none;" onclick="window.print()">Formatted for Printing</button>';
+    h += '    </div>';
+    h += '    <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
+    h += '  </div>';
     h += '</div>';
-    h += '<h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
 
     h += '<table id="fretboard">';
 
