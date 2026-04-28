@@ -264,16 +264,20 @@
     h += '</select>';
     h += '</div>';
 
-    // Row 2: toggles + key
+    const printColors = x.pc === 'y';
+
+    // Row 2: toggles + key + clear
     h += '<div class="opt_row opt_row_toggles">';
     h += '<label><input type="checkbox" class="chxbx" name="y" value="y"' + (x.y === 'y' ? ' checked="checked"' : '') + '/> Display ' + escHtml(x[rev + 'yy']) + '</label>';
     h += '<label><input id="cyo" type="checkbox" class="chxbx" name="z" value="y"' + (x.z === 'y' ? ' checked="checked"' : '') + '/> Show custom tuning</label>';
+    h += '<label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked="checked"' : '') + '/> Print in color</label>';
     h += '<label>Key: <select class="inputs" name="k">';
     h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
     for (const a of ALLNOTES) {
       h += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
     }
     h += '</select></label>';
+    h += '<a href="?" id="clear_hl_btn">Clear</a>';
     h += '</div>';
 
     // Row 3: highlight degree pickers
@@ -284,7 +288,6 @@
       const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
       h += '<label class="hl_pill"><input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '/>' + escHtml(a) + escHtml(EXTENSIONS[i]) + '</label>';
     });
-    h += '<a href="?" id="clear_hl_btn">Clear</a>';
     h += '</div>';
 
     h += '</div>';
@@ -302,21 +305,11 @@
       ? String(x[rev + 'sdgs']).replace(/ /g, '')
       : String(x[rev + 'dgs']).replace(/ /g, '');
 
-    const printColors = x.pc === 'y';
-
     let h = '';
     h += '<div class="fb_header">';
-    h += '  <div class="fb_middle">';
-    h += '    <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
-    h += '    <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
-    h += '    <div id="options_root"></div>';
-    h += '  </div>';
-    h += '  <div class="fb_right">';
-    h += '    <div id="print_btn">';
-    h += '      <label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked' : '') + '/> Color</label>';
-    h += '      <button style="background:none;border:none;" onclick="window.print()">Formatted for Printing</button>';
-    h += '    </div>';
-    h += '  </div>';
+    h += '  <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
+    h += '  <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
+    h += '  <div id="options_root"></div>';
     h += '</div>';
 
     h += '<table id="fretboard">';
@@ -577,7 +570,9 @@
       '  or in the form above the fretboard) and the bookends update.',
       '',
       '  Click any chord name at the top or bottom of the grid to highlight',
-      '  that chord on the fretboard. The chord-name buttons are themselves',
+      '  that chord on the fretboard — the keyboard section also fades every',
+      '  note that is not part of that chord, so the chord notes pop across',
+      '  the whole 88-note span. The chord-name buttons are themselves',
       '  background-colored by the degree that defines that chord type:',
       '    Maj → 3 (orange)        Min → ♭3 (beige)',
       '    aug → ♭6 (green)        dim → ♭5 (blue)',
@@ -606,7 +601,9 @@
       '  current key.',
       '',
       '  Click any scale name at the top or bottom of the grid to highlight',
-      '  that scale on the fretboard.',
+      '  that scale on the fretboard — the keyboard section also fades every',
+      '  note outside the scale, so the scale notes pop across the whole',
+      '  88-note span.',
       '',
       '  Note: scales that include ♯4, ♯5, or ♯6 (Lydian, Hungarian Minor,',
       '  Whole Tone) display the enharmonic equivalents ♭5, ♭6, ♭7 because',
@@ -696,6 +693,37 @@
     overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
     document.body.appendChild(overlay);
     document.addEventListener('keydown', escClose);
+  }
+
+  function printSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    let restoreClosed = false;
+    if (section.tagName === 'DETAILS' && !section.open) {
+      restoreClosed = true;
+      section.open = true;
+    }
+    document.body.setAttribute('data-print', sectionId);
+    function cleanup() {
+      document.body.removeAttribute('data-print');
+      if (restoreClosed) section.open = false;
+      window.removeEventListener('afterprint', cleanup);
+    }
+    window.addEventListener('afterprint', cleanup);
+    setTimeout(function () { window.print(); }, 50);
+  }
+
+  function bindPrintButtons() {
+    document.querySelectorAll('.section_print').forEach(function (btn) {
+      if (btn._printBtnBound) return;
+      btn._printBtnBound = true;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        const sectionId = btn.getAttribute('data-print-section');
+        if (sectionId) printSection(sectionId);
+      });
+    });
   }
 
   function bindHelpButtons() {
@@ -969,13 +997,15 @@
       style.id = 'keyboard_dynamic_style';
       document.head.appendChild(style);
     }
-    // If any highlights are set, dim the notes that aren't in the highlight set.
-    // If nothing is highlighted, show all 12 notes in their key-relative colors.
+    // If any highlights are set, dim notes outside the set so the chosen ones pop.
+    // White keys dimmed → plain white bg with text close to white (label fades).
+    // Black keys dimmed → label color close to the dark cell bg (also fades).
     const anyHighlighted = DEGREES.some(function (d) {
       return x['hl_' + d.replace('♭', 'b')] === 'y';
     });
-    const DIM_BG    = '#C9D2D6';   // white-key bg when not in highlight set
-    const DIM_TEXT  = '#777';      // black-key text when not in highlight set
+    const DIM_WHITE_BG    = '#ffffff';
+    const DIM_WHITE_TEXT  = '#ececec';
+    const DIM_BLACK_TEXT  = '#1d1d2c';
 
     const i1 = KEYS.indexOf(x.k);
     let css = '';
@@ -985,12 +1015,20 @@
       const deg = DEGREES[semi];
       const inHighlightSet = !anyHighlighted || (x['hl_' + deg.replace('♭', 'b')] === 'y');
       const def = KEYBOARD_NOTE_CLASSES[note];
-      const prop = def.mode === 'bg' ? 'background-color' : 'color';
-      const color = inHighlightSet
-        ? KEYBOARD_DEGREE_COLORS[deg]
-        : (def.mode === 'bg' ? DIM_BG : DIM_TEXT);
       def.cls.forEach(function (c) {
-        css += '.ritz .waffle .' + c + ' { ' + prop + ': ' + color + ' !important; }\n';
+        const sel = '.ritz .waffle .' + c;
+        if (def.mode === 'bg') {
+          // White-key cell: tint bg by degree (or white if dimmed)
+          const bg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_WHITE_BG;
+          css += sel + ' { background-color: ' + bg + ' !important; }\n';
+          if (!inHighlightSet) {
+            css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
+          }
+        } else {
+          // Black-key cell: tint label by degree (or near-bg if dimmed)
+          const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
+          css += sel + ' { color: ' + fg + ' !important; }\n';
+        }
       });
     }
     style.textContent = css;
@@ -1158,6 +1196,7 @@
     bindCollapsibles();
     bindLinkInterceptor();
     bindHelpButtons();
+    bindPrintButtons();
     renderQuiz();
     window.addEventListener('popstate', applyState);
 

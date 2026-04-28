@@ -162,32 +162,32 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
 
 }
 
-@page { margin: 1cm; size: landscape; }
+@page { margin: 0.6cm; size: landscape; }
 @media print {
-    /* Strip page chrome — only the title, info bar, and fretboard print */
-    body, #section_1, #section_2,
-    h1, .slant, .finder, .pro,
+    /* Common: strip page chrome, force black text where it matters */
+    body, h1, .slant, .finder, .pro,
     #fretboard, #fretnums, #info_l, #info_r, #_no_highlight_
                                            {  color:black !important; letter-spacing:normal;                          }
-    body, #section_1, #section_2           {  background:none !important; border:none !important;                     }
-    #fretboard, #_no_highlight_            {  background-color:#fff !important;                                       }
-
-    /* Hide everything that's not part of the printed fretboard */
-    #section_3, #section_4, #section_5,
+    body                                   {  background:none !important; margin:0 !important; padding:0 !important; }
+    .section                               {  background:none !important; border:none !important;
+                                              min-width:0 !important; margin:0 !important; padding:0 !important;
+                                              border-radius:0 !important; box-shadow:none !important;
+                                              width:100% !important; max-width:100% !important;                       }
+    /* Always hide section chrome that doesn't belong on paper */
     #blurb, #print_btn, #view_src,
-    #tunings_drop, table td:first-child    {  display:none !important; width:0; margin:0; padding:0;                  }
+    .section_help, .section_print, .section_key_picker
+                                           {  display:none !important;                                                }
 
-    /* Layout: title + info above the fretboard */
-    h1, #info_l, #info_r                   {  clear:both !important; display:block !important;
-                                              float:none !important; margin:4px auto; padding:0; text-align:center;   }
-    h1                                     {  font-size:1.4em;                                                        }
-    #info_l, #info_r                       {  font-size:1em; opacity:1;                                               }
-
-    /* Fretboard sizing */
-    #fretboard                             {  width:99% !important; border-radius:0 !important;                       }
-    table tr                               {  height:2em;                                                             }
-    #fretnums                              {  height:2em !important; font-weight:normal !important;                   }
-    #fretnums, #f_cyo_dark                 {  background-color:#ddd !important;                                       }
+    /* Per-section print: hide everything except the section being printed.
+       The section is forced open via JS, so the <details> children show. */
+    body[data-print] > *                   {  display:none !important;                                                }
+    body[data-print="section_2"] #section_2,
+    body[data-print="section_3"] #section_3,
+    body[data-print="section_4"] #section_4,
+    body[data-print="section_5"] #section_5,
+    body[data-print="section_6"] #section_6 {  display:block !important;                                              }
+    body[data-print] details > *           {  display:block !important;                                              }
+    body[data-print] details > summary     {  display:none !important;                                                }
 
     /* Force colored highlights to print when the user has opted in */
     body.print-colors #_1_, body.print-colors #_b2_, body.print-colors #_2_,
@@ -197,6 +197,43 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
+
+    /* ===== Section 2: Fretboard ===== */
+    body[data-print="section_2"] #tunings_drop,
+    body[data-print="section_2"] table td:first-child
+                                           {  display:none !important;                                                }
+    body[data-print="section_2"] #fretboard{  background-color:#fff !important; width:100% !important;
+                                              border-radius:0 !important;                                              }
+    body[data-print="section_2"] #fretboard tr      {  height:2em;                                                    }
+    body[data-print="section_2"] #fretnums          {  height:2em !important; font-weight:normal !important;
+                                                       background-color:#ddd !important;                              }
+    body[data-print="section_2"] #info_l,
+    body[data-print="section_2"] #info_r            {  display:block !important; text-align:center !important;
+                                                       margin:2px auto !important; font-size:1em;                     }
+
+    /* ===== Section 3: Chord Builder Grid ===== */
+    body[data-print="section_3"] #chord_grid        {  font-size:0.55em; width:100% !important;
+                                                       border-radius:0 !important;                                    }
+    body[data-print="section_3"] #chord_grid td     {  padding:1px !important;                                        }
+    body[data-print="section_3"] .cg_col_left,
+    body[data-print="section_3"] .cg_col_right      {  width:38px !important;                                         }
+
+    /* ===== Section 4: Keyboard ===== */
+    body[data-print="section_4"] #keyboard          {  font-size:0.5em; width:100% !important;
+                                                       border-radius:0 !important;                                    }
+    body[data-print="section_4"] #keyboard td       {  padding:0 !important;                                          }
+
+    /* ===== Section 5: Tunings List ===== */
+    body[data-print="section_5"] #filter            {  display:none !important;                                       }
+    body[data-print="section_5"] #tunings           {  font-size:0.62em; width:100% !important;
+                                                       border-radius:0 !important;                                    }
+    body[data-print="section_5"] #tunings td,
+    body[data-print="section_5"] #tunings th        {  padding:1px 4px !important;                                    }
+
+    /* ===== Section 6: Scale Builder Grid ===== */
+    body[data-print="section_6"] #scale_grid        {  font-size:0.8em; width:100% !important;
+                                                       border-radius:0 !important;                                    }
+    body[data-print="section_6"] #scale_grid td     {  padding:2px !important;                                        }
 }
 
 /* Outside @media print so the property carries into the print render reliably */
@@ -266,6 +303,13 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                              background: rgba(255,255,255,0.18); color: #fff;
                                              font: 600 0.85em/20px inherit; text-align: center; cursor: pointer;     }
 .section_help:hover                        { background: rgba(255,255,255,0.4); border-color: #fff;                  }
+/* Print button next to each section title */
+.section_print                             { display: inline-block; margin-left: 4px; padding: 2px 10px;
+                                             vertical-align: middle; font: 500 0.78em inherit;
+                                             border-radius: 12px; border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             cursor: pointer;                                                          }
+.section_print:hover                       { background: rgba(255,255,255,0.4); border-color: #fff;                   }
 details.collapsible > summary:hover        { background: linear-gradient(180deg, #a8c2cb, #95b3bd);                  }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }
@@ -317,20 +361,12 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 .section_key_picker select.inputs:focus    { border-color: #4d6c79; outline: none;                                   }
 
 /*********************************************************************************************************************
-                            FRETBOARD HEADER (3 cols: source+tuning | form | print+key)
+                            FRETBOARD HEADER (single stack: key info, tuning info, form)
 *********************************************************************************************************************/
-.fb_header                                 { display: grid; grid-template-columns: minmax(540px, 3fr) minmax(180px, 1fr);
-                                             gap: 12px; align-items: start; padding: 8px 16px 4px;                    }
-.fb_middle                                 { display: flex; flex-direction: column; gap: 2px; align-items: center;                       }
-.fb_middle #info_l, .fb_middle #info_r     { margin: 0 !important; text-align: center !important;                                       }
-.fb_right                                  { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
-/* Override the original float-based rules now that we use a grid */
-.fb_header #view_src, .fb_header #info_l,
-.fb_header #print_btn, .fb_header #info_r { float: none !important; display: block !important; margin: 0 !important; }
-.fb_header #info_l, .fb_header #info_r    { font-size: 0.95em; opacity: 0.9;                                          }
-/* Form sits centered inside the middle column with no extra outer padding */
-.fb_middle #tunings_drop                   { padding: 0 6px;                                                          }
-.fb_middle .opt_row_main select            { min-width: 100%;                                                          }
+.fb_header                                 { padding: 8px 16px 4px; text-align: center;                                }
+.fb_header #info_l, .fb_header #info_r     { display: block !important; float: none !important;
+                                             margin: 0 0 2px !important; text-align: center !important;
+                                             font-size: 0.95em; opacity: 0.9;                                          }
 
 /*********************************************************************************************************************
                             LEARN / QUIZ
