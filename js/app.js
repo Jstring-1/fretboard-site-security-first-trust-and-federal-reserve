@@ -18,6 +18,15 @@
   const TUNINGS = D.tunings;
 
   // ---------- helpers ----------
+  // URL with every current param except hl — used by every Clear button so
+  // clearing only drops the highlight, not the key/tuning/collapsed sections.
+  function clearHlHref() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('hl');
+    const qs = params.toString();
+    return qs ? '?' + qs : window.location.pathname;
+  }
+
   function escHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -408,7 +417,7 @@
       '<span class="section_key_picker"><label>Key: <select class="inputs" name="k">' +
         opts +
       '</select></label></span>' +
-      '<a href="?" class="section_clear">Clear</a>';
+      '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
     slots.forEach(function (s) {
       const target = s.getAttribute('data-summary-for');
       if (target === 'section_5') { s.innerHTML = ''; return; }  // tunings list: no key/clear
