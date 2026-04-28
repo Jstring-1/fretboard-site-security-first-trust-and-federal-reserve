@@ -1438,41 +1438,63 @@
     const DIM_WHITE_TEXT  = '#888888';   // readable medium grey on the light bg
     const DIM_BLACK_TEXT  = '#3a3a3a';   // visible-but-quiet on the dark cell bg
 
+    // Plain-piano colours used when no highlights are set: clean white keys
+    // with black text + dark black keys with white text. The degree label
+    // below each note stays so users still see the relationship to the
+    // current key, just rendered in a neutral muted tone.
+    const PLAIN_WHITE_BG   = '#f4f4f4';
+    const PLAIN_WHITE_TEXT = '#111';
+    const PLAIN_BLACK_BG   = '#1a1a1a';
+    const PLAIN_BLACK_TEXT = '#f4f4f4';
+    const PLAIN_DEG_ON_WHITE = '#666';
+    const PLAIN_DEG_ON_BLACK = '#bbb';
+
     const i1 = KEYS.indexOf(x.k);
     let css = '';
     for (const note in KEYBOARD_NOTE_CLASSES) {
       const noteIdx = KEYS.indexOf(note);
       const semi = ((noteIdx - i1) + 12) % 12;
       const deg = DEGREES[semi];
-      const inHighlightSet = !anyHighlighted || (x['hl_' + deg.replace('♭', 'b')] === 'y');
+      const inHighlightSet = anyHighlighted && (x['hl_' + deg.replace('♭', 'b')] === 'y');
       const def = KEYBOARD_NOTE_CLASSES[note];
+
       def.cls.forEach(function (c) {
         const sel = '.ritz .waffle .' + c;
         if (def.mode === 'bg') {
-          // White-key cell: tint bg by degree (or grey if dimmed)
-          const bg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_WHITE_BG;
-          css += sel + ' { background-color: ' + bg + ' !important; }\n';
-          if (!inHighlightSet) {
-            css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
-          } else if (anyHighlighted) {
-            // Highlighted: degree-coloured bg + dark label, no border ring.
-            css += sel + ' { color: #000 !important; }\n';
+          // White-key column.
+          if (inHighlightSet) {
+            // Highlighted note: degree-coloured bg + dark label.
+            css += sel + ' { background-color: ' + KEYBOARD_DEGREE_COLORS[deg] + ' !important; '
+                  +       'color: #000 !important; }\n';
+          } else {
+            // Anything not actively highlighted reads as a plain piano key.
+            // Used both when no highlights are set and when only some are.
+            css += sel + ' { background-color: ' + PLAIN_WHITE_BG + ' !important; '
+                  +       'color: ' + PLAIN_WHITE_TEXT + ' !important; }\n';
           }
         } else {
-          // Black-key cell: tint label by degree (or near-bg if dimmed). No ring.
-          const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
-          css += sel + ' { color: ' + fg + ' !important; }\n';
+          // Black-key cell.
+          if (inHighlightSet) {
+            css += sel + ' { background-color: ' + PLAIN_BLACK_BG + ' !important; '
+                  +       'color: ' + KEYBOARD_DEGREE_COLORS[deg] + ' !important; }\n';
+          } else {
+            css += sel + ' { background-color: ' + PLAIN_BLACK_BG + ' !important; '
+                  +       'color: ' + PLAIN_BLACK_TEXT + ' !important; }\n';
+          }
         }
       });
+
       // Add the degree (e.g. "1", "♭3") on a second line below the note label.
-      // Only emit on `lbl` cells — the cells that actually carry the note
-      // letter — so white keys don't get a duplicate degree from the spacer
-      // cell that sits above them on the black-key row.
+      // Only on cells that actually carry the note letter (avoids duplicate
+      // labels on the spacer cells above each white key).
       (def.lbl || def.cls).forEach(function (c) {
         const sel = '.ritz .waffle .' + c;
-        const degColor = (def.mode === 'bg')
-          ? (inHighlightSet ? '#000' : DIM_WHITE_TEXT)
-          : (inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT);
+        let degColor;
+        if (def.mode === 'bg') {
+          degColor = inHighlightSet ? '#000' : PLAIN_DEG_ON_WHITE;
+        } else {
+          degColor = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : PLAIN_DEG_ON_BLACK;
+        }
         css += sel + '::after { content: "' + escapeCssString(deg) + '"; display: block; '
                   +  'font-size: 0.78em; line-height: 1; opacity: 0.85; '
                   +  'color: ' + degColor + '; }\n';
