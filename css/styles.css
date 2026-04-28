@@ -396,6 +396,15 @@ details.collapsible > summary { cursor: default; }
                                              background: rgba(255,255,255,0.18); color: #fff;
                                              cursor: pointer;                                                          }
 .section_print:hover                       { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+/* CSV export pill — same shape as the Print pill so the right-side row
+   reads as a consistent set of action chips. */
+.section_export                            { display: inline-block; margin-left: 4px; padding: 2px 10px;
+                                             vertical-align: middle; font: 500 0.78em inherit; letter-spacing: 0.04em;
+                                             border-radius: 12px; border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             cursor: pointer;                                                          }
+.section_export:hover                      { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+@media print { .section_export { display: none !important; }                                                          }
 
 /* Per-section Key dropdown + Clear, in each summary after the Print button */
 .summary_extras                            { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px;
@@ -720,6 +729,19 @@ select option                              { color: var(--text); background: var
 .tun_pop_filter:focus                      { border-color: var(--accent-hi);                                         }
 .tun_pop_count                             { color: var(--muted-dim); font: 400 0.78em var(--font); flex: 0 0 auto;
                                              letter-spacing: 0.04em;                                                  }
+
+/* Quick string-count radio row sits just under the search input. One-tap
+   filter for the most common case ("show me only 8-string tunings"). */
+.tun_pop_strs                              { display: flex; flex-wrap: wrap; gap: 6px;
+                                             padding: 8px 10px; background: var(--bg-elevated);
+                                             border-bottom: 1px solid #1f1f1f;                                       }
+.tun_pop_str_btn                           { padding: 4px 12px; font: 400 0.82em var(--font);
+                                             background: transparent; color: var(--muted);
+                                             border: 1px solid #2a2a2a; border-radius: 999px;
+                                             cursor: pointer;                                                          }
+.tun_pop_str_btn:hover                     { color: var(--accent-hi); border-color: var(--accent-hi);                  }
+.tun_pop_str_btn.active                    { background: var(--accent-hi); color: #000;
+                                             border-color: var(--accent-hi); font-weight: 600;                       }
 
 .tun_pop_body                              { flex: 1 1 auto; overflow: auto;                                          }
 .tun_pop_table                             { width: 100%; border-collapse: collapse; font: 400 0.85em var(--font);   }

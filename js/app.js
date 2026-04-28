@@ -311,6 +311,7 @@
   // user keeps their column sort and search after picking a tuning.
   let _tunPickerSort = { col: 'name', dir: 'asc' };
   let _tunPickerFilter = '';
+  let _tunPickerStrFilter = '';   // '' = all; '6' / '8' / '10' / '12' for quick string-count filter
 
   function _tunPickerRows(x) {
     const rev = (x.y === 'y') ? 'rev_' : '';
@@ -345,14 +346,21 @@
   }
 
   function _tunPickerFiltered(rows) {
+    let out = rows;
+    if (_tunPickerStrFilter) {
+      const want = +_tunPickerStrFilter;
+      out = out.filter(function (r) { return +r.strs === want; });
+    }
     const q = _tunPickerFilter.trim().toLowerCase();
-    if (!q) return rows;
-    // tokenise so "8 a6" matches "8-string A6 ..."
-    const toks = q.split(/\s+/);
-    return rows.filter(function (r) {
-      const hay = (r.strs + ' ' + r.name + ' ' + r.notes + ' ' + r.dgs + ' ' + r.info).toLowerCase();
-      return toks.every(function (t) { return hay.indexOf(t) !== -1; });
-    });
+    if (q) {
+      // tokenise so "8 a6" matches "8-string A6 ..."
+      const toks = q.split(/\s+/);
+      out = out.filter(function (r) {
+        const hay = (r.strs + ' ' + r.name + ' ' + r.notes + ' ' + r.dgs + ' ' + r.info).toLowerCase();
+        return toks.every(function (t) { return hay.indexOf(t) !== -1; });
+      });
+    }
+    return out;
   }
 
   function renderTuningPicker(x) {
@@ -370,6 +378,18 @@
     h += '<div class="tun_pop_head">';
     h += '  <input type="search" class="tun_pop_filter" placeholder="filter — e.g. ‘8 A6’ or ‘E9 emmons’" value="' + escHtml(_tunPickerFilter) + '" autocomplete="off" spellcheck="false">';
     h += '  <span class="tun_pop_count">' + rows.length + ' / ' + Object.keys(TUNINGS).length + '</span>';
+    h += '</div>';
+    // Quick string-count radios — one click filter for the most common
+    // selectors. The filter text input still works on top of this.
+    const quick = ['', '6', '8', '10', '12'];
+    h += '<div class="tun_pop_strs" role="radiogroup" aria-label="Filter by string count">';
+    quick.forEach(function (v) {
+      const active = (_tunPickerStrFilter === v) ? ' active' : '';
+      const label = v === '' ? 'All' : v + '-string';
+      h += '<button type="button" class="tun_pop_str_btn' + active + '" '
+        +  'data-strs="' + v + '" role="radio" aria-checked="' + (_tunPickerStrFilter === v) + '">'
+        +  escHtml(label) + '</button>';
+    });
     h += '</div>';
     h += '<div class="tun_pop_body">';
     h += '<table class="tun_pop_table"><thead><tr>';
@@ -453,6 +473,12 @@
       }
     });
     pop.addEventListener('click', function (e) {
+      const strBtn = e.target.closest && e.target.closest('.tun_pop_str_btn');
+      if (strBtn) {
+        _tunPickerStrFilter = strBtn.getAttribute('data-strs') || '';
+        renderTuningPicker(x);
+        return;
+      }
       const th = e.target.closest && e.target.closest('.tun_pop_th');
       if (th) {
         const col = th.getAttribute('data-col');
@@ -1168,6 +1194,67 @@
     });
   }
 
+  // Quote a value per RFC 4180 — wrap in double quotes if it contains a
+  // comma, quote, or newline; double up any internal quotes.
+  function csvQuote(v) {
+    const s = String(v == null ? '' : v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  // Build a CSV from the *visible* rows of the on-page tunings table, so the
+  // user's current sort + filter (and the section's own filter input) are
+  // honoured. Falls back to dumping the full TUNINGS object if the table
+  // hasn't rendered yet.
+  function buildTuningsCsv() {
+    const cols = ['Strings', 'Name', 'Notes', 'Notes (Reverse)', 'Degrees', 'Degrees (Reverse)', 'Info'];
+    const lines = [cols.map(csvQuote).join(',')];
+    const table = document.getElementById('tunings');
+    if (table) {
+      // Use the table rows that are currently rendered + visible (filter
+      // hides rows via display:none).
+      table.querySelectorAll('tbody tr').forEach(function (tr) {
+        if (tr.offsetParent === null && tr.style.display === 'none') return;
+        const cells = tr.querySelectorAll('td');
+        if (!cells.length) return;
+        const row = Array.prototype.map.call(cells, function (td) {
+          return csvQuote(td.textContent.trim());
+        });
+        lines.push(row.join(','));
+      });
+    } else {
+      Object.keys(TUNINGS).forEach(function (key) {
+        const t = TUNINGS[key];
+        lines.push([t.strs, t.name, t.notes, t.rev_notes, t.dgs, t.rev_dgs, t.info || '']
+          .map(csvQuote).join(','));
+      });
+    }
+    return lines.join('\r\n');
+  }
+
+  function downloadCsv(filename, content) {
+    const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 200);
+  }
+
+  function bindExportButtons() {
+    document.querySelectorAll('.section_export').forEach(function (btn) {
+      if (btn._exportBound) return;
+      btn._exportBound = true;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (btn.getAttribute('data-export') === 'tunings') {
+          const stamp = new Date().toISOString().slice(0, 10);
+          downloadCsv('slantfinder-tunings-' + stamp + '.csv', buildTuningsCsv());
+        }
+      });
+    });
+  }
+
   function bindHelpButtons() {
     document.querySelectorAll('.section_help').forEach(function (btn) {
       if (btn._helpBound) return;
@@ -1713,6 +1800,7 @@
     bindLinkInterceptor();
     bindHelpButtons();
     bindPrintButtons();
+    bindExportButtons();
     bindSummaryExtras();
     bindSummaryToggleScope();
     bindFooterWitherfork();
