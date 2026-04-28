@@ -719,8 +719,8 @@ select option                              { color: var(--text); background: var
 #section_5.nested_section                  { margin: 14px 0 22px;                                                    }
 /* Without a .summary_status spacer in this section's summary, the Print + ?
    buttons would sit right next to the title. Push them to the right edge. */
-#section_5.nested_section > summary > .section_print
-                                           { margin-left: auto;                                                       }
+#section_5.nested_section > summary > .section_print,
+#section_8 > summary > .section_help       { margin-left: auto;                                                       }
 
 /* Top 4 keyboard rows (Octaves, Steel Gauges, 10-band EQ, Frequency Hz):
    force dark text so the numbers stay readable on the colored cell bgs the
