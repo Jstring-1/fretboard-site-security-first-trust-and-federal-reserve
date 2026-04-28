@@ -12,23 +12,31 @@
 #page_sub a                                 { color: var(--accent-hi); text-decoration: none; }
 #page_sub a:hover                           { text-decoration: underline; }
 
-/* ---------- Controls bar ---------- */
-.tab_controls                               { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: flex-end;
+/* ---------- Controls bar ----------
+   Each field is a label-on-top stack with a fixed total height so rows align
+   vertically even when the label wraps to two lines. Buttons sit on the same
+   baseline as the inputs by giving them the same total height. */
+.tab_controls                               { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end;
                                               padding: 14px 18px; background: var(--surface);
-                                              border-bottom: 1px solid #222; }
-.tab_ctl                                    { display: flex; flex-direction: column; gap: 3px; font: 400 0.78em var(--font); color: var(--muted); }
-.tab_ctl span                               { letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.95em; }
+                                              border-bottom: 1px solid #222;                                          }
+.tab_ctl                                    { display: flex; flex-direction: column; justify-content: flex-end;
+                                              gap: 4px; height: 56px;
+                                              font: 400 0.78em var(--font); color: var(--muted);                     }
+.tab_ctl span                               { letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.95em;
+                                              line-height: 1.1; min-height: 22px; display: flex; align-items: flex-end; }
 .tab_ctl input,
 .tab_ctl select                             { font: 400 0.95em var(--font); padding: 4px 6px; min-width: 70px;
+                                              height: 28px; box-sizing: border-box;
                                               background: var(--bg-elevated); color: var(--accent);
-                                              border: 1px solid #2a2a2a; border-radius: 3px; }
-.tab_ctl input#ctl_title                    { min-width: 220px; }
+                                              border: 1px solid #2a2a2a; border-radius: 3px;                          }
+.tab_ctl input#ctl_title                    { min-width: 220px;                                                       }
 .tab_ctl input:focus,
-.tab_ctl select:focus                       { outline: none; border-color: var(--accent-hi); }
-.ctl_btn                                    { font: 400 0.85em var(--font); padding: 6px 12px;
+.tab_ctl select:focus                       { outline: none; border-color: var(--accent-hi);                          }
+.ctl_btn                                    { font: 400 0.85em var(--font); padding: 0 12px;
+                                              height: 28px; box-sizing: border-box; align-self: flex-end;
                                               background: var(--bg-elevated); color: var(--accent);
-                                              border: 1px solid #2a2a2a; border-radius: 3px; cursor: pointer; }
-.ctl_btn:hover                              { border-color: var(--accent-hi); color: var(--accent-hi); }
+                                              border: 1px solid #2a2a2a; border-radius: 3px; cursor: pointer;        }
+.ctl_btn:hover                              { border-color: var(--accent-hi); color: var(--accent-hi);                }
 
 /* ---------- Paper / staff ---------- */
 #tab_paper                                  { background: var(--surface); padding: 24px 28px 36px;
@@ -55,7 +63,14 @@
                                               height: 1px; background: var(--muted); z-index: 0; }
 .tab_label                                  { z-index: 2; text-align: right; padding-right: 8px;
                                               font: 600 0.85em var(--font); color: var(--accent-hi);
-                                              background: var(--surface); }
+                                              background: var(--surface);                                            }
+/* Editable string label — looks like the old read-only div but accepts text. */
+input.tab_label_input                       { width: 100%; height: 20px; box-sizing: border-box;
+                                              border: 1px solid transparent; border-radius: 2px;
+                                              outline: none; caret-color: var(--accent-hi);                          }
+input.tab_label_input:hover                 { border-color: rgba(95,232,224,0.25);                                    }
+input.tab_label_input:focus                 { border-color: var(--accent-hi); color: var(--accent);                   }
+input.tab_label_input::placeholder          { color: var(--muted-dim); font-weight: 400;                              }
 .tab_cells                                  { display: grid; height: 22px; align-items: center; }
 .tab_cell                                   { position: relative; z-index: 1; text-align: center;
                                               border-left: 1px solid transparent; }
@@ -64,10 +79,12 @@
                                               border: none; background: var(--surface); color: var(--accent);
                                               text-align: center; font: 600 0.9em var(--font); outline: none;
                                               caret-color: var(--accent-hi); }
-.tab_cell input:focus                       { background: var(--accent-hi); color: #000; border-radius: 2px; }
-.tab_cell input:not(:placeholder-shown)     { background: var(--surface); }
-/* leave 1-2 px breathing room around digits so they don't kiss the staff line */
-.tab_cell input::placeholder                { color: transparent; }
+/* Focused cell: keep the dark surface bg so typed digits stay readable
+   (white on dark). Use a thin cyan ring to mark focus instead of swapping
+   to an accent-coloured fill, which previously flipped to black-on-black
+   while the user was still typing. */
+.tab_cell input:focus                       { box-shadow: inset 0 0 0 1px var(--accent-hi);
+                                              color: var(--accent-hi); border-radius: 2px;                          }
 
 /* When showing as "blank" (for printing), hide any typed values */
 #tab_paper.blank .tab_cell input            { color: transparent !important; background: transparent !important; }

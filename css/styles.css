@@ -636,6 +636,65 @@ select option                              { color: var(--text); background: var
 
 @media print { #quick_picks, #kb_quick_picks, #kb_picks_root { display: none !important; } }
 
+/* ---------- Tuning picker (sortable / filterable popover) ---------- */
+.tun_picker                                { position: relative; display: inline-block; flex: 1 1 auto;
+                                             min-width: 0; max-width: 100%;                                          }
+.tun_picker_btn                            { display: flex; width: 100%; align-items: center; gap: 8px;
+                                             padding: 4px 10px; min-height: 30px; cursor: pointer; text-align: left;
+                                             background: var(--bg-elevated); color: var(--accent);
+                                             border: 1px solid #2a2a2a; border-radius: 3px;
+                                             font: 400 0.95em var(--font);                                           }
+.tun_picker_btn:hover                      { border-color: var(--accent-hi);                                          }
+.tun_picker_btn[aria-expanded="true"]      { border-color: var(--accent-hi);                                          }
+.tun_btn_main                              { flex: 1 1 auto; min-width: 0; overflow: hidden;
+                                             text-overflow: ellipsis; white-space: nowrap;                          }
+.tun_btn_caret                             { color: var(--muted); flex: 0 0 auto;                                    }
+.tun_hidden_select                         { display: none !important;                                                }
+
+.tun_pop                                   { position: absolute; top: calc(100% + 4px); left: 0; z-index: 1500;
+                                             width: min(720px, 92vw); max-height: 60vh;
+                                             background: var(--surface); color: var(--accent);
+                                             border: 1px solid #2a2a2a; border-radius: 6px;
+                                             box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+                                             display: flex; flex-direction: column; overflow: hidden;                }
+.tun_pop[hidden]                           { display: none !important;                                                }
+
+.tun_pop_head                              { display: flex; align-items: center; gap: 10px;
+                                             padding: 8px 10px; border-bottom: 1px solid #1f1f1f; background: var(--bg-elevated); }
+.tun_pop_filter                            { flex: 1 1 auto; padding: 5px 8px; font: 400 0.9em var(--font);
+                                             background: var(--bg); color: var(--accent);
+                                             border: 1px solid #2a2a2a; border-radius: 3px; outline: none;            }
+.tun_pop_filter:focus                      { border-color: var(--accent-hi);                                         }
+.tun_pop_count                             { color: var(--muted-dim); font: 400 0.78em var(--font); flex: 0 0 auto;
+                                             letter-spacing: 0.04em;                                                  }
+
+.tun_pop_body                              { flex: 1 1 auto; overflow: auto;                                          }
+.tun_pop_table                             { width: 100%; border-collapse: collapse; font: 400 0.85em var(--font);   }
+.tun_pop_table thead th                    { position: sticky; top: 0; z-index: 1;
+                                             background: var(--bg-elevated); color: var(--muted);
+                                             text-align: left; padding: 6px 10px; border-bottom: 1px solid #2a2a2a;
+                                             font-weight: 600; letter-spacing: 0.04em; cursor: pointer;
+                                             user-select: none;                                                       }
+.tun_pop_table thead th.active             { color: var(--accent-hi);                                                }
+.tun_pop_table thead th:hover              { color: var(--accent-hi);                                                }
+.tun_pop_arrow                             { color: var(--accent-hi); margin-left: 2px;                              }
+.tun_pop_table tbody tr                    { cursor: pointer;                                                         }
+.tun_pop_table tbody td                    { padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
+                                             color: var(--accent);                                                    }
+.tun_pop_table tbody tr:hover td           { background: rgba(95,232,224,0.08);                                       }
+.tun_pop_table tbody tr.tun_pop_row_selected td
+                                           { background: rgba(95,232,224,0.18); color: var(--accent-hi);              }
+.tun_pop_table tbody tr:focus              { outline: none; }
+.tun_pop_table tbody tr:focus td           { background: rgba(95,232,224,0.14);                                       }
+.tun_pop_table .c_strs                     { white-space: nowrap; color: var(--muted); width: 1%;                    }
+.tun_pop_table .c_name                     { white-space: nowrap; font-weight: 600;                                  }
+.tun_pop_table .c_notes                    { white-space: nowrap;                                                     }
+.tun_pop_table .c_dgs                      { white-space: nowrap; color: var(--muted);                                }
+.tun_pop_table .c_info                     { color: var(--muted); font-style: italic;                                 }
+.tun_pop_empty                             { padding: 14px; text-align: center; color: var(--muted-dim);              }
+
+@media print { .tun_pop, .tun_picker_btn { display: none !important; } }
+
 /* Top 4 keyboard rows (Octaves, Steel Gauges, 10-band EQ, Frequency Hz):
    force dark text so the numbers stay readable on the colored cell bgs the
    inline ritz CSS sets up. Higher specificity beats those .ritz .waffle

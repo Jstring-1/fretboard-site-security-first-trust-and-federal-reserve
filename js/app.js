@@ -277,16 +277,22 @@
       ? 'Tunings displayed High → Low. Click to flip to Low → High.'
       : 'Tunings displayed Low → High. Click to flip to High → Low.';
 
-    // Row 1: y switch + tuning selector
+    // Row 1: y switch + tuning picker (sortable / filterable popover; the
+    // hidden <select name="x"> keeps gatherAndNavigate working when other
+    // form controls change without the user touching the picker).
     h += '<div class="opt_row opt_row_main">';
     h += '<a href="' + escHtml(yToggleHref) + '" class="y_switch y_' + yState + '" title="' + escHtml(yTitle) + '" aria-label="Toggle tuning direction">' + yLabel + '</a>';
-    h += '<select class="inputs" name="x">';
-    h += '<option value="' + escHtml(x.x) + '">(' + x.strs + '-string) ' + escHtml(x.name) + ' — ' + escHtml(x[rev + 'notes']) + ' — (' + escHtml(x[rev + 'dgs']) + ')</option>';
-    for (const a in TUNINGS) {
-      const b = TUNINGS[a];
-      h += '<option value="' + escHtml(a) + '">(' + b.strs + '-string) ' + escHtml(b.name) + ' — ' + escHtml(b[rev + 'notes']) + ' — (' + escHtml(b[rev + 'dgs']) + ')</option>';
-    }
-    h += '</select>';
+    const curLabel = '(' + x.strs + '-string) ' + x.name + ' — ' + x[rev + 'notes'] + ' — (' + x[rev + 'dgs'] + ')';
+    h += '<div class="tun_picker" id="tun_picker">';
+    h +=   '<button type="button" class="tun_picker_btn inputs" id="tun_picker_btn" aria-haspopup="dialog" aria-expanded="false">';
+    h +=     '<span class="tun_btn_main">' + escHtml(curLabel) + '</span>';
+    h +=     '<span class="tun_btn_caret" aria-hidden="true">▾</span>';
+    h +=   '</button>';
+    h +=   '<select class="inputs tun_hidden_select" name="x" aria-hidden="true" tabindex="-1">';
+    h +=     '<option value="' + escHtml(x.x) + '" selected>' + escHtml(curLabel) + '</option>';
+    h +=   '</select>';
+    h +=   '<div class="tun_pop" id="tun_pop" hidden role="dialog" aria-label="Choose a tuning"></div>';
+    h += '</div>';
     h += '</div>';
 
     // (Key dropdown + Clear live in the section title bars now, not in the form.)
@@ -297,6 +303,193 @@
 
     h += '</div>';
     root.innerHTML = h;
+  }
+
+  // ---------- tuning picker popover ----------
+  // Sortable / filterable replacement for the native <select name="x">.
+  // Sort + filter state persists in module-scope vars across re-renders so the
+  // user keeps their column sort and search after picking a tuning.
+  let _tunPickerSort = { col: 'name', dir: 'asc' };
+  let _tunPickerFilter = '';
+
+  function _tunPickerRows(x) {
+    const rev = (x.y === 'y') ? 'rev_' : '';
+    const rows = [];
+    for (const key in TUNINGS) {
+      const t = TUNINGS[key];
+      rows.push({
+        key:   key,
+        strs:  t.strs,
+        name:  t.name,
+        notes: t[rev + 'notes'],
+        dgs:   t[rev + 'dgs'],
+        info:  t.info || ''
+      });
+    }
+    return rows;
+  }
+
+  function _tunPickerSorted(rows) {
+    const { col, dir } = _tunPickerSort;
+    const mul = dir === 'desc' ? -1 : 1;
+    return rows.slice().sort(function (a, b) {
+      let av = a[col], bv = b[col];
+      if (col === 'strs') { av = +av; bv = +bv; }
+      else { av = String(av).toLowerCase(); bv = String(bv).toLowerCase(); }
+      if (av < bv) return -1 * mul;
+      if (av > bv) return  1 * mul;
+      // Stable secondary sort by name then notes
+      if (a.name !== b.name) return a.name.localeCompare(b.name);
+      return a.notes.localeCompare(b.notes);
+    });
+  }
+
+  function _tunPickerFiltered(rows) {
+    const q = _tunPickerFilter.trim().toLowerCase();
+    if (!q) return rows;
+    // tokenise so "8 a6" matches "8-string A6 ..."
+    const toks = q.split(/\s+/);
+    return rows.filter(function (r) {
+      const hay = (r.strs + ' ' + r.name + ' ' + r.notes + ' ' + r.dgs + ' ' + r.info).toLowerCase();
+      return toks.every(function (t) { return hay.indexOf(t) !== -1; });
+    });
+  }
+
+  function renderTuningPicker(x) {
+    const pop = document.getElementById('tun_pop');
+    if (!pop) return;
+    const rows = _tunPickerFiltered(_tunPickerSorted(_tunPickerRows(x)));
+    const cols = [
+      { k: 'strs',  label: 'Str' },
+      { k: 'name',  label: 'Name' },
+      { k: 'notes', label: 'Notes' },
+      { k: 'dgs',   label: 'Degrees' },
+      { k: 'info',  label: 'Info' }
+    ];
+    let h = '';
+    h += '<div class="tun_pop_head">';
+    h += '  <input type="search" class="tun_pop_filter" placeholder="filter — e.g. ‘8 A6’ or ‘E9 emmons’" value="' + escHtml(_tunPickerFilter) + '" autocomplete="off" spellcheck="false">';
+    h += '  <span class="tun_pop_count">' + rows.length + ' / ' + Object.keys(TUNINGS).length + '</span>';
+    h += '</div>';
+    h += '<div class="tun_pop_body">';
+    h += '<table class="tun_pop_table"><thead><tr>';
+    cols.forEach(function (c) {
+      const arrow = (_tunPickerSort.col === c.k)
+        ? (_tunPickerSort.dir === 'asc' ? ' ▲' : ' ▼')
+        : '';
+      h += '<th data-col="' + c.k + '" class="tun_pop_th' + (_tunPickerSort.col === c.k ? ' active' : '') + '">'
+        + escHtml(c.label) + '<span class="tun_pop_arrow">' + arrow + '</span></th>';
+    });
+    h += '</tr></thead><tbody>';
+    rows.forEach(function (r) {
+      const sel = (r.key === x.x) ? ' tun_pop_row_selected' : '';
+      h += '<tr class="tun_pop_row' + sel + '" data-key="' + escAttr(r.key) + '" tabindex="0">';
+      h += '<td class="c_strs">' + r.strs + '</td>';
+      h += '<td class="c_name">' + escHtml(r.name) + '</td>';
+      h += '<td class="c_notes">' + escHtml(r.notes) + '</td>';
+      h += '<td class="c_dgs">' + escHtml(r.dgs) + '</td>';
+      h += '<td class="c_info">' + escHtml(r.info) + '</td>';
+      h += '</tr>';
+    });
+    if (!rows.length) {
+      h += '<tr><td colspan="5" class="tun_pop_empty">No tunings match.</td></tr>';
+    }
+    h += '</tbody></table></div>';
+    pop.innerHTML = h;
+  }
+
+  function escAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function bindTuningPicker(x) {
+    const btn = document.getElementById('tun_picker_btn');
+    const pop = document.getElementById('tun_pop');
+    if (!btn || !pop) return;
+
+    function open() {
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      renderTuningPicker(x);
+      // focus the filter input for instant typing
+      setTimeout(function () {
+        const f = pop.querySelector('.tun_pop_filter');
+        if (f) f.focus();
+        const selRow = pop.querySelector('.tun_pop_row_selected');
+        if (selRow) selRow.scrollIntoView({ block: 'center' });
+      }, 0);
+      document.addEventListener('mousedown', onDocDown, true);
+      document.addEventListener('keydown', onKeydown, true);
+    }
+    function close() {
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      document.removeEventListener('mousedown', onDocDown, true);
+      document.removeEventListener('keydown', onKeydown, true);
+    }
+    function onDocDown(e) {
+      if (!pop.contains(e.target) && e.target !== btn && !btn.contains(e.target)) close();
+    }
+    function onKeydown(e) {
+      if (e.key === 'Escape') { e.preventDefault(); close(); btn.focus(); }
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      pop.hidden ? open() : close();
+    });
+
+    // Delegated handlers for the popover contents (re-rendered on filter/sort
+    // changes, so attaching once on `pop` keeps wiring trivial).
+    pop.addEventListener('input', function (e) {
+      if (e.target.classList && e.target.classList.contains('tun_pop_filter')) {
+        _tunPickerFilter = e.target.value;
+        // Preserve focus + caret across re-render
+        const at = e.target.selectionStart;
+        renderTuningPicker(x);
+        const f = pop.querySelector('.tun_pop_filter');
+        if (f) { f.focus(); try { f.setSelectionRange(at, at); } catch (_) {} }
+      }
+    });
+    pop.addEventListener('click', function (e) {
+      const th = e.target.closest && e.target.closest('.tun_pop_th');
+      if (th) {
+        const col = th.getAttribute('data-col');
+        if (_tunPickerSort.col === col) {
+          _tunPickerSort.dir = _tunPickerSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          _tunPickerSort = { col: col, dir: col === 'strs' ? 'asc' : 'asc' };
+        }
+        renderTuningPicker(x);
+        return;
+      }
+      const row = e.target.closest && e.target.closest('.tun_pop_row');
+      if (row) {
+        const key = row.getAttribute('data-key');
+        if (key) {
+          close();
+          // Apply the new tuning by setting the hidden select + dispatching
+          // change → bindAutoSubmit → gatherAndNavigate, which preserves every
+          // other URL param.
+          const sel = document.querySelector('.tun_hidden_select');
+          if (sel) {
+            // Make sure the option exists before setting value (single-option select)
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.selected = true;
+            sel.innerHTML = '';
+            sel.appendChild(opt);
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      }
+    });
+    pop.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const row = document.activeElement && document.activeElement.closest && document.activeElement.closest('.tun_pop_row');
+        if (row) { e.preventDefault(); row.click(); }
+      }
+    });
   }
 
   // Quick-pick chord/scale chips. Reused above the fretboard AND above the
@@ -1426,6 +1619,7 @@
     renderTuningsTable(x);
     applyKeyboardColors(x);
     renderKeyboardPicks(x);
+    bindTuningPicker(x);
     applyCollapseFromUrl();
 
     renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding

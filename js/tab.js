@@ -142,7 +142,11 @@
       for (var r = 0; r < state.strings; r++) {
         var label = state.notes[r] || '';
         html += '<div class="tab_row" style="grid-template-columns: ' + rowTemplate + ';">';
-        html += '<div class="tab_label">' + escHtml(label) + '</div>';
+        // Editable string label — lets users write a tuning we don't have a
+        // preset for. Preset selection prefills these; manual edits override.
+        html += '<input class="tab_label tab_label_input" type="text" maxlength="3" '
+              + 'data-r="' + r + '" value="' + escAttr(label) + '" '
+              + 'placeholder="—" autocomplete="off" spellcheck="false">';
         html += '<div class="tab_cells" style="grid-template-columns: ' + cellsTemplate + ';">';
         for (var c = 0; c < totalCells; c++) {
           var globalCol = firstMeasure * cellsPerMeasure + c;
@@ -163,10 +167,32 @@
     grid.innerHTML = html;
 
     // wire input handlers (delegated)
-    grid.querySelectorAll('input').forEach(function (inp) {
+    grid.querySelectorAll('input.tab_label_input').forEach(function (inp) {
+      inp.addEventListener('input', onLabelInput);
+    });
+    grid.querySelectorAll('input:not(.tab_label_input)').forEach(function (inp) {
       inp.addEventListener('input', onCellInput);
       inp.addEventListener('keydown', onCellKey);
     });
+  }
+
+  // Editable string-label input. Supports plain notes (A, F#, Bb, C♯, D♭).
+  // We normalise # → ♯ and b (after a letter) → ♭ for the on-screen label,
+  // and keep state.notes in sync so the share URL captures custom tunings.
+  function onLabelInput(e) {
+    var inp = e.target;
+    var r = +inp.getAttribute('data-r');
+    var raw = inp.value;
+    // Normalise ascii accidentals to unicode glyphs once the user has typed
+    // the full token. This is a soft normalisation — we only swap when the
+    // input ends in '#' or a letter+b, so an in-progress 'B' isn't eaten.
+    var v = raw
+      .replace(/#/g, '♯')
+      .replace(/([A-Ga-g])b\b/g, '$1♭')
+      .replace(/([A-Ga-g])b$/, '$1♭');
+    if (v !== raw) inp.value = v;
+    state.notes[r] = v;
+    saveLocal();
   }
 
   function onCellInput(e) {
@@ -186,10 +212,11 @@
     var r = +inp.getAttribute('data-r');
     var c = +inp.getAttribute('data-c');
     var dr = 0, dc = 0;
-    if (e.key === 'ArrowRight') dc = 1;
-    else if (e.key === 'ArrowLeft') dc = -1;
-    else if (e.key === 'ArrowUp')   dr = -1;
-    else if (e.key === 'ArrowDown') dr = 1;
+    if (e.key === 'ArrowRight')      dc = 1;
+    else if (e.key === 'ArrowLeft')  dc = -1;
+    else if (e.key === 'ArrowUp')    dr = -1;
+    else if (e.key === 'ArrowDown')  dr = 1;
+    else if (e.key === 'Enter')      dr = 1;          // Enter steps down a string
     else return;
     var next = grid.querySelector('input[data-r="' + (r + dr) + '"][data-c="' + (c + dc) + '"]');
     if (next) {
@@ -356,10 +383,43 @@
 
     btnPrintBl.addEventListener('click', function (e) {
       e.preventDefault();
+      // "Print blank" prints a full page of empty tab staves at the current
+      // string count, regardless of the current notes/measures. We snapshot
+      // state, stamp a generous blank layout, render, print, then restore.
+      const snap = {
+        cells:    state.cells,
+        measures: state.measures,
+        beats:    state.beats,
+        subdiv:   state.subdiv,
+        perLine:  state.perLine,
+        title:    state.title
+      };
+      // ~6 systems of 4 measures gives a clean letter-page sheet at the
+      // default per-line. Honour the user's perLine + beats; only force
+      // measure count + clear cells.
+      state.cells    = {};
+      state.subdiv   = 1;                            // one cell per beat is plenty for handwriting
+      state.measures = (state.perLine || 4) * 6;     // ~6 systems
+      state.title    = '';                           // blank sheet — no title
+      titlePrint.textContent = '';
+      subPrint.textContent = state.strings + '-string blank tab —  ' +
+        (state.tuning && TUNINGS[state.tuning]
+          ? (TUNINGS[state.tuning].name + '  ' + TUNINGS[state.tuning].notes)
+          : '');
       paper.classList.add('blank');
+      render();
       window.print();
-      // restore after the print dialog closes
-      setTimeout(function () { paper.classList.remove('blank'); }, 500);
+      // Restore after the print dialog closes
+      setTimeout(function () {
+        paper.classList.remove('blank');
+        state.cells    = snap.cells;
+        state.measures = snap.measures;
+        state.subdiv   = snap.subdiv;
+        state.perLine  = snap.perLine;
+        state.title    = snap.title;
+        titlePrint.textContent = snap.title || '';
+        render();
+      }, 500);
     });
 
     btnShare.addEventListener('click', function (e) {
