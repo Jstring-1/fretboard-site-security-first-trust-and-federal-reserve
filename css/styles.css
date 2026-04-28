@@ -539,14 +539,23 @@ select option                              { color: var(--text); background: var
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
 
-/* Active chord/scale link in the chord_grid + scale_grid title rows. The cell
-   already has its degree-id bg color; the box-shadow inset adds a cyan ring
-   without disturbing layout. The link href flips to the clear-hl URL so a
-   second click clears the highlight. */
+/* Active chord/scale link in the chord_grid + scale_grid title rows. Yellow
+   ring (matches the highlighted-degree marker on the fretboard and keyboard).
+   The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
-#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px var(--accent-hi);                            }
+#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #ffd400;                                     }
 #chord_grid td.cg_selected a,
 #scale_grid td.cg_selected a               { color: #000 !important; font-weight: 700;                                }
+
+/* Highlighted-degree markers on the fretboard: yellow ring around any cell
+   whose id is one of the 12 degree IDs (i.e., a highlighted note). Empty/
+   no_highlight cells are unaffected. */
+#fretboard td[id="_1_"],  #fretboard td[id="_b2_"], #fretboard td[id="_2_"],
+#fretboard td[id="_b3_"], #fretboard td[id="_3_"],  #fretboard td[id="_4_"],
+#fretboard td[id="_b5_"], #fretboard td[id="_5_"],  #fretboard td[id="_b6_"],
+#fretboard td[id="_6_"],  #fretboard td[id="_b7_"], #fretboard td[id="_7_"] {
+    box-shadow: inset 0 0 0 2px #ffd400;
+}
 
 /* Sortable header buttons */
 table.sortable thead                       { background-color: rgba(95,232,224,0.06);                                 }

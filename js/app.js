@@ -1136,16 +1136,15 @@
           if (!inHighlightSet) {
             css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
           } else {
-            // Highlighted: dark inset outline so it pops on the white piano body
-            css += sel + ' { box-shadow: inset 0 0 0 2px #000 !important; color: #000 !important; }\n';
+            // Highlighted: yellow outline (matches chord/scale + fretboard markers)
+            css += sel + ' { box-shadow: inset 0 0 0 2px #ffd400 !important; color: #000 !important; }\n';
           }
         } else {
           // Black-key cell: tint label by degree (or near-bg if dimmed)
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
           if (inHighlightSet) {
-            // Highlighted: outline matches the degree color so the key stands out
-            css += sel + ' { box-shadow: inset 0 0 0 2px ' + fg + ' !important; }\n';
+            css += sel + ' { box-shadow: inset 0 0 0 2px #ffd400 !important; }\n';
           }
         }
       });
