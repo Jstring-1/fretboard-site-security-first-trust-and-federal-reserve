@@ -157,18 +157,8 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:10px;                                                    }
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
-/* Keyboard sits on a white piano-body inside the dark section frame. Section
-   wrapper stays dark per the global site theme (light page, dark sections). */
+/* Keyboard sits on a white piano-body inside the dark section frame. */
 .ritz                                      {  background-color:#ffffff; padding:0; border-radius:6px; margin:0 6px;   }
-/* Override the bulk dark-bg rule from the inline ritz/waffle CSS for chrome
-   cells (labels, separators, range cells). Black-key cells stay dark. */
-.ritz .waffle .s0, .ritz .waffle .s10, .ritz .waffle .s11, .ritz .waffle .s12,
-.ritz .waffle .s20, .ritz .waffle .s21, .ritz .waffle .s22, .ritz .waffle .s24,
-.ritz .waffle .s31, .ritz .waffle .s46, .ritz .waffle .s54, .ritz .waffle .s55,
-.ritz .waffle .s56, .ritz .waffle .s57, .ritz .waffle .s59, .ritz .waffle .s61 {
-    background-color:#ffffff !important;
-    color:#111 !important;
-}
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
@@ -514,9 +504,21 @@ select option                              { color: var(--text); background: var
 /* Blurb at the bottom — sits on the light page bg, needs dark text */
 #blurb                                     { font-size: 0.78em; color: #555555; opacity: 0.85; margin: 12px 0;       }
 
+/* Keyboard chrome override — must come AFTER the inline ritz/waffle CSS block
+   (which sets these cells to bg:#000 with !important). Labels, separators,
+   trailing spacers and instrument-range cells become white; the black-key
+   cells (s33/s36/s38/s41/s43/s44/s45) stay dark. */
+.ritz .waffle .s0, .ritz .waffle .s10, .ritz .waffle .s11, .ritz .waffle .s12,
+.ritz .waffle .s20, .ritz .waffle .s21, .ritz .waffle .s22, .ritz .waffle .s24,
+.ritz .waffle .s31, .ritz .waffle .s46, .ritz .waffle .s54, .ritz .waffle .s55,
+.ritz .waffle .s56, .ritz .waffle .s57, .ritz .waffle .s59, .ritz .waffle .s61 {
+    background-color:#ffffff !important;
+    color:#111 !important;
+}
+
 /* Footer "Jimmy Witherfork Strikes Again" — sits on the light page bg */
-#site_footer                               { text-align: center; padding: 24px 16px 32px; margin-top: 16px;            }
-#site_footer #footer_witherfork            { color: #555555 !important; font-size: 0.85em; letter-spacing: 0.04em;
+#site_footer                               { text-align: center; padding: 8px 16px 12px; margin-top: 4px;              }
+#site_footer #footer_witherfork            { color: #555555 !important; font-size: 0.78em; letter-spacing: 0.04em;
                                              text-decoration: none; cursor: pointer; transition: color .12s;          }
 #site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
 @media print { #site_footer { display: none !important; } }

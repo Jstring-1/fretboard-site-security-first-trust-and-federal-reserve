@@ -420,14 +420,23 @@
   }
 
   // Stop summary clicks on the dropdown / Clear link from toggling the parent <details>.
+  // For the <a> Clear link we ALSO need to drive navigation here, because
+  // stopPropagation blocks bindLinkInterceptor from seeing the click.
   function bindSummaryExtras() {
     document.body.addEventListener('mousedown', function (e) {
       if (e.target.closest && e.target.closest('.summary_extras')) e.stopPropagation();
     }, true);
     document.body.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('.summary_extras')) {
-        // Don't toggle the section; let the actual control (select/anchor) handle the click
-        e.stopPropagation();
+      const extras = e.target.closest && e.target.closest('.summary_extras');
+      if (!extras) return;
+      e.stopPropagation();  // don't toggle the parent <details>
+      const link = e.target.closest('a');
+      if (link) {
+        const href = link.getAttribute('href');
+        if (href && href.charAt(0) === '?') {
+          e.preventDefault();
+          navigateTo(href);
+        }
       }
     }, true);
   }
@@ -761,6 +770,30 @@
     overlay.querySelector('.vs_backdrop').addEventListener('click', closeViewSourceModal);
     overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
     document.body.appendChild(overlay);
+
+    // Optional anchor: position the panel near the cursor (used by the
+    // Witherfork footer popup). Clamps inside the viewport so a click near
+    // an edge doesn't push the panel off-screen.
+    if (opts && opts.anchor) {
+      const panel = overlay.querySelector('.vs_panel');
+      const margin = 12;
+      const w = panel.offsetWidth;
+      const h = panel.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = opts.anchor.x - w / 2;
+      let top  = opts.anchor.y - h - margin;       // prefer above the cursor
+      if (top < margin) top = opts.anchor.y + margin;  // not enough room above → below
+      left = Math.max(margin, Math.min(left, vw - w - margin));
+      top  = Math.max(margin, Math.min(top,  vh - h - margin));
+      panel.style.position = 'fixed';
+      panel.style.left = left + 'px';
+      panel.style.top  = top + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.transform = 'none';
+    }
+
     document.addEventListener('keydown', escClose);
   }
 
@@ -772,7 +805,11 @@
       e.preventDefault();
       const html =
         '<a class="wf_link" href="https://seadisco.com" target="_blank" rel="noopener noreferrer">SeaDisco.com</a>';
-      showInfoModal(html, { html: true, className: 'wf_compact' });
+      showInfoModal(html, {
+        html: true,
+        className: 'wf_compact',
+        anchor: { x: e.clientX, y: e.clientY }
+      });
     });
   }
 
@@ -1268,7 +1305,6 @@
 
   // ---------- init ----------
   function init() {
-    const t0 = performance.now();
     applyState();
     bindCollapsibles();
     bindLinkInterceptor();
@@ -1278,10 +1314,6 @@
     bindFooterWitherfork();
     renderQuiz();
     window.addEventListener('popstate', applyState);
-
-    // Loaded-in blurb (set once on initial load)
-    const blurb = document.getElementById('blurb');
-    if (blurb) blurb.textContent = 'Loaded in ' + ((performance.now() - t0) / 1000).toFixed(8) + 's';
   }
 
   if (document.readyState === 'loading') {
