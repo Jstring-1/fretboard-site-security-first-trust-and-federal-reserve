@@ -615,22 +615,24 @@ select option                              { color: var(--text); background: var
 #kb_quick_picks .qp_link.cg_selected       { background: var(--accent-hi) !important; color: #000 !important;
                                              border-color: var(--accent-hi) !important;                              }
 
-/* Highlight-degree row above the keyboard's quick picks. Pills are <a>
-   toggle links here (not form checkboxes), so clicking flips just that
-   degree in the URL. Visual style mirrors the form pills. */
-#kb_picks_root .kb_hl_row                  { display: flex; flex-wrap: wrap; align-items: center;
+/* Highlight-degree row — used both inside the fretboard form (.fb_hl_row)
+   and above the keyboard's quick picks (.kb_hl_row). Pills are <a> toggle
+   links: clicking flips just that degree in the URL, then the link
+   interceptor re-renders in place (no scroll jump). On-state pills are
+   coloured per-degree via inline styles set by highlightPillsLinkHtml. */
+.opt_row_highlights.kb_hl_row,
+.opt_row_highlights.fb_hl_row              { display: flex; flex-wrap: wrap; align-items: center;
                                              justify-content: center; gap: 4px;
                                              padding: 6px 14px 0; line-height: 1;                                    }
-#kb_picks_root .kb_hl_row .hl_title        { color: var(--muted); font: 600 0.78em var(--font);
+.opt_row_highlights .hl_title              { color: var(--muted); font: 600 0.78em var(--font);
                                              letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
-#kb_picks_root .kb_hl_row .hl_pill         { display: inline-block; padding: 3px 9px; font-size: 0.85em;
+.opt_row_highlights a.hl_pill              { display: inline-block; padding: 3px 9px; font-size: 0.85em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
-                                             text-decoration: none;                                                  }
-#kb_picks_root .kb_hl_row .hl_pill:hover   { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
-#kb_picks_root .kb_hl_row .hl_pill_on      { background: var(--accent-hi) !important; color: #000 !important;
-                                             border-color: var(--accent-hi) !important; font-weight: 600;            }
-#kb_picks_root .kb_hl_row .hl_all_pill     { margin-left: 8px;                                                       }
+                                             text-decoration: none; transition: background .12s, border-color .12s; }
+.opt_row_highlights a.hl_pill:hover        { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
+.opt_row_highlights a.hl_pill_on           { font-weight: 600;                                                       }
+.opt_row_highlights a.hl_all_pill          { margin-left: 8px;                                                       }
 
 @media print { #quick_picks, #kb_quick_picks, #kb_picks_root { display: none !important; } }
 

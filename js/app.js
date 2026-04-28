@@ -24,7 +24,8 @@
     const params = new URLSearchParams(window.location.search);
     params.delete('hl');
     const qs = params.toString();
-    return qs ? '?' + qs : window.location.pathname;
+    // Always include the leading "?" so the link interceptor catches it.
+    return qs ? '?' + qs : '?';
   }
 
   // Escape a string so it's safe to drop inside a CSS `content: "..."` value.
@@ -290,27 +291,9 @@
 
     // (Key dropdown + Clear live in the section title bars now, not in the form.)
 
-    // Row 3: highlight degree pickers
-    h += '<div class="opt_row opt_row_highlights">';
-    h += '<span class="hl_title">Highlight:</span>';
-    DEGREES.forEach(function (a, i) {
-      const ab = flatToB(a);
-      const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
-      h += '<label class="hl_pill"><input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '/>' + escHtml(a) + escHtml(EXTENSIONS[i]) + '</label>';
-    });
-    // All / None toggle — preserves every other URL param
-    const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
-    let allHref;
-    if (allOn) {
-      allHref = clearHlHref();
-    } else {
-      const p = new URLSearchParams(window.location.search);
-      p.delete('hl');
-      DEGREES.forEach(function (d) { p.append('hl', flatToB(d)); });
-      allHref = '?' + p.toString();
-    }
-    h += '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
-    h += '</div>';
+    // Row 3: highlight degree pickers (link-style toggle pills, same widget
+    // used above the keyboard so the two sections look identical).
+    h += highlightPillsLinkHtml(x, 'fb_hl_row');
 
     h += '</div>';
     root.innerHTML = h;
@@ -344,11 +327,24 @@
     return h;
   }
 
-  // Highlight degree pills as toggle LINKS (not checkboxes). Used in the
-  // keyboard section's mirror bar — it's outside the fretboard form, so each
-  // pill builds an URL that flips its own degree on/off.
-  function highlightPillsLinkHtml(x) {
-    let h = '<div class="opt_row opt_row_highlights kb_hl_row">';
+  // Per-degree colors used for the highlight-pill on-state, mirroring the
+  // fretboard cell colors (#_1_ etc. in styles.css). Keep in sync with that map.
+  const HL_PILL_COLORS = {
+    '1':  '#ff0000', 'b2': '#674ea7', '2':  '#9900ff',
+    'b3': '#f6b26b', '3':  '#ff6d01', '4':  '#00ffff',
+    'b5': '#3d85c6', '5':  '#0000ff',
+    'b6': '#6aa84f', '6':  '#0cc016',
+    'b7': '#a64d79', '7':  '#ff00ff'
+  };
+  // Degrees whose background reads dark enough that white text wins.
+  const HL_PILL_LIGHT_TEXT = { '1':1, 'b2':1, '2':1, '3':1, 'b5':1, '5':1, 'b6':1, 'b7':1, '7':1 };
+
+  // Highlight degree pills as toggle LINKS (not checkboxes). Used both inside
+  // the fretboard form AND above the keyboard section so the two stay in sync.
+  // Each pill flips its own `&hl=<deg>` in the URL, so the link interceptor
+  // re-renders in place. On-state pills are coloured to match the degree.
+  function highlightPillsLinkHtml(x, rowCls) {
+    let h = '<div class="opt_row opt_row_highlights ' + (rowCls || '') + '">';
     h += '<span class="hl_title">Highlight:</span>';
     DEGREES.forEach(function (a, i) {
       const ab = flatToB(a);
@@ -359,9 +355,15 @@
       cur.forEach(function (d) { if (d !== ab) p.append('hl', d); });
       if (!on) p.append('hl', ab);
       const qs = p.toString();
-      const href = qs ? '?' + qs : window.location.pathname;
+      const href = qs ? '?' + qs : '?';
       const cls = 'hl_pill' + (on ? ' hl_pill_on' : '');
-      h += '<a class="' + cls + '" href="' + escHtml(href) + '">'
+      let style = '';
+      if (on) {
+        const bg = HL_PILL_COLORS[ab] || '#888';
+        const fg = HL_PILL_LIGHT_TEXT[ab] ? '#fff' : '#000';
+        style = ' style="background:' + bg + ';color:' + fg + ';border-color:' + bg + ';"';
+      }
+      h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>'
         + escHtml(a) + escHtml(EXTENSIONS[i]) + '</a>';
     });
     const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
@@ -384,7 +386,7 @@
   function renderKeyboardPicks(x) {
     const root = document.getElementById('kb_picks_root');
     if (!root) return;
-    root.innerHTML = highlightPillsLinkHtml(x) + quickPicksHtml(x, 'kb_quick_picks');
+    root.innerHTML = highlightPillsLinkHtml(x, 'kb_hl_row') + quickPicksHtml(x, 'kb_quick_picks');
   }
 
   function renderFretboard(x) {
@@ -983,9 +985,11 @@
       if (cb && cb.checked) parts.push(name + '=' + cb.value);
     });
 
-    opt.querySelectorAll('input[type="checkbox"][name="hl"]:checked').forEach(function (cb) {
-      // Encode ♭ as b for URL hl values (matches PHP/quick-link convention)
-      parts.push('hl=' + cb.value.replace(/♭/g, 'b'));
+    // Highlight pills are link-driven now (no checkboxes), so the active set
+    // lives entirely in the URL. Carry whatever's currently in `?hl=...` so
+    // changes to other form controls don't drop the highlights.
+    new URLSearchParams(window.location.search).getAll('hl').forEach(function (v) {
+      parts.push('hl=' + v);
     });
 
     if (fb) {
@@ -1026,18 +1030,26 @@
     });
   }
 
-  // Intercept clicks on any '?...' query-string link so we update via pushState
-  // instead of triggering a full page navigation.
+  // Intercept clicks on any same-page link so we update via pushState
+  // instead of triggering a full page navigation. Catches both '?foo=bar'
+  // hrefs AND bare-pathname hrefs (which fire when, say, deselecting the last
+  // highlight pill empties the query string and the helper returns the path).
   function bindLinkInterceptor() {
     document.body.addEventListener('click', function (e) {
       const a = e.target.closest && e.target.closest('a');
       if (!a) return;
       // Honor modifier-clicks (open in new tab/window) and middle-click
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
-      const href = a.getAttribute('href');
-      if (!href || href.charAt(0) !== '?') return;
+      const raw = a.getAttribute('href');
+      if (!raw) return;
+      let url;
+      try { url = new URL(a.href, window.location.href); } catch (_) { return; }
+      // External or different-page links: let the browser handle them.
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname !== window.location.pathname) return;
+      // Same-page nav: route through pushState so we don't reload / scroll.
       e.preventDefault();
-      navigateTo(href);
+      navigateTo(url.search || '?');
     });
   }
 
