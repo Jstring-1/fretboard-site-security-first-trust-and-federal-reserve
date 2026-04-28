@@ -67,6 +67,30 @@
   }
   function hashToSharp(s) { return String(s).replace(/♯/g, 's'); }
 
+  // Canonical order for URL params — every URL the app generates should
+  // emit known params in this order so shared / bookmarked URLs read
+  // consistently. Unknown / legacy params (e.g. s1..s12) are appended
+  // alphabetically at the end.
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort'];
+  function canonicalQS(params) {
+    const known = new Set(URL_PARAM_ORDER);
+    const out = new URLSearchParams();
+    URL_PARAM_ORDER.forEach(function (k) {
+      if (params.has(k)) {
+        params.getAll(k).forEach(function (v) { out.append(k, v); });
+      }
+    });
+    const unknown = [];
+    params.forEach(function (_v, k) {
+      if (!known.has(k) && unknown.indexOf(k) === -1) unknown.push(k);
+    });
+    unknown.sort();
+    unknown.forEach(function (k) {
+      params.getAll(k).forEach(function (v) { out.append(k, v); });
+    });
+    return out.toString();
+  }
+
   // Read the active highlight degrees from URL params. Accepts both the
   // legacy multi-key form ?hl=1&hl=b3&hl=5 and the compact comma-separated
   // form ?hl=1,b3,5 — splits on commas across every hl key seen.
@@ -602,7 +626,7 @@
         // plays 6-string can pin "6-string" once and keep it across reloads.
         const params = new URLSearchParams(window.location.search);
         if (want) params.set('fcp', want); else params.delete('fcp');
-        const qs = params.toString();
+        const qs = canonicalQS(params);
         history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
         renderTuningPicker(x);
         return;
@@ -1594,9 +1618,15 @@
   }
 
   function navigateTo(search) {
-    if (search === window.location.search) return;
-    // '?' with no params → strip the query entirely so the URL bar isn't littered
-    const target = (search === '?' || search === '') ? window.location.pathname : search;
+    // Canonicalize param order so every navigation emits the same shape.
+    let _norm = search;
+    try {
+      const _p = new URLSearchParams(String(search || '').replace(/^\?/, ''));
+      const _qs = canonicalQS(_p);
+      _norm = _qs ? '?' + _qs : '?';
+    } catch (_) {}
+    if (_norm === window.location.search || (_norm === '?' && !window.location.search)) return;
+    const target = (_norm === '?' || _norm === '') ? window.location.pathname : _norm;
     // Preserve scroll across the re-render — pushState shouldn't move the page,
     // but some layout shifts during innerHTML swaps can cause a jump.
     const sx = window.scrollX || window.pageXOffset || 0;
@@ -1713,7 +1743,7 @@
         const params = new URLSearchParams(window.location.search);
         if (col >= 0 && dir) params.set('sort', col + ':' + dir);
         else params.delete('sort');
-        const qs = params.toString();
+        const qs = canonicalQS(params);
         history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
       });
     });
@@ -1766,7 +1796,7 @@
       const params = new URLSearchParams(window.location.search);
       if (text) params.set('f', text); else params.delete('f');
       if (strs) params.set('fc', strs); else params.delete('fc');
-      const qs = params.toString();
+      const qs = canonicalQS(params);
       history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
     }
     function refresh() {
@@ -1845,7 +1875,7 @@
     });
     if (closed.length) params.set('c', closed.join(','));
     else params.delete('c');
-    const qs = params.toString();
+    const qs = canonicalQS(params);
     const target = qs ? '?' + qs : window.location.pathname;
     if (target === window.location.pathname + window.location.search) return;
     if (target === window.location.search) return;
