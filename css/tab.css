@@ -146,15 +146,15 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
                                               margin: 0 !important; width: 100% !important;                          }
   .tab_title_print                           { color: #000 !important; font-size: 0.9em !important; margin: 0 !important; }
   .tab_subtitle_print                        { display: none !important;                                              }
-  /* Use the same row dimensions as the editor on-screen — 22px tall
-     rows + 22px tab_cells — so what prints is a 1:1 of what the user
-     sees while writing the tab. Earlier I shrunk the rows for print
-     density, but every height mismatch between row, cell, and input
-     produced a visual offset that made notes appear on the wrong
-     string. Density now comes from the gap between systems instead.  */
-  #tab_grid                                  { gap: 24px !important;                                                  }
+  /* 14px rows + 14px cells + 14px inputs — every dimension matched so
+     each note's line-box fits cleanly inside its own row (no string
+     offset). Same dimensions for regular AND blank print so they look
+     consistent. */
+  #tab_grid                                  { gap: 16px !important;                                                  }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
                                               padding: 4px 0 4px !important;                                          }
+  .tab_row                                   { height: 14px !important;                                                }
+  .tab_cells                                 { height: 14px !important;                                                }
   .tab_row::before                           { background: #000 !important;
                                               -webkit-print-color-adjust: exact;
                                               print-color-adjust: exact;                                              }
@@ -170,42 +170,34 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   .tab_row_first .tab_cell.barline::after    { top: 50% !important;                                                   }
   .tab_row_last  .tab_cell.barline::after    { bottom: 50% !important;                                                }
   /* System left/right borders get the same treatment so they don't poke
-     past the top and bottom staff lines either. The 15px offset matches
-     the padding-top/-bottom (4px) plus half a row height (11px) at the
-     22px row dimensions used on screen. */
+     past the top and bottom staff lines either. 11px = padding-top (4)
+     + half a row height (7) for 14px rows. */
   .tab_system                                { border-left: 0 !important; border-right: 0 !important;
                                               position: relative !important;                                          }
   .tab_system::before,
-  .tab_system::after                         { content: ""; position: absolute; top: 15px; bottom: 15px;
+  .tab_system::after                         { content: ""; position: absolute; top: 11px; bottom: 11px;
                                               width: 1px; background: #000;                                           }
   .tab_system::before                        { left: 0;                                                                }
   .tab_system::after                         { right: 0;                                                               }
   /* Empty cells stay transparent in print so the staff line shows through.
      Filled cells get an opaque white bg so the digit punches the line. */
-  /* Inputs keep their on-screen dimensions in print — no height/line-
-     height overrides. Just ink colour + transparent default bg so the
-     staff line shows through empty cells. */
+  /* Inputs locked to row height (14px) with matching line-height so
+     each digit sits exactly in its own row — no overflow into the row
+     above or below. */
   .tab_cell input                            { background: transparent !important; color: #000 !important;
+                                              height: 14px !important; line-height: 14px !important;
+                                              font-size: 0.7em !important; vertical-align: middle !important;
                                               -webkit-print-color-adjust: exact; print-color-adjust: exact;            }
   .tab_cell input:not(:placeholder-shown)    { background: #fff !important;                                            }
+  input.tab_label_input                      { height: 14px !important; line-height: 14px !important;                  }
   /* Hide measure numbers in print regardless — they eat ~10px per system,
      which is the difference between 5 and 6 systems per page at 12 strings. */
   .tab_measure_numbers                       { display: none !important;                                              }
 
-  /* Print-blank uses TIGHTER row dimensions than regular print so we
-     can fit more systems on a page (no typed data here, so the input
-     overflow that haunts regular print doesn't matter). */
-  #tab_paper.blank .tab_row                  { height: 12px !important;                                                }
-  #tab_paper.blank .tab_cells                { height: 12px !important;                                                }
-  #tab_paper.blank .tab_cell input           { height: 12px !important; line-height: 12px !important;
-                                              font-size: 0.65em !important;                                            }
-  #tab_paper.blank input.tab_label_input     { height: 12px !important; line-height: 12px !important;                  }
-  #tab_paper.blank #tab_grid                 { gap: 18px !important;                                                  }
-  #tab_paper.blank .tab_system               { padding: 2px 0 !important;                                              }
-  #tab_paper.blank .tab_system::before,
-  #tab_paper.blank .tab_system::after        { top: 8px !important; bottom: 8px !important;                            }
   /* Print-blank: drop the measure bar-lines too so the user has a clean
-     handwriting sheet — they can pencil in their own bar-lines / counts. */
+     handwriting sheet — they can pencil in their own bar-lines / counts.
+     Same row dimensions as regular print (above) so the staves print at
+     the same height in either mode. */
   #tab_paper.blank .tab_cell.barline         { border-left: 0 !important;                                              }
   /* And hide the string-label inputs entirely on blank print — the
      beforeprint hook fills empties with "—", which would show up as a
