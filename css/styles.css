@@ -556,9 +556,10 @@ select option                              { color: var(--text); background: var
    The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
 #scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #e6ff00;                                     }
-/* Selected chord / scale link: bold (text colour comes from the rule above). */
+/* Selected chord / scale link: yellow ring only — no font-weight change so
+   the chip width stays identical and the row doesn't reflow on click. */
 #chord_grid td.cg_selected a,
-#scale_grid td.cg_selected a               { font-weight: 700;                                                        }
+#scale_grid td.cg_selected a               { /* width-stable: ring only */                                            }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
@@ -587,7 +588,9 @@ select option                              { color: var(--text); background: var
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none; transition: background .12s, border-color .12s; }
 #quick_picks .qp_link:hover                { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
-#quick_picks .qp_link.cg_selected          { box-shadow: inset 0 0 0 2px #e6ff00; font-weight: 700;                  }
+/* Yellow ring only — same font-weight as unselected so the chip's width
+   stays put when toggled (no row reflow on click). */
+#quick_picks .qp_link.cg_selected          { box-shadow: inset 0 0 0 2px #e6ff00;                                     }
 @media print { #quick_picks { display: none !important; } }
 
 /* Sortable header buttons */
