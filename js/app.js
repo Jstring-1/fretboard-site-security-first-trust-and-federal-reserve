@@ -305,10 +305,10 @@
       ? String(x[rev + 'sdgs']).replace(/ /g, '')
       : String(x[rev + 'dgs']).replace(/ /g, '');
 
+    // Tuning + Key info now lives in each section's title bar (rendered by
+    // renderSummaryStatus). The fretboard header only carries the form.
     let h = '';
     h += '<div class="fb_header">';
-    h += '  <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
-    h += '  <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
     h += '  <div id="options_root"></div>';
     h += '</div>';
 
@@ -376,7 +376,8 @@
   }
 
   // Each section's title bar gets its own Key dropdown + Clear link, populated
-  // here on every render so they stay in sync with the URL state.
+  // here on every render so they stay in sync with the URL state. The Tunings
+  // list section (section_5) is intentionally excluded.
   function renderSummaryExtras(x) {
     const slots = document.querySelectorAll('.summary_extras');
     if (!slots.length) return;
@@ -389,7 +390,33 @@
         opts +
       '</select></label></span>' +
       '<a href="?" class="section_clear">Clear</a>';
-    slots.forEach(function (s) { s.innerHTML = html; });
+    slots.forEach(function (s) {
+      const target = s.getAttribute('data-summary-for');
+      if (target === 'section_5') { s.innerHTML = ''; return; }  // tunings list: no key/clear
+      s.innerHTML = html;
+    });
+  }
+
+  // Compact "Key … · Highlighted … | Tuning …" line shown in every section
+  // title bar except the Learn quiz.
+  function renderSummaryStatus(x) {
+    const rev = (x.y === 'y') ? 'rev_' : '';
+    const tuningName = (x.z === 'y') ? 'Custom' : x.name;
+    const tuningNotes = (x.z === 'y')
+      ? String(x[rev + 's']).replace(/ /g, '')
+      : String(x[rev + 'notes']).replace(/ /g, '');
+    const tuningDgs = (x.z === 'y')
+      ? String(x[rev + 'sdgs']).replace(/ /g, '')
+      : String(x[rev + 'dgs']).replace(/ /g, '');
+    const keyPart = 'Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name);
+    const tunPart = 'Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' (' + escHtml(tuningDgs) + ')';
+    // Two short stacked lines: key/highlight on top, tuning underneath.
+    const html =
+      '<span class="status_key">' + keyPart + '</span>' +
+      '<span class="status_tun">' + tunPart + '</span>';
+    document.querySelectorAll('.summary_status').forEach(function (s) {
+      s.innerHTML = html;
+    });
   }
 
   // Stop summary clicks on the dropdown / Clear link from toggling the parent <details>.
@@ -1193,6 +1220,7 @@
     applyCollapseFromUrl();
 
     renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding
+    renderSummaryStatus(x);  // compact key/tuning text in each title bar
     bindAutoSubmit();        // so the change-listener catches them
     applyPrintColors();
 

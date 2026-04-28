@@ -326,7 +326,9 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
 *********************************************************************************************************************/
 /* Section summary header (matches .section's 10px corner radius) */
 details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 10px 16px; font-size: 1.05em;
-                                             background: linear-gradient(180deg, #1a1a1a, #0e0e0e); color: #fff;     }
+                                             background: linear-gradient(180deg, #1a1a1a, #0e0e0e); color: #fff;
+                                             display: flex; align-items: center; gap: 6px;                            }
+details.collapsible > summary .summary_title { font-weight: 700; }
 /* Help (?) button next to each section title */
 .section_help                              { display: inline-block; width: 22px; height: 22px; padding: 0;
                                              margin-left: 8px; vertical-align: middle;
@@ -358,6 +360,20 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                              background: rgba(255,255,255,0.18); color: #fff !important;
                                              text-decoration: none; cursor: pointer;                                   }
 .summary_extras .section_clear:hover       { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+
+/* Compact Key + Tuning status, centered in every section title bar (except Learn).
+   Two short lines stacked; flex-grows to fill the middle space. Truncates with
+   ellipsis if it gets crowded. */
+.summary_status                            { flex: 1 1 auto; min-width: 0; padding: 0 12px;
+                                             font: 400 0.78em var(--font); font-weight: normal;
+                                             color: rgba(240,240,240,0.75); text-align: center;
+                                             display: flex; flex-direction: column; gap: 2px;                          }
+.summary_status:empty                      { display: none;                                                            }
+.summary_status .status_key,
+.summary_status .status_tun                { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;          }
+.summary_status .status_sep                { display: none;                                                            }
+.summary_status .status_key                { color: rgba(240,240,240,0.92);                                            }
+.summary_status .status_tun                { color: rgba(240,240,240,0.75);                                            }
 
 /* Custom Tuning header doubles as a toggle switch (replaces 'Show custom tuning' checkbox) */
 .cyo_switch                                { padding: 0 !important;                                                   }
