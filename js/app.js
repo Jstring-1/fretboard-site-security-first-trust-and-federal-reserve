@@ -303,6 +303,30 @@
     h += '  <div id="options_root"></div>';
     h += '</div>';
 
+    // Quick-pick chord/scale links — copies of the chord_grid + scale_grid
+    // top rows, parked above the fretboard so the user doesn't have to
+    // scroll down to a builder section to apply a chord or scale.
+    h += '<div id="quick_picks">';
+    h += '  <div class="qp_row"><span class="qp_label">Chords</span>';
+    for (const a in GRID) {
+      const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
+      const isSelected = (x.hl_n === a.replace(/_/g, ' '));
+      const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
+      const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
+      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
+    }
+    h += '  </div>';
+    h += '  <div class="qp_row"><span class="qp_label">Scales</span>';
+    for (const name in SCALES) {
+      const label = name.replace(/_/g, ' ');
+      const isSelected = (x.hl_n === label);
+      const href = isSelected ? x._hilight_url : (x._hilight_url + SCALES[name]);
+      const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
+      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
+    }
+    h += '  </div>';
+    h += '</div>';
+
     h += '<table id="fretboard">';
 
     const cyoState = x.z === 'y' ? 'on' : 'off';
@@ -459,28 +483,13 @@
       _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
     };
 
-    // Background color for each chord-link cell = the degree that gives the chord its character
-    const CHORD_CHAR_DEG = {
-      Maj:'_3_',         Min:'_b3_',        aug:'_b6_',        dim:'_b5_',
-      sus2:'_2_',        sus4:'_4_',
-      Maj6:'_6_',        min6:'_6_',
-      dom7:'_b7_',       min7:'_b7_',       aug7:'_b7_',       '7b5':'_b5_',
-      dim7:'_6_',        'half-dim':'_b5_',
-      Maj7:'_7_',        'min-Maj7':'_7_',
-      add9:'_2_',        min9:'_2_',        '6add9':'_2_',
-      '9th':'_2_',       '7b9':'_b2_',      Maj9:'_2_',        '7#9':'_b3_',
-      '11th':'_4_',      min11:'_4_',       '7#11':'_b5_',
-      '13th':'_6_',      min13:'_6_'
-    };
-
     let chordLinksRow = '<tr id="under_chord_grid"><td></td>';
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
-      const idAttr = CHORD_CHAR_DEG[a] ? ' id="' + CHORD_CHAR_DEG[a] + '"' : '';
       const isSelected = (x.hl_n === a.replace(/_/g, ' '));
       const href = isSelected ? x._hilight_url : (x._hilight_url + GRID[a]);
       const tdCls = isSelected ? ' class="cg_selected"' : '';
-      chordLinksRow += '<td' + idAttr + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
+      chordLinksRow += '<td' + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
     }
     chordLinksRow += '<td></td></tr>';
 

@@ -551,10 +551,8 @@ select option                              { color: var(--text); background: var
    The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
 #scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #e6ff00;                                     }
-/* Chord cells already have a bright degree-coloured bg, so dark + bold text
-   reads on top. Scale cells have a dark bg, so just bold the link and keep
-   its inherited light colour — don't force dark on dark. */
-#chord_grid td.cg_selected a               { color: #000 !important; font-weight: 700;                                }
+/* Selected chord / scale link: bold, inherited light text on dark grid bg. */
+#chord_grid td.cg_selected a,
 #scale_grid td.cg_selected a               { font-weight: 700;                                                        }
 
 /* Highlighted-degree markers on the fretboard: yellow ring around any cell
@@ -566,6 +564,22 @@ select option                              { color: var(--text); background: var
 #fretboard td[id="_6_"],  #fretboard td[id="_b7_"], #fretboard td[id="_7_"] {
     box-shadow: inset 0 0 0 2px #e6ff00;
 }
+
+/* Quick-pick chord + scale link strip above the fretboard. Same href logic
+   as the chord/scale builder grid title rows; selected state shows the same
+   yellow ring + bold text. */
+#quick_picks                               { padding: 6px 14px 4px; display: flex; flex-direction: column; gap: 4px; }
+#quick_picks .qp_row                       { display: flex; flex-wrap: wrap; align-items: center;
+                                             gap: 4px 4px; line-height: 1;                                            }
+#quick_picks .qp_label                     { font-size: 0.78em; font-weight: 600; color: var(--muted);
+                                             min-width: 56px; text-align: right; padding-right: 6px;                  }
+#quick_picks .qp_link                      { display: inline-block; padding: 3px 9px; font-size: 0.85em;
+                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
+                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+                                             text-decoration: none; transition: background .12s, border-color .12s; }
+#quick_picks .qp_link:hover                { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
+#quick_picks .qp_link.cg_selected          { box-shadow: inset 0 0 0 2px #e6ff00; font-weight: 700;                  }
+@media print { #quick_picks { display: none !important; } }
 
 /* Sortable header buttons */
 table.sortable thead                       { background-color: rgba(95,232,224,0.06);                                 }
