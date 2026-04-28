@@ -67,12 +67,15 @@
 .tab_row                                    { position: relative; display: grid;
                                               align-items: center;
                                               height: 22px; }
-/* Use a 1px top-border on a zero-height element instead of a 1px-tall
-   background. Borders are treated as foreground strokes by every browser
-   so they print reliably without needing print-color-adjust hacks. The
-   colour is bumped above --muted so the line reads clearly on screen. */
+/* Staff line: 1px-tall background bar centred on the row's visual mid-
+   line. The earlier border-top approach drew the line a px or two above
+   centre (border-top sits below the box's top edge, which we'd anchored
+   at top:50%), making the digits look like they were floating below the
+   line. Using height:1px + translateY(-50%) puts the line exactly on
+   the row's centre, matching the digit caps inside the cell inputs. */
 .tab_row::before                            { content: ""; position: absolute; left: 36px; right: 0; top: 50%;
-                                              height: 0; border-top: 1px solid #c0c0c0; z-index: 0;                  }
+                                              height: 1px; background: #c0c0c0; z-index: 0;
+                                              transform: translateY(-50%);                                            }
 .tab_label                                  { z-index: 2; text-align: right; padding-right: 8px;
                                               font: 600 0.85em var(--font); color: var(--accent-hi);
                                               background: var(--surface);                                            }
@@ -150,7 +153,9 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   #tab_grid                                  { gap: 24px !important;                                                  }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
                                               padding: 4px 0 4px !important;                                          }
-  .tab_row::before                           { border-top-color: #000 !important;                                      }
+  .tab_row::before                           { background: #000 !important;
+                                              -webkit-print-color-adjust: exact;
+                                              print-color-adjust: exact;                                              }
   .tab_label                                 { color: #000 !important; background: #fff !important;
                                               font-size: 0.7em !important;                                            }
   /* Bar lines: switch from a per-cell border-left to a positioned ::after
