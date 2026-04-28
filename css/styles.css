@@ -157,8 +157,10 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:10px;                                                    }
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
-/* Keyboard sits on a white "piano body" inside the dark section frame */
-.ritz                                      {  background-color:#ffffff; padding:6px; border-radius:6px;              }
+/* Keyboard section's content area is a light "piano body" — the keyboard itself
+   sits on white. The dark Noir frame is just the section's title bar. */
+#section_4                                 {  background-color:#ffffff !important;                                    }
+.ritz                                      {  background-color:transparent; padding:0; border-radius:0;               }
 /* Override the bulk dark-bg rule from the inline ritz/waffle CSS for chrome
    cells (labels, separators, range cells). Black-key cells stay dark. */
 .ritz .waffle .s0, .ritz .waffle .s10, .ritz .waffle .s11, .ritz .waffle .s12,
