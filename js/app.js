@@ -602,6 +602,55 @@
     }
   }
 
+  // ---------- keyboard color override (per current key) ----------
+  // Map each note to the keyboard cell classes that visually represent it.
+  // White-note positions get a background color; black-note positions get a text color
+  // (the cell itself stays dark, only the "A♯" / "C♯" / etc. label gets tinted).
+  const KEYBOARD_NOTE_CLASSES = {
+    'A':  { mode: 'bg',    cls: ['s32', 's47'] },
+    'B':  { mode: 'bg',    cls: ['s34', 's48'] },
+    'C':  { mode: 'bg',    cls: ['s35', 's49'] },
+    'D':  { mode: 'bg',    cls: ['s37', 's50'] },
+    'E':  { mode: 'bg',    cls: ['s39', 's51'] },
+    'F':  { mode: 'bg',    cls: ['s40', 's52'] },
+    'G':  { mode: 'bg',    cls: ['s42', 's53'] },
+    'A♯': { mode: 'color', cls: ['s33', 's44'] },
+    'C♯': { mode: 'color', cls: ['s36', 's45'] },
+    'D♯': { mode: 'color', cls: ['s38'] },
+    'F♯': { mode: 'color', cls: ['s41'] },
+    'G♯': { mode: 'color', cls: ['s43'] }
+  };
+  const KEYBOARD_DEGREE_COLORS = {
+    '1':  '#ff0000', '♭2': '#674ea7', '2':  '#9900ff',
+    '♭3': '#f6b26b', '3':  '#ff6d01', '4':  '#00ffff',
+    '♭5': '#3d85c6', '5':  '#0000ff',
+    '♭6': '#6aa84f', '6':  '#0cc016',
+    '♭7': '#a64d79', '7':  '#ff00ff'
+  };
+
+  function applyKeyboardColors(x) {
+    let style = document.getElementById('keyboard_dynamic_style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'keyboard_dynamic_style';
+      document.head.appendChild(style);
+    }
+    const i1 = KEYS.indexOf(x.k);
+    let css = '';
+    for (const note in KEYBOARD_NOTE_CLASSES) {
+      const noteIdx = KEYS.indexOf(note);
+      const semi = ((noteIdx - i1) + 12) % 12;
+      const deg = DEGREES[semi];
+      const color = KEYBOARD_DEGREE_COLORS[deg];
+      const def = KEYBOARD_NOTE_CLASSES[note];
+      const prop = def.mode === 'bg' ? 'background-color' : 'color';
+      def.cls.forEach(function (c) {
+        css += '.ritz .waffle .' + c + ' { ' + prop + ': ' + color + ' !important; }\n';
+      });
+    }
+    style.textContent = css;
+  }
+
   // ---------- learn / quiz ----------
   let _quizCurrent = null;
 
@@ -738,6 +787,7 @@
     renderChordGrid(x);
     renderScaleGrid(x);
     renderTuningsTable(x);
+    applyKeyboardColors(x);
 
     bindAutoSubmit();
     bindPrintColorToggle();
