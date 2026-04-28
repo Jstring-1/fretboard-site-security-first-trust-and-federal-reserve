@@ -306,9 +306,6 @@
 
     let h = '';
     h += '<div class="fb_header">';
-    h += '  <div class="fb_left">';
-    h += '    <div id="view_src"><button style="background:none;border:none;" type="button" onclick="viewSource()">View Source Message</button></div>';
-    h += '  </div>';
     h += '  <div class="fb_middle">';
     h += '    <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
     h += '    <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
@@ -520,49 +517,161 @@
     root.innerHTML = h;
   }
 
-  // ---------- view source modal (ASCII-art "About" message) ----------
-  const SF_MESSAGE = [
-    '',
-    '',
-    '  ███████ ██       █████  ███    ██ ████████ ███████ ██ ███    ██ ██████  ███████ ██████',
-    '  ██      ██      ██   ██ ████   ██    ██    ██      ██ ████   ██ ██   ██ ██      ██   ██',
-    '  ███████ ██      ███████ ██ ██  ██    ██    █████   ██ ██ ██  ██ ██   ██ █████   ██████',
-    '       ██ ██      ██   ██ ██  ██ ██    ██    ██      ██ ██  ██ ██ ██   ██ ██      ██   ██',
-    '  ███████ ███████ ██   ██ ██   ████    ██    ██      ██ ██   ████ ██████  ███████ ██   ██ .pro',
-    '',
-    '',
-    '  <<<:::-----       SlantFinder.pro       -----:::>>>',
-    '',
-    '',
-    '  This site was created to be as free, accurate, and useful as possible within my coding abilities and music theory knowledge (lacking).',
-    '  It is designed for screen widths > 1024px because fretboards are wide and steel players are old.',
-    '  Requests, corrections, additions, suggestions:  https://bb.steelguitarforum.com/viewtopic.php?t=396088',
-    '',
-    '  SlantFinder.pro fretboard visualization tool for 6-, 8-, 10-, & 12-string steel guitars',
-    '',
-    '  Including:',
-    '    Auto-populate the fretboard with 80+ tunings from dropdown menu',
-    '    Make your own custom Tuning',
-    '    Degrees displayed with notes on fretboard',
-    '    Changable key and highlight-able Degrees with consistent color scheme for degrees',
-    '    Quicklinks for highlighting common scales/chords (preserves tunings/options)',
-    '    Formatted, low-ink fretboard printing, to print degree highlights enable Background Graphics in the print preview window.',
-    '    Chord structure grid, with chord names linked to highlight those corresponding Degrees (visible on screen sizes > 1200 for now )',
-    '    Piano keyboard visualization with octaves, frequencies, and steel gauges (visible on screen sizes > 1200 for now )',
-    '    Sortable and filterable list of 80+ tunings for 6-,8-,10-,& 12-string steel guitars',
-    '      with names linked to highlight the fretboard with that tuning',
-    '    Copyable tunings list formatted for .CSV in the bottom of source code: # of strings, tuning name, tuning, degrees',
-    '',
-    '  Excluding:',
-    '    Ads, pop-ups, sign-ups, tracking, cookies, distractions, copyrights, subscriptions, images, bloat',
-    '',
-    '  Hello? is this thing on?  Oh well.',
-    '',
-    '',
-    '  <<<:::-----       SlantFinder.pro       -----:::>>>',
-    '',
-    ''
-  ].join('\n');
+  // ---------- About / per-section help popups ----------
+  const SECTION_HELP = {
+    fretboard: [
+      '',
+      '  ███████ ██       █████  ███    ██ ████████ ███████ ██ ███    ██ ██████  ███████ ██████',
+      '  ██      ██      ██   ██ ████   ██    ██    ██      ██ ████   ██ ██   ██ ██      ██   ██',
+      '  ███████ ██      ███████ ██ ██  ██    ██    █████   ██ ██ ██  ██ ██   ██ █████   ██████',
+      '       ██ ██      ██   ██ ██  ██ ██    ██    ██      ██ ██  ██ ██ ██   ██ ██      ██   ██',
+      '  ███████ ███████ ██   ██ ██   ████    ██    ██      ██ ██   ████ ██████  ███████ ██   ██ .pro',
+      '',
+      '  <<<:::-----       SlantFinder.pro       -----:::>>>',
+      '',
+      '  Fretboard visualization tool for 6-, 8-, 10-, and 12-string steel guitars.',
+      '',
+      '  How to use:',
+      '    • Pick a tuning from the dropdown — the fretboard fills in note names and',
+      '      degrees relative to the chosen Key.',
+      '    • Tick "Show custom tuning" to enable per-string note dropdowns and roll',
+      '      your own tuning.',
+      '    • Tick "Display High to Low" to flip the string order in the indicators',
+      '      and the tunings list.',
+      '    • Tick any of the degree pills (1, ♭2, 2, ..., 7) to highlight those',
+      '      degrees on the fretboard. The Clear link drops every parameter back',
+      '      to defaults.',
+      '    • Print: the Print button formats the fretboard for paper. Tick "Color"',
+      '      next to it to include highlighted-degree colors in the printout',
+      '      (otherwise paper output is black-and-white).',
+      '',
+      '  URL state:',
+      '    Every selection (tuning, key, custom strings, highlights, collapsed',
+      '    sections, sort order, filter, print-color preference) lives in the URL,',
+      '    so any view is bookmarkable and shareable.',
+      '',
+      '  Designed for screens 1024px+. The chord and scale builders, keyboard,',
+      '  and learn quiz hide on smaller viewports because the fretboard is wide',
+      '  and steel players are old.',
+      '',
+      '  Excluding: ads, pop-ups, sign-ups, tracking, cookies, copyrights,',
+      '  subscriptions, images, bloat.',
+      '',
+      '  Hello? is this thing on? Oh well.',
+      '',
+      '  Suggestions, corrections, additions:',
+      '    https://bb.steelguitarforum.com/viewtopic.php?t=396088',
+      ''
+    ].join('\n'),
+
+    chord_grid: [
+      '',
+      '  Chord Builder Grid',
+      '',
+      '  Each column is a chord type; each row is one degree of the scale.',
+      '  A filled cell means that degree is part of that chord, colored to match',
+      '  the degree color used everywhere else on the site.',
+      '',
+      '  Bookend columns (left and right) show the actual note name for each',
+      '  degree in the current key. Change the key (top-right of this section,',
+      '  or in the form above the fretboard) and the bookends update.',
+      '',
+      '  Click any chord name at the top or bottom of the grid to highlight',
+      '  that chord on the fretboard. The chord-name buttons are themselves',
+      '  background-colored by the degree that defines that chord type:',
+      '    Maj → 3 (orange)        Min → ♭3 (beige)',
+      '    aug → ♭6 (green)        dim → ♭5 (blue)',
+      '    sus2 → 2 (purple)       sus4 → 4 (cyan)',
+      '    6/13 chords → 6 (green)',
+      '    7-family → ♭7 (wine)    Maj7 / min-Maj7 → 7 (magenta)',
+      '    9-family → 2 (purple)   ♭9 → ♭2 (violet)   ♯9 → ♭3 (beige)',
+      '    11-family → 4 (cyan)    ♯11 → ♭5 (blue)',
+      ''
+    ].join('\n'),
+
+    scale_grid: [
+      '',
+      '  Scale Builder Grid',
+      '',
+      '  One row per degree of the octave, one column per scale (16 in total):',
+      '    • The seven modes of major (Ionian / Dorian / Phrygian / Lydian /',
+      '      Mixolydian / Aeolian / Locrian)',
+      '    • Melodic Minor and Harmonic Minor',
+      '    • Phrygian Dominant and Hungarian Minor',
+      '    • Major Pentatonic, Minor Pentatonic, Blues',
+      '    • Whole Tone, Diminished',
+      '',
+      '  Filled cells mark which degrees belong to each scale, colored by the',
+      '  degree. Bookend columns show the note name for each degree in the',
+      '  current key.',
+      '',
+      '  Click any scale name at the top or bottom of the grid to highlight',
+      '  that scale on the fretboard.',
+      '',
+      '  Note: scales that include ♯4, ♯5, or ♯6 (Lydian, Hungarian Minor,',
+      '  Whole Tone) display the enharmonic equivalents ♭5, ♭6, ♭7 because',
+      '  the 12-tone degree alphabet only has one slot per pitch class.',
+      ''
+    ].join('\n'),
+
+    keyboard: [
+      '',
+      '  Keyboard',
+      '',
+      '  Piano keyboard from A0 to C8, with octave numbers, frequencies in Hz,',
+      '  and steel string gauges that target each note. The MXR 10-band EQ row',
+      '  shows which frequency centers each band covers.',
+      '',
+      '  Black-key text and white-key backgrounds are colored by their degree',
+      '  relative to the current key. Change the key (top-right of this section)',
+      '  and every note color shifts to match.',
+      '',
+      '  When degrees are highlighted on the fretboard, notes outside the',
+      '  highlight set dim to grey here so the chosen notes stand out across',
+      '  the whole 88-note span.',
+      ''
+    ].join('\n'),
+
+    tunings: [
+      '',
+      '  Tunings List',
+      '',
+      '  170+ tunings for 6-, 8-, 10-, and 12-string steel guitars.',
+      '',
+      '    • Click any column header to sort. Click the same header again to',
+      '      reverse direction.',
+      '    • Type in the filter box to narrow the list (matches the Strings',
+      '      column).',
+      '    • Click a tuning name to load that tuning into the fretboard,',
+      '      keeping the current key and highlights.',
+      '',
+      '  Sort and filter state are kept in the URL, so a sorted/filtered view',
+      '  is bookmarkable.',
+      ''
+    ].join('\n'),
+
+    learn: [
+      '',
+      '  Learn',
+      '',
+      '  Endless random quiz with three rotating question types:',
+      '',
+      '    1. Show degrees, name the scale.',
+      '         e.g.  "1 2 ♭3 4 5 6 ♭7"  →  Dorian',
+      '',
+      '    2. Show degrees, name the chord.',
+      '         e.g.  "1 3 5 ♭7"  →  dom7',
+      '',
+      '    3. Show notes in a specific key, name the scale or chord.',
+      '         e.g.  "In C, what scale is C D E F G A B?"  →  Major',
+      '',
+      '  Multiple choice with three plausible distractors from the same family',
+      '  as the answer. Click an answer — the button turns green for correct,',
+      '  red for wrong. There is no score, no answer reveal, no round limit.',
+      '  Click Next to draw a fresh question.',
+      ''
+    ].join('\n')
+  };
 
   function closeViewSourceModal() {
     const m = document.getElementById('view_source_modal');
@@ -572,22 +681,36 @@
   function escClose(e) {
     if (e.key === 'Escape') closeViewSourceModal();
   }
-  window.viewSource = function () {
+  function showInfoModal(text) {
     closeViewSourceModal();
     const overlay = document.createElement('div');
     overlay.id = 'view_source_modal';
     overlay.innerHTML =
       '<div class="vs_backdrop"></div>' +
-      '<div class="vs_panel" role="dialog" aria-label="About SlantFinder.pro">' +
+      '<div class="vs_panel" role="dialog" aria-label="About">' +
         '<button class="vs_close" type="button" aria-label="Close">×</button>' +
         '<pre class="vs_pre"></pre>' +
       '</div>';
-    overlay.querySelector('.vs_pre').textContent = SF_MESSAGE; // textContent — no HTML re-parse
+    overlay.querySelector('.vs_pre').textContent = text; // textContent — no HTML re-parse
     overlay.querySelector('.vs_backdrop').addEventListener('click', closeViewSourceModal);
     overlay.querySelector('.vs_close').addEventListener('click', closeViewSourceModal);
     document.body.appendChild(overlay);
     document.addEventListener('keydown', escClose);
-  };
+  }
+
+  function bindHelpButtons() {
+    document.querySelectorAll('.section_help').forEach(function (btn) {
+      if (btn._helpBound) return;
+      btn._helpBound = true;
+      btn.addEventListener('click', function (e) {
+        // Stop the click from bubbling up to <summary> (which would toggle the section)
+        e.stopPropagation();
+        e.preventDefault();
+        const key = btn.getAttribute('data-help');
+        showInfoModal(SECTION_HELP[key] || '');
+      });
+    });
+  }
 
   // ---------- auto-submit on any control change ----------
   function gatherAndNavigate() {
@@ -1034,6 +1157,7 @@
     applyState();
     bindCollapsibles();
     bindLinkInterceptor();
+    bindHelpButtons();
     renderQuiz();
     window.addEventListener('popstate', applyState);
 

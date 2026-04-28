@@ -259,6 +259,13 @@ details.collapsible > summary:hover       { background-color:#a8c2cb;           
 /* Section summary header (matches .section's 10px corner radius) */
 details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 10px 16px; font-size: 1.05em;
                                              background: linear-gradient(180deg, #9bb6c0, #87a6b1); color: #fff;     }
+/* Help (?) button next to each section title */
+.section_help                              { display: inline-block; width: 22px; height: 22px; padding: 0;
+                                             margin-left: 8px; vertical-align: middle;
+                                             border-radius: 50%; border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             font: 600 0.85em/20px inherit; text-align: center; cursor: pointer;     }
+.section_help:hover                        { background: rgba(255,255,255,0.4); border-color: #fff;                  }
 details.collapsible > summary:hover        { background: linear-gradient(180deg, #a8c2cb, #95b3bd);                  }
 details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }
@@ -312,9 +319,8 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 /*********************************************************************************************************************
                             FRETBOARD HEADER (3 cols: source+tuning | form | print+key)
 *********************************************************************************************************************/
-.fb_header                                 { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(540px, 2fr) minmax(180px, 1fr);
+.fb_header                                 { display: grid; grid-template-columns: minmax(540px, 3fr) minmax(180px, 1fr);
                                              gap: 12px; align-items: start; padding: 8px 16px 4px;                    }
-.fb_left                                   { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;  }
 .fb_middle                                 { display: flex; flex-direction: column; gap: 2px; align-items: center;                       }
 .fb_middle #info_l, .fb_middle #info_r     { margin: 0 !important; text-align: center !important;                                       }
 .fb_right                                  { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
