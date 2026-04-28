@@ -44,13 +44,15 @@ body, #hl_button                           {  background-color: var(--bg) !impor
 #hl_button_x, #view_src, #print_btn,table  {  background-color:#0e0e0e;                                              }
 #section_3,#section_4,#section_5, #section_1,#section_2
                                            {  background-color:#0a0a0a;                                              }
-#fretboard                                 {  background-color:#cccccc;                                              }
-#_no_highlight_                            {  background-color:#cccccc;                                              }
-#chord_grid, #tunings                      {  background-color:#0a0a0a;                                              }
+/* Fretboard + chord/scale grids share the same light 'tabletop' so the three
+   visualizations read as one family. Tunings list stays on the dark surface. */
+#fretboard, #chord_grid, #scale_grid       {  background-color:#cccccc;                                              }
+#_no_highlight_, #_x_                      {  background-color:#cccccc;                                              }
+#tunings                                   {  background-color:#0a0a0a;                                              }
 table.sortable                             {  background-color:#0a0a0a;                                              }
 table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;                                              }
 #fretnums, #f_cyo_dark                     {  background-color:#1a1a1a;                                              }
-#_x_                                       {  background-color:#0a0a0a;  accent-color:#1a1a1a; }
+#_x_                                       {  accent-color:#1a1a1a;                                                  }
 #red_bg                                    {  background-color:#ff0000 !important;                                   } 
 #_1_                                       {  background-color:#ff0000;  accent-color:#ff0000;                       }
 #_b2_                                      {  background-color:#674ea7;  accent-color:#674ea7;                       } 
@@ -94,7 +96,10 @@ a:hover                                    {  color:var(--accent-hi);           
    would be illegible on orange / magenta / cyan / etc. */
 #_1_, #_b2_, #_2_, #_b3_, #_3_, #_4_, #_b5_, #_b6_, #_6_, #_b7_, #_7_
                                            {  color:#000000 !important;                                              }
-#_no_highlight_                            {  color:#333333 !important;                                              }
+#_no_highlight_, #_x_                      {  color:#333333 !important;                                              }
+/* Chord/scale name links in the builder header rows now sit on a light grid
+   bg — text needs to be dark to read. */
+#chord_grid a, #scale_grid a               {  color:#111 !important;                                                 }
 #fretnums, #blurb                          {  color:#888888;                                                         }                         
 #_5_                                       {  color:#dddddd;                                                         }
 ._i_                                       {  color:#ff0000;                                                         }
@@ -551,9 +556,14 @@ select option                              { color: var(--text); background: var
    The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
 #scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #e6ff00;                                     }
-/* Selected chord / scale link: bold, inherited light text on dark grid bg. */
+/* Selected chord / scale link: bold (text colour comes from the rule above). */
 #chord_grid td.cg_selected a,
 #scale_grid td.cg_selected a               { font-weight: 700;                                                        }
+/* Consistent row heights inside the chord and scale builder grids so the
+   data cells feel as deliberate as the fretboard's fret rows. */
+#chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
+#chord_grid #under_chord_grid,
+#scale_grid #under_scale_grid              { height: 30px;                                                            }
 
 /* Highlighted-degree markers on the fretboard: yellow ring around any cell
    whose id is one of the 12 degree IDs (i.e., a highlighted note). Empty/
