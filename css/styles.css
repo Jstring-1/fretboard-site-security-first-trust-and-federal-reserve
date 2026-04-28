@@ -109,7 +109,10 @@ a:hover                                    {  color:var(--accent-hi);           
 /* Chord/scale name links in the builder header rows now sit on a light grid
    bg — text needs to be dark to read. */
 #chord_grid a, #scale_grid a               {  color:#111 !important;                                                 }
-#fretnums, #blurb                          {  color:#888888;                                                         }                         
+#fretnums, #blurb                          {  color:#888888;                                                         }
+/* Non-marker frets (1, 2, 4, 6, 8, 10, 11) get a smaller, dimmer label so
+   they're readable but don't compete with the marker frets (3, 5, 7, 9, 12). */
+#fretnums .fret_minor                      {  font-size: 0.78em; color: #555555; opacity: 0.85;                       }                         
 #_5_                                       {  color:#dddddd;                                                         }
 ._i_                                       {  color:#ff0000;                                                         }
 ._ii_                                      {  color:#9900ff;                                                         }    

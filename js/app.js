@@ -749,7 +749,19 @@
     const toggleHref = '?' + toggleParams.toString();
     const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
       '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">Custom Tuning: ' + cyoState.toUpperCase() + '</a>' +
-      '</td><td id="f0">X</td><td id="f1"></td><td id="f2"></td><td id="f3">3</td><td id="f4"></td><td id="f5">5</td><td id="f6"></td><td id="f7">7</td><td id="f8"></td><td id="f9">9</td><td id="f10"></td><td id="f11"></td><td id="f12">12</td></tr>';
+      '</td><td id="f0">X</td>'
+      + '<td id="f1"><span class="fret_minor">1</span></td>'
+      + '<td id="f2"><span class="fret_minor">2</span></td>'
+      + '<td id="f3">3</td>'
+      + '<td id="f4"><span class="fret_minor">4</span></td>'
+      + '<td id="f5">5</td>'
+      + '<td id="f6"><span class="fret_minor">6</span></td>'
+      + '<td id="f7">7</td>'
+      + '<td id="f8"><span class="fret_minor">8</span></td>'
+      + '<td id="f9">9</td>'
+      + '<td id="f10"><span class="fret_minor">10</span></td>'
+      + '<td id="f11"><span class="fret_minor">11</span></td>'
+      + '<td id="f12">12</td></tr>';
     h += fretnumsTop;
 
     const str = {};
@@ -784,7 +796,20 @@
       h += '</tr>';
     }
 
-    const fretnumsBot = '<tr id="fretnums"><td id="f_cyo"></td><td id="f0">X</td><td id="f1"></td><td id="f2"></td><td id="f3">3</td><td id="f4"></td><td id="f5">5</td><td id="f6"></td><td id="f7">7</td><td id="f8"></td><td id="f9">9</td><td id="f10"></td><td id="f11"></td><td id="f12">12</td></tr>';
+    const fretnumsBot = '<tr id="fretnums">'
+      + '<td id="f_cyo"></td><td id="f0">X</td>'
+      + '<td id="f1"><span class="fret_minor">1</span></td>'
+      + '<td id="f2"><span class="fret_minor">2</span></td>'
+      + '<td id="f3">3</td>'
+      + '<td id="f4"><span class="fret_minor">4</span></td>'
+      + '<td id="f5">5</td>'
+      + '<td id="f6"><span class="fret_minor">6</span></td>'
+      + '<td id="f7">7</td>'
+      + '<td id="f8"><span class="fret_minor">8</span></td>'
+      + '<td id="f9">9</td>'
+      + '<td id="f10"><span class="fret_minor">10</span></td>'
+      + '<td id="f11"><span class="fret_minor">11</span></td>'
+      + '<td id="f12">12</td></tr>';
     h += fretnumsBot + '</table>';
 
     root.innerHTML = h;
