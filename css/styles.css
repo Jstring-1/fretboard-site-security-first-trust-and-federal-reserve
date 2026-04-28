@@ -569,30 +569,20 @@ select option                              { color: var(--text); background: var
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
 
-/* Active chord/scale link in the chord_grid + scale_grid title rows. Yellow
-   ring (matches the highlighted-degree marker on the fretboard and keyboard).
-   The link href flips to the clear-hl URL so a second click clears it. */
+/* Active chord/scale link in the chord_grid + scale_grid title rows. Selection
+   is now indicated by the cleared href only (chip click toggles), no border. */
 #chord_grid td.cg_selected,
-#scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 1px #e6ff00;                                     }
-/* Selected chord / scale link: yellow ring only — no font-weight change so
-   the chip width stays identical and the row doesn't reflow on click. */
+#scale_grid td.cg_selected                 { /* highlight border removed */                                           }
 #chord_grid td.cg_selected a,
-#scale_grid td.cg_selected a               { /* width-stable: ring only */                                            }
+#scale_grid td.cg_selected a               { /* width-stable, no decoration */                                        }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
 #chord_grid #under_chord_grid,
 #scale_grid #under_scale_grid              { height: 30px;                                                            }
 
-/* Highlighted-degree markers on the fretboard: yellow ring around any cell
-   whose id is one of the 12 degree IDs (i.e., a highlighted note). Empty/
-   no_highlight cells are unaffected. */
-#fretboard td[id="_1_"],  #fretboard td[id="_b2_"], #fretboard td[id="_2_"],
-#fretboard td[id="_b3_"], #fretboard td[id="_3_"],  #fretboard td[id="_4_"],
-#fretboard td[id="_b5_"], #fretboard td[id="_5_"],  #fretboard td[id="_b6_"],
-#fretboard td[id="_6_"],  #fretboard td[id="_b7_"], #fretboard td[id="_7_"] {
-    box-shadow: inset 0 0 0 1px #e6ff00;
-}
+/* Highlighted-degree markers on the fretboard: now signalled only by the
+   cell's degree-coloured background — no yellow ring. */
 
 /* Quick-pick chord + scale link strip above the fretboard. Same href logic
    as the chord/scale builder grid title rows; selected state shows the same
@@ -608,7 +598,7 @@ select option                              { color: var(--text); background: var
 #quick_picks .qp_link:hover                { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 /* Yellow ring only — same font-weight as unselected so the chip's width
    stays put when toggled (no row reflow on click). */
-#quick_picks .qp_link.cg_selected          { box-shadow: inset 0 0 0 1px #e6ff00;                                     }
+#quick_picks .qp_link.cg_selected          { /* highlight border removed; href toggles on click */                  }
 @media print { #quick_picks { display: none !important; } }
 
 /* Sortable header buttons */
@@ -623,13 +613,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /* Tunings table padding (was 6px 12px — keeps that, but lighter row separation) */
 #tunings tbody tr                          { transition: background-color .1s;                                       }
 #tunings tbody tr:hover                    { background-color: #1a1a1a !important;                                   }
-/* Currently chosen tuning row: yellow ring around the whole row, drawn via
-   per-cell inset box-shadow so it doesn't disturb the table layout. */
-#tunings tbody tr.tun_selected td          { box-shadow: inset 0 1px 0 #e6ff00, inset 0 -1px 0 #e6ff00;              }
-#tunings tbody tr.tun_selected td:first-child
-                                           { box-shadow: inset 0 1px 0 #e6ff00, inset 0 -1px 0 #e6ff00, inset 1px 0 0 #e6ff00; }
-#tunings tbody tr.tun_selected td:last-child
-                                           { box-shadow: inset 0 1px 0 #e6ff00, inset 0 -1px 0 #e6ff00, inset -1px 0 0 #e6ff00; }
+/* Currently chosen tuning row: highlight border removed. */
 
 /* Print resets so the polish doesn't show in print */
 @media print {

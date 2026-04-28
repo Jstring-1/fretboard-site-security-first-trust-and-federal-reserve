@@ -1164,16 +1164,13 @@
           if (!inHighlightSet) {
             css += sel + ' { color: ' + DIM_WHITE_TEXT + ' !important; }\n';
           } else if (anyHighlighted) {
-            // Only ring when a chord/scale/highlight is actually active
-            css += sel + ' { box-shadow: inset 0 0 0 1px #e6ff00 !important; color: #000 !important; }\n';
+            // Highlighted: degree-coloured bg + dark label, no border ring.
+            css += sel + ' { color: #000 !important; }\n';
           }
         } else {
-          // Black-key cell: tint label by degree (or near-bg if dimmed)
+          // Black-key cell: tint label by degree (or near-bg if dimmed). No ring.
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
-          if (inHighlightSet && anyHighlighted) {
-            css += sel + ' { box-shadow: inset 0 0 0 1px #e6ff00 !important; }\n';
-          }
         }
       });
     }
