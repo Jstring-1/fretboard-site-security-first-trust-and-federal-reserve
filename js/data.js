@@ -1763,14 +1763,14 @@ window.SF_DATA = {
             "strs": 6
         },
         "DGDGBD": {
-            "name": "G",
+            "name": "Open G",
             "notes": "D G D G B D",
             "url_notes": "DGDGBD",
             "rev_notes": "D B G D G D",
             "dgs": "5 1 5 1 3 5",
             "rev_dgs": "5 3 1 5 1 5",
             "udgs": "1 3 5",
-            "info": "",
+            "info": "Keith Richards / blues",
             "strs": 6
         },
         "GBDGBD": {
@@ -2069,6 +2069,50 @@ window.SF_DATA = {
             "udgs": "1 2 3 4 5 6 7",
             "info": "Bobby Black\/Reese Anderson",
             "strs": 12
+        },
+        "DADF♯AD": {
+            "name": "Open D",
+            "notes": "D A D F♯ A D",
+            "url_notes": "DADFsAD",
+            "rev_notes": "D A F♯ D A D",
+            "dgs": "1 5 1 3 5 1",
+            "rev_dgs": "1 5 3 1 5 1",
+            "udgs": "1 3 5",
+            "info": "Joni Mitchell / blues",
+            "strs": 6
+        },
+        "EAEAC♯E": {
+            "name": "Open A",
+            "notes": "E A E A C♯ E",
+            "url_notes": "EAEACsE",
+            "rev_notes": "E C♯ A E A E",
+            "dgs": "5 1 5 1 3 5",
+            "rev_dgs": "5 3 1 5 1 5",
+            "udgs": "1 3 5",
+            "info": "Open G shape, whole step up",
+            "strs": 6
+        },
+        "DADGBE": {
+            "name": "Drop D",
+            "notes": "D A D G B E",
+            "url_notes": "DADGBE",
+            "rev_notes": "E B G D A D",
+            "dgs": "1 5 1 4 6 2",
+            "rev_dgs": "2 6 4 1 5 1",
+            "udgs": "1 2 4 5 6",
+            "info": "standard guitar, low E dropped to D",
+            "strs": 6
+        },
+        "EBEG♯BE": {
+            "name": "Open E",
+            "notes": "E B E G♯ B E",
+            "url_notes": "EBEGsBE",
+            "rev_notes": "E B G♯ E B E",
+            "dgs": "1 5 1 3 5 1",
+            "rev_dgs": "1 5 3 1 5 1",
+            "udgs": "1 3 5",
+            "info": "Duane Allman / slide guitar (Open D shape, whole step up)",
+            "strs": 6
         }
     }
 };
