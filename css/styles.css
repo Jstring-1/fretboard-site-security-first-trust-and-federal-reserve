@@ -338,12 +338,12 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
                             STYLE AUDIT — softer corners, polished form, more breathing room
 *********************************************************************************************************************/
 /* Section summary header (matches .section's 10px corner radius) */
-details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 8px 16px; font-size: 1.05em;
+details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 6px 16px; font-size: 1.05em;
                                              background: linear-gradient(180deg, #1a1a1a, #0e0e0e); color: #fff;
                                              display: flex; align-items: center; gap: 6px;
                                              /* Pin the height so highlight-text length changes don't grow the bar
-                                                and ripple every section's height. */
-                                             height: 48px; box-sizing: border-box;                                    }
+                                                and ripple every section's height. Three stacked status lines fit. */
+                                             height: 60px; box-sizing: border-box;                                    }
 details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
 details.collapsible > summary .summary_title:hover { background: rgba(255,255,255,0.08); }
 /* Outside the title, the cursor stays default — only the title is the toggle. */
@@ -389,16 +389,16 @@ details.collapsible > summary { cursor: default; }
 .summary_status                            { flex: 1 1 auto; min-width: 0; padding: 0 12px;
                                              font: 400 0.78em var(--font); font-weight: normal;
                                              color: rgba(240,240,240,0.75); text-align: center;
-                                             display: flex; flex-direction: column; gap: 2px;
-                                             height: 32px; overflow: hidden;
-                                             /* Override summary's user-select:none so the indicators
-                                                can be highlighted/copied. */
+                                             display: flex; flex-direction: column; gap: 1px;
+                                             height: 48px; overflow: hidden;
                                              user-select: text; cursor: text;                                         }
+.summary_status > span                     { line-height: 14px; min-height: 14px;                                    }
 .summary_status:empty                      { display: none;                                                            }
 .summary_status .status_key,
 .summary_status .status_tun                { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;          }
 .summary_status .status_sep                { display: none;                                                            }
 .summary_status .status_key                { color: rgba(240,240,240,0.92);                                            }
+.summary_status .status_hl                 { color: var(--accent-hi);                                                  }
 .summary_status .status_tun                { color: rgba(240,240,240,0.75);                                            }
 
 /* Custom Tuning header doubles as a toggle switch (replaces 'Show custom tuning' checkbox) */
@@ -545,10 +545,13 @@ select option                              { color: var(--text); background: var
 #view_source_modal.wf_compact .vs_panel    { top: 50%; left: 50%; right: auto; bottom: auto;
                                              transform: translate(-50%, -50%);
                                              width: auto; height: auto;
-                                             max-width: 280px; max-height: none;                                       }
+                                             max-width: 280px; max-height: none;
+                                             background: #0a0a0a; color: #f0f0f0;
+                                             border: 1px solid rgba(95,232,224,0.35);                                  }
 #view_source_modal.wf_compact .vs_pre      { padding: 28px 32px; text-align: center;
                                              font-family: var(--font); font-size: 1.05em;
-                                             white-space: normal; overflow: visible;                                  }
+                                             white-space: normal; overflow: visible;
+                                             background: #0a0a0a; color: #f0f0f0;                                      }
 /* Higher specificity than the body 'a:link / a:visited' rule so the link
    actually picks up the cyan colour on the white modal panel. */
 #view_source_modal a.wf_link,

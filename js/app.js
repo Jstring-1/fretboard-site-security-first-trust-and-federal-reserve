@@ -443,23 +443,19 @@
     });
   }
 
-  // Compact "Key … · Highlighted … | Tuning …" line shown in every section
-  // title bar except the Learn quiz.
+  // Three short stacked lines per section title:
+  //   Key: A
+  //   Maj Chord (1 3 5)        ← blank when no highlight is active
+  //   Fretboard Tuning A6
   function renderSummaryStatus(x) {
-    const rev = (x.y === 'y') ? 'rev_' : '';
     const tuningName = (x.z === 'y') ? 'Custom' : x.name;
-    const tuningNotes = (x.z === 'y')
-      ? String(x[rev + 's']).replace(/ /g, '')
-      : String(x[rev + 'notes']).replace(/ /g, '');
-    const tuningDgs = (x.z === 'y')
-      ? String(x[rev + 'sdgs']).replace(/ /g, '')
-      : String(x[rev + 'dgs']).replace(/ /g, '');
-    const keyPart = 'Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name);
-    const tunPart = 'Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' (' + escHtml(tuningDgs) + ')';
-    // Two short stacked lines: key/highlight on top, tuning underneath.
+    const hlText = x.hl_n
+      ? x.hl_name.replace(/^Highlighted:\s*/, '')
+      : '';
     const html =
-      '<span class="status_key">' + keyPart + '</span>' +
-      '<span class="status_tun">' + tunPart + '</span>';
+      '<span class="status_key">Key: ' + escHtml(x.k) + '</span>' +
+      '<span class="status_hl">' + escHtml(hlText) + '</span>' +
+      '<span class="status_tun">Fretboard Tuning ' + escHtml(tuningName) + '</span>';
     document.querySelectorAll('.summary_status').forEach(function (s) {
       s.innerHTML = html;
     });
