@@ -40,7 +40,7 @@ table                                      {  min-width:960px;  width:98%;      
 /*********************************************************************************************************************
                             BG COLORS
 *********************************************************************************************************************/
-body, #hl_button                           {  background-color:#000000 !important;                                   }
+body, #hl_button                           {  background-color: var(--text) !important;                              }
 #hl_button_x, #view_src, #print_btn,table  {  background-color:#0e0e0e;                                              }
 #section_3,#section_4,#section_5, #section_1,#section_2
                                            {  background-color:#0a0a0a;                                              }
@@ -157,10 +157,9 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:10px;                                                    }
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
-/* Keyboard section's content area is a light "piano body" — the keyboard itself
-   sits on white. The dark Noir frame is just the section's title bar. */
-#section_4                                 {  background-color:#ffffff !important;                                    }
-.ritz                                      {  background-color:transparent; padding:0; border-radius:0;               }
+/* Keyboard sits on a white piano-body inside the dark section frame. Section
+   wrapper stays dark per the global site theme (light page, dark sections). */
+.ritz                                      {  background-color:#ffffff; padding:0; border-radius:6px; margin:0 6px;   }
 /* Override the bulk dark-bg rule from the inline ritz/waffle CSS for chrome
    cells (labels, separators, range cells). Black-key cells stay dark. */
 .ritz .waffle .s0, .ritz .waffle .s10, .ritz .waffle .s11, .ritz .waffle .s12,
@@ -512,12 +511,12 @@ select option                              { color: var(--text); background: var
 /* Title: tighten the tagline */
 #section_1 h1                              { letter-spacing: -0.02em;                                                }
 
-/* Blurb at the bottom */
-#blurb                                     { font-size: 0.78em; opacity: 0.65; margin: 12px 0;                       }
+/* Blurb at the bottom — sits on the light page bg, needs dark text */
+#blurb                                     { font-size: 0.78em; color: #555555; opacity: 0.85; margin: 12px 0;       }
 
-/* Footer "Jimmy Witherfork Strikes Again" — small text, subtle, opens modal */
+/* Footer "Jimmy Witherfork Strikes Again" — sits on the light page bg */
 #site_footer                               { text-align: center; padding: 24px 16px 32px; margin-top: 16px;            }
-#site_footer #footer_witherfork            { color: var(--muted) !important; font-size: 0.85em; letter-spacing: 0.04em;
+#site_footer #footer_witherfork            { color: #555555 !important; font-size: 0.85em; letter-spacing: 0.04em;
                                              text-decoration: none; cursor: pointer; transition: color .12s;          }
 #site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
 @media print { #site_footer { display: none !important; } }
