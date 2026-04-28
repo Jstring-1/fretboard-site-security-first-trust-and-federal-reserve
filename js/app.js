@@ -1001,7 +1001,7 @@
     'G♯': { mode: 'color', cls: ['s43'] }
   };
   const KEYBOARD_DEGREE_COLORS = {
-    '1':  '#ff0000', '♭2': '#674ea7', '2':  '#9900ff',
+    '1':  '#5fe8e0', '♭2': '#674ea7', '2':  '#9900ff',
     '♭3': '#f6b26b', '3':  '#ff6d01', '4':  '#00ffff',
     '♭5': '#3d85c6', '5':  '#0000ff',
     '♭6': '#6aa84f', '6':  '#0cc016',
@@ -1021,9 +1021,10 @@
     const anyHighlighted = DEGREES.some(function (d) {
       return x['hl_' + d.replace('♭', 'b')] === 'y';
     });
+    // Real piano: white keys are white, black keys are dark. Dimmed = label fades into bg.
     const DIM_WHITE_BG    = '#ffffff';
     const DIM_WHITE_TEXT  = '#ececec';
-    const DIM_BLACK_TEXT  = '#1d1d2c';
+    const DIM_BLACK_TEXT  = '#0a0a0a';   // near-black, fades into the dark cell bg
 
     const i1 = KEYS.indexOf(x.k);
     let css = '';
