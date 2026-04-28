@@ -64,18 +64,23 @@
 .tab_measure_numbers .nums                  { display: grid; }
 .tab_measure_numbers .num                   { text-align: left; padding-left: 6px; border-left: 1px solid transparent; }
 
+/* Staff line is drawn as a background gradient on the row itself. A 1px
+   horizontal stripe is painted at exactly the row's vertical centre via
+   colour stops in the gradient — no positioned pseudo, no transforms,
+   so the line lands in the same spot in every browser and in print.
+   The background is offset by 36px so it skips the label column. */
 .tab_row                                    { position: relative; display: grid;
                                               align-items: center;
-                                              height: 22px; }
-/* Staff line: 1px-tall background bar centred on the row's visual mid-
-   line. The earlier border-top approach drew the line a px or two above
-   centre (border-top sits below the box's top edge, which we'd anchored
-   at top:50%), making the digits look like they were floating below the
-   line. Using height:1px + translateY(-50%) puts the line exactly on
-   the row's centre, matching the digit caps inside the cell inputs. */
-.tab_row::before                            { content: ""; position: absolute; left: 36px; right: 0; top: 50%;
-                                              height: 1px; background: #c0c0c0; z-index: 0;
-                                              transform: translateY(-50%);                                            }
+                                              height: 22px;
+                                              background-image: linear-gradient(to bottom,
+                                                  transparent calc(50% - 0.5px),
+                                                  #c0c0c0 calc(50% - 0.5px),
+                                                  #c0c0c0 calc(50% + 0.5px),
+                                                  transparent calc(50% + 0.5px));
+                                              background-position: 36px 0;
+                                              background-size: calc(100% - 36px) 100%;
+                                              background-repeat: no-repeat;                                           }
+.tab_row::before                            { content: none;                                                            }
 .tab_label                                  { z-index: 2; text-align: right; padding-right: 8px;
                                               font: 600 0.85em var(--font); color: var(--accent-hi);
                                               background: var(--surface);                                            }
@@ -153,11 +158,15 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   #tab_grid                                  { gap: 16px !important;                                                  }
   .tab_system                                { border-color: #000 !important; page-break-inside: avoid;
                                               padding: 4px 0 4px !important;                                          }
-  .tab_row                                   { height: 14px !important;                                                }
+  .tab_row                                   { height: 14px !important;
+                                              background-image: linear-gradient(to bottom,
+                                                  transparent calc(50% - 0.5px),
+                                                  #000 calc(50% - 0.5px),
+                                                  #000 calc(50% + 0.5px),
+                                                  transparent calc(50% + 0.5px)) !important;
+                                              -webkit-print-color-adjust: exact !important;
+                                              print-color-adjust: exact !important;                                   }
   .tab_cells                                 { height: 14px !important;                                                }
-  .tab_row::before                           { background: #000 !important;
-                                              -webkit-print-color-adjust: exact;
-                                              print-color-adjust: exact;                                              }
   .tab_label                                 { color: #000 !important; background: #fff !important;
                                               font-size: 0.7em !important;                                            }
   /* Bar lines: switch from a per-cell border-left to a positioned ::after
