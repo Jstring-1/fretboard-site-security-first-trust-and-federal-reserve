@@ -176,11 +176,22 @@ table td                                   {  vertical-align:middle;            
 .ritz                                      {  background-color:#cccccc; padding:0; border-radius:6px; margin:0 6px;   }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
-/* Remove vertical separators between adjacent white-key cells so the
-   piano reads as continuous white keys instead of segmented boxes. */
+/* White-key cells (A B C D E F G) get a thin grey vertical border between
+   each one so the keyboard reads as a row of discrete piano keys, not one
+   long white slab. */
 .ritz .waffle .s47, .ritz .waffle .s48, .ritz .waffle .s49,
 .ritz .waffle .s50, .ritz .waffle .s51, .ritz .waffle .s52, .ritz .waffle .s53
-                                           {  border-left:none !important; border-right:none !important;              }
+                                           {  border-left: 1px solid #888 !important;
+                                              border-right: 1px solid #888 !important;                               }
+/* Black-key row cells (the gap fillers and the actual black keys A♯/C♯/…)
+   should read as one continuous dark bar — no visible borders between
+   adjacent cells. */
+.ritz .waffle .s32, .ritz .waffle .s33, .ritz .waffle .s34, .ritz .waffle .s35,
+.ritz .waffle .s36, .ritz .waffle .s37, .ritz .waffle .s38, .ritz .waffle .s39,
+.ritz .waffle .s40, .ritz .waffle .s41, .ritz .waffle .s42, .ritz .waffle .s43,
+.ritz .waffle .s44, .ritz .waffle .s45
+                                           {  border-left: none !important;
+                                              border-right: none !important;                                          }
 /* Steel Gauges, MXR EQ band, and Frequency Hz rows: drop the multicolor
    scheme and let the populated cells match the white-key bg below them.
    Also clears the grey text override on the row's blank/label cells. */
