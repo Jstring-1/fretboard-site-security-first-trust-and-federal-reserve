@@ -569,6 +569,12 @@ select option                              { color: var(--text); background: var
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
 #chord_grid #under_chord_grid,
 #scale_grid #under_scale_grid              { height: 30px;                                                            }
+/* Pin the fretboard row + cell heights so the table doesn't grow/shrink
+   when the highlight state changes between renders. box-sizing keeps any
+   border inside the cell so it doesn't add to the row size. */
+#fretboard tr                              { height: 32px;                                                            }
+#fretboard #fretnums                       { height: 24px;                                                            }
+#fretboard td                              { box-sizing: border-box;                                                  }
 
 /* Highlighted-degree markers on the fretboard: now signalled only by the
    cell's degree-coloured background — no yellow ring. */
