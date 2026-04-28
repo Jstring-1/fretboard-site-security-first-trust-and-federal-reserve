@@ -1,9 +1,9 @@
 /*********************************************************************************************************************
                             WIDTHS / HEIGHTS
 *********************************************************************************************************************/
-table                                      {  min-width:960px;  width:98%;                                           }                
-#section_3, #section_4, #section_5, #section_1,#section_2
-                                           {  width:98%; min-width:1000px;                                           }
+table                                      {  min-width:960px;  width:98%;                                           }
+.section                                   {  width:98%; min-width:1000px; margin:18px auto; padding:0;
+                                              border-radius:10px;                                                    }
 #view_src, #print_btn                      {  width:100px;                                                           }                
 .cg_col_left, .cg_col_right                {  width:60px !important;                                                 }
 #f0,#f_cyo                                 {  width:5%;                                                              }
@@ -88,7 +88,7 @@ a:hover,a,a:link,a:visited,a:active        {  text-decoration:none;             
 /*********************************************************************************************************************
                             PADDING / MARGINS
 *********************************************************************************************************************/
-#fretboard, #chord_grid, #keyboard, #tunings, #section_3,#section_4,#section_5,#section_1,#section_2
+#fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  margin: 12px auto 12px auto;        padding: 0;                        }
 body                                       {  margin: 0;                          padding: 0;                        }
 .pro                                       {  margin-left:-5px; }
@@ -121,7 +121,7 @@ table td                                   {  vertical-align:middle;            
 /*********************************************************************************************************************
                             BORDERS / CORNERS
 *********************************************************************************************************************/
-#section_3,#section_4,#section_5, #section_1,#section_2, #view_src, #print_btn, #hl_button, #hl_button_x
+#view_src, #print_btn, #hl_button, #hl_button_x
                                            {  border-radius:10px;                                                    }
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
@@ -232,12 +232,10 @@ details.collapsible > summary             { cursor:pointer; user-select:none; li
                                             padding:8px 14px; margin:0;
                                             font-size:1.2em; font-weight:bold;
                                             background-color:#92B0BB;
-                                            border-radius:3px;
                                             text-align:left;                                                          }
 details.collapsible > summary::-webkit-details-marker { display:none; }
 details.collapsible > summary::before     { content:'▼ '; display:inline-block; width:1em; transition:transform .15s; }
 details.collapsible:not([open]) > summary::before { content:'▶ '; }
-details.collapsible:not([open])           { padding-bottom:0; min-width:1000px; width:98%; margin:12px auto;          }
 details.collapsible > summary:hover       { background-color:#a8c2cb;                                                 }
 @media print {
     details.collapsible > summary         { display:none !important;                                                  }
@@ -247,10 +245,8 @@ details.collapsible > summary:hover       { background-color:#a8c2cb;           
 /*********************************************************************************************************************
                             SCALE BUILDER — inherits chord-grid styling
 *********************************************************************************************************************/
-#section_6                                 { width:98%; min-width:1000px; margin:12px auto; padding:0;                  }
 #section_6, #scale_grid                    { background-color:#C9D2D6;                                                 }
-#section_6                                 { table-layout:fixed; border-radius:10px;                                   }
-#scale_grid                                { margin: 12px auto 12px auto; padding: 0;                                  }
+#section_6                                 { table-layout:fixed;                                                       }
 @media only screen and (max-width: 480px)  { #section_6 { display:none; }                                              }
 @media only screen and (min-width: 481px) and (max-width: 768px)  { #section_6 { display:none; }                       }
 @media only screen and (min-width: 769px) and (max-width: 1024px) { #section_6 { width:100%; display:none; }           }
@@ -260,12 +256,11 @@ details.collapsible > summary:hover       { background-color:#a8c2cb;           
 /*********************************************************************************************************************
                             STYLE AUDIT — softer corners, polished form, more breathing room
 *********************************************************************************************************************/
-/* More space between sections */
-details.collapsible                        { margin: 18px auto;                                                       }
-details.collapsible > summary              { border-radius: 8px 8px 0 0; padding: 10px 16px; font-size: 1.05em;
+/* Section summary header (matches .section's 10px corner radius) */
+details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 10px 16px; font-size: 1.05em;
                                              background: linear-gradient(180deg, #9bb6c0, #87a6b1); color: #fff;     }
 details.collapsible > summary:hover        { background: linear-gradient(180deg, #a8c2cb, #95b3bd);                  }
-details.collapsible:not([open]) > summary  { border-radius: 8px;                                                     }
+details.collapsible:not([open]) > summary  { border-radius: 10px;                                                    }
 details.collapsible > summary::before      { color: rgba(255,255,255,0.85);                                          }
 
 /* Form layout: stacked rows with proper gaps */
@@ -307,8 +302,7 @@ details.collapsible > summary::before      { color: rgba(255,255,255,0.85);     
 /*********************************************************************************************************************
                             LEARN / QUIZ
 *********************************************************************************************************************/
-#section_7                                 { width:98%; min-width:1000px; margin:12px auto; padding:0;
-                                             background-color:#C9D2D6; border-radius:10px;                            }
+#section_7                                 { background-color:#C9D2D6;                                                 }
 @media only screen and (max-width: 480px)  { #section_7 { display:none; }                                              }
 @media only screen and (min-width: 481px) and (max-width: 768px)  { #section_7 { display:none; }                       }
 @media only screen and (min-width: 769px) and (max-width: 1024px) { #section_7 { width:100%; display:none; }           }
