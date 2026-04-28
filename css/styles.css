@@ -42,9 +42,11 @@ table                                      {  min-width:960px;  width:98%;      
 *********************************************************************************************************************/
 body, #hl_button                           {  background-color:#000000 !important;                                   }
 #hl_button_x, #view_src, #print_btn,table  {  background-color:#0e0e0e;                                              }
-#section_3,#section_4,#section_5, #section_1,#section_2, #fretboard 
+#section_3,#section_4,#section_5, #section_1,#section_2
                                            {  background-color:#0a0a0a;                                              }
-#_no_highlight_, #chord_grid, #tunings     {  background-color:#0a0a0a;                                              }
+#fretboard                                 {  background-color:#cccccc;                                              }
+#_no_highlight_                            {  background-color:#cccccc;                                              }
+#chord_grid, #tunings                      {  background-color:#0a0a0a;                                              }
 table.sortable                             {  background-color:#0a0a0a;                                              }
 table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;                                              }
 #fretnums, #f_cyo_dark                     {  background-color:#1a1a1a;                                              }
@@ -92,7 +94,7 @@ a:hover                                    {  color:var(--accent-hi);           
    would be illegible on orange / magenta / cyan / etc. */
 #_1_, #_b2_, #_2_, #_b3_, #_3_, #_4_, #_b5_, #_b6_, #_6_, #_b7_, #_7_
                                            {  color:#000000 !important;                                              }
-#_no_highlight_                            {  color:#888888;                                                         }                    
+#_no_highlight_                            {  color:#333333 !important;                                              }
 #fretnums, #blurb                          {  color:#888888;                                                         }                         
 #_5_                                       {  color:#dddddd;                                                         }
 ._i_                                       {  color:#ff0000;                                                         }
