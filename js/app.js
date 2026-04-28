@@ -894,8 +894,13 @@
     if (search === window.location.search) return;
     // '?' with no params → strip the query entirely so the URL bar isn't littered
     const target = (search === '?' || search === '') ? window.location.pathname : search;
+    // Preserve scroll across the re-render — pushState shouldn't move the page,
+    // but some layout shifts during innerHTML swaps can cause a jump.
+    const sx = window.scrollX || window.pageXOffset || 0;
+    const sy = window.scrollY || window.pageYOffset || 0;
     history.pushState({}, '', target);
     applyState();
+    window.scrollTo(sx, sy);
   }
 
   function bindAutoSubmit() {
