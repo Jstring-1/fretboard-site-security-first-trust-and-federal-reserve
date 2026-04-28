@@ -1115,9 +1115,10 @@
       return x['hl_' + d.replace('♭', 'b')] === 'y';
     });
     // Real piano: white keys are white, black keys are dark. Dimmed = label fades into bg.
-    const DIM_WHITE_BG    = '#ffffff';
-    const DIM_WHITE_TEXT  = '#ececec';
-    const DIM_BLACK_TEXT  = '#0a0a0a';   // near-black, fades into the dark cell bg
+    // Match the fretboard's light-grey "tabletop" so both reference surfaces feel the same.
+    const DIM_WHITE_BG    = '#cccccc';
+    const DIM_WHITE_TEXT  = '#bdbdbd';
+    const DIM_BLACK_TEXT  = '#0a0a0a';
 
     const i1 = KEYS.indexOf(x.k);
     let css = '';

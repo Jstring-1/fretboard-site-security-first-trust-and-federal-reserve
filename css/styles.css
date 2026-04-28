@@ -157,8 +157,9 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:10px;                                                    }
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
-/* Keyboard sits on a white piano-body inside the dark section frame. */
-.ritz                                      {  background-color:#ffffff; padding:0; border-radius:6px; margin:0 6px;   }
+/* Keyboard sits on a grey piano-body inside the dark section frame —
+   matches the fretboard's tabletop colour. */
+.ritz                                      {  background-color:#cccccc; padding:0; border-radius:6px; margin:0 6px;   }
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
@@ -512,7 +513,7 @@ select option                              { color: var(--text); background: var
 .ritz .waffle .s20, .ritz .waffle .s21, .ritz .waffle .s22, .ritz .waffle .s24,
 .ritz .waffle .s31, .ritz .waffle .s46, .ritz .waffle .s54, .ritz .waffle .s55,
 .ritz .waffle .s56, .ritz .waffle .s57, .ritz .waffle .s59, .ritz .waffle .s61 {
-    background-color:#ffffff !important;
+    background-color:#cccccc !important;
     color:#111 !important;
 }
 
@@ -544,8 +545,11 @@ select option                              { color: var(--text); background: var
    The link href flips to the clear-hl URL so a second click clears it. */
 #chord_grid td.cg_selected,
 #scale_grid td.cg_selected                 { box-shadow: inset 0 0 0 3px #ffd400;                                     }
-#chord_grid td.cg_selected a,
-#scale_grid td.cg_selected a               { color: #000 !important; font-weight: 700;                                }
+/* Chord cells already have a bright degree-coloured bg, so dark + bold text
+   reads on top. Scale cells have a dark bg, so just bold the link and keep
+   its inherited light colour — don't force dark on dark. */
+#chord_grid td.cg_selected a               { color: #000 !important; font-weight: 700;                                }
+#scale_grid td.cg_selected a               { font-weight: 700;                                                        }
 
 /* Highlighted-degree markers on the fretboard: yellow ring around any cell
    whose id is one of the 12 degree IDs (i.e., a highlighted note). Empty/
