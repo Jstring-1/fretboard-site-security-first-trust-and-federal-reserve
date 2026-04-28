@@ -234,6 +234,16 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print] details > *           {  display:block !important;                                              }
     body[data-print] details > summary     {  display:none !important;                                                }
 
+    /* Tunings List is nested INSIDE the fretboard section now. When printing
+       just Tunings, reveal section_2 as an ancestor but hide the fretboard
+       sibling content so only the tunings table reaches the page. */
+    body[data-print="section_5"] #section_2 {  display:block !important;                                              }
+    body[data-print="section_5"] #section_2 > *:not(#section_5):not(summary)
+                                           {  display:none !important;                                                }
+    /* Conversely, when printing the Fretboard alone, drop the nested tunings
+       so a paper Fretboard print isn't 100 pages of tunings table. */
+    body[data-print="section_2"] #section_5 {  display:none !important;                                              }
+
     /* Force colored highlights to print when the user has opted in */
     body.print-colors #_1_, body.print-colors #_b2_, body.print-colors #_2_,
     body.print-colors #_b3_, body.print-colors #_3_, body.print-colors #_4_,
