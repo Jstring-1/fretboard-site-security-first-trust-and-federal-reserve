@@ -502,8 +502,8 @@ details.collapsible > summary { cursor: default; }
 /* Tunings List filter bar — search input + quick-filter buttons in a
    centered row, persisted via ?f= and ?fc= so a user who only plays
    6-string can pin "6-string" once and keep it across reloads. */
-.tunings_filter_bar                        { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
-                                             padding: 10px 14px; justify-content: center;                              }
+.tunings_filter_bar                        { display: flex; flex-direction: column; align-items: center;
+                                             gap: 8px; padding: 10px 14px;                                             }
 .tunings_filter_input                      { flex: 0 1 auto; width: min(360px, 100%); padding: 6px 10px;
                                              font: 400 0.95em var(--font); color: var(--accent);
                                              background: var(--bg-elevated); border: 1px solid #2a2a2a;
