@@ -390,7 +390,10 @@ details.collapsible > summary { cursor: default; }
                                              font: 400 0.78em var(--font); font-weight: normal;
                                              color: rgba(240,240,240,0.75); text-align: center;
                                              display: flex; flex-direction: column; gap: 2px;
-                                             height: 32px; overflow: hidden;                                          }
+                                             height: 32px; overflow: hidden;
+                                             /* Override summary's user-select:none so the indicators
+                                                can be highlighted/copied. */
+                                             user-select: text; cursor: text;                                         }
 .summary_status:empty                      { display: none;                                                            }
 .summary_status .status_key,
 .summary_status .status_tun                { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;          }
@@ -573,6 +576,12 @@ select option                              { color: var(--text); background: var
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
 #chord_grid #under_chord_grid,
 #scale_grid #under_scale_grid              { height: 30px;                                                            }
+/* Tighter font on the dense chord grid so 'noteLetter(degree)' fits each cell. */
+#chord_grid td                             { font-size: 0.72em;                                                       }
+#scale_grid td                             { font-size: 0.95em;                                                       }
+/* "All" pill in the highlight row — matches the .hl_pill chips but acts as
+   a link (no checkbox inside). */
+.hl_all_pill                               { color: var(--text) !important; text-decoration: none; cursor: pointer;  }
 /* Pin the fretboard row + cell heights so the table doesn't grow/shrink
    when the highlight state changes between renders. box-sizing keeps any
    border inside the cell so it doesn't add to the row size. */

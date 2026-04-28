@@ -27,6 +27,12 @@
     return qs ? '?' + qs : window.location.pathname;
   }
 
+  // Escape a string so it's safe to drop inside a CSS `content: "..."` value.
+  // Non-ASCII (♭, ♯) is fine, but we must escape backslashes and double quotes.
+  function escapeCssString(s) {
+    return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  }
+
   function escHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -292,6 +298,18 @@
       const checked = (x['hl_' + ab] === 'y') ? 'checked="checked"' : '';
       h += '<label class="hl_pill"><input type="checkbox" class="chxbx" id="_' + ab + '_" name="hl" value="' + escHtml(a) + '" ' + checked + '/>' + escHtml(a) + escHtml(EXTENSIONS[i]) + '</label>';
     });
+    // All / None toggle — preserves every other URL param
+    const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
+    let allHref;
+    if (allOn) {
+      allHref = clearHlHref();
+    } else {
+      const p = new URLSearchParams(window.location.search);
+      p.delete('hl');
+      DEGREES.forEach(function (d) { p.append('hl', flatToB(d)); });
+      allHref = '?' + p.toString();
+    }
+    h += '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
     h += '</div>';
 
     h += '</div>';
@@ -516,7 +534,10 @@
         if (cell === null) {
           h += '<td id="_x_"></td>';
         } else {
-          h += '<td id="' + row.degId + '">' + escHtml(cell) + '</td>';
+          // Fretboard-style: noteLetter(degree). The bookends show the same
+          // pair, so each filled cell carries its full identity instead of
+          // just the abstract degree number.
+          h += '<td id="' + row.degId + '">' + escHtml(note) + '(' + escHtml(cell) + ')</td>';
         }
       }
       h += '<td class="cg_col_right" id="' + row.degId + '">' + escHtml(row.intervalLabel) + escHtml(note) + '</td>';
@@ -568,7 +589,8 @@
       h += '<td class="cg_col_left" id="' + row.degId + '">' + escHtml(note) + escHtml(row.intervalLabel) + '</td>';
       for (const scaleName in SCALES) {
         if (scaleDegrees[scaleName].indexOf(degSym) !== -1) {
-          h += '<td id="' + row.degId + '">' + escHtml(degSym) + '</td>';
+          // Fretboard-style label: noteLetter(degree)
+          h += '<td id="' + row.degId + '">' + escHtml(note) + '(' + escHtml(degSym) + ')</td>';
         } else {
           h += '<td id="_x_"></td>';
         }
@@ -1153,8 +1175,8 @@
     // Real piano: white keys are white, black keys are dark. Dimmed = label fades into bg.
     // Match the fretboard's light-grey "tabletop" so both reference surfaces feel the same.
     const DIM_WHITE_BG    = '#cccccc';
-    const DIM_WHITE_TEXT  = '#bdbdbd';
-    const DIM_BLACK_TEXT  = '#0a0a0a';
+    const DIM_WHITE_TEXT  = '#888888';   // readable medium grey on the light bg
+    const DIM_BLACK_TEXT  = '#3a3a3a';   // visible-but-quiet on the dark cell bg
 
     const i1 = KEYS.indexOf(x.k);
     let css = '';
@@ -1181,6 +1203,15 @@
           const fg = inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT;
           css += sel + ' { color: ' + fg + ' !important; }\n';
         }
+        // Add the degree (e.g. "1", "♭3") on a second line below the note label.
+        // Black-key cells use s44/s45 in higher octaves and the inline ritz CSS
+        // sets font-size:10pt — keep the degree small and dim-tinted regardless.
+        const degColor = (def.mode === 'bg')
+          ? (inHighlightSet ? '#000' : DIM_WHITE_TEXT)
+          : (inHighlightSet ? KEYBOARD_DEGREE_COLORS[deg] : DIM_BLACK_TEXT);
+        css += sel + '::after { content: "' + escapeCssString(deg) + '"; display: block; '
+                  +  'font-size: 0.78em; line-height: 1; opacity: 0.85; '
+                  +  'color: ' + degColor + '; }\n';
       });
     }
     style.textContent = css;
