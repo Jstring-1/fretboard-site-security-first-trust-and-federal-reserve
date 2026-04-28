@@ -269,16 +269,7 @@
     h += '</select>';
     h += '</div>';
 
-    // Row 2: key + clear
-    h += '<div class="opt_row opt_row_toggles">';
-    h += '<label>Key: <select class="inputs" name="k">';
-    h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
-    for (const a of ALLNOTES) {
-      h += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
-    }
-    h += '</select></label>';
-    h += '<a href="?" id="clear_hl_btn">Clear</a>';
-    h += '</div>';
+    // (Key dropdown + Clear live in the section title bars now, not in the form.)
 
     // Row 3: highlight degree pickers
     h += '<div class="opt_row opt_row_highlights">';
