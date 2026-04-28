@@ -192,6 +192,18 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
      which is the difference between 5 and 6 systems per page at 12 strings. */
   .tab_measure_numbers                       { display: none !important;                                              }
 
+  /* Print-blank uses TIGHTER row dimensions than regular print so we
+     can fit more systems on a page (no typed data here, so the input
+     overflow that haunts regular print doesn't matter). */
+  #tab_paper.blank .tab_row                  { height: 12px !important;                                                }
+  #tab_paper.blank .tab_cells                { height: 12px !important;                                                }
+  #tab_paper.blank .tab_cell input           { height: 12px !important; line-height: 12px !important;
+                                              font-size: 0.65em !important;                                            }
+  #tab_paper.blank input.tab_label_input     { height: 12px !important; line-height: 12px !important;                  }
+  #tab_paper.blank #tab_grid                 { gap: 18px !important;                                                  }
+  #tab_paper.blank .tab_system               { padding: 2px 0 !important;                                              }
+  #tab_paper.blank .tab_system::before,
+  #tab_paper.blank .tab_system::after        { top: 8px !important; bottom: 8px !important;                            }
   /* Print-blank: drop the measure bar-lines too so the user has a clean
      handwriting sheet — they can pencil in their own bar-lines / counts. */
   #tab_paper.blank .tab_cell.barline         { border-left: 0 !important;                                              }

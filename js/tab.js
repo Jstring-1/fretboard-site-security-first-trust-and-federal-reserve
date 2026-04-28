@@ -507,15 +507,13 @@
       // System count per string count, tuned so each string-count fills
       // exactly one landscape letter page. Fewer strings = taller systems
       // fit fewer; more strings = each system is taller so fewer fit.
-      // Tuned for the 22px-row print dimensions (matched to the editor).
-      // Each system = strings * 22px + 8px padding + 24px gap. Pick the
-      // largest count that still fits a landscape-letter page (~720px tall
-      // after 0.4in margins).
+      // System count per string count — tuned to fill exactly one
+      // landscape letter page in blank mode (which uses tighter rows).
       var BLANK_SYSTEMS_BY_STRINGS = {
-        4: 6, 5: 5, 6: 4,
-        7: 4, 8: 3,
-        9: 3, 10: 3,
-        11: 2, 12: 2
+        4: 8, 5: 7, 6: 6,
+        7: 5, 8: 5,
+        9: 4, 10: 4,
+        11: 3, 12: 3
       };
       var BLANK_SYSTEMS = BLANK_SYSTEMS_BY_STRINGS[state.strings] || 5;
       state.cells    = {};
