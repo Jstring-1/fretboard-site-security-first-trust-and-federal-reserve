@@ -145,6 +145,33 @@
       url_s += 's' + a + '=' + encodeURIComponent(hashToSharp(x['s' + a])) + '&';
     }
 
+    // Print-colors toggle (URL > localStorage > 'n')
+    const pcRaw = params.get('pc');
+    if (pcRaw === 'y' || pcRaw === 'n') {
+      x.pc = pcRaw;
+    } else {
+      let saved = null;
+      try { saved = window.localStorage.getItem('sf_print_colors'); } catch (e) {}
+      x.pc = saved === 'y' ? 'y' : 'n';
+    }
+
+    // Tunings table sort: ?sort=<col>:<a|d>
+    const sortRaw = params.get('sort');
+    x._sort = null;
+    if (sortRaw && /^\d+:[ad]$/.test(sortRaw)) {
+      const parts = sortRaw.split(':');
+      x._sort = { col: parseInt(parts[0], 10), dir: parts[1] };
+    }
+
+    // Tunings filter: ?f=<text>. Length-capped + control chars stripped to keep
+    // the URL sane and to ensure nothing weird ends up on the page (we still
+    // only ever set this via .value / textContent, never innerHTML).
+    const fRaw = params.get('f');
+    x._filter = '';
+    if (typeof fRaw === 'string') {
+      x._filter = fRaw.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 64);
+    }
+
     // hl_arr → flags
     if (x.hl === undefined || x.hl === null) x.hl = '';
     const hlArr = String(x.hl).split(' ').filter(v => v !== '' && v !== 'nothing');
@@ -275,16 +302,16 @@
       ? String(x[rev + 'sdgs']).replace(/ /g, '')
       : String(x[rev + 'dgs']).replace(/ /g, '');
 
-    let printColors = false;
-    try { printColors = window.localStorage.getItem('sf_print_colors') === 'y'; } catch (e) {}
+    const printColors = x.pc === 'y';
 
     let h = '';
     h += '<div class="fb_header">';
     h += '  <div class="fb_left">';
     h += '    <div id="view_src"><button style="background:none;border:none;" type="button" onclick="viewSource()">View Source Message</button></div>';
-    h += '    <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
     h += '  </div>';
     h += '  <div class="fb_middle">';
+    h += '    <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
+    h += '    <h3 id="info_l">Tuning: ' + escHtml(tuningName) + ' :: ' + escHtml(tuningNotes) + ' &nbsp; (' + escHtml(tuningDgs) + ')</h3>';
     h += '    <div id="options_root"></div>';
     h += '  </div>';
     h += '  <div class="fb_right">';
@@ -292,7 +319,6 @@
     h += '      <label class="print_color_toggle" title="Include highlight colors when printing"><input type="checkbox" id="print_colors_cb"' + (printColors ? ' checked' : '') + '/> Color</label>';
     h += '      <button style="background:none;border:none;" onclick="window.print()">Formatted for Printing</button>';
     h += '    </div>';
-    h += '    <h3 id="info_r">Key: ' + escHtml(x.k) + ' :: ' + escHtml(x.hl_name) + '</h3>';
     h += '  </div>';
     h += '</div>';
 
@@ -467,7 +493,7 @@
     const tunUrl = x._self + x.url_k + x.url_y + x.url_z + x.url_s + x.url_hl;
 
     let h = '';
-    h += '<input type="text" id="filter" class="inputs" onkeyup="filter()" placeholder="Filter">';
+    h += '<input type="text" id="filter" class="inputs" placeholder="Filter" maxlength="64" value="' + escHtml(x._filter || '') + '">';
     h += '<table class="sortable" id="tunings">';
     h += '<thead><tr>';
     h += '<th width="10%" class="name"><button>Strings<span aria-hidden="true"></span></button></th>';
@@ -595,13 +621,87 @@
   }
 
   // ---------- print-colors toggle ----------
+  function applyPrintColors(x) {
+    document.body.classList.toggle('print-colors', x.pc === 'y');
+  }
   function bindPrintColorToggle() {
     const cb = document.getElementById('print_colors_cb');
     if (!cb) return;
-    document.body.classList.toggle('print-colors', cb.checked);
     cb.addEventListener('change', function () {
       document.body.classList.toggle('print-colors', cb.checked);
       try { window.localStorage.setItem('sf_print_colors', cb.checked ? 'y' : 'n'); } catch (e) {}
+      const params = new URLSearchParams(window.location.search);
+      if (cb.checked) params.set('pc', 'y'); else params.delete('pc');
+      const qs = params.toString();
+      history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
+    });
+  }
+
+  // ---------- tunings sort + filter (URL-backed) ----------
+  function applyTuningsSort(x) {
+    if (!x._sort) return;
+    const table = document.getElementById('tunings');
+    if (!table || !table._sortableInstance) return;
+    const ths = table.querySelectorAll('thead th');
+    const col = x._sort.col;
+    if (col < 0 || col >= ths.length) return;
+    const ariaSort = x._sort.dir === 'd' ? 'descending' : 'ascending';
+    ths.forEach(function (t) { t.removeAttribute('aria-sort'); });
+    ths[col].setAttribute('aria-sort', ariaSort);
+    table._sortableInstance.sortColumn(col, ariaSort, ths[col].classList.contains('num'));
+  }
+
+  function bindTuningsSortObserver() {
+    const table = document.getElementById('tunings');
+    if (!table) return;
+    table.querySelectorAll('thead th button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // SortableTable's handler runs first (bound earlier); we read aria-sort after
+        const ths = table.querySelectorAll('thead th');
+        let col = -1, dir = null;
+        for (let i = 0; i < ths.length; i++) {
+          const a = ths[i].getAttribute('aria-sort');
+          if (a) { col = i; dir = a === 'descending' ? 'd' : 'a'; break; }
+        }
+        const params = new URLSearchParams(window.location.search);
+        if (col >= 0 && dir) params.set('sort', col + ':' + dir);
+        else params.delete('sort');
+        const qs = params.toString();
+        history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
+      });
+    });
+  }
+
+  function applyTuningsFilter(value) {
+    const table = document.getElementById('tunings');
+    if (!table) return;
+    const f = String(value || '').toUpperCase();
+    table.querySelectorAll('tbody tr').forEach(function (tr) {
+      const td = tr.querySelector('td');
+      if (!td) return;
+      const text = (td.textContent || '').toUpperCase();
+      tr.style.display = (!f || text.indexOf(f) > -1) ? '' : 'none';
+    });
+  }
+
+  let _filterDebounce = null;
+  function bindTuningsFilter() {
+    const input = document.getElementById('filter');
+    if (!input) return;
+    // Apply current filter on render
+    applyTuningsFilter(input.value);
+    input.addEventListener('input', function () {
+      // Cap length defensively (matches the maxlength attr; user can paste over)
+      const value = String(input.value || '').slice(0, 64);
+      if (input.value !== value) input.value = value;
+      applyTuningsFilter(value);
+      if (_filterDebounce) clearTimeout(_filterDebounce);
+      _filterDebounce = setTimeout(function () {
+        const params = new URLSearchParams(window.location.search);
+        if (value) params.set('f', value); else params.delete('f');
+        const qs = params.toString();
+        history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
+      }, 300);
     });
   }
 
@@ -874,13 +974,17 @@
 
     bindAutoSubmit();
     bindPrintColorToggle();
+    applyPrintColors(x);
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
     document.querySelectorAll('table.sortable').forEach(function (t) {
       if (typeof SortableTable !== 'undefined') {
-        try { new SortableTable(t); t._sortableInit = true; } catch (e) {}
+        try { t._sortableInstance = new SortableTable(t); t._sortableInit = true; } catch (e) {}
       }
     });
+    applyTuningsSort(x);
+    bindTuningsSortObserver();
+    bindTuningsFilter();
   }
 
   // ---------- init ----------
