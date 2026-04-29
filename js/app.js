@@ -2345,12 +2345,15 @@
       h += '<button type="button" class="quiz_choice">' + escHtml(c) + '</button>';
     });
     h += '</div>';
+    h += '<div class="quiz_skip_row"><button type="button" class="quiz_skip">Skip →</button></div>';
     h += '<div class="quiz_feedback"></div>';
     h += '</div>';
     root.innerHTML = h;
     root.querySelectorAll('.quiz_choice').forEach(function (btn) {
       btn.addEventListener('click', _quizHandleChoice);
     });
+    const skip = root.querySelector('.quiz_skip');
+    if (skip) skip.addEventListener('click', renderQuiz);
   }
 
   function _quizHandleChoice(e) {

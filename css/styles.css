@@ -1015,3 +1015,12 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .quiz_showcase_sub .quiz_sub_label         { color: var(--muted-dim); font-weight: 600;
                                              text-transform: uppercase; letter-spacing: 0.06em;
                                              font-size: 0.85em; margin-right: 4px;                                     }
+
+/* Quiz skip button — sits below the answer choices, dim by default
+   so it doesn't compete with the actual answers. */
+.quiz_skip_row                             { display: flex; justify-content: center; margin-top: 12px;                }
+.quiz_skip                                 { padding: 6px 16px; font: 400 0.82em var(--font);
+                                             color: var(--muted); background: transparent;
+                                             border: 1px solid #2a2a2a; border-radius: 999px;
+                                             cursor: pointer; letter-spacing: 0.04em;                                  }
+.quiz_skip:hover                           { color: var(--accent-hi); border-color: var(--accent-hi);                  }
