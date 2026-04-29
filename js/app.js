@@ -23,6 +23,8 @@
   function clearHlHref() {
     const params = new URLSearchParams(window.location.search);
     params.delete('hl');
+    params.delete('hn');
+    params.delete('pk');
     const qs = params.toString();
     // Always include the leading "?" so the link interceptor catches it.
     return qs ? '?' + qs : '?';
@@ -67,7 +69,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'hn', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -92,6 +94,26 @@
   // form ?hl=1,b3,5 — splits on commas across every hl key seen.
   function readHlParam(params) {
     return params.getAll('hl')
+      .flatMap(function (v) { return v.split(','); })
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length; });
+  }
+
+  // Read highlighted NOTE letters from ?hn=A,Cs,E. Independent of the
+  // degree highlights — these light up specific notes regardless of key.
+  // Same wire format as hn (comma-separated note letters with 's'/'b'),
+  // but a separate set used by the click-to-pick chord identifier. Lives in
+  // its own param so the user can paint highlights with hn pills AND build
+  // a "what chord is this?" pick set independently.
+  function readPkParam(params) {
+    return params.getAll('pk')
+      .flatMap(function (v) { return v.split(','); })
+      .map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.length; });
+  }
+
+  function readHnParam(params) {
+    return params.getAll('hn')
       .flatMap(function (v) { return v.split(','); })
       .map(function (s) { return s.trim(); })
       .filter(function (s) { return s.length; });
@@ -219,6 +241,35 @@
       } else {
         x.hl = 'nothing';
       }
+
+      // Validate hn (highlighted notes — independent of key). Notes are
+      // canonicalized to the sharp form ALLNOTES uses, so ?hn=Bb and ?hn=As
+      // both land as A♯.
+      const FLAT_TO_SHARP = {
+        'A♭': 'G♯', 'B♭': 'A♯', 'C♭': 'B',
+        'D♭': 'C♯', 'E♭': 'D♯', 'F♭': 'E',
+        'G♭': 'F♯'
+      };
+      const hnRaw = readHnParam(params).map(function (v) {
+        const f = bToFlat(sharpToHash(v));
+        return FLAT_TO_SHARP[f] || f;
+      });
+      const validHn = hnRaw.filter(function (n) {
+        return ALLNOTES.indexOf(n) !== -1;
+      });
+      x.hn = validHn.join(' ');
+
+      // Validate pk (chord-identifier picks — separate from hn so the user
+      // can have static highlights AND a click-to-build pick set going at
+      // the same time). Same encoding rules as hn.
+      const pkRaw = readPkParam(params).map(function (v) {
+        const f = bToFlat(sharpToHash(v));
+        return FLAT_TO_SHARP[f] || f;
+      });
+      const validPk = pkRaw.filter(function (n) {
+        return ALLNOTES.indexOf(n) !== -1;
+      });
+      x.pk = validPk.join(' ');
     }
 
     // Apply defaults
@@ -343,6 +394,26 @@
       x[key] = hlArr.indexOf(v) !== -1 ? 'y' : 'n';
     }
 
+    // Build the highlight-notes set from x.hn (space-separated). A Set keyed
+    // on the unicode-♯ form for fast lookup in renderers.
+    if (x.hn === undefined || x.hn === null) x.hn = '';
+    const hnArr = String(x.hn).split(' ').filter(function (v) { return v.length; });
+    x._hn_set = new Set(hnArr);
+    // url_hn for emitted hrefs (chord/scale chips etc.) — comma-separated
+    // with 'b' for flat / 's' for sharp.
+    x.url_hn = hnArr.length
+      ? 'hn=' + hnArr.map(function (n) { return urlNote(n); }).join(',') + '&'
+      : '';
+
+    // Click-to-pick chord-identifier set. Same shape as hn; renderers paint
+    // these cells with a yellow ring and the identify strip scans this set.
+    if (x.pk === undefined || x.pk === null) x.pk = '';
+    const pkArr = String(x.pk).split(' ').filter(function (v) { return v.length; });
+    x._pk_set = new Set(pkArr);
+    x.url_pk = pkArr.length
+      ? 'pk=' + pkArr.map(function (n) { return urlNote(n); }).join(',') + '&'
+      : '';
+
     // notedegrees: degree → note based on current key
     const a0 = KEYS.indexOf(x.k);
     const notedegrees = {};
@@ -398,7 +469,7 @@
     x.url_z = 'z=' + x.z + '&';
 
     x._self = '?';
-    x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z + x.url_s;
+    x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z + x.url_s + x.url_hn + x.url_pk;
 
     return x;
   }
@@ -449,7 +520,11 @@
 
     // (Key dropdown + Clear live in the section title bars now, not in the form.)
 
-    // Row 3: highlight degree pickers (link-style toggle pills, same widget
+    // Row 3: note-letter highlight pickers (independent of key). Painted in
+    // a distinct visual treatment so they can coexist with degree highlights.
+    h += notePillsLinkHtml(x, 'fb_hn_row');
+
+    // Row 4: highlight degree pickers (link-style toggle pills, same widget
     // used above the keyboard so the two sections look identical).
     h += highlightPillsLinkHtml(x, 'fb_hl_row');
 
@@ -690,19 +765,23 @@
     h += '  <div class="qp_row">';
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
-      const isSelected = (x.hl_n === a.replace(/_/g, ' '));
+      const chipDegs = fragToDegrees(GRID[a]);
+      const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
-      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
+      const tip = degsAndNotesTip(label, chipDegs, x.k);
+      h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
     }
     h += '  </div>';
     h += '  <div class="qp_row">';
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
-      const isSelected = (x.hl_n === label);
+      const chipDegs = fragToDegrees(SCALES[name]);
+      const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
-      h += '<a class="' + cls + '" href="' + href + '">' + escHtml(label) + '</a>';
+      const tip = degsAndNotesTip(label, chipDegs, x.k);
+      h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
     }
     h += '  </div>';
     h += '</div>';
@@ -761,6 +840,37 @@
       .join(' ');
   }
 
+  // True when two degree sets contain the same items (order-independent).
+  // Used to auto-highlight every chord/scale chip whose degrees match the
+  // active hl, not just the one whose name x.hl_n happened to land on.
+  function degSetsEqual(a, b) {
+    const A = new Set(String(a || '').split(/\s+/).filter(Boolean));
+    const B = new Set(String(b || '').split(/\s+/).filter(Boolean));
+    if (A.size !== B.size) return false;
+    for (const v of A) if (!B.has(v)) return false;
+    return true;
+  }
+
+  // Compose a hover tooltip showing a chord/scale's degrees + the resulting
+  // notes for the current site key. e.g.
+  //   "Maj7\nDegrees: 1 3 5 7\nNotes: A C♯ E G♯"
+  // degsStr arrives space-separated ("1 ♭3 5"); key is x.k.
+  function degsAndNotesTip(label, degsStr, key) {
+    const degs = String(degsStr || '').split(' ').filter(function (d) { return d.length; });
+    if (!degs.length) return label;
+    const notes = (function () {
+      const i1 = KEYS.indexOf(key);
+      if (i1 < 0) return [];
+      return degs.map(function (d) {
+        const off = DEGREES.indexOf(d);
+        return off < 0 ? '' : KEYS[i1 + off];
+      }).filter(Boolean);
+    })();
+    let tip = label + '\nDegrees: ' + degs.join(' ');
+    if (notes.length) tip += '\nNotes: ' + notes.join(' ');
+    return tip;
+  }
+
   // GRID / SCALES / CHORDS values in data.js are still in the legacy
   // multi-key form (&hl=1&hl=3&hl=5). Convert on the fly so chord/scale
   // chip URLs land in the same compact comma form as everything else.
@@ -780,6 +890,30 @@
     let qs = p.toString();
     if (hlList.length) {
       qs += (qs ? '&' : '') + 'hl=' + hlList.join(',');
+    }
+    return qs ? '?' + qs : '?';
+  }
+
+  // Build a URL with the given hn list as a single comma-separated `hn=`
+  // param (preserves every other current param exactly). Notes in the URL
+  // use the 's'/'b' encoding (F♯ → Fs, B♭ → Bb).
+  function buildHnHref(hnList) {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('hn');
+    let qs = p.toString();
+    if (hnList.length) {
+      qs += (qs ? '&' : '') + 'hn=' + hnList.map(function (n) { return urlNote(n); }).join(',');
+    }
+    return qs ? '?' + qs : '?';
+  }
+
+  // Mirror of buildHnHref for the chord-identifier pick set.
+  function buildPkHref(pkList) {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('pk');
+    let qs = p.toString();
+    if (pkList.length) {
+      qs += (qs ? '&' : '') + 'pk=' + pkList.map(function (n) { return urlNote(n); }).join(',');
     }
     return qs ? '?' + qs : '?';
   }
@@ -817,12 +951,39 @@
     return h;
   }
 
+  // Note-letter highlight pills — independent of key (and of degree
+  // highlights). Lets the user paint specific notes (e.g. A, C♯, E) wherever
+  // they fall on the fretboard / keyboard regardless of which scale degrees
+  // those notes happen to be in the current key.
+  function notePillsLinkHtml(x, rowCls) {
+    const cur = (x.hn ? String(x.hn).split(' ').filter(function (v) { return v.length; }) : []);
+    let h = '<div class="opt_row opt_row_notes ' + (rowCls || '') + '">';
+    h += '<span class="hl_title">Notes:</span>';
+    ALLNOTES.forEach(function (note) {
+      const on = cur.indexOf(note) !== -1;
+      let next;
+      if (on) {
+        next = cur.filter(function (n) { return n !== note; });
+      } else {
+        next = cur.concat([note]);
+      }
+      const href = buildHnHref(next);
+      const cls = 'note_pill' + (on ? ' note_pill_on' : '');
+      h += '<a class="' + cls + '" href="' + escHtml(href) + '">' + escHtml(note) + '</a>';
+    });
+    const allOn = ALLNOTES.every(function (n) { return cur.indexOf(n) !== -1; });
+    const allHref = allOn ? buildHnHref([]) : buildHnHref(ALLNOTES.slice());
+    h += '<a class="note_pill note_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
+    h += '</div>';
+    return h;
+  }
+
   // Render the highlight pills + chord/scale chips above the keyboard so the
   // keyboard section is fully usable when the fretboard section is collapsed.
   function renderKeyboardPicks(x) {
     const root = document.getElementById('kb_picks_root');
     if (!root) return;
-    root.innerHTML = highlightPillsLinkHtml(x, 'kb_hl_row') + quickPicksHtml(x, 'kb_quick_picks');
+    root.innerHTML = notePillsLinkHtml(x, 'kb_hn_row') + highlightPillsLinkHtml(x, 'kb_hl_row') + quickPicksHtml(x, 'kb_quick_picks');
   }
 
   function renderFretboard(x) {
@@ -884,6 +1045,9 @@
       let nutDeg = findKey(x._notedegrees, strizzle.toUpperCase());
       let nutBg = (x['hl_' + flatToB(nutDeg)] === 'y') ? flatToB(nutDeg) : 'no_highlight';
       const f_cyo = (x.z === 'n') ? 'f_cyo_dark' : 'f_cyo';
+      const nutNote = strizzle.toUpperCase();
+      const nutHnCls = (x._hn_set && x._hn_set.has(nutNote)) ? ' note_hl' : '';
+      const nutPkCls = (x._pk_set && x._pk_set.has(nutNote)) ? ' note_pk' : '';
 
       h += '<tr>';
       h += '<td id="' + f_cyo + '"><select class="inputs" name="s' + a + '">';
@@ -892,7 +1056,7 @@
         h += '<option value="' + escHtml(note) + '">' + escHtml(note) + '</option>';
       }
       h += '</select></td>';
-      h += '<td class="nut" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
+      h += '<td class="nut' + nutHnCls + nutPkCls + '" data-note="' + escHtml(nutNote) + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
 
       for (let b = 1; b <= 12; b++) {
         const cb = c + b;
@@ -900,7 +1064,9 @@
         let degAtFret = findKey(x._notedegrees, noteAtFret);
         let fbId = (x['hl_' + flatToB(degAtFret)] === 'y') ? flatToB(degAtFret) : 'no_highlight';
         const cls = (b === 1) ? 'nut1' : 'fb_td';
-        h += '<td class="' + cls + '" id="_' + fbId + '_">' + escHtml(noteAtFret) + '(' + escHtml(degAtFret || '') + ')</td>';
+        const cellHnCls = (x._hn_set && x._hn_set.has(noteAtFret)) ? ' note_hl' : '';
+        const cellPkCls = (x._pk_set && x._pk_set.has(noteAtFret)) ? ' note_pk' : '';
+        h += '<td class="' + cls + cellHnCls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" id="_' + fbId + '_">' + escHtml(noteAtFret) + '(' + escHtml(degAtFret || '') + ')</td>';
       }
       h += '</tr>';
     }
@@ -1086,11 +1252,11 @@
     let chordLinksRow = '<tr id="under_chord_grid"><td></td>';
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
-      const isSelected = (x.hl_n === a.replace(/_/g, ' '));
+      const chipDegs = fragToDegrees(GRID[a]);
+      const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const tdCls = isSelected ? ' class="cg_selected"' : '';
-      const degs = fragToDegrees(GRID[a]);
-      const tip = label + (degs ? ' — ' + degs : '');
+      const tip = degsAndNotesTip(label, chipDegs, x.k);
       chordLinksRow += '<td' + tdCls + '><a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a></td>';
     }
     chordLinksRow += '<td></td></tr>';
@@ -1144,11 +1310,11 @@
     let scaleLinksRow = '<tr id="under_scale_grid"><td></td>';
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
-      const isSelected = (x.hl_n === label);
+      const chipDegs = fragToDegrees(SCALES[name]);
+      const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const tdCls = isSelected ? ' class="cg_selected"' : '';
-      const degs = fragToDegrees(SCALES[name]);
-      const tip = label + (degs ? ' — ' + degs : '');
+      const tip = degsAndNotesTip(label, chipDegs, x.k);
       scaleLinksRow += '<td' + tdCls + '><a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a></td>';
     }
     scaleLinksRow += '<td></td></tr>';
@@ -1701,6 +1867,14 @@
     const hlList = readHlParam(new URLSearchParams(window.location.search));
     if (hlList.length) parts.push('hl=' + hlList.join(','));
 
+    // Note-letter highlights (hn) — also link-driven, carry as-is.
+    const hnList = readHnParam(new URLSearchParams(window.location.search));
+    if (hnList.length) parts.push('hn=' + hnList.join(','));
+
+    // Click-to-pick chord identifier set (pk) — carry as-is.
+    const pkList = readPkParam(new URLSearchParams(window.location.search));
+    if (pkList.length) parts.push('pk=' + pkList.join(','));
+
     // Custom-tuning strings combined into one no-separator `s=` param.
     // Three cases:
     //   z=y               → read selects, rebuild s=
@@ -2091,6 +2265,17 @@
       style.id = 'keyboard_dynamic_style';
       document.head.appendChild(style);
     }
+    // Tag every keyboard label cell with data-note so the click-to-pick
+    // delegated handler can read it. We set this each render in case the
+    // keyboard DOM was just rebuilt.
+    for (const note in KEYBOARD_NOTE_CLASSES) {
+      const def = KEYBOARD_NOTE_CLASSES[note];
+      (def.lbl || def.cls).forEach(function (c) {
+        document.querySelectorAll('.ritz .waffle .' + c).forEach(function (el) {
+          el.setAttribute('data-note', note);
+        });
+      });
+    }
     // If any highlights are set, dim notes outside the set so the chosen ones pop.
     // White keys dimmed → plain white bg with text close to white (label fades).
     // Black keys dimmed → label color close to the dark cell bg (also fades).
@@ -2121,10 +2306,23 @@
       const semi = ((noteIdx - i1) + 12) % 12;
       const deg = DEGREES[semi];
       const inHighlightSet = anyHighlighted && (x['hl_' + deg.replace('♭', 'b')] === 'y');
+      const inNoteSet = !!(x._hn_set && x._hn_set.has(note));
       const def = KEYBOARD_NOTE_CLASSES[note];
 
+      const inPickSet = !!(x._pk_set && x._pk_set.has(note));
       def.cls.forEach(function (c) {
         const sel = '.ritz .waffle .' + c;
+        if (inPickSet && inNoteSet) {
+          // Both pick + note-letter highlight: layered yellow over cyan.
+          css += sel + ' { box-shadow: inset 0 0 0 3px #ffeb00, inset 0 0 0 5px #00e5ff !important; }\n';
+        } else if (inPickSet) {
+          // Click-to-pick chord-identifier ring (fluorescent yellow).
+          css += sel + ' { box-shadow: inset 0 0 0 3px #ffeb00 !important; }\n';
+        } else if (inNoteSet) {
+          // Note-letter highlight ring sits on top of whatever degree styling
+          // applies; cyan inset shadow so it shows on both white and black keys.
+          css += sel + ' { box-shadow: inset 0 0 0 3px #00e5ff !important; }\n';
+        }
         if (def.mode === 'bg') {
           // White-key column.
           if (inHighlightSet) {
@@ -2178,6 +2376,270 @@
       });
     }
     style.textContent = css;
+  }
+
+  // ---------- click-to-pick + chord identifier ----------
+  // Maps the unicode-♯ pitch-class label ALLNOTES uses to a 0..11 index
+  // matching js/chord_lookup.js. Computed once.
+  const NOTE_TO_PC = (function () {
+    const m = {};
+    ALLNOTES.forEach(function (n, i) { m[n] = i; });
+    return m;
+  })();
+
+  // Default "+N" cap for the "Selected ⊂ Chord" identify bucket. Stored on
+  // the URL-suppressed local-only side so the choice doesn't leak into share
+  // links — picks themselves do, the cap pref does not.
+  let _identifyExtras = 1;        // 1 / 2 / Infinity ("All")
+  try {
+    const stored = localStorage.getItem('sf_identify_extras');
+    if (stored === '1' || stored === '2' || stored === 'all') {
+      _identifyExtras = stored === 'all' ? Infinity : +stored;
+    }
+  } catch (e) {}
+
+  function setIdentifyExtras(v) {
+    _identifyExtras = v;
+    try {
+      localStorage.setItem('sf_identify_extras', v === Infinity ? 'all' : String(v));
+    } catch (e) {}
+    if (window.SF_X) renderIdentifyStrips(window.SF_X);
+  }
+
+  // Toggle the clicked note in the pk= URL list. Suppresses default link
+  // behavior so the page stays put; uses the same history.replaceState path
+  // as the rest of the navigation (via the shared link interceptor), so the
+  // app re-renders in place.
+  function bindNotePick() {
+    function handler(e) {
+      const cell = e.target.closest && e.target.closest('[data-note]');
+      if (!cell) return;
+      // Don't capture clicks on form controls inside cells (the s1..sN selects).
+      if (e.target.closest('select, input, button, a')) return;
+      const note = cell.getAttribute('data-note');
+      if (!note) return;
+      e.preventDefault();
+      const cur = readPkParam(new URLSearchParams(window.location.search))
+        .map(function (v) {
+          const f = bToFlat(sharpToHash(v));
+          const FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
+          return FLAT_TO_SHARP[f] || f;
+        });
+      const i = cur.indexOf(note);
+      const next = i === -1 ? cur.concat([note]) : cur.filter(function (n) { return n !== note; });
+      const href = buildPkHref(next);
+      const qs = href.slice(1);
+      const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
+      history.replaceState(null, '', newUrl);
+      applyState();
+    }
+    const fb = document.getElementById('fretboard');
+    if (fb && !fb._pickBound) {
+      fb._pickBound = true;
+      fb.addEventListener('click', handler);
+    }
+    document.querySelectorAll('.ritz .waffle [data-note]').forEach(function (el) {
+      // Visual cue that keys are clickable
+      el.style.cursor = 'pointer';
+    });
+    const kb = document.querySelector('.ritz .waffle');
+    if (kb && !kb._pickBound) {
+      kb._pickBound = true;
+      kb.addEventListener('click', handler);
+    }
+  }
+
+  // ---------- chord identify strip ----------
+  // Convert a pk Set (notes like "A","C♯") to a 12-bit pitch-class mask.
+  function pkSetToMask(pkSet) {
+    let m = 0;
+    pkSet.forEach(function (n) {
+      const pc = NOTE_TO_PC[n];
+      if (pc !== undefined) m |= (1 << pc);
+    });
+    return m;
+  }
+  function popcount(n) {
+    let c = 0;
+    while (n) { n &= n - 1; c++; }
+    return c;
+  }
+
+  // Score chords against the picks. Returns three arrays:
+  //   exact:     chord.mask == sel
+  //   subset:    chord.mask ⊂ sel  (chord lives inside what you played)
+  //   superset:  sel ⊂ chord.mask  (you played part of a chord), capped by
+  //              the +N extras setting
+  function classifyChords(selMask) {
+    const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
+    const selSize = popcount(selMask);
+    const exact = [];
+    const subset = [];
+    const superset = [];
+    const extrasCap = _identifyExtras;
+    for (let i = 0; i < data.length; i++) {
+      const m = data[i][0];
+      const name = data[i][1];
+      if (m === selMask) {
+        exact.push(name);
+        continue;
+      }
+      // chord ⊂ sel: every chord bit is set in sel
+      if ((m & selMask) === m && m !== 0 && m !== selMask) {
+        subset.push({ name: name, size: popcount(m) });
+        continue;
+      }
+      // sel ⊂ chord: every sel bit is set in chord, with a cap on extras
+      if ((m & selMask) === selMask && m !== selMask) {
+        const extras = popcount(m) - selSize;
+        if (extras <= extrasCap) superset.push({ name: name, extras: extras });
+      }
+    }
+    // Sort: subset by chord size desc, then name; superset by extras asc, then name
+    subset.sort(function (a, b) {
+      if (a.size !== b.size) return b.size - a.size;
+      return a.name.localeCompare(b.name);
+    });
+    superset.sort(function (a, b) {
+      if (a.extras !== b.extras) return a.extras - b.extras;
+      return a.name.localeCompare(b.name);
+    });
+    return { exact: exact.sort(), subset: subset, superset: superset };
+  }
+
+  // Build a URL that pre-loads the chord — we set k= to the chord's root and
+  // hl= to its degrees relative to that root. Strip pk= so the user moves
+  // from "what is this?" to "show me this chord on the board" cleanly.
+  function applyChordHref(chordName, chordMask) {
+    // Find root: first matching note letter at the start of the name.
+    let root = null;
+    for (let i = ALLNOTES.length - 1; i >= 0; i--) {
+      const n = ALLNOTES[i];
+      if (chordName.indexOf(n) === 0) { root = n; break; }
+    }
+    if (!root) return null;
+    const rootPc = NOTE_TO_PC[root];
+    // Rotate mask to root: degree d is set when bit (rootPc+d)%12 is set.
+    const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+    const degs = [];
+    for (let i = 0; i < 12; i++) {
+      if ((chordMask >> ((rootPc + i) % 12)) & 1) degs.push(DEG_LBL[i]);
+    }
+    const p = new URLSearchParams(window.location.search);
+    p.delete('hl'); p.delete('pk'); p.set('k', urlNote(root));
+    if (degs.length) {
+      p.append('hl', degs.map(function (d) { return d.replace('♭', 'b'); }).join(','));
+    }
+    return '?' + canonicalQS(p);
+  }
+
+  function renderIdentifyStrips(x) {
+    const fbHost = document.getElementById('fb_identify_root');
+    const kbHost = document.getElementById('kb_identify_root');
+    if (!fbHost && !kbHost) return;
+
+    const pkArr = String(x.pk || '').split(' ').filter(function (v) { return v.length; });
+    let html;
+    if (pkArr.length < 3) {
+      const rem = 3 - pkArr.length;
+      html = '<div class="identify_strip identify_hint">'
+           + '<span class="identify_label">Identify:</span> '
+           + 'click ' + (pkArr.length === 0 ? '3 or more' : (rem + ' more'))
+           + ' fret cell' + (rem === 1 ? '' : 's') + ' or piano key'
+           + (rem === 1 ? '' : 's') + ' to identify a chord '
+           + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
+           + '</div>';
+    } else {
+      const selMask = pkSetToMask(x._pk_set);
+      const buckets = classifyChords(selMask);
+      const clearHref = buildPkHref([]);
+
+      function chipsHtml(items, extractName) {
+        if (!items.length) return '<span class="identify_empty">none</span>';
+        return items.map(function (it) {
+          const name = extractName ? extractName(it) : it;
+          // Find this chord's mask so we can build an apply URL + tooltip.
+          const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
+          let mask = 0;
+          for (let j = 0; j < data.length; j++) {
+            if (data[j][1] === name) { mask = data[j][0]; break; }
+          }
+          const href = applyChordHref(name, mask) || '#';
+          // Build tooltip from the chord's own root + intervals (key-independent
+          // for these chips — their root is baked into the name, not the site key).
+          let tip = name;
+          if (mask) {
+            // Find root pc by matching the longest leading note letter.
+            let root = null, rootPc = -1;
+            for (let i = ALLNOTES.length - 1; i >= 0; i--) {
+              if (name.indexOf(ALLNOTES[i]) === 0) { root = ALLNOTES[i]; rootPc = NOTE_TO_PC[root]; break; }
+            }
+            if (rootPc >= 0) {
+              const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+              const degs = [], notes = [];
+              for (let i = 0; i < 12; i++) {
+                if ((mask >> ((rootPc + i) % 12)) & 1) {
+                  degs.push(DEG_LBL[i]);
+                  notes.push(ALLNOTES[(rootPc + i) % 12]);
+                }
+              }
+              tip = name + '\nDegrees: ' + degs.join(' ') + '\nNotes: ' + notes.join(' ');
+            }
+          }
+          return '<a class="identify_chip" href="' + escHtml(href) + '" title="' + escAttr(tip) + '">' + escHtml(name) + '</a>';
+        }).join('');
+      }
+
+      const extras = _identifyExtras;
+      const extrasPills = ['1', '2', 'All'].map(function (lbl) {
+        const v = lbl === 'All' ? Infinity : +lbl;
+        const on = (extras === v) ? ' identify_pill_on' : '';
+        return '<a class="identify_pill' + on + '" href="#" data-extras="' + lbl + '">+' + lbl + '</a>';
+      }).join('');
+
+      html = ''
+        + '<div class="identify_strip">'
+        + '  <div class="identify_head">'
+        + '    <span class="identify_label">Identify:</span>'
+        + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
+        + '    <a class="identify_clear" href="' + escHtml(clearHref) + '">Clear picks</a>'
+        + '  </div>'
+        + '  <div class="identify_row">'
+        + '    <span class="identify_bucket_label">Exact</span>'
+        + '    <span class="identify_chips">' + chipsHtml(buckets.exact) + '</span>'
+        + '  </div>'
+        + '  <div class="identify_row">'
+        + '    <span class="identify_bucket_label">Contains</span>'
+        + '    <span class="identify_chips">'
+        +        chipsHtml(buckets.subset, function (it) { return it.name; })
+        + '    </span>'
+        + '  </div>'
+        + '  <div class="identify_row">'
+        + '    <span class="identify_bucket_label">Could be (+ extras)</span>'
+        + '    <span class="identify_extras_toggle">' + extrasPills + '</span>'
+        + '    <span class="identify_chips">'
+        +        chipsHtml(buckets.superset, function (it) { return it.name; })
+        + '    </span>'
+        + '  </div>'
+        + '</div>';
+    }
+
+    if (fbHost) fbHost.innerHTML = html;
+    if (kbHost) kbHost.innerHTML = html;
+
+    // Wire +N pills (delegated, idempotent)
+    [fbHost, kbHost].forEach(function (host) {
+      if (!host || host._extrasBound) return;
+      host._extrasBound = true;
+      host.addEventListener('click', function (e) {
+        const pill = e.target.closest && e.target.closest('.identify_pill');
+        if (!pill) return;
+        e.preventDefault();
+        e.stopPropagation();   // keep the link interceptor from navigating
+        const lbl = pill.getAttribute('data-extras');
+        setIdentifyExtras(lbl === 'All' ? Infinity : +lbl);
+      });
+    });
   }
 
   // ---------- learn / quiz ----------
@@ -2399,6 +2861,8 @@
     renderSummaryStatus(x);  // compact key/tuning text in each title bar
     bindAutoSubmit();        // so the change-listener catches them
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
+    bindNotePick();          // click fret cells / keyboard keys to pick notes
+    renderIdentifyStrips(x); // chord-identify strips below fretboard + keyboard
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time

@@ -703,12 +703,13 @@ select option                              { color: var(--text); background: var
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
 
-/* Active chord/scale link in the chord_grid + scale_grid title rows. Selection
-   is now indicated by the cleared href only (chip click toggles), no border. */
-#chord_grid td.cg_selected,
-#scale_grid td.cg_selected                 { /* highlight border removed */                                           }
+/* Active chord/scale link in the chord_grid + scale_grid title rows. When
+   a chord/scale is the active selection, paint its name like a highlighted
+   pill so the grid mirrors the pill row state at a glance. */
 #chord_grid td.cg_selected a,
-#scale_grid td.cg_selected a               { /* width-stable, no decoration */                                        }
+#scale_grid td.cg_selected a               { display: inline-block; padding: 1px 6px; border-radius: 4px;
+                                             background: var(--accent-hi); color: #000 !important;
+                                             font-weight: 600; text-decoration: none;                                 }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
@@ -778,7 +779,76 @@ select option                              { color: var(--text); background: var
 .opt_row_highlights a.hl_pill_on           { font-weight: 600;                                                       }
 .opt_row_highlights a.hl_all_pill          { margin-left: 8px;                                                       }
 
-@media print { #quick_picks, #kb_quick_picks, #kb_picks_root { display: none !important; } }
+/* Note-letter highlight row — same shape as .opt_row_highlights but uses a
+   distinct on-state colour (cyan) so a pill being "on" reads as note-letter
+   highlighting rather than a degree highlight. The two rows can stack and
+   coexist (e.g. degree 1/3/5 + note A all glowing at once). */
+.opt_row_notes                             { display: flex; flex-wrap: wrap; align-items: center;
+                                             justify-content: center; gap: 4px;
+                                             padding: 6px 14px 2px; line-height: 1;                                  }
+.opt_row_notes .hl_title                   { color: var(--muted); font: 600 0.78em var(--font);
+                                             letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
+.opt_row_notes a.note_pill                 { display: inline-block; padding: 3px 9px; font-size: 0.85em;
+                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
+                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+                                             text-decoration: none; transition: background .12s, border-color .12s; }
+.opt_row_notes a.note_pill:hover           { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
+.opt_row_notes a.note_pill_on              { font-weight: 600; background: #00e5ff; color: #001014 !important;
+                                             border-color: #00e5ff;                                                  }
+.opt_row_notes a.note_all_pill             { margin-left: 8px;                                                       }
+
+/* Note-letter highlight visual on the fretboard cells. Sits on top of the
+   existing degree-highlight bg via an inset cyan ring so both can show. */
+#fretboard td.note_hl                      { box-shadow: inset 0 0 0 3px #00e5ff;                                    }
+/* Click-to-pick highlight for the chord identifier — fluorescent yellow.
+   Inset shadow doesn't change cell dimensions (no layout shift). When the
+   same cell is BOTH hn-highlighted and pk-picked, the yellow wins on the
+   inner ring; the cyan stays as a halo via a layered shadow. */
+#fretboard td.note_pk                      { box-shadow: inset 0 0 0 3px #ffeb00;                                    }
+#fretboard td.note_pk.note_hl              { box-shadow: inset 0 0 0 3px #ffeb00, inset 0 0 0 5px #00e5ff;            }
+#fretboard td[data-note]                   { cursor: pointer;                                                        }
+
+/* Keyboard pick ring uses the same yellow via a dynamic stylesheet rule
+   added by applyKeyboardColors (see app.js). Cursor styling here so static
+   keys still feel clickable. */
+.ritz .waffle [data-note]                  { cursor: pointer;                                                        }
+
+/* ---------- Chord identify strip (below fretboard / keyboard) ---------- */
+#fb_identify_root, #kb_identify_root       { padding: 8px 18px 4px;                                                  }
+.identify_strip                            { background: rgba(255,255,255,0.04); border-radius: 6px;
+                                             padding: 10px 14px; font-size: 0.9em; line-height: 1.45;                }
+.identify_hint                             { color: var(--muted); font-style: italic;                                }
+.identify_hint .identify_count             { color: #ffeb00;                                                          }
+.identify_label                            { font: 600 0.78em var(--font); letter-spacing: 0.06em;
+                                             text-transform: uppercase; color: var(--muted); margin-right: 8px;       }
+.identify_head                             { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+                                             margin-bottom: 8px; padding-bottom: 6px;
+                                             border-bottom: 1px solid rgba(255,255,255,0.08);                         }
+.identify_picks                            { color: var(--text); font-weight: 600;                                    }
+.identify_clear                            { margin-left: auto; color: var(--muted); font-size: 0.85em;
+                                             text-decoration: underline;                                              }
+.identify_clear:hover                      { color: var(--text);                                                      }
+.identify_row                              { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+                                             margin-bottom: 4px;                                                       }
+.identify_bucket_label                     { font: 600 0.75em var(--font); letter-spacing: 0.05em;
+                                             text-transform: uppercase; color: var(--muted); min-width: 110px;        }
+.identify_chips                            { display: flex; flex-wrap: wrap; gap: 4px; flex: 1;                       }
+.identify_empty                            { color: var(--muted); font-style: italic;                                  }
+.identify_chip                             { display: inline-block; padding: 2px 8px; font-size: 0.85em;
+                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
+                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+                                             text-decoration: none; transition: background .12s, border-color .12s; }
+.identify_chip:hover                       { background: rgba(255,235,0,0.15); border-color: #ffeb00;                 }
+.identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
+.identify_pill                             { display: inline-block; padding: 1px 8px; font-size: 0.8em;
+                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
+                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+                                             text-decoration: none;                                                    }
+.identify_pill:hover                       { background: rgba(255,255,255,0.12);                                      }
+.identify_pill_on                          { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;   }
+
+@media print { #quick_picks, #kb_quick_picks, #kb_picks_root,
+               #fb_identify_root, #kb_identify_root          { display: none !important; }                            }
 
 /* ---------- Tuning picker (sortable / filterable popover) ---------- */
 .tun_picker                                { position: relative; display: inline-block;
