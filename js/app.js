@@ -1570,8 +1570,15 @@
     pushSelect(opt.querySelector('select[name="x"]'));
     // Key dropdown lives in each section's title bar (.section_key_picker) since
     // the form no longer has its own. Read from any of them — bindAutoSubmit's
-    // sync handler keeps every section's key picker at the same value.
-    pushSelect(document.querySelector('.section_key_picker select[name="k"]'));
+    // sync handler keeps every section's key picker at the same value. Falls
+    // back to window.SF_X.k (parsed state) if no picker is in the DOM yet,
+    // so the URL always carries k= once any change fires.
+    const _kPick = document.querySelector('.section_key_picker select[name="k"]');
+    if (_kPick) {
+      pushSelect(_kPick);
+    } else if (window.SF_X && window.SF_X.k) {
+      parts.push('k=' + urlNote(window.SF_X.k));
+    }
 
     // y (low/high direction) and z (custom-tuning toggle) are now link-
     // driven switches, not checkboxes — they live entirely in the URL.
