@@ -798,6 +798,7 @@ select option                              { color: var(--text); background: var
 .opt_row_highlights a.hl_pill:hover        { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 .opt_row_highlights a.hl_pill_on           { font-weight: 600;                                                       }
 .opt_row_highlights a.hl_all_pill          { margin-left: 8px;                                                       }
+.opt_row_highlights a.hl_none_pill         { margin-left: 2px;                                                       }
 
 /* Note-letter highlight row — drives the same hl= state as the degree pill
    row below it. The on-state colour matches the degree's pill colour
@@ -816,6 +817,7 @@ select option                              { color: var(--text); background: var
 .opt_row_notes a.note_pill:hover           { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 .opt_row_notes a.note_pill_on              { font-weight: 600;                                                       }
 .opt_row_notes a.note_all_pill             { margin-left: 8px;                                                       }
+.opt_row_notes a.note_none_pill            { margin-left: 2px;                                                       }
 /* Pull the degree-pill row right up under the note-pill row in both the
    fretboard and keyboard panes (no gap between the two views of the same
    selection). */

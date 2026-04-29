@@ -894,11 +894,8 @@
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>'
         + escHtml(a) + escHtml(EXTENSIONS[i]) + '</a>';
     });
-    const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
-    const allHref = allOn
-      ? clearHlHref()
-      : buildHlHref(DEGREES.map(flatToB));
-    h += '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
+    h += '<a class="hl_pill hl_all_pill" href="' + escHtml(buildHlHref(DEGREES.map(flatToB))) + '">All</a>';
+    h += '<a class="hl_pill hl_none_pill" href="' + escHtml(clearHlHref()) + '">None</a>';
     h += '</div>';
     return h;
   }
@@ -941,9 +938,8 @@
       }
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>' + escHtml(note) + '</a>';
     });
-    const allOn = DEGREES.every(function (d) { return x['hl_' + flatToB(d)] === 'y'; });
-    const allHref = allOn ? clearHlHref() : buildHlHref(DEGREES.map(flatToB));
-    h += '<a class="note_pill note_all_pill" href="' + escHtml(allHref) + '">' + (allOn ? 'None' : 'All') + '</a>';
+    h += '<a class="note_pill note_all_pill" href="' + escHtml(buildHlHref(DEGREES.map(flatToB))) + '">All</a>';
+    h += '<a class="note_pill note_none_pill" href="' + escHtml(clearHlHref()) + '">None</a>';
     h += '</div>';
     return h;
   }
