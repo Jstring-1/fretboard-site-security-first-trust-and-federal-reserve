@@ -38,7 +38,8 @@ table                                      {  min-width:960px;  width:98%;      
                                               border: 1px solid #1f1f1f;
                                               box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset;                       }
 #view_src, #print_btn                      {  width:100px;                                                           }                
-.cg_col_left, .cg_col_right                {  width:60px !important;                                                 }
+.cg_chord_label                            {  width:88px !important;                                                 }
+.cg_deg_header                             {  height:24px !important;                                                 }
 #f0,#f_cyo,#f_cyo_dark                     {  width:5%;                                                              }
 #f1                                        {  width:8.5%;                                                            }            
 #f2,#f3                                    {  width:8.5%;                                                            }
@@ -166,8 +167,10 @@ h1, h2, h3, h4, input                      {  margin: 6px auto 6px auto ; }
 *********************************************************************************************************************/
 body, #info_l, #info_r, #view_src, #print_btn, #f_cyo, #f_cyo_dark, #tunings tr 
                                            {  text-align:center;                                                     }
-.cg_col_right , #tunings td, #blurb        {  text-align:left;                                                       }   
-.cg_col_left, .name                        {  text-align:right;                                                      }               
+#tunings td, #blurb                        {  text-align:left;                                                       }
+.name                                      {  text-align:right;                                                      }
+.cg_chord_label                            {  text-align:center;                                                     }
+.cg_deg_header                             {  text-align:center;                                                     }
 
 #hl_button, #hl_button_x, #info_l, #info_r, #view_src, #print_btn
                                            {  display:inline;                                                        }
@@ -325,8 +328,7 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_3"] #chord_grid        {  font-size:0.55em; width:100% !important;
                                                        border-radius:0 !important;                                    }
     body[data-print="section_3"] #chord_grid td     {  padding:1px !important;                                        }
-    body[data-print="section_3"] .cg_col_left,
-    body[data-print="section_3"] .cg_col_right      {  width:38px !important;                                         }
+    body[data-print="section_3"] .cg_chord_label    {  width:60px !important;                                         }
 
     /* ===== Section 4: Keyboard ===== */
     body[data-print="section_4"] #keyboard          {  font-size:0.5em; width:100% !important;
@@ -704,16 +706,28 @@ select option                              { color: var(--text); background: var
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
 
 /* Make the entire chord/scale name cell the click target — fill the <td>
-   with the <a> so users can hit anywhere on the cell, not just the text. */
-#chord_grid #under_chord_grid td > a,
-#scale_grid #under_scale_grid td > a       { display: block; padding: 4px 6px; height: 100%;
+   with the <a> so users can hit anywhere on the cell, not just the text.
+   Applies to the leftmost / rightmost label cell of each chord (or scale)
+   row in the flipped grid. */
+#chord_grid td.cg_chord_label > a,
+#scale_grid td.cg_chord_label > a          { display: block; padding: 4px 6px; height: 100%;
                                              text-align: center; text-decoration: none; box-sizing: border-box;       }
-/* When a chord/scale is the active selection, paint the whole cell like a
-   highlighted pill so the grid mirrors the pill row state at a glance. */
+/* When a chord/scale is the active selection, paint the whole label cell
+   like a highlighted pill so the grid mirrors the pill row state at a
+   glance. */
 #chord_grid td.cg_selected,
 #scale_grid td.cg_selected                 { background: var(--accent-hi);                                            }
 #chord_grid td.cg_selected > a,
 #scale_grid td.cg_selected > a             { color: #000 !important; font-weight: 600;                                }
+/* Muted internal cell borders + soft corners for the flipped grids. The
+   fretboard / keyboard tabletop is #cccccc; #2e2e2e on top reads as black,
+   so step it up to a light grey that just hints at the cell edges. */
+#chord_grid, #chord_grid td,
+#scale_grid, #scale_grid td                { border-color: #aaaaaa !important;                                        }
+#chord_grid td, #scale_grid td             { border-radius: 3px;                                                      }
+/* Cell spacing so the rounded corners actually show up between neighbours
+   instead of butting up against each other. */
+#chord_grid, #scale_grid                   { border-spacing: 1px;                                                     }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }

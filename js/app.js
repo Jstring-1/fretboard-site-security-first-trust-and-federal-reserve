@@ -1217,38 +1217,52 @@
       _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
     };
 
-    let chordLinksRow = '<tr id="under_chord_grid"><td></td>';
+    // Flipped grid: rows = chord types, columns = degree slots (ascending
+    // 1, ♭2, 2, …, 7, 8(=1 octave), ♭9, 9, …, 14). SF_GRID_ROWS lists slots
+    // top-down (descending in pitch); reverse so the horizontal column order
+    // reads ascending left-to-right.
+    const COLS = window.SF_GRID_ROWS.slice().reverse();
+
+    // Header row: degree labels above each column.
+    function buildDegHeader(idAttr) {
+      let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '><td></td>';
+      for (const col of COLS) {
+        const note = noteLetters[col.degId];
+        s += '<td class="cg_deg_header" id="' + col.degId + '">'
+           + escHtml(note) + escHtml(col.intervalLabel) + '</td>';
+      }
+      s += '<td></td></tr>';
+      return s;
+    }
+
+    let h = '<table id="chord_grid">';
+    h += buildDegHeader('above_chord_grid');
+    let chordIdx = 0;
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const chipDegs = fragToDegrees(GRID[a]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
-      const tdCls = isSelected ? ' class="cg_selected"' : '';
+      const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k);
-      chordLinksRow += '<td' + tdCls + '><a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a></td>';
-    }
-    chordLinksRow += '<td></td></tr>';
-
-    let h = '<table id="chord_grid">';
-    h += chordLinksRow;
-    for (const row of window.SF_GRID_ROWS) {
-      const note = noteLetters[row.degId];
-      h += '<tr>';
-      h += '<td class="cg_col_left" id="' + row.degId + '">' + escHtml(note) + escHtml(row.intervalLabel) + '</td>';
-      for (const cell of row.cells) {
+      const labelCell = '<td class="' + labelTdCls + '">'
+                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
+                      + '</td>';
+      h += '<tr>' + labelCell;
+      for (const col of COLS) {
+        const cell = col.cells[chordIdx];
         if (cell === null) {
           h += '<td id="_x_"></td>';
         } else {
-          // Fretboard-style: noteLetter(degree). The bookends show the same
-          // pair, so each filled cell carries its full identity instead of
-          // just the abstract degree number.
-          h += '<td id="' + row.degId + '">' + escHtml(note) + '(' + escHtml(cell) + ')</td>';
+          const note = noteLetters[col.degId];
+          h += '<td id="' + col.degId + '">' + escHtml(note) + '(' + escHtml(cell) + ')</td>';
         }
       }
-      h += '<td class="cg_col_right" id="' + row.degId + '">' + escHtml(row.intervalLabel) + escHtml(note) + '</td>';
-      h += '</tr>';
+      h += labelCell + '</tr>';
+      chordIdx++;
     }
-    h += chordLinksRow + '</table>';
+    h += buildDegHeader('under_chord_grid');
+    h += '</table>';
     root.innerHTML = h;
   }
 
@@ -1262,8 +1276,9 @@
       _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
     };
 
-    // Bottom 12 rows of the chord grid — the unison-octave half
-    const ROWS = window.SF_GRID_ROWS.slice(12);
+    // Single-octave column order: 1, ♭2, 2, …, 7. The chord grid stacks an
+    // octave on top of this; the scale grid sticks to the basic seven.
+    const COLS = window.SF_GRID_ROWS.slice(12).reverse();
 
     // Parse SCALES["..."] = "&hl=1&hl=2&hl=b3..." into a Set of degree symbols
     const scaleDegrees = {};
@@ -1275,37 +1290,43 @@
       scaleDegrees[name] = degs;
     }
 
-    let scaleLinksRow = '<tr id="under_scale_grid"><td></td>';
+    function buildDegHeader(idAttr) {
+      let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '><td></td>';
+      for (const col of COLS) {
+        const note = noteLetters[col.degId];
+        s += '<td class="cg_deg_header" id="' + col.degId + '">'
+           + escHtml(note) + escHtml(col.intervalLabel) + '</td>';
+      }
+      s += '<td></td></tr>';
+      return s;
+    }
+
+    let h = '<table id="scale_grid">';
+    h += buildDegHeader('above_scale_grid');
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
-      const tdCls = isSelected ? ' class="cg_selected"' : '';
+      const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k);
-      scaleLinksRow += '<td' + tdCls + '><a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a></td>';
-    }
-    scaleLinksRow += '<td></td></tr>';
-
-    let h = '<table id="scale_grid">';
-    h += scaleLinksRow;
-    for (const row of ROWS) {
-      const note = noteLetters[row.degId];
-      const degSym = row.intervalLabel.replace(/[()]/g, '');
-      h += '<tr>';
-      h += '<td class="cg_col_left" id="' + row.degId + '">' + escHtml(note) + escHtml(row.intervalLabel) + '</td>';
-      for (const scaleName in SCALES) {
-        if (scaleDegrees[scaleName].indexOf(degSym) !== -1) {
-          // Fretboard-style label: noteLetter(degree)
-          h += '<td id="' + row.degId + '">' + escHtml(note) + '(' + escHtml(degSym) + ')</td>';
+      const labelCell = '<td class="' + labelTdCls + '">'
+                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
+                      + '</td>';
+      h += '<tr>' + labelCell;
+      for (const col of COLS) {
+        const degSym = col.intervalLabel.replace(/[()]/g, '');
+        if (scaleDegrees[name].indexOf(degSym) !== -1) {
+          const note = noteLetters[col.degId];
+          h += '<td id="' + col.degId + '">' + escHtml(note) + '(' + escHtml(degSym) + ')</td>';
         } else {
           h += '<td id="_x_"></td>';
         }
       }
-      h += '<td class="cg_col_right" id="' + row.degId + '">' + escHtml(row.intervalLabel) + escHtml(note) + '</td>';
-      h += '</tr>';
+      h += labelCell + '</tr>';
     }
-    h += scaleLinksRow + '</table>';
+    h += buildDegHeader('under_scale_grid');
+    h += '</table>';
     root.innerHTML = h;
   }
 
