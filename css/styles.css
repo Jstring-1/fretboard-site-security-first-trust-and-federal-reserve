@@ -1121,3 +1121,69 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              border: 1px solid #2a2a2a; border-radius: 999px;
                                              cursor: pointer; letter-spacing: 0.04em;                                  }
 .quiz_skip:hover                           { color: var(--accent-hi); border-color: var(--accent-hi);                  }
+
+/* ---------- Mobile hint banner ----------
+   Shown only on narrow viewports. Hidden on desktop and on landscape phones
+   so it doesn't nag users who already have enough room to read. */
+#mobile_hint                               { display: none;                                                          }
+
+/* =====================================================================
+   Mobile (< 700px wide). Desktop above stays untouched. The wide tables
+   stay wide; their parent sections become horizontal-scroll containers
+   so the user can swipe through them inside each card. Sections still
+   stack vertically. Pills wrap, fonts shrink slightly, padding tightens.
+   ===================================================================== */
+@media (max-width: 700px) {
+  #mobile_hint                             { display: block; padding: 10px 14px;
+                                             background: rgba(255,235,0,0.10); color: #ffe680;
+                                             border-bottom: 1px solid rgba(255,235,0,0.25);
+                                             font-size: 0.85em; line-height: 1.35;                                    }
+
+  /* Section padding tightens; the inner tables get their own scroll. */
+  .section, .nested_section                { padding-left: 6px; padding-right: 6px;                                   }
+  details > summary                        { font-size: 0.95em;                                                       }
+
+  /* Wide reference tables: scroll horizontally inside their card so the
+     viewport doesn't stretch sideways. The tables keep their min-width. */
+  #fretboard_root, #fb_identify_root,
+  #kb_picks_root, #kb_identify_root,
+  #keyboard_key_root, .ritz,
+  #chord_grid_root, #scale_grid_root,
+  #tunings_root                            { overflow-x: auto;
+                                             -webkit-overflow-scrolling: touch;
+                                             max-width: 100vw;                                                        }
+
+  /* Identify-strip pills/chips wrap rather than overflow horizontally. */
+  .identify_strip                          { font-size: 0.85em;                                                       }
+  .identify_chips                          { gap: 3px;                                                                 }
+  .identify_chip                           { font-size: 0.78em; padding: 2px 6px;                                     }
+
+  /* Quick-pick / pill rows — already wrap; just shrink the chip font so
+     more fit per line. */
+  .qp_row a.qp_link                        { font-size: 0.78em; padding: 2px 6px;                                     }
+  .opt_row_highlights a.hl_pill,
+  .opt_row_notes a.note_pill               { font-size: 0.78em; padding: 2px 7px;                                     }
+
+  /* Keep the section title bar from overflowing on narrow screens — the
+     status / tuning / extras spans collapse into smaller text. */
+  .summary_title                           { font-size: 1em;                                                          }
+  .summary_status, .summary_tuning,
+  .summary_extras                          { font-size: 0.78em;                                                       }
+
+  /* Section help/print/CSV buttons shrink slightly on phone. */
+  .section_help, .section_print,
+  .section_export                          { font-size: 0.75em; padding: 2px 6px;                                     }
+
+  /* Site title — keep impact but no longer dominates the viewport. */
+  #site_title                              { font-size: 1.5em; margin: 8px 12px;                                      }
+
+  /* Body padding is tiny so there's no double-margin against the section
+     scroll containers. */
+  body                                     { padding: 0; margin: 0;                                                   }
+}
+
+/* Landscape phones get more room — kill the hint banner since the wide
+   tables fit roughly 1:1 in landscape on most modern phones. */
+@media (max-width: 900px) and (orientation: landscape) {
+  #mobile_hint                             { display: none;                                                           }
+}
