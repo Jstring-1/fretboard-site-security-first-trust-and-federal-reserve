@@ -2575,31 +2575,42 @@
           for (let j = 0; j < data.length; j++) {
             if (data[j][1] === name) { mask = data[j][0]; break; }
           }
-          const href = applyChordHref(name, mask) || '#';
-          // Build tooltip from the chord's own root + intervals (key-independent
-          // for these chips — their root is baked into the name, not the site key).
-          let tip = name;
-          if (mask) {
-            // Find root pc by matching the longest leading note letter.
-            let root = null, rootPc = -1;
-            for (const n of PC_TO_NOTE) {
-              if (name.indexOf(n) === 0 && (root === null || n.length > root.length)) {
-                root = n; rootPc = NOTE_TO_PC[n];
-              }
-            }
-            if (rootPc >= 0) {
-              const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
-              const degs = [], notes = [];
-              for (let i = 0; i < 12; i++) {
-                if ((mask >> ((rootPc + i) % 12)) & 1) {
-                  degs.push(DEG_LBL[i]);
-                  notes.push(PC_TO_NOTE[(rootPc + i) % 12]);
-                }
-              }
-              tip = name + '\nDegrees: ' + degs.join(' ') + '\nNotes: ' + notes.join(' ');
+          // Resolve root + degree set so we can render tooltip + detect
+          // engagement (chip is "on" when x.k matches this chord's root and
+          // x.hl matches its degree set).
+          let root = null, rootPc = -1;
+          for (const n of PC_TO_NOTE) {
+            if (name.indexOf(n) === 0 && (root === null || n.length > root.length)) {
+              root = n; rootPc = NOTE_TO_PC[n];
             }
           }
-          return '<a class="identify_chip" href="' + escHtml(href) + '" title="' + escAttr(tip) + '">' + escHtml(name) + '</a>';
+          let tip = name;
+          let degsStr = '';
+          if (mask && rootPc >= 0) {
+            const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+            const degs = [], notes = [];
+            for (let i = 0; i < 12; i++) {
+              if ((mask >> ((rootPc + i) % 12)) & 1) {
+                degs.push(DEG_LBL[i]);
+                notes.push(PC_TO_NOTE[(rootPc + i) % 12]);
+              }
+            }
+            degsStr = degs.join(' ');
+            tip = name + '\nDegrees: ' + degsStr + '\nNotes: ' + notes.join(' ');
+          }
+          const isEngaged = root === x.k && degSetsEqual(degsStr, x.hl);
+          let href;
+          if (isEngaged) {
+            // Disengage: clear hl, keep everything else (including pk).
+            const p = new URLSearchParams(window.location.search);
+            p.delete('hl');
+            const _qs = canonicalQS(p);
+            href = _qs ? '?' + _qs : '?';
+          } else {
+            href = applyChordHref(name, mask) || '#';
+          }
+          const cls = 'identify_chip' + (isEngaged ? ' identify_chip_on' : '');
+          return '<a class="' + cls + '" href="' + escHtml(href) + '" title="' + escAttr(tip) + '">' + escHtml(name) + '</a>';
         }).join('');
       }
 

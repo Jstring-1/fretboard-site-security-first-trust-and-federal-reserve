@@ -839,6 +839,11 @@ select option                              { color: var(--text); background: var
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none; transition: background .12s, border-color .12s; }
 .identify_chip:hover                       { background: rgba(255,235,0,0.15); border-color: #ffeb00;                 }
+a.identify_chip_on,
+a.identify_chip_on:link,
+a.identify_chip_on:visited,
+a.identify_chip_on:active                  { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;
+                                             font-weight: 600;                                                         }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 .identify_pill                             { display: inline-block; padding: 1px 8px; font-size: 0.8em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
