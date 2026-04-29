@@ -719,18 +719,20 @@ select option                              { color: var(--text); background: var
 #scale_grid td.cg_selected                 { background: var(--accent-hi);                                            }
 #chord_grid td.cg_selected > a,
 #scale_grid td.cg_selected > a             { color: #000 !important; font-weight: 600;                                }
-/* Muted internal cell borders + soft corners for the fretboard and the
-   flipped chord / scale grids. Their tabletop is #cccccc; #2e2e2e on top
-   reads as black, so step it up to a light grey that just hints at the
-   cell edges. */
+/* Muted internal cell borders + soft corners for the fretboard, keyboard,
+   and the flipped chord / scale grids. Their tabletop is #cccccc; #2e2e2e
+   on top reads as black, so step it up to a light grey that just hints
+   at the cell edges. */
 #fretboard, #fretboard td,
 #chord_grid, #chord_grid td,
-#scale_grid, #scale_grid td                { border-color: #aaaaaa !important;                                        }
-#fretboard td, #chord_grid td, #scale_grid td
-                                           { border-radius: 3px;                                                      }
+#scale_grid, #scale_grid td,
+.ritz .waffle, .ritz .waffle td            { border-color: #aaaaaa !important;                                        }
+#fretboard td, #chord_grid td, #scale_grid td,
+.ritz .waffle td                           { border-radius: 3px;                                                      }
 /* Cell spacing so the rounded corners actually show up between neighbours
    instead of butting up against each other. */
-#fretboard, #chord_grid, #scale_grid       { border-spacing: 1px;                                                     }
+#fretboard, #chord_grid, #scale_grid,
+.ritz .waffle                              { border-spacing: 1px;                                                     }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
