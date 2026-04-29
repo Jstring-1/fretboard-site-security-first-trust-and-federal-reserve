@@ -703,13 +703,17 @@ select option                              { color: var(--text); background: var
 /* Fretboard info bar */
 #info_l, #info_r                           { font-weight: 600; opacity: 0.9;                                         }
 
-/* Active chord/scale link in the chord_grid + scale_grid title rows. When
-   a chord/scale is the active selection, paint its name like a highlighted
-   pill so the grid mirrors the pill row state at a glance. */
-#chord_grid td.cg_selected a,
-#scale_grid td.cg_selected a               { display: inline-block; padding: 1px 6px; border-radius: 4px;
-                                             background: var(--accent-hi); color: #000 !important;
-                                             font-weight: 600; text-decoration: none;                                 }
+/* Make the entire chord/scale name cell the click target — fill the <td>
+   with the <a> so users can hit anywhere on the cell, not just the text. */
+#chord_grid #under_chord_grid td > a,
+#scale_grid #under_scale_grid td > a       { display: block; padding: 4px 6px; height: 100%;
+                                             text-align: center; text-decoration: none; box-sizing: border-box;       }
+/* When a chord/scale is the active selection, paint the whole cell like a
+   highlighted pill so the grid mirrors the pill row state at a glance. */
+#chord_grid td.cg_selected,
+#scale_grid td.cg_selected                 { background: var(--accent-hi);                                            }
+#chord_grid td.cg_selected > a,
+#scale_grid td.cg_selected > a             { color: #000 !important; font-weight: 600;                                }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
@@ -779,13 +783,14 @@ select option                              { color: var(--text); background: var
 .opt_row_highlights a.hl_pill_on           { font-weight: 600;                                                       }
 .opt_row_highlights a.hl_all_pill          { margin-left: 8px;                                                       }
 
-/* Note-letter highlight row — same shape as .opt_row_highlights but uses a
-   distinct on-state colour (cyan) so a pill being "on" reads as note-letter
-   highlighting rather than a degree highlight. The two rows can stack and
-   coexist (e.g. degree 1/3/5 + note A all glowing at once). */
+/* Note-letter highlight row — drives the same hl= state as the degree pill
+   row below it. The on-state colour matches the degree's pill colour
+   (applied inline by notePillsLinkHtml) so the two rows agree visually
+   when the same item is engaged. The row sits flush against the degree
+   row beneath with no extra padding between. */
 .opt_row_notes                             { display: flex; flex-wrap: wrap; align-items: center;
                                              justify-content: center; gap: 4px;
-                                             padding: 6px 14px 2px; line-height: 1;                                  }
+                                             padding: 6px 14px 0; line-height: 1;                                    }
 .opt_row_notes .hl_title                   { color: var(--muted); font: 600 0.78em var(--font);
                                              letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
 .opt_row_notes a.note_pill                 { display: inline-block; padding: 3px 9px; font-size: 0.85em;
@@ -793,19 +798,16 @@ select option                              { color: var(--text); background: var
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none; transition: background .12s, border-color .12s; }
 .opt_row_notes a.note_pill:hover           { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
-.opt_row_notes a.note_pill_on              { font-weight: 600; background: #00e5ff; color: #001014 !important;
-                                             border-color: #00e5ff;                                                  }
+.opt_row_notes a.note_pill_on              { font-weight: 600;                                                       }
 .opt_row_notes a.note_all_pill             { margin-left: 8px;                                                       }
+/* Pull the degree-pill row right up under the note-pill row in both the
+   fretboard and keyboard panes (no gap between the two views of the same
+   selection). */
+.opt_row_notes + .opt_row_highlights       { padding-top: 4px;                                                        }
 
-/* Note-letter highlight visual on the fretboard cells. Sits on top of the
-   existing degree-highlight bg via an inset cyan ring so both can show. */
-#fretboard td.note_hl                      { box-shadow: inset 0 0 0 3px #00e5ff;                                    }
 /* Click-to-pick highlight for the chord identifier — fluorescent yellow.
-   Inset shadow doesn't change cell dimensions (no layout shift). When the
-   same cell is BOTH hn-highlighted and pk-picked, the yellow wins on the
-   inner ring; the cyan stays as a halo via a layered shadow. */
+   Inset shadow doesn't change cell dimensions (no layout shift). */
 #fretboard td.note_pk                      { box-shadow: inset 0 0 0 3px #ffeb00;                                    }
-#fretboard td.note_pk.note_hl              { box-shadow: inset 0 0 0 3px #ffeb00, inset 0 0 0 5px #00e5ff;            }
 #fretboard td[data-note]                   { cursor: pointer;                                                        }
 
 /* Keyboard pick ring uses the same yellow via a dynamic stylesheet rule
