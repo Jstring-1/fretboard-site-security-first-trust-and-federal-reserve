@@ -1,1 +1,3 @@
 .claude/
+# Legacy PHP source kept locally for reference — not shipped, not edited.
+_legacy/

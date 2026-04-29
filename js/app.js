@@ -49,9 +49,6 @@
       .replace(/♯/g, 's')
       .replace(/ /g, '');
   }
-  function urlNoteRaw(s) {
-    return String(s).replace(/♯/g, 's');
-  }
   function reverseSpaceStr(s) {
     return String(s).split(' ').reverse().join(' ');
   }
@@ -65,7 +62,6 @@
       .replace(/#/g, '♯')
       .replace(/([A-G])s/g, '$1♯');
   }
-  function hashToSharp(s) { return String(s).replace(/♯/g, 's'); }
 
   // Canonical order for URL params — every URL the app generates should
   // emit known params in this order so shared / bookmarked URLs read
@@ -153,15 +149,22 @@
       // Hydrate hl (compact ?hl=1,b3,5 OR legacy ?hl=1&hl=b3&hl=5)
       const hlList = readHlParam(params).map(function (v) { return bToFlat(v); });
       if (hlList.length) raw.hl = hlList;
-      // Hydrate s1..s12 (compact ?s=A.Cs.E.F.G.A.C.E OR legacy ?s1=…&s2=…)
+      // Hydrate s1..s12 (compact ?s=A.Cs.E.F.G.A.C.E OR legacy ?s1=…&s2=…).
+      // Each parsed value is validated against the same A-G + ♯/♭ alphabet
+      // the single-value note params use; anything weird from a hand-edited
+      // URL gets dropped so it can't slip into the dropdowns or display.
       const cstr = readCustomStrings(params);
-      for (const sk in cstr) raw[sk] = [bToFlat(sharpToHash(cstr[sk]))];
-      // Track how many s-strings the URL actually carried (separate from
-      // x.sN, which gets backfilled from DEF_X defaults below). Used to
-      // override the fretboard string count when custom tuning is engaged.
+      const _noteRe = /^[A-G♯♭]+$/;
+      for (const sk in cstr) {
+        const _v = bToFlat(sharpToHash(cstr[sk]));
+        if (_noteRe.test(_v)) raw[sk] = [_v];
+      }
+      // Track how many s-strings the URL actually carried (post-validation,
+      // so invalid notes from a hand-edited URL don't bump the count).
+      // Used to override the fretboard string count when custom is engaged.
       let _csCountUrl = 0;
       for (let i = 1; i <= 12; i++) {
-        if (cstr['s' + i]) _csCountUrl = i;
+        if (raw['s' + i] && raw['s' + i][0]) _csCountUrl = i;
         else break;
       }
       x._customStrsFromUrl = _csCountUrl;
@@ -296,10 +299,13 @@
 
     // Tunings table sort: ?sort=<col>:<a|d>
     const sortRaw = params.get('sort');
-    x._sort = null;
     if (sortRaw && /^\d+:[ad]$/.test(sortRaw)) {
       const parts = sortRaw.split(':');
       x._sort = { col: parseInt(parts[0], 10), dir: parts[1] };
+    } else {
+      // Default: sort by Strings ascending (column 0) so 6-strings land
+      // at the top whenever the URL doesn't specify a sort.
+      x._sort = { col: 0, dir: 'a' };
     }
 
     // Tunings filter: ?f=<text>. Length-capped + control chars stripped to keep
@@ -455,7 +461,7 @@
   // Sortable / filterable replacement for the native <select name="x">.
   // Sort + filter state persists in module-scope vars across re-renders so the
   // user keeps their column sort and search after picking a tuning.
-  let _tunPickerSort = { col: 'name', dir: 'asc' };
+  let _tunPickerSort = { col: 'strs', dir: 'asc' };
   let _tunPickerFilter = '';
   let _tunPickerStrFilter = '';   // '' = all; '6' / '8' / '10' / '12' for quick string-count filter
 
