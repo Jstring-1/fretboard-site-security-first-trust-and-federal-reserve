@@ -733,12 +733,11 @@ select option                              { color: var(--text); background: var
 #fretboard, #chord_grid, #scale_grid       { border-spacing: 1px;                                                     }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
+/* Both grids now have the same column count and the same cell-content
+   shape (e.g. "F♯(9)"), so they read with one font size and one row
+   height across the board. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
-#chord_grid #under_chord_grid,
-#scale_grid #under_scale_grid              { height: 30px;                                                            }
-/* Tighter font on the dense chord grid so 'noteLetter(degree)' fits each cell. */
-#chord_grid td                             { font-size: 0.72em;                                                       }
-#scale_grid td                             { font-size: 0.95em;                                                       }
+#chord_grid td, #scale_grid td             { font-size: 0.85em;                                                       }
 /* "All" pill in the highlight row — matches the .hl_pill chips but acts as
    a link (no checkbox inside). */
 .hl_all_pill                               { color: var(--text) !important; text-decoration: none; cursor: pointer;  }
