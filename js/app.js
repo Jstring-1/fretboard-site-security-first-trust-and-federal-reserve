@@ -2379,13 +2379,15 @@
   }
 
   // ---------- click-to-pick + chord identifier ----------
-  // Maps the unicode-♯ pitch-class label ALLNOTES uses to a 0..11 index
-  // matching js/chord_lookup.js. Computed once.
-  const NOTE_TO_PC = (function () {
-    const m = {};
-    ALLNOTES.forEach(function (n, i) { m[n] = i; });
-    return m;
-  })();
+  // Pitch-class index used by the chord-identifier lookup. MUST match the
+  // C-indexed numbering in js/chord_lookup.js (C=0, C♯=1, ..., B=11).
+  // Don't be tempted to derive this from ALLNOTES — that's A-indexed and
+  // would put the masks one fifth away from where they belong.
+  const NOTE_TO_PC = {
+    'C': 0, 'C♯': 1, 'D': 2, 'D♯': 3, 'E': 4, 'F': 5,
+    'F♯': 6, 'G': 7, 'G♯': 8, 'A': 9, 'A♯': 10, 'B': 11
+  };
+  const PC_TO_NOTE = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
   // Default "+N" cap for the "Selected ⊂ Chord" identify bucket. Stored on
   // the URL-suppressed local-only side so the choice doesn't leak into share
@@ -2516,11 +2518,13 @@
   // hl= to its degrees relative to that root. Strip pk= so the user moves
   // from "what is this?" to "show me this chord on the board" cleanly.
   function applyChordHref(chordName, chordMask) {
-    // Find root: first matching note letter at the start of the name.
+    // Find root: longest matching note letter at the start of the name.
+    // Walk sharps last so "C♯..." beats "C..." when present.
     let root = null;
-    for (let i = ALLNOTES.length - 1; i >= 0; i--) {
-      const n = ALLNOTES[i];
-      if (chordName.indexOf(n) === 0) { root = n; break; }
+    for (const n of PC_TO_NOTE) {
+      if (chordName.indexOf(n) === 0 && (root === null || n.length > root.length)) {
+        root = n;
+      }
     }
     if (!root) return null;
     const rootPc = NOTE_TO_PC[root];
@@ -2531,7 +2535,9 @@
       if ((chordMask >> ((rootPc + i) % 12)) & 1) degs.push(DEG_LBL[i]);
     }
     const p = new URLSearchParams(window.location.search);
-    p.delete('hl'); p.delete('pk'); p.set('k', urlNote(root));
+    p.delete('hl'); p.set('k', urlNote(root));
+    // Keep pk= so picking a chord chip doesn't reset the user's pick set —
+    // they often want to keep exploring from the same selection.
     if (degs.length) {
       p.append('hl', degs.map(function (d) { return d.replace('♭', 'b'); }).join(','));
     }
@@ -2576,8 +2582,10 @@
           if (mask) {
             // Find root pc by matching the longest leading note letter.
             let root = null, rootPc = -1;
-            for (let i = ALLNOTES.length - 1; i >= 0; i--) {
-              if (name.indexOf(ALLNOTES[i]) === 0) { root = ALLNOTES[i]; rootPc = NOTE_TO_PC[root]; break; }
+            for (const n of PC_TO_NOTE) {
+              if (name.indexOf(n) === 0 && (root === null || n.length > root.length)) {
+                root = n; rootPc = NOTE_TO_PC[n];
+              }
             }
             if (rootPc >= 0) {
               const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
@@ -2585,7 +2593,7 @@
               for (let i = 0; i < 12; i++) {
                 if ((mask >> ((rootPc + i) % 12)) & 1) {
                   degs.push(DEG_LBL[i]);
-                  notes.push(ALLNOTES[(rootPc + i) % 12]);
+                  notes.push(PC_TO_NOTE[(rootPc + i) % 12]);
                 }
               }
               tip = name + '\nDegrees: ' + degs.join(' ') + '\nNotes: ' + notes.join(' ');
