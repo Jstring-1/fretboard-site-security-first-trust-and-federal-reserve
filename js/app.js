@@ -2387,13 +2387,26 @@
       const href = buildPkHref(next);
       const qs = href.slice(1);
       const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
-      // Preserve scroll across the re-render. Without this the identify
-      // strip's first appearance (3rd pick) reflows the page upward.
-      const sx = window.scrollX || window.pageXOffset || 0;
-      const sy = window.scrollY || window.pageYOffset || 0;
+      // Anchor scroll to the clicked element so the page doesn't appear to
+      // shift when the identify strip grows / shrinks above it. The fretboard
+      // table is rebuilt by applyState; the keyboard table is static. Either
+      // way we find the anchor again by id/class after the re-render and
+      // compensate for any vertical delta.
+      const isKb = !!e.target.closest('.ritz');
+      const anchorSel = isKb ? '#section_4' : '#fretboard';
+      const anchorBefore = (function () {
+        const el = document.querySelector(anchorSel);
+        return el ? el.getBoundingClientRect().top : null;
+      })();
       history.replaceState(null, '', newUrl);
       applyState();
-      window.scrollTo(sx, sy);
+      if (anchorBefore !== null) {
+        const el = document.querySelector(anchorSel);
+        if (el) {
+          const delta = el.getBoundingClientRect().top - anchorBefore;
+          if (delta) window.scrollBy(0, delta);
+        }
+      }
     }
     const fb = document.getElementById('fretboard');
     if (fb && !fb._pickBound) {
