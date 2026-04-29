@@ -6,7 +6,7 @@
        page  (deepest, almost-black)  →  section body (lifted)  →  section
        header (brightest of the three, sits like a tab on top of the body).
      Inputs / popovers reuse --bg-elevated (mid-tone). */
-  --bg:            #b8b8b8;   /* page background — light grey, sections sit darker on top */
+  --bg:            #2e2e2e;   /* page background — slightly lighter than section headers so sections read as darker tiles */
   --bg-elevated:   #1c1c1c;   /* inputs / popovers / dropdowns */
   --bg-hover:      #2a2a2a;
   --surface:       #141414;   /* section body — lifted from the page */
@@ -656,11 +656,6 @@ select option                              { color: var(--text); background: var
 #site_title                                { text-align: center; letter-spacing: -0.02em;
                                              margin: 18px 0 12px; padding: 0;
                                              background: transparent; border: none; box-shadow: none;                }
-/* Logo + footer sit on the light page bg — flip their text to dark so they
-   read against the new background. .finder keeps the cyan accent. */
-#site_title a, #site_title a:link,
-#site_title a:visited, #site_title a:active,
-#site_title .slant, #site_title .pro       { color: #111 !important;                                                  }
 /* Build number lives in the footer below the Witherfork link. Quiet,
    small, just a timestamp for support / debug reference. */
 #build_num                                 { text-align: center; font: 400 0.7em var(--font);
@@ -684,10 +679,9 @@ select option                              { color: var(--text); background: var
 
 /* Footer "Jimmy Witherfork Strikes Again" — sits on the dark page bg */
 #site_footer                               { text-align: center; padding: 8px 16px 12px; margin-top: 4px;              }
-#site_footer #footer_witherfork            { color: #333 !important; font-size: 0.78em; letter-spacing: 0.04em;
+#site_footer #footer_witherfork            { color: var(--muted) !important; font-size: 0.78em; letter-spacing: 0.04em;
                                              text-decoration: none; cursor: pointer; transition: color .12s;          }
-#site_footer #footer_witherfork:hover      { color: #000 !important;                                                  }
-#build_num                                 { color: #444 !important;                                                  }
+#site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
 @media print { #site_footer { display: none !important; } }
 
 /* Witherfork modal — tiny, centered, just a link to SeaDisco.com */
