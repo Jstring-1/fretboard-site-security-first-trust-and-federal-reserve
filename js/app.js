@@ -238,10 +238,10 @@
     x.url_notes = urlNote(x.notes);
 
     // Build x.s from s1..s12 (custom-tuning notes assembled in reverse order).
-    // Cap at the URL-derived count so a 6-string custom doesn't silently pull
-    // in DEF_X defaults for s7..s12 and become a 12-string string in the
-    // header / display.
-    const _sCount = (x._customStrsFromUrl > 0) ? x._customStrsFromUrl : 12;
+    // Cap at the URL-derived count when present; otherwise cap at the main
+    // tuning's string count so a bare-URL load with a 6-string main doesn't
+    // surface the legacy 12-string DEF_X entries in the header.
+    const _sCount = (x._customStrsFromUrl > 0) ? x._customStrsFromUrl : (+x.strs || 12);
     let ess = '';
     for (let i = _sCount; i >= 1; i--) {
       if (KEYS.indexOf(x['s' + i]) !== -1) ess += x['s' + i] + ' ';
