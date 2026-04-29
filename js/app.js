@@ -1590,14 +1590,18 @@
     const hlList = readHlParam(new URLSearchParams(window.location.search));
     if (hlList.length) parts.push('hl=' + hlList.join(','));
 
-    // Custom-tuning strings combined into one dot-separated `s=` param.
-    // Only rewrite when custom tuning is engaged (z=y). When z=n the form
-    // still has s-selects showing default fallback values for strings the
-    // user never touched — gathering them all here would overwrite a
-    // 6-string custom set with 12 string slots whenever the user toggled
-    // custom off and changed any other control.
+    // Custom-tuning strings combined into one no-separator `s=` param.
+    // Three cases:
+    //   z=y               → read selects, rebuild s=
+    //   z=n + URL has s   → preserve URL s untouched (avoids overwriting
+    //                       a 6-string custom with 12 form-select slots
+    //                       when the main tuning has more strings)
+    //   z=n + no URL s    → read selects so the URL captures the active
+    //                       custom (e.g. on first state change after a
+    //                       fresh page load with DEF_X defaults)
     const _zIsY = (_curParams.get('z') === 'y');
-    if (fb && _zIsY) {
+    const _curS = _curParams.get('s');
+    function _readSFromForm() {
       const sels = fb.querySelectorAll('select[name^="s"]');
       const sVals = [];
       sels.forEach(function (sel) {
@@ -1606,21 +1610,26 @@
         sVals[parseInt(m[1], 10) - 1] = urlNote(sel.value);
       });
       while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
-      if (sVals.length) {
-        const _normalized = sVals.map(function (v) { return v || ''; });
-        const _hasGap = _normalized.some(function (v) { return !v; });
-        parts.push('s=' + _normalized.join(_hasGap ? '.' : ''));
-      }
+      if (!sVals.length) return null;
+      const normalized = sVals.map(function (v) { return v || ''; });
+      const hasGap = normalized.some(function (v) { return !v; });
+      return normalized.join(hasGap ? '.' : '');
+    }
+    if (fb && _zIsY) {
+      const _v = _readSFromForm();
+      if (_v) parts.push('s=' + _v);
+    } else if (_curS) {
+      parts.push('s=' + _curS);
+    } else if (fb) {
+      // No s in URL yet — write the form's current selects so the user's
+      // first state change captures the active custom in the URL.
+      const _v = _readSFromForm();
+      if (_v) parts.push('s=' + _v);
     } else {
-      // Preserve whatever the URL already has so toggling custom off and
-      // back on returns to the same custom tuning.
-      const _curS = _curParams.get('s');
-      if (_curS) parts.push('s=' + _curS);
-      else {
-        for (let i = 1; i <= 12; i++) {
-          const _v = _curParams.get('s' + i);
-          if (_v != null) parts.push('s' + i + '=' + _v);
-        }
+      // Legacy individual ?s1=…&s2=… preservation (rare).
+      for (let i = 1; i <= 12; i++) {
+        const _v = _curParams.get('s' + i);
+        if (_v != null) parts.push('s' + i + '=' + _v);
       }
     }
 
