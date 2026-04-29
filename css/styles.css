@@ -284,7 +284,8 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_4"] #section_4,
     body[data-print="section_5"] #section_5,
     body[data-print="section_6"] #section_6,
-    body[data-print="section_8"] #section_8 {  display:block !important;                                              }
+    body[data-print="section_8"] #section_8,
+    body[data-print="section_9"] #section_9 {  display:block !important;                                              }
     body[data-print] details > *           {  display:block !important;                                              }
     body[data-print] details > summary     {  display:none !important;                                                }
 
@@ -975,3 +976,42 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
     details#section_2 > *                  { display: block !important;                                              }
     details#section_2 > summary            { display: none !important;                                               }
 }
+
+/* ============================================================
+   Key Signatures section — side-by-side reference tables
+   ============================================================ */
+.ks_grid                                   { display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+                                             padding: 12px 18px;                                                       }
+.ks_panel                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
+                                             border-radius: 6px; overflow: hidden;                                     }
+.ks_panel_title                            { padding: 8px 12px; font: 600 0.78em var(--font);
+                                             color: var(--accent-hi); letter-spacing: 0.08em;
+                                             text-transform: uppercase; background: #161616;
+                                             border-bottom: 1px solid #1f1f1f;                                         }
+.ks_table                                  { width: 100%; border-collapse: collapse;
+                                             font: 400 0.92em var(--font); color: var(--accent);                       }
+.ks_table thead th                         { text-align: left; padding: 6px 12px;
+                                             font: 600 0.78em var(--font); color: var(--muted);
+                                             letter-spacing: 0.06em; text-transform: uppercase;
+                                             background: #131313;                                                      }
+.ks_table tbody td                         { padding: 6px 12px; border-bottom: 1px solid #1f1f1f;                      }
+.ks_table tbody tr:last-child td           { border-bottom: none;                                                      }
+.ks_table tbody tr.ks_row_current td       { background: rgba(95,232,224,0.14); color: var(--accent-hi); font-weight: 600; }
+.ks_table tbody tr:hover td                { background: rgba(255,255,255,0.04);                                       }
+.ks_table .ks_key                          { width: 90px; white-space: nowrap;                                         }
+.ks_table .ks_key a                        { color: inherit; text-decoration: none;                                    }
+.ks_table .ks_key a:hover                  { color: var(--accent-hi);                                                  }
+.ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
+.ks_table .ks_sig                          { width: 80px; color: var(--muted); white-space: nowrap;                    }
+.ks_table .ks_notes                        { color: var(--text);                                                       }
+.ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
+                                             color: var(--muted); text-align: center;                                  }
+
+/* Quiz: sub-showcase line shows the matching notes (or degrees) below
+   the main showcase, dimmer so the question stays the focus. */
+.quiz_showcase_sub                         { font: 400 0.95em var(--font); color: var(--muted);
+                                             text-align: center; margin: 4px 0 8px;
+                                             letter-spacing: 0.08em;                                                   }
+.quiz_showcase_sub .quiz_sub_label         { color: var(--muted-dim); font-weight: 600;
+                                             text-transform: uppercase; letter-spacing: 0.06em;
+                                             font-size: 0.85em; margin-right: 4px;                                     }

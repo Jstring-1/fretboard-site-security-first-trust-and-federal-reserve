@@ -320,7 +320,7 @@
     // (?fc=) and the fretboard tuning popover (?fcp=). Persisted separately
     // in the URL so a user who only plays 6-string can pin both filters.
     function _validStrs(v) {
-      return (v === '6' || v === '8' || v === '10' || v === '12') ? v : '';
+      return (v === '4' || v === '5' || v === '6' || v === '8' || v === '10' || v === '12') ? v : '';
     }
     x._filterStrs    = _validStrs(params.get('fc'));
     x._pickerStrs    = _validStrs(params.get('fcp'));
@@ -533,7 +533,7 @@
     h += '</div>';
     // Quick string-count radios — one click filter for the most common
     // selectors. The filter text input still works on top of this.
-    const quick = ['', '6', '8', '10', '12'];
+    const quick = ['', '4', '5', '6', '8', '10', '12'];
     h += '<div class="tun_pop_strs" role="radiogroup" aria-label="Filter by string count">';
     quick.forEach(function (v) {
       const active = (_tunPickerStrFilter === v) ? ' active' : '';
@@ -725,6 +725,33 @@
   // the fretboard form AND above the keyboard section so the two stay in sync.
   // Each pill flips its own `&hl=<deg>` in the URL, so the link interceptor
   // re-renders in place. On-state pills are coloured to match the degree.
+  // ---------- key-signature reference data ----------
+  // Two parallel orders of the major keys: sharp side (C through C♯) and
+  // flat side (F through C♭). Each row carries:
+  //   key      — display name, including unicode accidentals
+  //   setKey   — value to set k= to (SlantFinder uses ♯-spellings only)
+  //   count    — sharps or flats in the signature
+  //   notes    — the actual accidental notes in canonical signature order
+  const KEY_SIGS_SHARP = [
+    { key: 'C',  setKey: 'C',  count: 0, notes: '—' },
+    { key: 'G',  setKey: 'G',  count: 1, notes: 'F♯' },
+    { key: 'D',  setKey: 'D',  count: 2, notes: 'F♯ C♯' },
+    { key: 'A',  setKey: 'A',  count: 3, notes: 'F♯ C♯ G♯' },
+    { key: 'E',  setKey: 'E',  count: 4, notes: 'F♯ C♯ G♯ D♯' },
+    { key: 'B',  setKey: 'B',  count: 5, notes: 'F♯ C♯ G♯ D♯ A♯' },
+    { key: 'F♯', setKey: 'F♯', count: 6, notes: 'F♯ C♯ G♯ D♯ A♯ E♯' },
+    { key: 'C♯', setKey: 'C♯', count: 7, notes: 'F♯ C♯ G♯ D♯ A♯ E♯ B♯' }
+  ];
+  const KEY_SIGS_FLAT = [
+    { key: 'F',  setKey: 'F',  count: 1, notes: 'B♭' },
+    { key: 'B♭', setKey: 'A♯', count: 2, notes: 'B♭ E♭' },
+    { key: 'E♭', setKey: 'D♯', count: 3, notes: 'B♭ E♭ A♭' },
+    { key: 'A♭', setKey: 'G♯', count: 4, notes: 'B♭ E♭ A♭ D♭' },
+    { key: 'D♭', setKey: 'C♯', count: 5, notes: 'B♭ E♭ A♭ D♭ G♭' },
+    { key: 'G♭', setKey: 'F♯', count: 6, notes: 'B♭ E♭ A♭ D♭ G♭ C♭' },
+    { key: 'C♭', setKey: 'B',  count: 7, notes: 'B♭ E♭ A♭ D♭ G♭ C♭ F♭' }
+  ];
+
   // Pull a "1 ♭3 5" style degree readout out of a GRID / SCALES URL
   // fragment ("&hl=1&hl=b3&hl=5"). Empty string if the fragment is empty.
   function fragToDegrees(frag) {
@@ -952,7 +979,7 @@
       // Sections that don't need the Key picker / Clear button:
       //   section_5 = nested tunings list (no chord-state context)
       //   section_8 = tab editor (its own controls bar handles state)
-      if (target === 'section_5' || target === 'section_8') { s.innerHTML = ''; return; }
+      if (target === 'section_5' || target === 'section_8' || target === 'section_9') { s.innerHTML = ''; return; }
       s.innerHTML = html;
     });
   }
@@ -1148,6 +1175,52 @@
     root.innerHTML = h;
   }
 
+  // Build a URL that switches the key to `k` while preserving every other
+  // current param. Used by the Key Signatures table rows.
+  function buildKeySetHref(k) {
+    const p = new URLSearchParams(window.location.search);
+    p.set('k', urlNote(k));
+    const qs = canonicalQS(p);
+    return qs ? '?' + qs : '?';
+  }
+
+  function renderKeySignatures(x) {
+    const root = document.getElementById('key_signatures_root');
+    if (!root) return;
+    function buildTable(rows, title) {
+      let h = '<div class="ks_panel">';
+      h +=   '<div class="ks_panel_title">' + escHtml(title) + '</div>';
+      h +=   '<table class="ks_table"><thead><tr>'
+        +    '<th class="ks_key">Key</th>'
+        +    '<th class="ks_sig">Signature</th>'
+        +    '<th class="ks_notes">Accidentals</th>'
+        +    '</tr></thead><tbody>';
+      for (const r of rows) {
+        const isCurrent = (urlNote(r.setKey) === urlNote(x.k));
+        const cls = 'ks_row' + (isCurrent ? ' ks_row_current' : '');
+        const sig = r.count === 0
+          ? '0'
+          : r.count + (rows === KEY_SIGS_FLAT ? '♭' : '♯');
+        h += '<tr class="' + cls + '">';
+        h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
+          +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
+        h += '<td class="ks_sig">' + escHtml(sig) + '</td>';
+        h += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
+        h += '</tr>';
+      }
+      h += '</tbody></table></div>';
+      return h;
+    }
+    let h = '<div class="ks_grid">';
+    h +=   buildTable(KEY_SIGS_SHARP, 'Sharp keys');
+    h +=   buildTable(KEY_SIGS_FLAT,  'Flat keys');
+    h += '</div>';
+    h += '<div class="ks_help">Click a key to set it. Hand-signal flow: '
+      +  'fingers up = sharps, fingers down = flats — '
+      +  '3 up → A major, 2 down → B♭ major.</div>';
+    root.innerHTML = h;
+  }
+
   function renderTuningsTable(x) {
     const root = document.getElementById('tunings_root');
     const rev = (x.y === 'y') ? 'rev_' : '';
@@ -1159,7 +1232,7 @@
     h += '<div class="tunings_filter_bar">';
     h += '  <input type="search" id="filter" class="tunings_filter_input" placeholder="Filter — name, notes, info…" maxlength="64" value="' + escHtml(x._filter || '') + '" autocomplete="off" spellcheck="false">';
     h += '  <div class="tunings_strs" role="radiogroup" aria-label="Filter by string count">';
-    ['', '6', '8', '10', '12'].forEach(function (v) {
+    ['', '4', '5', '6', '8', '10', '12'].forEach(function (v) {
       const active = (x._filterStrs === v) ? ' active' : '';
       const label = v === '' ? 'All' : v + '-string';
       h += '<button type="button" class="tunings_str_btn' + active + '" '
@@ -1339,6 +1412,24 @@
       '',
       '  Sort and filter state live in the URL, so a sorted/filtered view is',
       '  bookmarkable.',
+      ''
+    ].join('\n'),
+
+    key_signatures: [
+      '',
+      '  Key Signatures',
+      '',
+      '  Two reference tables side-by-side: sharp keys on the left',
+      '  (C through C♯ major), flat keys on the right (F through C♭).',
+      '  Each row shows the key, how many sharps or flats are in its',
+      '  signature, and which notes those accidentals are.',
+      '',
+      '  The current site key is highlighted in cyan in whichever',
+      '  table it lives in. Click any row to jump to that key.',
+      '',
+      '  Hand-signal flow during a gig: fingers up = sharps,',
+      '  fingers down = flats. 3 fingers up → A major. 2 fingers',
+      '  down → B♭ major.',
       ''
     ].join('\n'),
 
@@ -1827,7 +1918,7 @@
         text: (p.get('f') || ''),
         strs: (function () {
           const v = p.get('fc');
-          return (v === '6' || v === '8' || v === '10' || v === '12') ? v : '';
+          return (v === '4' || v === '5' || v === '6' || v === '8' || v === '10' || v === '12') ? v : '';
         })()
       };
     }
@@ -2114,34 +2205,52 @@
     return arr;
   }
 
-  function generateQuizQuestion() {
+  // Site-key-aware degree → note mapping.
+  function _qDegsToNotes(degs, key) {
+    const i1 = KEYS.indexOf(key);
+    if (i1 < 0) return [];
+    return degs.map(function (d) {
+      const off = DEGREES.indexOf(d);
+      return off < 0 ? '' : KEYS[i1 + off];
+    });
+  }
+
+  function generateQuizQuestion(x) {
     const r = Math.random();
-    if (r < 0.34) return _qScaleByDegrees();
-    if (r < 0.67) return _qChordByDegrees();
+    if (r < 0.20) return _qKeySignature();
+    if (r < 0.40) return _qKeySignatureCount();
+    if (r < 0.60) return _qScaleByDegrees(x);
+    if (r < 0.80) return _qChordByDegrees(x);
     return _qInKey();
   }
 
-  function _qScaleByDegrees() {
+  function _qScaleByDegrees(x) {
     const names = Object.keys(SCALES);
     const target = _qPickRandom(names);
     const distractors = _qPickN(names.filter(function (n) { return n !== target; }), 3);
     const choices = _qShuffle([target].concat(distractors)).map(_qPrettyScale);
+    const degs = _qDegList(SCALES[target]);
     return {
       prompt: 'Which scale has these degrees?',
-      showcase: _qDegList(SCALES[target]).join('  '),
+      showcase: degs.join('  '),
+      showcaseSub: _qDegsToNotes(degs, x.k).join('  '),
+      showcaseSubLabel: 'In key of ' + x.k,
       choices: choices,
       answer: _qPrettyScale(target)
     };
   }
 
-  function _qChordByDegrees() {
+  function _qChordByDegrees(x) {
     const names = Object.keys(GRID);
     const target = _qPickRandom(names);
     const distractors = _qPickN(names.filter(function (n) { return n !== target; }), 3);
     const choices = _qShuffle([target].concat(distractors)).map(_qPrettyChord);
+    const degs = _qDegList(GRID[target]);
     return {
       prompt: 'Which chord has these degrees?',
-      showcase: _qDegList(GRID[target]).join('  '),
+      showcase: degs.join('  '),
+      showcaseSub: _qDegsToNotes(degs, x.k).join('  '),
+      showcaseSubLabel: 'In key of ' + x.k,
       choices: choices,
       answer: _qPrettyChord(target)
     };
@@ -2157,28 +2266,80 @@
     const fmt = isScale ? _qPrettyScale : _qPrettyChord;
     const choices = _qShuffle([target].concat(distractors)).map(fmt);
 
-    const i1 = KEYS.indexOf(key);
     const degs = _qDegList(pool[target]);
-    const notes = degs.map(function (d) {
-      return KEYS[i1 + DEGREES.indexOf(d)];
-    }).join('  ');
+    const notes = _qDegsToNotes(degs, key);
 
     return {
       prompt: 'In the key of ' + key + ', which ' + (isScale ? 'scale' : 'chord') + ' has these notes?',
-      showcase: notes,
+      showcase: notes.join('  '),
+      showcaseSub: degs.join('  '),
+      showcaseSubLabel: 'Degrees',
       choices: choices,
       answer: fmt(target)
+    };
+  }
+
+  // "What key has N sharps/flats?" — answer is one of the major keys.
+  function _qKeySignature() {
+    const useFlats = Math.random() < 0.5;
+    const set = useFlats ? KEY_SIGS_FLAT : KEY_SIGS_SHARP.slice(1); // skip C (0 accidentals)
+    const target = _qPickRandom(set);
+    const distractors = _qPickN(set.filter(function (r) { return r.key !== target.key; }), 3);
+    const allKeyNames = (KEY_SIGS_SHARP.concat(KEY_SIGS_FLAT)).map(function (r) { return r.key; });
+    // Pad distractors with random keys if there aren't enough in this side
+    while (distractors.length < 3) {
+      const random = _qPickRandom(allKeyNames);
+      if (random !== target.key && !distractors.some(function (d) { return d.key === random; })) {
+        distractors.push({ key: random });
+      }
+    }
+    const choices = _qShuffle([target].concat(distractors)).map(function (r) {
+      return r.key + ' major';
+    });
+    return {
+      prompt: 'Which key has ' + target.count + ' ' + (useFlats ? 'flat' : 'sharp')
+        + (target.count === 1 ? '' : 's') + '?',
+      showcase: target.notes,
+      showcaseSubLabel: '',
+      choices: choices,
+      answer: target.key + ' major'
+    };
+  }
+
+  // "How many sharps/flats are in <key> major?" — answer is the count.
+  function _qKeySignatureCount() {
+    const all = KEY_SIGS_SHARP.concat(KEY_SIGS_FLAT.filter(function (r) { return r.count > 0; }));
+    const target = _qPickRandom(all);
+    const isFlat = KEY_SIGS_FLAT.indexOf(target) !== -1;
+    const word = isFlat ? 'flats' : 'sharps';
+    const correct = String(target.count);
+    const distractors = _qShuffle(['0', '1', '2', '3', '4', '5', '6', '7']
+      .filter(function (n) { return n !== correct; })).slice(0, 3);
+    const choices = _qShuffle([correct].concat(distractors));
+    return {
+      prompt: 'How many ' + word + ' in ' + target.key + ' major?',
+      showcase: target.notes,
+      showcaseSubLabel: '',
+      choices: choices,
+      answer: correct
     };
   }
 
   function renderQuiz() {
     const root = document.getElementById('quiz_root');
     if (!root) return;
-    const q = generateQuizQuestion();
+    // Pass current site state in so degree-based questions can echo the
+    // notes for the user's chosen key on a sub-line below the degrees.
+    const q = generateQuizQuestion(window.SF_X || { k: 'A' });
     _quizCurrent = q;
     let h = '<div class="quiz_card">';
     h += '<div class="quiz_prompt">' + escHtml(q.prompt) + '</div>';
     h += '<div class="quiz_showcase">' + escHtml(q.showcase) + '</div>';
+    if (q.showcaseSub) {
+      h += '<div class="quiz_showcase_sub">'
+        + (q.showcaseSubLabel ? '<span class="quiz_sub_label">' + escHtml(q.showcaseSubLabel) + ':</span> ' : '')
+        + escHtml(q.showcaseSub) + '</div>';
+    }
     h += '<div class="quiz_choices">';
     q.choices.forEach(function (c) {
       h += '<button type="button" class="quiz_choice">' + escHtml(c) + '</button>';
@@ -2225,6 +2386,7 @@
     renderChordGrid(x);
     renderScaleGrid(x);
     renderTuningsTable(x);
+    renderKeySignatures(x);
     applyKeyboardColors(x);
     renderKeyboardPicks(x);
     bindTuningPicker(x);

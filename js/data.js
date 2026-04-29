@@ -2113,6 +2113,39 @@ window.SF_DATA = {
             "udgs": "1 3 5",
             "info": "Duane Allman / slide guitar",
             "strs": 6
+        },
+        "EADG": {
+            "name": "Bass",
+            "notes": "E A D G",
+            "url_notes": "EADG",
+            "rev_notes": "G D A E",
+            "dgs": "1 4 ♭7 ♭3",
+            "rev_dgs": "♭3 ♭7 4 1",
+            "udgs": "1 ♭3 4 ♭7",
+            "info": "4-string bass, standard tuning",
+            "strs": 4
+        },
+        "GCEA": {
+            "name": "Ukulele",
+            "notes": "G C E A",
+            "url_notes": "GCEA",
+            "rev_notes": "A E C G",
+            "dgs": "1 4 6 2",
+            "rev_dgs": "2 6 4 1",
+            "udgs": "1 2 4 6",
+            "info": "Soprano / concert / tenor ukulele (reentrant high G)",
+            "strs": 4
+        },
+        "GDGBD": {
+            "name": "Banjo Open G",
+            "notes": "G D G B D",
+            "url_notes": "GDGBD",
+            "rev_notes": "D B G D G",
+            "dgs": "1 5 1 3 5",
+            "rev_dgs": "5 3 1 5 1",
+            "udgs": "1 3 5",
+            "info": "5-string banjo, 5th string high G drone",
+            "strs": 5
         }
     }
 };
