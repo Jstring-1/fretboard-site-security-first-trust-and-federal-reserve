@@ -1217,20 +1217,21 @@
       _b6_: KEYS[i1 + 8], _6_:  KEYS[i1 + 9], _b7_: KEYS[i1 + 10], _7_: KEYS[i1 + 11]
     };
 
-    // Flipped grid: rows = chord types, columns = degree slots (ascending
-    // 1, ♭2, 2, …, 7, 8(=1 octave), ♭9, 9, …, 14). SF_GRID_ROWS lists slots
-    // top-down (descending in pitch); reverse so the horizontal column order
-    // reads ascending left-to-right.
-    const COLS = window.SF_GRID_ROWS.slice().reverse();
+    // 12-column layout. Every extension folds back into its basic-octave
+    // column (9 → 2, ♭13 → ♭6, ♯11 → ♭5, etc.) since they share a pitch
+    // class. The label inside each cell still shows the chord's
+    // theoretical degree — so an extension that has no basic equivalent
+    // active in this chord still reads "9" or "♭13", just sitting in the
+    // "2" or "♭6" column where it belongs harmonically.
+    const DEG_COLS = ['_1_','_b2_','_2_','_b3_','_3_','_4_','_b5_','_5_','_b6_','_6_','_b7_','_7_'];
 
-    // Header row: degree labels above each column.
     function buildDegHeader(idAttr) {
       let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '><td></td>';
-      for (const col of COLS) {
-        const note = noteLetters[col.degId];
-        s += '<td class="cg_deg_header" id="' + col.degId + '">'
-           + escHtml(note) + escHtml(col.intervalLabel) + '</td>';
-      }
+      DEG_COLS.forEach(function (degId, i) {
+        const note = noteLetters[degId];
+        s += '<td class="cg_deg_header" id="' + degId + '">'
+           + escHtml(note) + '(' + escHtml(DEGREES[i]) + ')</td>';
+      });
       s += '<td></td></tr>';
       return s;
     }
@@ -1249,13 +1250,25 @@
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
       h += '<tr>' + labelCell;
-      for (const col of COLS) {
-        const cell = col.cells[chordIdx];
-        if (cell === null) {
-          h += '<td id="_x_"></td>';
+
+      // Bucket the chord's filled slots by basic degree column. SF_GRID_ROWS
+      // lists extensions first (rows 0–11) and basic-octave last (rows 12–
+      // 23); take the first non-null write per column so extension labels
+      // win if both end up populated for the same pitch class.
+      const cellsByDeg = {};
+      for (const slot of window.SF_GRID_ROWS) {
+        const v = slot.cells[chordIdx];
+        if (v !== null && cellsByDeg[slot.degId] === undefined) {
+          cellsByDeg[slot.degId] = v;
+        }
+      }
+
+      for (const degId of DEG_COLS) {
+        if (cellsByDeg[degId] !== undefined) {
+          const note = noteLetters[degId];
+          h += '<td id="' + degId + '">' + escHtml(note) + '(' + escHtml(cellsByDeg[degId]) + ')</td>';
         } else {
-          const note = noteLetters[col.degId];
-          h += '<td id="' + col.degId + '">' + escHtml(note) + '(' + escHtml(cell) + ')</td>';
+          h += '<td id="_x_"></td>';
         }
       }
       h += labelCell + '</tr>';
