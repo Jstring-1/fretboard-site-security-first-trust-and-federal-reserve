@@ -845,7 +845,10 @@ select option                              { color: var(--text); background: var
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none;                                                    }
 .identify_pill:hover                       { background: rgba(255,255,255,0.12);                                      }
-.identify_pill_on                          { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;   }
+a.identify_pill_on,
+a.identify_pill_on:link,
+a.identify_pill_on:visited,
+a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;   }
 
 @media print { #quick_picks, #kb_quick_picks, #kb_picks_root,
                #fb_identify_root, #kb_identify_root          { display: none !important; }                            }
