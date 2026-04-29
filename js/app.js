@@ -2430,8 +2430,13 @@
       const href = buildPkHref(next);
       const qs = href.slice(1);
       const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
+      // Preserve scroll across the re-render. Without this the identify
+      // strip's first appearance (3rd pick) reflows the page upward.
+      const sx = window.scrollX || window.pageXOffset || 0;
+      const sy = window.scrollY || window.pageYOffset || 0;
       history.replaceState(null, '', newUrl);
       applyState();
+      window.scrollTo(sx, sy);
     }
     const fb = document.getElementById('fretboard');
     if (fb && !fb._pickBound) {
