@@ -725,6 +725,15 @@
   // the fretboard form AND above the keyboard section so the two stay in sync.
   // Each pill flips its own `&hl=<deg>` in the URL, so the link interceptor
   // re-renders in place. On-state pills are coloured to match the degree.
+  // Pull a "1 ♭3 5" style degree readout out of a GRID / SCALES URL
+  // fragment ("&hl=1&hl=b3&hl=5"). Empty string if the fragment is empty.
+  function fragToDegrees(frag) {
+    return String(frag || '').split('&hl=').slice(1)
+      .map(function (s) { return s.replace(/&.*$/, '').replace(/b/g, '♭'); })
+      .filter(function (s) { return s.length; })
+      .join(' ');
+  }
+
   // GRID / SCALES / CHORDS values in data.js are still in the legacy
   // multi-key form (&hl=1&hl=3&hl=5). Convert on the fly so chord/scale
   // chip URLs land in the same compact comma form as everything else.
@@ -1053,7 +1062,9 @@
       const isSelected = (x.hl_n === a.replace(/_/g, ' '));
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const tdCls = isSelected ? ' class="cg_selected"' : '';
-      chordLinksRow += '<td' + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
+      const degs = fragToDegrees(GRID[a]);
+      const tip = label + (degs ? ' — ' + degs : '');
+      chordLinksRow += '<td' + tdCls + '><a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a></td>';
     }
     chordLinksRow += '<td></td></tr>';
 
@@ -1109,7 +1120,9 @@
       const isSelected = (x.hl_n === label);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const tdCls = isSelected ? ' class="cg_selected"' : '';
-      scaleLinksRow += '<td' + tdCls + '><a href="' + href + '">' + escHtml(label) + '</a></td>';
+      const degs = fragToDegrees(SCALES[name]);
+      const tip = label + (degs ? ' — ' + degs : '');
+      scaleLinksRow += '<td' + tdCls + '><a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a></td>';
     }
     scaleLinksRow += '<td></td></tr>';
 
