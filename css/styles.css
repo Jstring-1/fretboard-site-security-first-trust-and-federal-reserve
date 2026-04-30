@@ -787,23 +787,20 @@ select option                              { color: var(--text); background: var
    links: clicking flips just that degree in the URL, then the link
    interceptor re-renders in place (no scroll jump). On-state pills are
    coloured per-degree via inline styles set by highlightPillsLinkHtml. */
-/* Both pill rows (notes + degrees) use the same 15-column grid so the
-   pills line up vertically: column 1 is the row label, columns 2–13 are
-   the 12 note/degree pills, columns 14–15 are All / None. Identical
-   template means each pill in the Notes row sits directly above the
-   matching pill in the Highlight row. */
+/* Both pill rows (notes + degrees) use the same 12-column grid so each
+   note pill sits directly above its matching degree pill. The single
+   All / None pair below them sits in its own centred row. */
 .opt_row_highlights.kb_hl_row,
 .opt_row_highlights.fb_hl_row,
 .opt_row_notes.kb_hn_row,
 .opt_row_notes.fb_hn_row                   { display: grid;
-                                             grid-template-columns: repeat(12, minmax(28px, 1fr)) 50px 50px;
+                                             grid-template-columns: repeat(12, minmax(28px, 1fr));
                                              align-items: center; gap: 4px;
                                              padding: 4px 14px; line-height: 1;
                                              background: transparent; border-radius: 0;                               }
-.opt_row_highlights.kb_hl_row,
-.opt_row_highlights.fb_hl_row              { padding-bottom: 8px;                                                     }
-.opt_row_notes.kb_hn_row,
-.opt_row_notes.fb_hn_row                   { padding-top: 8px; padding-bottom: 0;                                     }
+/* Shared All / None row — flex, centred. */
+.opt_row_allnone                           { display: flex; gap: 6px; justify-content: center;
+                                             padding: 4px 14px; line-height: 1;                                       }
 /* Wrap the keyboard's mirror controls in the same padded container as the
    fretboard form (#tunings_drop), so the highlight strip + chord/scale
    chip rows have matching side margins and a consistent gap below. */

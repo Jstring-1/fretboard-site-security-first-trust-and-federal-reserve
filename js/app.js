@@ -493,6 +493,9 @@
     // used above the keyboard so the two sections look identical).
     h += highlightPillsLinkHtml(x, 'fb_hl_row');
 
+    // Row 5: shared All / None for both pill rows.
+    h += allNoneRowHtml('fb_allnone_row');
+
     h += '</div>';
     root.innerHTML = h;
   }
@@ -893,10 +896,19 @@
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>'
         + escHtml(a) + escHtml(EXTENSIONS[i]) + '</a>';
     });
-    h += '<a class="hl_pill hl_all_pill" href="' + escHtml(buildHlHref(DEGREES.map(flatToB))) + '">All</a>';
-    h += '<a class="hl_pill hl_none_pill" href="' + escHtml(clearHlHref()) + '">None</a>';
     h += '</div>';
     return h;
+  }
+
+  // Single All / None button pair — sits below the degree pill row so we
+  // don't repeat the same controls at the end of both pill rows.
+  function allNoneRowHtml(rowCls) {
+    const allHref = buildHlHref(DEGREES.map(flatToB));
+    const noneHref = clearHlHref();
+    return '<div class="opt_row opt_row_allnone ' + (rowCls || '') + '">'
+         + '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">All</a>'
+         + '<a class="hl_pill hl_none_pill" href="' + escHtml(noneHref) + '">None</a>'
+         + '</div>';
   }
 
   // Note-letter highlight pills — drive the SAME hl= URL param as the degree
@@ -936,8 +948,6 @@
       }
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>' + escHtml(note) + '</a>';
     });
-    h += '<a class="note_pill note_all_pill" href="' + escHtml(buildHlHref(DEGREES.map(flatToB))) + '">All</a>';
-    h += '<a class="note_pill note_none_pill" href="' + escHtml(clearHlHref()) + '">None</a>';
     h += '</div>';
     return h;
   }
@@ -947,7 +957,10 @@
   function renderKeyboardPicks(x) {
     const root = document.getElementById('kb_picks_root');
     if (!root) return;
-    root.innerHTML = notePillsLinkHtml(x, 'kb_hn_row') + highlightPillsLinkHtml(x, 'kb_hl_row') + quickPicksHtml(x, 'kb_quick_picks');
+    root.innerHTML = notePillsLinkHtml(x, 'kb_hn_row')
+                   + highlightPillsLinkHtml(x, 'kb_hl_row')
+                   + allNoneRowHtml('kb_allnone_row')
+                   + quickPicksHtml(x, 'kb_quick_picks');
   }
 
   function renderFretboard(x) {
