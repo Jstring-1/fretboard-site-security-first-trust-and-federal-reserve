@@ -745,7 +745,7 @@ select option                              { color: var(--text); background: var
    cell edges. */
 #fretboard, #fretboard td,
 #chord_grid, #chord_grid td,
-#scale_grid, #scale_grid td                { border-color: #aaaaaa !important;                                        }
+#scale_grid, #scale_grid td                { border-color: #777777 !important;                                        }
 #fretboard td, #chord_grid td, #scale_grid td
                                            { border-radius: 3px;                                                      }
 /* Cell spacing so the rounded corners actually show up between neighbours
