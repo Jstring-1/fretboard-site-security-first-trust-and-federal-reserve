@@ -1531,8 +1531,6 @@
       h +=   '<table class="ks_table"><thead><tr>'
         +    '<th class="ks_key">Key</th>'
         +    '<th class="ks_sig">Signature</th>'
-        +    '<th class="ks_staff" aria-label="Staff notation"></th>'
-        +    '<th class="ks_hands" aria-label="Hand signal"></th>'
         +    '<th class="ks_notes">Accidentals</th>'
         +    '</tr></thead><tbody>';
       // The flats panel starts at 1 flat (F major) but the sharps panel
@@ -1547,17 +1545,20 @@
         const sig = r.count === 0
           ? '0'
           : r.count + (rows === KEY_SIGS_FLAT ? '♭' : '♯');
+        const direction = rows === KEY_SIGS_FLAT ? 'down' : 'up';
+        const staff = keySigStaffSvg(r.count, direction);
+        const fingers = r.count > 0 ? fingerSvg(r.count, direction) : '';
         h += '<tr class="' + cls + '">';
         h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
           +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
-        h += '<td class="ks_sig">' + escHtml(sig) + '</td>';
-        h += '<td class="ks_staff">'
-          +  keySigStaffSvg(r.count, rows === KEY_SIGS_FLAT ? 'down' : 'up')
+        // One Signature cell that carries all three signals — count text,
+        // staff render, hand-signal sprite — laid out inline so the table
+        // reads as a seamless three-column grid.
+        h += '<td class="ks_sig">'
+          +  '<span class="ks_sig_count">' + escHtml(sig) + '</span>'
+          +  '<span class="ks_sig_staff">' + staff + '</span>'
+          +  '<span class="ks_sig_hand">' + fingers + '</span>'
           +  '</td>';
-        const fingers = r.count > 0
-          ? fingerSvg(r.count, rows === KEY_SIGS_FLAT ? 'down' : 'up')
-          : '';
-        h += '<td class="ks_hands">' + fingers + '</td>';
         h += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
         h += '</tr>';
       }
@@ -1565,8 +1566,8 @@
       return h;
     }
     let h = '<div class="ks_grid">';
-    h +=   buildTable(KEY_SIGS_SHARP, 'Sharp keys');
-    h +=   buildTable(KEY_SIGS_FLAT,  'Flat keys');
+    h +=   buildTable(KEY_SIGS_SHARP, 'Sharps');
+    h +=   buildTable(KEY_SIGS_FLAT,  'Flats');
     h += '</div>';
     h += '<div class="ks_help">Click a key to set it. Hand-signal flow: '
       +  'fingers up = sharps, fingers down = flats — '

@@ -1205,9 +1205,16 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table .ks_key a                        { color: inherit; text-decoration: none;                                    }
 .ks_table .ks_key a:hover                  { color: var(--accent-hi);                                                  }
 .ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
-.ks_table .ks_sig                          { width: 70px; color: var(--muted); white-space: nowrap;                    }
-.ks_table .ks_hands                        { width: 80px; padding: 2px 12px; vertical-align: middle;                   }
-.ks_table .ks_staff                        { width: 90px; padding: 2px 6px; vertical-align: middle;                    }
+/* Single Signature cell carries the count + staff render + hand sprite
+   inline — the table now reads as three flush columns instead of five
+   columns with two empty headers. */
+.ks_table .ks_sig                          { color: var(--muted); white-space: nowrap; padding: 4px 12px;
+                                             vertical-align: middle;                                                  }
+.ks_sig_count                              { display: inline-block; min-width: 36px; color: var(--text);
+                                             font-weight: 600; vertical-align: middle;                                }
+.ks_sig_staff                              { display: inline-block; vertical-align: middle; margin: 0 12px 0 6px;
+                                             color: var(--text);                                                      }
+.ks_sig_hand                               { display: inline-block; vertical-align: middle;                            }
 .ks_staff                                  { color: var(--text); display: inline-block; vertical-align: middle;        }
 /* Jazz hand-signal indicator: sprite from img/fingers-{up,down}.png. Each
    sprite is 5 panels side by side (1, 2, 3, 4, 5 fingers). The display

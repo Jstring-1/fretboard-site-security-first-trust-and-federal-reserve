@@ -682,19 +682,20 @@
   }
 
   function writeCapture(row, fret, modifier) {
-    // Cursor follows the clicked string so the green cursor highlight
-    // ALWAYS lights up the cell that just got the value — clicks and
-    // visual cursor stay in sync.
-    capture.cursorRow = row;
+    // Target is whichever cell the cursor is sitting on — that's what the
+    // green outline shows. The string row clicked on the mini-fretboard
+    // only contributes the fret number; arrow keys / direct tab-cell
+    // clicks are how the user picks the target row.
+    var targetRow = capture.cursorRow;
     var col = capture.cursorCol;
-    var key = row + '_' + col;
+    var key = targetRow + '_' + col;
     var prev = state.cells[key] || '';
     var written = String(fret) + (modifier || '');
     state.cells[key] = written;
-    capture.lastWritten = { row: row, col: col, prev: prev };
+    capture.lastWritten = { row: targetRow, col: col, prev: prev };
     saveLocal();
     // Patch the live input value in place; no full re-render.
-    var inp = grid && grid.querySelector('input[data-r="' + row + '"][data-c="' + col + '"]');
+    var inp = grid && grid.querySelector('input[data-r="' + targetRow + '"][data-c="' + col + '"]');
     if (inp) inp.value = written;
     // Advance unless the chord-lock holds the cursor in place.
     if (!capture.chord) advanceCapture(capture.step);
