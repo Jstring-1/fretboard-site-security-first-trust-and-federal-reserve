@@ -796,7 +796,7 @@ select option                              { color: var(--text); background: var
 .opt_row_highlights.fb_hl_row,
 .opt_row_notes.kb_hn_row,
 .opt_row_notes.fb_hn_row                   { display: grid;
-                                             grid-template-columns: 78px repeat(12, minmax(28px, 1fr)) 50px 50px;
+                                             grid-template-columns: repeat(12, minmax(28px, 1fr)) 50px 50px;
                                              align-items: center; gap: 4px;
                                              padding: 4px 14px; line-height: 1;
                                              background: transparent; border-radius: 0;                               }

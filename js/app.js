@@ -872,7 +872,6 @@
 
   function highlightPillsLinkHtml(x, rowCls) {
     let h = '<div class="opt_row opt_row_highlights ' + (rowCls || '') + '">';
-    h += '<span class="hl_title">Highlight:</span>';
     const cur = readHlParam(new URLSearchParams(window.location.search));
     DEGREES.forEach(function (a, i) {
       const ab = flatToB(a);
@@ -907,7 +906,6 @@
   // key changes but the underlying selection state stays put.
   function notePillsLinkHtml(x, rowCls) {
     let h = '<div class="opt_row opt_row_notes ' + (rowCls || '') + '">';
-    h += '<span class="hl_title">Notes:</span>';
     const i1 = KEYS.indexOf(x.k);
     const cur = readHlParam(new URLSearchParams(window.location.search));
     ALLNOTES.forEach(function (note) {
