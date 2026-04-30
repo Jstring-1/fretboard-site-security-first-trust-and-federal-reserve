@@ -238,52 +238,12 @@
       inp.addEventListener('keydown', onCellKey);
     });
 
-    // Tag every cell with the pitch class it represents (open string
-    // note + fret) so the global staff-hover popover can render the
-    // right note when the user toggles it on for this section.
-    refreshCellNoteAttrs();
     // Re-render the mini-fretboard if it's mounted (string count / tuning
     // changes need to flow into the capture board too) and re-paint the
     // cursor highlight on the freshly rendered inputs.
     if (capBoard) renderCaptureBoard();
     if (capStatus) updateCaptureUI();
   }
-
-  // ---- Staff-hover support ------------------------------------------------
-  // Compute the pitch class for a (row, fret) pair and write it as
-  // data-note on the input. Empty / non-numeric cells get the data-note
-  // attribute removed so the popover only fires on filled cells.
-  function _pitchAtFret(openNote, fret) {
-    var idx = ALLNOTES.indexOf(openNote);
-    if (idx < 0) return null;
-    return ALLNOTES[(idx + fret + 12 * 100) % 12];
-  }
-  function refreshCellNoteAttrs() {
-    if (!grid) return;
-    var cells = grid.querySelectorAll('input:not(.tab_label_input)');
-    cells.forEach(function (inp) {
-      var r = +inp.getAttribute('data-r');
-      var openNote = _canonNote(state.notes[r]);
-      // Tab values can be like "12", "12h", "5p", "/12", "12~". Pull the
-      // first run of digits as the fret number.
-      var v = String(inp.value || '').match(/\d+/);
-      if (!openNote || !v) {
-        inp.removeAttribute('data-note');
-        return;
-      }
-      var fret = +v[0];
-      if (!isFinite(fret) || fret < 0 || fret > 36) {
-        inp.removeAttribute('data-note');
-        return;
-      }
-      var pc = _pitchAtFret(openNote, fret);
-      if (pc) inp.setAttribute('data-note', pc);
-      else    inp.removeAttribute('data-note');
-    });
-  }
-  // Called from app.js when the staff-hover toggle flips so we can
-  // recompute attributes if the user has edits the popover should reflect.
-  window.SF_TabHover = { refresh: refreshCellNoteAttrs };
 
   // The 12 chromatic notes, used by the arrow-cycle on tuning-label inputs.
   var ALLNOTES = (DATA.allnotes && DATA.allnotes.length === 12)
@@ -350,21 +310,6 @@
       .replace(/([A-Ga-g])b$/, '$1♭');
     if (v !== raw) inp.value = v;
     state.notes[r] = v;
-    // Open-string change → re-tag every fret cell on this row so the
-    // staff popover follows the new tuning without a full render.
-    if (grid) {
-      grid.querySelectorAll('input:not(.tab_label_input)[data-r="' + r + '"]').forEach(function (cellInp) {
-        var fret = String(cellInp.value || '').match(/\d+/);
-        var openNote = _canonNote(v);
-        if (openNote && fret) {
-          var pc = _pitchAtFret(openNote, +fret[0]);
-          if (pc) cellInp.setAttribute('data-note', pc);
-          else    cellInp.removeAttribute('data-note');
-        } else {
-          cellInp.removeAttribute('data-note');
-        }
-      });
-    }
     saveLocal();
   }
 
@@ -377,17 +322,6 @@
     var key = r + '_' + c;
     if (v) state.cells[key] = v;
     else   delete state.cells[key];
-    // Update this cell's data-note in place so the staff popover follows
-    // the edit without a full re-render.
-    var openNote = _canonNote(state.notes[+r]);
-    var n = String(v || '').match(/\d+/);
-    if (openNote && n) {
-      var pc = _pitchAtFret(openNote, +n[0]);
-      if (pc) inp.setAttribute('data-note', pc);
-      else    inp.removeAttribute('data-note');
-    } else {
-      inp.removeAttribute('data-note');
-    }
     saveLocal();
   }
 
@@ -749,16 +683,9 @@
     state.cells[key] = written;
     capture.lastWritten = { row: row, col: col, prev: prev };
     saveLocal();
-    // Patch the live input + its data-note in place; no full re-render.
+    // Patch the live input value in place; no full re-render.
     var inp = grid && grid.querySelector('input[data-r="' + row + '"][data-c="' + col + '"]');
-    if (inp) {
-      inp.value = written;
-      var openNote = _canonNote(state.notes[row]);
-      if (openNote) {
-        var pc = _pitchAtFret(openNote, fret);
-        if (pc) inp.setAttribute('data-note', pc);
-      }
-    }
+    if (inp) inp.value = written;
     // Advance unless the chord-lock holds the cursor in place.
     if (!capture.chord) advanceCapture(capture.step);
     else updateCaptureUI();
