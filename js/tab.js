@@ -827,7 +827,52 @@
           updateCaptureUI();
         }
       });
+      // Focus on a tab cell (via Tab key, click, or arrow nav) → cursor
+      // follows. Keeps the green outline pinned to whatever input the
+      // user actually has focused, so arrow keys + click feel unified.
+      grid.addEventListener('focusin', function (e) {
+        var inp = e.target;
+        if (!inp.matches || !inp.matches('input:not(.tab_label_input)')) return;
+        var r = +inp.getAttribute('data-r');
+        var c = +inp.getAttribute('data-c');
+        if (isFinite(r) && isFinite(c)) {
+          capture.cursorRow = r;
+          capture.cursorCol = c;
+          updateCaptureUI();
+        }
+      });
     }
+    // Document-level arrow-key handler: while Record is on, arrow keys
+    // move the capture cursor even when no tab input has focus (e.g.
+    // right after a fretboard click). Skips form controls and the
+    // section's own buttons so editing text fields still works.
+    document.addEventListener('keydown', function (e) {
+      if (!capture.rec) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+      // Don't hijack arrow keys inside form controls + the capture bar +
+      // tuning labels — those have their own keyboard semantics.
+      if (t.closest('.tab_controls') || t.closest('.tab_capture_bar')
+          || t.classList.contains('tab_label_input')
+          || t.tagName === 'TEXTAREA' || t.isContentEditable) return;
+      // If the user is focused on a tab cell input, let onCellKey handle
+      // it — that already moves focus, and the focusin listener will
+      // sync the cursor.
+      if (t.matches && t.matches('input[data-r][data-c]:not(.tab_label_input)')) return;
+      var dr = 0, dc = 0;
+      if      (e.key === 'ArrowUp')    dr = -1;
+      else if (e.key === 'ArrowDown')  dr = 1;
+      else if (e.key === 'ArrowLeft')  dc = -1;
+      else if (e.key === 'ArrowRight') dc = 1;
+      else return;
+      e.preventDefault();
+      capture.cursorRow = Math.max(0, Math.min(state.strings - 1, capture.cursorRow + dr));
+      capture.cursorCol = Math.max(0, Math.min(totalCols() - 1, capture.cursorCol + dc));
+      var inp = grid && grid.querySelector('input[data-r="' + capture.cursorRow
+                                          + '"][data-c="' + capture.cursorCol + '"]');
+      if (inp) inp.focus();
+      updateCaptureUI();
+    });
   }
 
   function init() {
