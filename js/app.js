@@ -1348,35 +1348,18 @@
     return qs ? '?' + qs : '?';
   }
 
-  // Jazz hand-signal indicator: a stylised hand silhouette showing N
-  // raised fingers above a palm. 1–5 → one hand; 6 → 5+1 (two hands);
-  // 7 → 5+2. For flats we flip the whole thing vertically so the palm is
-  // on top and the fingers point down — same gesture, inverted.
-  function _oneHandSvg(n) {
-    const fingerW = 4, fingerH = 13, gap = 2, padX = 3, totalH = 22;
-    const handW = padX * 2 + 5 * fingerW + 4 * gap;        // always 5 slots wide
-    const palmTop = fingerH + 1;                           // gap between fingers and palm
-    const palmH   = totalH - palmTop;
-    let svg = '<svg class="ks_hand" viewBox="0 0 ' + handW + ' ' + totalH
-            + '" width="' + handW + '" height="' + totalH + '" aria-hidden="true">';
-    // Palm
-    svg += '<rect x="1" y="' + palmTop + '" width="' + (handW - 2)
-        +  '" height="' + palmH + '" rx="3"/>';
-    // Extended fingers (left-justified inside the 5-slot palm)
-    for (let i = 0; i < n; i++) {
-      const x = padX + i * (fingerW + gap);
-      svg += '<rect x="' + x + '" y="1" width="' + fingerW
-          +  '" height="' + fingerH + '" rx="2"/>';
-    }
-    return svg + '</svg>';
-  }
+  // Jazz hand-signal indicator: a CSS sprite of img/fingers-up.png (or
+  // fingers-down.png for flats), each holding 5 hand panels side by side.
+  // Counts 1–5 render a single panel; 6 renders 5+1 and 7 renders 5+2 to
+  // mirror the real-world two-hand signal for those keys.
   function fingerSvg(count, direction) {
     if (count <= 0) return '';
+    const dirCls = direction === 'down' ? 'ks_hand_down' : 'ks_hand_up';
     const hands = count <= 5 ? [count] : [5, count - 5];
-    const flipCls = direction === 'down' ? ' ks_fingers_flip' : '';
-    return '<span class="ks_fingers' + flipCls + '">'
-         + hands.map(_oneHandSvg).join('<span class="ks_hand_gap"></span>')
-         + '</span>';
+    const html = hands
+      .map(function (n) { return '<span class="ks_hand ' + dirCls + ' ks_hand_' + n + '"></span>'; })
+      .join('');
+    return '<span class="ks_fingers">' + html + '</span>';
   }
 
   function renderKeySignatures(x) {
