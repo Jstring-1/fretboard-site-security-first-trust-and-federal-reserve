@@ -1535,7 +1535,13 @@
         +    '<th class="ks_hands" aria-label="Hand signal"></th>'
         +    '<th class="ks_notes">Accidentals</th>'
         +    '</tr></thead><tbody>';
-      for (const r of rows) {
+      // The flats panel starts at 1 flat (F major) but the sharps panel
+      // starts at 0 sharps (C major). Reuse C major at the top of the
+      // flats panel too so rows for N flats / N sharps line up.
+      const renderRows = (rows === KEY_SIGS_FLAT)
+        ? [KEY_SIGS_SHARP[0]].concat(rows)
+        : rows;
+      for (const r of renderRows) {
         const isCurrent = (urlNote(r.setKey) === urlNote(x.k));
         const cls = 'ks_row' + (isCurrent ? ' ks_row_current' : '');
         const sig = r.count === 0
