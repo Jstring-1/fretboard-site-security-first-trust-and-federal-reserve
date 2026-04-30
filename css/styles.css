@@ -62,8 +62,8 @@ body, #hl_button                           {  background-color: var(--bg) !impor
                                            {  background-color:#0a0a0a;                                              }
 /* Fretboard + chord/scale grids share the same light 'tabletop' so the three
    visualizations read as one family. Tunings list stays on the dark surface. */
-#fretboard, #chord_grid, #scale_grid       {  background-color:#cccccc;                                              }
-#_no_highlight_, #_x_                      {  background-color:#cccccc;                                              }
+#fretboard, #chord_grid, #scale_grid       {  background-color:#a8a8a8;                                              }
+#_no_highlight_, #_x_                      {  background-color:#a8a8a8;                                              }
 #tunings                                   {  background-color:#0a0a0a;                                              }
 table.sortable                             {  background-color:#0a0a0a;                                              }
 table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;                                              }
@@ -199,7 +199,7 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:8px;     overflow:hidden;                                }
 /* Keyboard sits on a grey piano-body inside the dark section frame —
    matches the fretboard's tabletop colour. */
-.ritz                                      {  background-color:#cccccc; padding:0; border-radius:6px; margin:0 6px;   }
+.ritz                                      {  background-color:#a8a8a8; padding:0; border-radius:6px; margin:0 6px;   }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
 /* White-key cells (A B C D E F G) get a thin grey vertical border between
@@ -241,7 +241,7 @@ table td                                   {  vertical-align:middle;            
 .ritz .waffle .s17, .ritz .waffle .s18, .ritz .waffle .s19,
 .ritz .waffle .s23, .ritz .waffle .s25, .ritz .waffle .s26, .ritz .waffle .s27,
 .ritz .waffle .s28, .ritz .waffle .s29, .ritz .waffle .s30
-                                           {  background-color:#cccccc !important; color:#111 !important;              }
+                                           {  background-color:#a8a8a8 !important; color:#111 !important;              }
 .ritz .waffle .s12, .ritz .waffle .s22     {  color:#111 !important;                                                   }
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
@@ -682,7 +682,7 @@ select option                              { color: var(--text); background: var
 .ritz .waffle .s20, .ritz .waffle .s21, .ritz .waffle .s22, .ritz .waffle .s24,
 .ritz .waffle .s31, .ritz .waffle .s46, .ritz .waffle .s54, .ritz .waffle .s55,
 .ritz .waffle .s56, .ritz .waffle .s57, .ritz .waffle .s59, .ritz .waffle .s61 {
-    background-color:#cccccc !important;
+    background-color:#a8a8a8 !important;
     color:#111 !important;
 }
 
@@ -740,7 +740,7 @@ select option                              { color: var(--text); background: var
 #chord_grid tr.cg_row_selected #_x_,
 #scale_grid tr.cg_row_selected #_x_        { background: var(--accent-hi) !important;                                 }
 /* Muted internal cell borders + soft corners for the fretboard and the
-   flipped chord / scale grids. Their tabletop is #cccccc; #2e2e2e on top
+   flipped chord / scale grids. Their tabletop is #a8a8a8; #2e2e2e on top
    reads as black, so step it up to a light grey that just hints at the
    cell edges. */
 #fretboard, #fretboard td,
@@ -1098,7 +1098,7 @@ a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00
 #keyboard > tbody > tr > td.s11,
 #keyboard > tbody > tr > td.s21,
 #keyboard > tbody > tr > td.s31,
-#keyboard > tbody > tr > td.s46              { background-color: #cccccc !important;
+#keyboard > tbody > tr > td.s46              { background-color: #a8a8a8 !important;
                                               color: #1a1a1a !important;                                              }
 
 /* Sortable header buttons */

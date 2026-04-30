@@ -2389,7 +2389,7 @@
     });
     // Real piano: white keys are white, black keys are dark. Dimmed = label fades into bg.
     // Match the fretboard's light-grey "tabletop" so both reference surfaces feel the same.
-    const DIM_WHITE_BG    = '#cccccc';
+    const DIM_WHITE_BG    = '#a8a8a8';
     const DIM_WHITE_TEXT  = '#888888';   // readable medium grey on the light bg
     const DIM_BLACK_TEXT  = '#3a3a3a';   // visible-but-quiet on the dark cell bg
 
