@@ -338,11 +338,17 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_2"] #info_r            {  display:block !important; text-align:center !important;
                                                        margin:2px auto !important; font-size:1em;                     }
 
-    /* ===== Section 3: Chord Builder Grid ===== */
+    /* ===== Section 3: Chord Builder Grid =====
+       Tight rows + landscape page should put the entire flipped grid on
+       one page. ~28 chord rows × 12px = 336px, plus header rows + section
+       chrome, fits inside a landscape A4 page height. */
     body[data-print="section_3"] #chord_grid        {  font-size:0.55em; width:100% !important;
-                                                       border-radius:0 !important;                                    }
-    body[data-print="section_3"] #chord_grid td     {  padding:1px !important;                                        }
+                                                       border-radius:0 !important;
+                                                       border-spacing: 0 !important;                                  }
+    body[data-print="section_3"] #chord_grid tr     {  height: 12px !important;                                       }
+    body[data-print="section_3"] #chord_grid td     {  padding:0 1px !important; line-height: 1.05 !important;        }
     body[data-print="section_3"] .cg_chord_label    {  width:60px !important;                                         }
+    body[data-print="section_3"] .cg_corner_label   {  font-size: 0.85em !important;                                  }
 
     /* ===== Section 4: Keyboard ===== */
     body[data-print="section_4"] #keyboard          {  font-size:0.5em; width:100% !important;
@@ -356,10 +362,14 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_5"] #tunings td,
     body[data-print="section_5"] #tunings th        {  padding:1px 4px !important;                                    }
 
-    /* ===== Section 6: Scale Builder Grid ===== */
+    /* ===== Section 6: Scale Builder Grid =====
+       16 scales × ~16px row = ~256px, fits one landscape page easily. */
     body[data-print="section_6"] #scale_grid        {  font-size:0.8em; width:100% !important;
-                                                       border-radius:0 !important;                                    }
-    body[data-print="section_6"] #scale_grid td     {  padding:2px !important;                                        }
+                                                       border-radius:0 !important;
+                                                       border-spacing: 0 !important;                                  }
+    body[data-print="section_6"] #scale_grid tr     {  height: 16px !important;                                       }
+    body[data-print="section_6"] #scale_grid td     {  padding:1px 2px !important; line-height: 1.1 !important;       }
+    body[data-print="section_6"] .cg_corner_label   {  font-size: 0.85em !important;                                  }
 }
 
 /* Outside @media print so the property carries into the print render reliably */
