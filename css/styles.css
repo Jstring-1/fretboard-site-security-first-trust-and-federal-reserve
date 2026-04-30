@@ -787,14 +787,23 @@ select option                              { color: var(--text); background: var
    links: clicking flips just that degree in the URL, then the link
    interceptor re-renders in place (no scroll jump). On-state pills are
    coloured per-degree via inline styles set by highlightPillsLinkHtml. */
+/* Both pill rows (notes + degrees) use the same 15-column grid so the
+   pills line up vertically: column 1 is the row label, columns 2–13 are
+   the 12 note/degree pills, columns 14–15 are All / None. Identical
+   template means each pill in the Notes row sits directly above the
+   matching pill in the Highlight row. */
 .opt_row_highlights.kb_hl_row,
-.opt_row_highlights.fb_hl_row              { display: flex; flex-wrap: wrap; align-items: center;
-                                             justify-content: center; gap: 4px;
-                                             padding: 8px 14px; line-height: 1;
-                                             /* Reset the .opt_row_highlights translucent card so the highlight
-                                                row sits on the section's surface directly — both fretboard and
-                                                keyboard use the same look now. */
-                                             background: transparent; border-radius: 0;                              }
+.opt_row_highlights.fb_hl_row,
+.opt_row_notes.kb_hn_row,
+.opt_row_notes.fb_hn_row                   { display: grid;
+                                             grid-template-columns: 78px repeat(12, minmax(28px, 1fr)) 50px 50px;
+                                             align-items: center; gap: 4px;
+                                             padding: 4px 14px; line-height: 1;
+                                             background: transparent; border-radius: 0;                               }
+.opt_row_highlights.kb_hl_row,
+.opt_row_highlights.fb_hl_row              { padding-bottom: 8px;                                                     }
+.opt_row_notes.kb_hn_row,
+.opt_row_notes.fb_hn_row                   { padding-top: 8px; padding-bottom: 0;                                     }
 /* Wrap the keyboard's mirror controls in the same padded container as the
    fretboard form (#tunings_drop), so the highlight strip + chord/scale
    chip rows have matching side margins and a consistent gap below. */
@@ -802,33 +811,30 @@ select option                              { color: var(--text); background: var
                                              gap: 8px; padding: 10px 18px 14px;                                       }
 .opt_row_highlights .hl_title              { color: var(--muted); font: 600 0.78em var(--font);
                                              letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
-.opt_row_highlights a.hl_pill              { display: inline-block; padding: 3px 9px; font-size: 0.85em;
+.opt_row_highlights a.hl_pill              { display: block; padding: 3px 4px; font-size: 0.85em; text-align: center;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none; transition: background .12s, border-color .12s; }
 .opt_row_highlights a.hl_pill:hover        { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 .opt_row_highlights a.hl_pill_on           { font-weight: 600;                                                       }
-.opt_row_highlights a.hl_all_pill          { margin-left: 8px;                                                       }
-.opt_row_highlights a.hl_none_pill         { margin-left: 2px;                                                       }
+.opt_row_highlights a.hl_all_pill,
+.opt_row_highlights a.hl_none_pill         { margin-left: 0;                                                         }
 
 /* Note-letter highlight row — drives the same hl= state as the degree pill
    row below it. The on-state colour matches the degree's pill colour
    (applied inline by notePillsLinkHtml) so the two rows agree visually
    when the same item is engaged. The row sits flush against the degree
    row beneath with no extra padding between. */
-.opt_row_notes                             { display: flex; flex-wrap: wrap; align-items: center;
-                                             justify-content: center; gap: 4px;
-                                             padding: 6px 14px 0; line-height: 1;                                    }
 .opt_row_notes .hl_title                   { color: var(--muted); font: 600 0.78em var(--font);
                                              letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
-.opt_row_notes a.note_pill                 { display: inline-block; padding: 3px 9px; font-size: 0.85em;
+.opt_row_notes a.note_pill                 { display: block; padding: 3px 4px; font-size: 0.85em; text-align: center;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none; transition: background .12s, border-color .12s; }
 .opt_row_notes a.note_pill:hover           { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 .opt_row_notes a.note_pill_on              { font-weight: 600;                                                       }
-.opt_row_notes a.note_all_pill             { margin-left: 8px;                                                       }
-.opt_row_notes a.note_none_pill            { margin-left: 2px;                                                       }
+.opt_row_notes a.note_all_pill,
+.opt_row_notes a.note_none_pill            { margin-left: 0;                                                         }
 /* Pull the degree-pill row right up under the note-pill row in both the
    fretboard and keyboard panes (no gap between the two views of the same
    selection). */
