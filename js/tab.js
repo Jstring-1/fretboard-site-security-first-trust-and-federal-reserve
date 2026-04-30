@@ -627,19 +627,25 @@
     var n = state.strings;
     // Show frets 0–12. Cells small (~26px wide × 22px tall).
     var FRETS = 12;
+    // Standard fretboard markers (3 / 5 / 7 / 9 / 12) read full-strength;
+    // every other fret number renders muted via .fret_minor.
+    var MARKER_FRETS = { 3: 1, 5: 1, 7: 1, 9: 1, 12: 1 };
     var rows = [];
     for (var r = 0; r < n; r++) {
       var label = state.notes[r] || '—';
       var cells = '<td class="tcap_label">' + escAttr(label) + '</td>';
       for (var f = 0; f <= FRETS; f++) {
-        cells += '<td class="tcap_cell" data-row="' + r + '" data-fret="' + f + '">'
+        var nutCls = (f === 0) ? ' tcap_nut' : '';
+        cells += '<td class="tcap_cell' + nutCls + '" data-row="' + r + '" data-fret="' + f + '">'
               +  f + '</td>';
       }
       rows.push('<tr data-row="' + r + '">' + cells + '</tr>');
     }
     var fretHead = '<tr class="tcap_frets"><td></td>';
     for (var i = 0; i <= FRETS; i++) {
-      fretHead += '<td>' + i + '</td>';
+      var nutHeadCls = (i === 0) ? ' tcap_nut' : '';
+      var label = MARKER_FRETS[i] ? String(i) : '<span class="fret_minor">' + i + '</span>';
+      fretHead += '<td class="' + nutHeadCls.trim() + '">' + label + '</td>';
     }
     fretHead += '</tr>';
     capBoard.innerHTML = '<table class="tcap_board">'
@@ -676,6 +682,10 @@
   }
 
   function writeCapture(row, fret, modifier) {
+    // Cursor follows the clicked string so the green cursor highlight
+    // ALWAYS lights up the cell that just got the value — clicks and
+    // visual cursor stay in sync.
+    capture.cursorRow = row;
     var col = capture.cursorCol;
     var key = row + '_' + col;
     var prev = state.cells[key] || '';

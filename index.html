@@ -122,6 +122,7 @@
 
 <details id="section_8" class="collapsible section" open><summary><span class="summary_title">Tab</span><span class="summary_extras" data-summary-for="section_8"></span><button type="button" class="section_help" data-help="tab" aria-label="About">?</button></summary><br/>
   <div id="tab_section_root">
+    <div class="tab_editor_panel">
     <div class="tab_controls">
       <label class="tab_ctl"><span>Title</span><input id="ctl_title" type="text" value="Untitled" maxlength="80"></label>
       <label class="tab_ctl"><span>Strings</span><select id="ctl_strings"><option>4</option><option>5</option><option>6</option><option>7</option><option selected>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></label>
@@ -151,16 +152,17 @@
           <button type="button" class="tcap_btn"                id="tcap_back"  title="Erase last entry; cursor steps back">⌫</button>
           <button type="button" class="tcap_btn"                id="tcap_rest"  title="Rest — advance cursor without writing anything">⊘</button>
           <button type="button" class="tcap_btn"                id="tcap_reset" title="Cursor jumps to row 0 column 0">⏮</button>
-          <span class="tcap_step">Step
-            <button type="button" class="tcap_step_dn" id="tcap_step_dn" aria-label="Decrease step">−</button>
+          <span class="tcap_step" title="Cells the cursor advances after each fret click. 1 = one subdivision (an 8th note when subdiv=2), 2 = two subdivisions (a quarter note when subdiv=2), and so on.">Advance
+            <button type="button" class="tcap_step_dn" id="tcap_step_dn" aria-label="Decrease advance">−</button>
             <span class="tcap_step_val" id="tcap_step_val">1</span>
-            <button type="button" class="tcap_step_up" id="tcap_step_up" aria-label="Increase step">+</button>
+            <button type="button" class="tcap_step_up" id="tcap_step_up" aria-label="Increase advance">+</button>
           </span>
           <span class="tcap_status" id="tcap_status" aria-live="polite"></span>
         </div>
         <div id="tab_mini_fretboard"></div>
       </div>
     </details>
+    </div><!-- /.tab_editor_panel -->
     <div id="tab_paper">
       <div id="tab_title_block">
         <div id="tab_title_print" class="tab_title_print"></div>
@@ -184,7 +186,7 @@
 
 <footer id="site_footer">
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260429.2253</div>
+  <div id="build_num">20260430.0745</div>
 </footer>
 
 </body>

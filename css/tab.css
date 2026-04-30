@@ -211,10 +211,21 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
 }
 
 /* ====================================================================== */
+/*  Tab editor panel — wraps the form, instructions, and capture mode in  */
+/*  one slightly-darker card so they read as the editor surface, separate */
+/*  from the tab paper that holds the actual notation.                    */
+/* ====================================================================== */
+.tab_editor_panel                          { background: #0e0e0e; border: 1px solid #2a2a2a;
+                                             border-radius: 8px; padding: 12px 14px;
+                                             margin: 8px 14px 14px;                                                  }
+.tab_editor_panel .tab_controls            { margin-bottom: 8px;                                                    }
+.tab_editor_panel .tab_help                { margin-bottom: 8px;                                                    }
+
+/* ====================================================================== */
 /*  Capture-from-fretboard mode (opt-in mini-fretboard inside the Tab     */
 /*  section). Hidden by default since the <details> opens on user click.  */
 /* ====================================================================== */
-.tab_capture                               { margin: 8px 0 12px; padding: 6px 10px;
+.tab_capture                               { margin: 4px 6px; padding: 6px 10px;
                                              background: rgba(255,255,255,0.04);
                                              border: 1px solid rgba(255,255,255,0.10);
                                              border-radius: 8px;                                                   }
@@ -227,7 +238,10 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
 .tab_capture_title                         { font-size: 0.95em;                                                    }
 .tab_capture_hint                          { color: var(--muted); font-size: 0.82em; margin-left: 12px;             }
 
-#tab_capture_body.rec_on                   { padding: 8px; border: 2px solid #c0392b; border-radius: 6px;
+/* Record indicator — uses outline + box-shadow so the badge appears
+   without resizing the body or shifting the mini-fretboard below. */
+#tab_capture_body                          { transition: box-shadow .15s, background-color .15s;                    }
+#tab_capture_body.rec_on                   { box-shadow: inset 0 0 0 2px #c0392b;
                                              background: rgba(192,57,43,0.06);                                       }
 
 .tab_capture_bar                           { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -261,8 +275,14 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
                                              font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;}
 .tcap_board .tcap_label                    { background: #d5d5d5; font-weight: 700;                                  }
 .tcap_board tr.tcap_frets td               { background: transparent; color: var(--muted);                          }
+/* Marker frets (3, 5, 7, 9, 12) read full-strength; the in-between ones
+   render muted via .fret_minor — same convention as the main fretboard. */
+.tcap_board tr.tcap_frets .fret_minor      { font-size: 0.85em; color: #444; opacity: 0.55;                          }
 .tcap_board td.tcap_cell                   { cursor: pointer;                                                       }
 .tcap_board td.tcap_cell:hover             { background: #ffeb00; color: #1a1a00;                                   }
+/* Nut indicator — a thicker right-edge on the open-string column, same
+   visual cue the main fretboard uses to mark fret 0 / nut. */
+.tcap_board td.tcap_nut                    { border-right: 4px solid #2a2a2a;                                       }
 
 /* Active tab cursor cell — green outline so the user always knows where the
    next captured fret will land. */

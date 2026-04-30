@@ -258,8 +258,8 @@ table td                                   {  vertical-align:middle;            
 .ritz .waffle .s28, .ritz .waffle .s29, .ritz .waffle .s30
                                            {  background-color:#a8a8a8 !important; color:#888 !important;              }
 .ritz .waffle .s12, .ritz .waffle .s22     {  color:#888 !important;                                                   }
-.nut                                       {  border-right:8px solid #5a5a5a !important;                             }
-.nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
+.nut                                       {  border-right:10px solid #2a2a2a !important;                            }
+.nut1                                      {  border-left:10px solid #2a2a2a !important;                             }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
 #view_src, #print_btn                      {  border:1px solid #5fe8e0;                                              }
 #hl_button, #hl_button_x                   {  border:1px solid #000000 !important;                                   }
