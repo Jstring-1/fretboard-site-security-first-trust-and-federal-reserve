@@ -785,13 +785,16 @@ select option                              { color: var(--text); background: var
 .section_compact_on                        { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
 .section_compact_on:hover                  { background: var(--accent-hi); border-color: #fff;                       }
 .section_compact svg                       { fill: currentColor; display: block;                                     }
-/* In compact mode each row has different filled-cell counts, so the
-   table can't keep a fixed column grid — switch to auto layout so cells
-   sit next to each other instead of stretching. */
+/* In compact mode each row has a different filled-cell count, but every
+   cell keeps a fixed width so the populated cells still line up vertically
+   across rows even though the row's total length varies. */
 #chord_grid.cg_compact, #scale_grid.cg_compact
                                            { table-layout: auto; min-width: 0; width: auto; margin-left: 14px;        }
 #chord_grid.cg_compact td, #scale_grid.cg_compact td
-                                           { padding: 2px 8px;                                                        }
+                                           { width: 64px; min-width: 64px; max-width: 64px;
+                                             padding: 0;                                                              }
+#chord_grid.cg_compact .cg_chord_label,
+#scale_grid.cg_compact .cg_chord_label     { width: 88px !important; min-width: 88px; max-width: 88px;                }
 /* "All" pill in the highlight row — matches the .hl_pill chips but acts as
    a link (no checkbox inside). */
 .hl_all_pill                               { color: var(--text) !important; text-decoration: none; cursor: pointer;  }
