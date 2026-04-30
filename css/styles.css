@@ -249,8 +249,8 @@ table td                                   {  vertical-align:middle;            
 .ritz .waffle .s17, .ritz .waffle .s18, .ritz .waffle .s19,
 .ritz .waffle .s23, .ritz .waffle .s25, .ritz .waffle .s26, .ritz .waffle .s27,
 .ritz .waffle .s28, .ritz .waffle .s29, .ritz .waffle .s30
-                                           {  background-color:#a8a8a8 !important; color:#555 !important;              }
-.ritz .waffle .s12, .ritz .waffle .s22     {  color:#555 !important;                                                   }
+                                           {  background-color:#a8a8a8 !important; color:#888 !important;              }
+.ritz .waffle .s12, .ritz .waffle .s22     {  color:#888 !important;                                                   }
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
@@ -697,7 +697,7 @@ select option                              { color: var(--text); background: var
 .ritz .waffle .s62, .ritz .waffle .s63, .ritz .waffle .s64, .ritz .waffle .s65,
 .ritz .waffle .s66, .ritz .waffle .s67 {
     background-color:#a8a8a8 !important;
-    color:#555 !important;
+    color:#888 !important;
 }
 
 /* Footer "Jimmy Witherfork Strikes Again" — sits on the dark page bg */
