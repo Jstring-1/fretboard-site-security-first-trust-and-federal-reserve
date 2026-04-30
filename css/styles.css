@@ -752,14 +752,19 @@ select option                              { color: var(--text); background: var
    height across the board. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
 #chord_grid td, #scale_grid td             { font-size: 0.85em;                                                       }
-/* Compact-mode toggle: a small checkbox above each grid that hides the
-   empty (#_x_) cells so each row reads as just its populated notes. */
-.grid_controls                             { padding: 6px 12px 4px; text-align: right;                                }
-.grid_compact_label                        { display: inline-flex; align-items: center; gap: 6px;
-                                             color: var(--muted); font-size: 0.82em;
-                                             cursor: pointer; user-select: none;                                      }
-.grid_compact_label input                  { margin: 0; cursor: pointer;                                              }
-.grid_compact_label:hover                  { color: var(--text);                                                      }
+/* Compact-mode toggle button: lives in each grid section's header before
+   the Key picker. Clicking it flips between full-grid and stacked-cell
+   modes — icon swaps to mirror the action available on next click. */
+.section_compact                           { display: inline-flex; align-items: center; justify-content: center;
+                                             width: 28px; height: 22px; padding: 0; margin-right: 4px;
+                                             vertical-align: middle; border-radius: 6px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             cursor: pointer;                                                         }
+.section_compact:hover                     { background: rgba(255,255,255,0.4); border-color: #fff;                  }
+.section_compact_on                        { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
+.section_compact_on:hover                  { background: var(--accent-hi); border-color: #fff;                       }
+.section_compact svg                       { fill: currentColor; display: block;                                     }
 /* In compact mode each row has different filled-cell counts, so the
    table can't keep a fixed column grid — switch to auto layout so cells
    sit next to each other instead of stretching. */

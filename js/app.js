@@ -1121,7 +1121,10 @@
       //   section_5 = nested tunings list (no chord-state context)
       //   section_8 = tab editor (its own controls bar handles state)
       if (target === 'section_5' || target === 'section_8' || target === 'section_9') { s.innerHTML = ''; return; }
-      s.innerHTML = html;
+      // Chord (section_3) + Scale (section_6) builders: prepend the
+      // compact-mode icon toggle just before the Clear / Key picker.
+      const prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
+      s.innerHTML = prefix + html;
     });
   }
 
@@ -1224,23 +1227,45 @@
   function setCompactGrids(v) {
     _compactGrids = !!v;
     try { localStorage.setItem('sf_compact_grids', _compactGrids ? '1' : '0'); } catch (e) {}
-    if (window.SF_X) { renderChordGrid(window.SF_X); renderScaleGrid(window.SF_X); }
+    if (window.SF_X) {
+      renderChordGrid(window.SF_X);
+      renderScaleGrid(window.SF_X);
+      renderSummaryExtras(window.SF_X);   // refresh the icon's on/off state
+    }
   }
-  function compactToggleHtml(idAttr) {
-    return '<div class="grid_controls">'
-         + '  <label class="grid_compact_label">'
-         + '    <input type="checkbox" class="grid_compact_toggle" id="' + idAttr + '"'
-         +        (_compactGrids ? ' checked' : '') + '>'
-         + '    <span>Compact (hide empty cells)</span>'
-         + '  </label>'
-         + '</div>';
+  // Icon button for the section header — same shape as section_print/help.
+  // Two SVGs: "stacked rows" when on (click spreads), "spread grid" when off
+  // (click compacts). Lives inside summary_extras so the existing
+  // bindSummaryExtras handler keeps clicks from toggling the parent <details>.
+  function compactToggleHtml() {
+    const on = _compactGrids;
+    const title = on ? 'Compact mode on — click to show empty cells'
+                     : 'Compact mode off — click to hide empty cells';
+    const iconStacked = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+                     + '<rect x="2" y="3" width="12" height="2" rx="1"/>'
+                     + '<rect x="2" y="7" width="12" height="2" rx="1"/>'
+                     + '<rect x="2" y="11" width="12" height="2" rx="1"/></svg>';
+    const iconGrid = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+                  + '<rect x="1" y="1" width="6" height="6" rx="1"/>'
+                  + '<rect x="9" y="1" width="6" height="6" rx="1"/>'
+                  + '<rect x="1" y="9" width="6" height="6" rx="1"/>'
+                  + '<rect x="9" y="9" width="6" height="6" rx="1"/></svg>';
+    return '<button type="button" class="section_compact' + (on ? ' section_compact_on' : '')
+         + '" title="' + escAttr(title) + '" aria-label="' + escAttr(title)
+         + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
+         + (on ? iconGrid : iconStacked)
+         + '</button>';
   }
   function bindCompactToggles() {
-    document.querySelectorAll('.grid_compact_toggle').forEach(function (el) {
-      if (el._compactBound) return;
-      el._compactBound = true;
-      el.addEventListener('change', function () { setCompactGrids(el.checked); });
-    });
+    if (document.body._compactToggleBound) return;
+    document.body._compactToggleBound = true;
+    document.body.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.section_compact');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setCompactGrids(!_compactGrids);
+    }, true);   // capture so it runs before bindSummaryExtras' stopPropagation
   }
 
   function renderChordGrid(x) {
@@ -1272,8 +1297,7 @@
     }
 
     const compact = _compactGrids;
-    let h = compactToggleHtml('cg_compact_chord');
-    h += '<table id="chord_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
+    let h = '<table id="chord_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
     if (!compact) h += buildDegHeader('above_chord_grid');
     let chordIdx = 0;
     for (const a in GRID) {
@@ -1352,8 +1376,7 @@
     }
 
     const compact = _compactGrids;
-    let h = compactToggleHtml('cg_compact_scale');
-    h += '<table id="scale_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
+    let h = '<table id="scale_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
     if (!compact) h += buildDegHeader('above_scale_grid');
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
