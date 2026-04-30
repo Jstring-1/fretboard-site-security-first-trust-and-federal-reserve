@@ -566,8 +566,14 @@ details.collapsible > summary > .summary_title::before
                                            { color: rgba(255,255,255,0.85);                                          }
 
 /* Form layout: stacked rows with proper gaps */
+/* Both sections' pill-row stacks (fretboard #tunings_drop and keyboard
+   #kb_picks_root) share the same column gap so the rows look identical
+   in spacing across both sections. 40% of the previous 12px value. */
 #tunings_drop                              { padding: 14px 18px 16px; display: flex; flex-direction: column;
-                                             gap: 12px; align-items: center; font-weight: 500;                      }
+                                             gap: 5px; align-items: center; font-weight: 500;                       }
+/* The tuning-picker row (top of the fretboard form) wants more breathing
+   room before the pill rows below it. */
+#tunings_drop .opt_row_main                { margin-bottom: 6px;                                                    }
 .opt_row                                   { display: flex; flex-wrap: wrap; gap: 10px 16px;
                                              align-items: center; justify-content: center;                          }
 .opt_row label                             { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -835,7 +841,7 @@ select option                              { color: var(--text); background: var
    fretboard form (#tunings_drop), so the highlight strip + chord/scale
    chip rows have matching side margins and a consistent gap below. */
 #kb_picks_root                             { display: flex; flex-direction: column;
-                                             gap: 8px; padding: 10px 18px 14px;                                       }
+                                             gap: 5px; padding: 10px 18px 14px;                                      }
 .opt_row_highlights .hl_title              { color: var(--muted); font: 600 0.78em var(--font);
                                              letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
 .opt_row_highlights a.hl_pill              { display: block; padding: 3px 4px; font-size: 0.85em; text-align: center;
