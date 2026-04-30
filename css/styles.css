@@ -455,7 +455,7 @@ details.collapsible > summary:hover       { background-color:#1a1a1a;           
    layer in the dark stack, with a thin bottom border separating it from the
    section body. */
 details.collapsible > summary              { border-radius: 10px 10px 0 0; padding: 6px 16px; font-size: 1.05em;
-                                             background: var(--surface-head); color: #fff;
+                                             background: var(--surface); color: #fff;
                                              border-bottom: 1px solid #1f1f1f;
                                              display: flex; align-items: center; gap: 6px;
                                              justify-content: flex-end; position: relative;
