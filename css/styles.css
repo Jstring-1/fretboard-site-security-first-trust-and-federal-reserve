@@ -1212,10 +1212,19 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table tbody .ks_sig_count,
 .ks_table tbody .ks_sig_staff,
 .ks_table tbody .ks_sig_hand               { padding: 4px 6px; vertical-align: middle; text-align: center;            }
-.ks_table tbody .ks_sig_count              { width: 50px; color: var(--text); font-weight: 600;
-                                             padding-left: 12px;                                                       }
-.ks_table tbody .ks_sig_staff              { width: 90px; color: var(--text);                                          }
-.ks_table tbody .ks_sig_hand               { width: 80px; padding-right: 12px;                                          }
+.ks_table tbody .ks_sig_count              { width: 25px; color: var(--text); font-weight: 600;
+                                             padding-left: 6px;                                                        }
+.ks_table tbody .ks_sig_staff              { width: 45px; color: var(--text);                                          }
+.ks_table tbody .ks_sig_hand               { width: 40px; padding-right: 6px;                                          }
+/* Shrink the staff + hand glyphs to fit the halved sub-columns. */
+.ks_table .ks_staff                        { transform: scale(0.7); transform-origin: left center;                    }
+.ks_table .ks_fingers                      { margin-left: 0;                                                          }
+.ks_table .ks_hand                         { width: 18px; height: 18px; background-size: 90px 18px;                   }
+.ks_table .ks_hand_1                       { background-position:    0 0;                                              }
+.ks_table .ks_hand_2                       { background-position: -18px 0;                                             }
+.ks_table .ks_hand_3                       { background-position: -36px 0;                                             }
+.ks_table .ks_hand_4                       { background-position: -54px 0;                                             }
+.ks_table .ks_hand_5                       { background-position: -72px 0;                                             }
 .ks_staff                                  { color: var(--text); display: inline-block; vertical-align: middle;        }
 /* Jazz hand-signal indicator: sprite from img/fingers-{up,down}.png. Each
    sprite is 5 panels side by side (1, 2, 3, 4, 5 fingers). The display
