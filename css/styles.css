@@ -1106,7 +1106,10 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table .ks_key a                        { color: inherit; text-decoration: none;                                    }
 .ks_table .ks_key a:hover                  { color: var(--accent-hi);                                                  }
 .ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
-.ks_table .ks_sig                          { width: 80px; color: var(--muted); white-space: nowrap;                    }
+.ks_table .ks_sig                          { width: 110px; color: var(--muted); white-space: nowrap;                   }
+.ks_fingers                                { display: inline-block; vertical-align: middle; margin-left: 8px;
+                                             fill: var(--accent-hi); transform-origin: center;                        }
+.ks_table tbody tr.ks_row_current .ks_fingers { fill: var(--accent-hi);                                                }
 .ks_table .ks_notes                        { color: var(--text);                                                       }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }

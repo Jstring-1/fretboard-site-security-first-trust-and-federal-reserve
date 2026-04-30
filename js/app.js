@@ -1348,6 +1348,26 @@
     return qs ? '?' + qs : '?';
   }
 
+  // Inline SVG of N upward strokes — line-art "fingers up" indicator. For
+  // flats we render the same SVG with a vertical scale flip so the fingers
+  // point down. Stays small so it can sit next to the signature count text
+  // without dominating the cell.
+  function fingerSvg(count, direction) {
+    if (count <= 0) return '';
+    const n = count;
+    const fingerW = 4, fingerH = 14, gap = 3, padX = 2, totalH = 16;
+    const totalW = padX * 2 + n * fingerW + (n - 1) * gap;
+    const flip = direction === 'down' ? ' style="transform:scaleY(-1);"' : '';
+    let svg = '<svg class="ks_fingers" viewBox="0 0 ' + totalW + ' ' + totalH
+            + '" width="' + totalW + '" height="' + totalH + '" aria-hidden="true"' + flip + '>';
+    for (let i = 0; i < n; i++) {
+      const x = padX + i * (fingerW + gap);
+      svg += '<rect x="' + x + '" y="1" width="' + fingerW + '" height="' + fingerH + '" rx="2"/>';
+    }
+    svg += '</svg>';
+    return svg;
+  }
+
   function renderKeySignatures(x) {
     const root = document.getElementById('key_signatures_root');
     if (!root) return;
@@ -1368,7 +1388,10 @@
         h += '<tr class="' + cls + '">';
         h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
           +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
-        h += '<td class="ks_sig">' + escHtml(sig) + '</td>';
+        const fingers = r.count > 0
+          ? fingerSvg(r.count, rows === KEY_SIGS_FLAT ? 'down' : 'up')
+          : '';
+        h += '<td class="ks_sig">' + escHtml(sig) + fingers + '</td>';
         h += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
         h += '</tr>';
       }
