@@ -749,6 +749,21 @@ select option                              { color: var(--text); background: var
    height across the board. */
 #chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
 #chord_grid td, #scale_grid td             { font-size: 0.85em;                                                       }
+/* Compact-mode toggle: a small checkbox above each grid that hides the
+   empty (#_x_) cells so each row reads as just its populated notes. */
+.grid_controls                             { padding: 6px 12px 4px; text-align: right;                                }
+.grid_compact_label                        { display: inline-flex; align-items: center; gap: 6px;
+                                             color: var(--muted); font-size: 0.82em;
+                                             cursor: pointer; user-select: none;                                      }
+.grid_compact_label input                  { margin: 0; cursor: pointer;                                              }
+.grid_compact_label:hover                  { color: var(--text);                                                      }
+/* In compact mode each row has different filled-cell counts, so the
+   table can't keep a fixed column grid — switch to auto layout so cells
+   sit next to each other instead of stretching. */
+#chord_grid.cg_compact, #scale_grid.cg_compact
+                                           { table-layout: auto; min-width: 0; width: auto; margin-left: 14px;        }
+#chord_grid.cg_compact td, #scale_grid.cg_compact td
+                                           { padding: 2px 8px;                                                        }
 /* "All" pill in the highlight row — matches the .hl_pill chips but acts as
    a link (no checkbox inside). */
 .hl_all_pill                               { color: var(--text) !important; text-decoration: none; cursor: pointer;  }

@@ -1215,6 +1215,34 @@
     }, true);
   }
 
+  // Compact grid mode — when on, the chord/scale grids skip empty (#_x_)
+  // cells so each row reads as just the populated notes side by side.
+  // Local-only preference; doesn't go into the URL since it's a display
+  // toggle, not a sharable state.
+  let _compactGrids = false;
+  try { _compactGrids = localStorage.getItem('sf_compact_grids') === '1'; } catch (e) {}
+  function setCompactGrids(v) {
+    _compactGrids = !!v;
+    try { localStorage.setItem('sf_compact_grids', _compactGrids ? '1' : '0'); } catch (e) {}
+    if (window.SF_X) { renderChordGrid(window.SF_X); renderScaleGrid(window.SF_X); }
+  }
+  function compactToggleHtml(idAttr) {
+    return '<div class="grid_controls">'
+         + '  <label class="grid_compact_label">'
+         + '    <input type="checkbox" class="grid_compact_toggle" id="' + idAttr + '"'
+         +        (_compactGrids ? ' checked' : '') + '>'
+         + '    <span>Compact (hide empty cells)</span>'
+         + '  </label>'
+         + '</div>';
+  }
+  function bindCompactToggles() {
+    document.querySelectorAll('.grid_compact_toggle').forEach(function (el) {
+      if (el._compactBound) return;
+      el._compactBound = true;
+      el.addEventListener('change', function () { setCompactGrids(el.checked); });
+    });
+  }
+
   function renderChordGrid(x) {
     const root = document.getElementById('chord_grid_root');
     const i1 = KEYS.indexOf(x.k);
@@ -1243,8 +1271,10 @@
       return s;
     }
 
-    let h = '<table id="chord_grid">';
-    h += buildDegHeader('above_chord_grid');
+    const compact = _compactGrids;
+    let h = compactToggleHtml('cg_compact_chord');
+    h += '<table id="chord_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
+    if (!compact) h += buildDegHeader('above_chord_grid');
     let chordIdx = 0;
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
@@ -1274,14 +1304,14 @@
         if (cellsByDeg[degId] !== undefined) {
           const note = noteLetters[degId];
           h += '<td id="' + degId + '">' + escHtml(note) + '(' + escHtml(cellsByDeg[degId]) + ')</td>';
-        } else {
+        } else if (!compact) {
           h += '<td id="_x_"></td>';
         }
       }
       h += labelCell + '</tr>';
       chordIdx++;
     }
-    h += buildDegHeader('under_chord_grid');
+    if (!compact) h += buildDegHeader('under_chord_grid');
     h += '</table>';
     root.innerHTML = h;
   }
@@ -1321,8 +1351,10 @@
       return s;
     }
 
-    let h = '<table id="scale_grid">';
-    h += buildDegHeader('above_scale_grid');
+    const compact = _compactGrids;
+    let h = compactToggleHtml('cg_compact_scale');
+    h += '<table id="scale_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
+    if (!compact) h += buildDegHeader('above_scale_grid');
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
@@ -1339,13 +1371,13 @@
         if (scaleDegrees[name].indexOf(degSym) !== -1) {
           const note = noteLetters[col.degId];
           h += '<td id="' + col.degId + '">' + escHtml(note) + '(' + escHtml(degSym) + ')</td>';
-        } else {
+        } else if (!compact) {
           h += '<td id="_x_"></td>';
         }
       }
       h += labelCell + '</tr>';
     }
-    h += buildDegHeader('under_scale_grid');
+    if (!compact) h += buildDegHeader('under_scale_grid');
     h += '</table>';
     root.innerHTML = h;
   }
@@ -2919,6 +2951,7 @@
     renderSummaryStatus(x);  // compact key/tuning text in each title bar
     bindAutoSubmit();        // so the change-listener catches them
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
+    bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindNotePick();          // click fret cells / keyboard keys to pick notes
     renderIdentifyStrips(x); // chord-identify strips below fretboard + keyboard
     applyPrintColors();
