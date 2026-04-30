@@ -994,9 +994,23 @@
     const toggleParams = new URLSearchParams(window.location.search);
     if (cyoNextZ === 'y') toggleParams.set('z', 'y'); else toggleParams.delete('z');
     const toggleHref = '?' + toggleParams.toString();
+    // String-direction (y) toggle that lives in place of the open-string "X"
+    // marker — one in each fretnums row so flipping the order is reachable
+    // from either end of the fretboard without scrolling back to the form.
+    const yToggleParams = new URLSearchParams(window.location.search);
+    if (x.y !== 'y') yToggleParams.set('y', 'y'); else yToggleParams.delete('y');
+    const yToggleHref = '?' + yToggleParams.toString();
+    const yState = x.y === 'y' ? 'on' : 'off';
+    const yLabel = x.y === 'y' ? 'H→L' : 'L→H';
+    const yTitle = x.y === 'y'
+      ? 'Strings shown High → Low. Click to flip to Low → High.'
+      : 'Strings shown Low → High. Click to flip to High → Low.';
+    const f0Cell = '<td id="f0" class="f0_y_switch"><a href="' + escHtml(yToggleHref)
+                 + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escAttr(yTitle)
+                 + '" aria-label="Toggle string direction">' + yLabel + '</a></td>';
     const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
       '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">Custom Tuning: ' + cyoState.toUpperCase() + '</a>' +
-      '</td><td id="f0">X</td>'
+      '</td>' + f0Cell
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
@@ -1070,7 +1084,7 @@
     customLoaderHtml += '</select>';
 
     const fretnumsBot = '<tr id="fretnums">'
-      + '<td id="f_cyo">' + customLoaderHtml + '</td><td id="f0">X</td>'
+      + '<td id="f_cyo">' + customLoaderHtml + '</td>' + f0Cell
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
