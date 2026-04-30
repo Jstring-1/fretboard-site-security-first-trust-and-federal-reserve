@@ -62,7 +62,10 @@ body, #hl_button                           {  background-color: var(--bg) !impor
                                            {  background-color:#0a0a0a;                                              }
 /* Fretboard + chord/scale grids share the same light 'tabletop' so the three
    visualizations read as one family. Tunings list stays on the dark surface. */
-#fretboard, #chord_grid, #scale_grid       {  background-color:#a8a8a8;                                              }
+/* Table bg now acts as the "grout" between cells — darker than the cell
+   fills (#a8a8a8) so the 1px border-spacing reads as a deliberate frame
+   around every cell rather than empty gap. */
+#fretboard, #chord_grid, #scale_grid       {  background-color:#555555;                                              }
 #_no_highlight_, #_x_                      {  background-color:#a8a8a8;                                              }
 #tunings                                   {  background-color:#0a0a0a;                                              }
 table.sortable                             {  background-color:#0a0a0a;                                              }
@@ -745,7 +748,12 @@ select option                              { color: var(--text); background: var
    cell edges. */
 #fretboard, #fretboard td,
 #chord_grid, #chord_grid td,
-#scale_grid, #scale_grid td                { border-color: #777777 !important;                                        }
+#scale_grid, #scale_grid td                { border-color: #555555 !important;                                        }
+/* Cells without an explicit background (chord/scale name labels and degree
+   header rows) need one too so they don't show through as the dark grout. */
+#chord_grid .cg_chord_label, #chord_grid .cg_deg_header,
+#scale_grid .cg_chord_label, #scale_grid .cg_deg_header
+                                           { background-color: #a8a8a8;                                              }
 #fretboard td, #chord_grid td, #scale_grid td
                                            { border-radius: 3px;                                                      }
 /* Cell spacing so the rounded corners actually show up between neighbours
