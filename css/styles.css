@@ -1200,6 +1200,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
 .ks_table .ks_sig                          { width: 70px; color: var(--muted); white-space: nowrap;                    }
 .ks_table .ks_hands                        { width: 80px; padding: 2px 12px; vertical-align: middle;                   }
+.ks_table .ks_staff                        { width: 90px; padding: 2px 6px; vertical-align: middle;                    }
+.ks_staff                                  { color: var(--text); display: inline-block; vertical-align: middle;        }
 /* Jazz hand-signal indicator: sprite from img/fingers-{up,down}.png. Each
    sprite is 5 panels side by side (1, 2, 3, 4, 5 fingers). The display
    size below scales the source 1164×233 sprite down to 140×28 (so each
@@ -1225,7 +1227,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
    the main showcase, dimmer so the question stays the focus. */
 .quiz_showcase_sub                         { font: 400 0.95em var(--font); color: var(--muted);
                                              text-align: center; margin: 4px 0 8px;
-                                             letter-spacing: 0.08em;                                                   }
+                                             letter-spacing: 0.08em; min-height: 1.5em;                                }
+.quiz_showcase_sub_empty                   { visibility: hidden;                                                       }
 .quiz_showcase_sub .quiz_sub_label         { color: var(--muted-dim); font-weight: 600;
                                              text-transform: uppercase; letter-spacing: 0.06em;
                                              font-size: 0.85em; margin-right: 4px;                                     }

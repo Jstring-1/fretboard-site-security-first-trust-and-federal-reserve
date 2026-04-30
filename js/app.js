@@ -1453,6 +1453,62 @@
     return '<span class="ks_fingers">' + html + '</span>';
   }
 
+  // Render a treble-clef staff with `count` sharps or flats laid out in
+  // canonical order. Uses inline SVG for the staff lines + Unicode glyphs
+  // (𝄞, ♯, ♭) for the clef and accidentals — the latter two render in
+  // every modern OS without a custom font dependency.
+  function keySigStaffSvg(count, direction) {
+    const isFlat = direction === 'down';
+    // Treble-clef staff y-positions (line spacing 6px). Lines 1–5 from
+    // bottom to top. Spaces are halfway between adjacent lines.
+    const LINE_5 = 8;   // F5 (top line)        SPACE_4 = 11   E5 (top space)
+    const LINE_4 = 14;  // D5                   SPACE_3 = 17   C5
+    const LINE_3 = 20;  // B4 (middle line)     SPACE_2 = 23   A4
+    const LINE_2 = 26;  // G4                   SPACE_1 = 29   F4
+    const LINE_1 = 32;  // E4 (bottom line)
+    const ABOVE_5 = 5;  // G5 (above the staff)
+    // Canonical sharp positions: F♯ C♯ G♯ D♯ A♯ E♯ B♯
+    const SHARP_Y = [LINE_5, 17, ABOVE_5, LINE_4, 23, 11, LINE_3];
+    // Canonical flat positions: B♭ E♭ A♭ D♭ G♭ C♭ F♭
+    const FLAT_Y  = [LINE_3, 11, 23, LINE_4, LINE_2, 17, 29];
+    const yList   = isFlat ? FLAT_Y : SHARP_Y;
+    const symbol  = isFlat ? '♭' : '♯';
+
+    const cleffW = 12;
+    const accW   = 6;
+    const padR   = 4;
+    const totalW = cleffW + count * accW + padR;
+    const totalH = 38;
+
+    let s = '<svg class="ks_staff" viewBox="0 0 ' + totalW + ' ' + totalH
+          + '" width="' + totalW + '" height="' + totalH + '" aria-hidden="true">';
+    // 5 staff lines
+    for (let i = 0; i < 5; i++) {
+      const y = LINE_5 + i * 6;
+      s += '<line x1="0" y1="' + y + '" x2="' + totalW + '" y2="' + y
+        +  '" stroke="currentColor" stroke-width="0.7"/>';
+    }
+    // Treble clef glyph — relies on system music-symbol fonts. Worst case
+    // it shows as a missing-glyph box but the staff + accidentals still
+    // convey the key signature.
+    s += '<text x="-1" y="' + (LINE_1 + 2)
+      +  '" font-family="\'Noto Music\',\'Bravura\',\'Segoe UI Symbol\',\'Apple Symbols\',serif"'
+      +  ' font-size="26" fill="currentColor">𝄞</text>';
+    // Accidentals
+    for (let i = 0; i < count; i++) {
+      const yMid = yList[i];
+      const x = cleffW + i * accW;
+      // ♯ has its visual center near baseline-3, ♭ near baseline-2; nudge
+      // the y so the glyph straddles the target staff position.
+      const yText = isFlat ? yMid + 2 : yMid + 3.5;
+      s += '<text x="' + x + '" y="' + yText
+        +  '" font-size="10.5" fill="currentColor" font-family="serif">'
+        +  symbol + '</text>';
+    }
+    s += '</svg>';
+    return s;
+  }
+
   function renderKeySignatures(x) {
     const root = document.getElementById('key_signatures_root');
     if (!root) return;
@@ -1462,6 +1518,7 @@
       h +=   '<table class="ks_table"><thead><tr>'
         +    '<th class="ks_key">Key</th>'
         +    '<th class="ks_sig">Signature</th>'
+        +    '<th class="ks_staff" aria-label="Staff notation"></th>'
         +    '<th class="ks_hands" aria-label="Hand signal"></th>'
         +    '<th class="ks_notes">Accidentals</th>'
         +    '</tr></thead><tbody>';
@@ -1475,6 +1532,9 @@
         h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
           +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
         h += '<td class="ks_sig">' + escHtml(sig) + '</td>';
+        h += '<td class="ks_staff">'
+          +  keySigStaffSvg(r.count, rows === KEY_SIGS_FLAT ? 'down' : 'up')
+          +  '</td>';
         const fingers = r.count > 0
           ? fingerSvg(r.count, rows === KEY_SIGS_FLAT ? 'down' : 'up')
           : '';
@@ -2957,11 +3017,17 @@
     let h = '<div class="quiz_card">';
     h += '<div class="quiz_prompt">' + escHtml(q.prompt) + '</div>';
     h += '<div class="quiz_showcase">' + escHtml(q.showcase) + '</div>';
+    // Reserve the showcase-sub slot every render — even when there's no
+    // sub text — so questions that DO carry a "In key of …" line don't
+    // bump the choices down and re-flow the page on appearance.
+    h += '<div class="quiz_showcase_sub' + (q.showcaseSub ? '' : ' quiz_showcase_sub_empty') + '">';
     if (q.showcaseSub) {
-      h += '<div class="quiz_showcase_sub">'
-        + (q.showcaseSubLabel ? '<span class="quiz_sub_label">' + escHtml(q.showcaseSubLabel) + ':</span> ' : '')
-        + escHtml(q.showcaseSub) + '</div>';
+      h += (q.showcaseSubLabel ? '<span class="quiz_sub_label">' + escHtml(q.showcaseSubLabel) + ':</span> ' : '')
+         + escHtml(q.showcaseSub);
+    } else {
+      h += '&nbsp;';
     }
+    h += '</div>';
     h += '<div class="quiz_choices">';
     q.choices.forEach(function (c) {
       h += '<button type="button" class="quiz_choice">' + escHtml(c) + '</button>';
