@@ -1131,17 +1131,20 @@
       const target = s.getAttribute('data-summary-for');
       // Sections that don't need the Key picker / Clear button:
       //   section_5 = nested tunings list (no chord-state context)
-      //   section_8 = tab editor (its own controls bar handles state)
-      if (target === 'section_5' || target === 'section_8' || target === 'section_9') { s.innerHTML = ''; return; }
+      //   section_9 = key signatures (read-only reference)
+      if (target === 'section_5' || target === 'section_9') { s.innerHTML = ''; return; }
+      // Tab editor (section_8) gets just the staff-hover toggle — no key
+      // picker / Clear, since tab state is managed inside the editor.
+      if (target === 'section_8') { s.innerHTML = staffHoverToggleHtml(target); return; }
       // Chord (section_3) + Scale (section_6) builders: prepend the
       // compact-mode icon toggle just before the Clear / Key picker.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
       // Sections with hoverable note cells (fretboard, keyboard, chord
-      // grid, scale grid) get the staff-on-hover toggle. Toggling from
-      // any of them flips the same global state.
+      // grid, scale grid) get their own staff-on-hover toggle. Each one
+      // controls only its own section's popover behaviour.
       if (target === 'section_2' || target === 'section_3'
           || target === 'section_4' || target === 'section_6') {
-        prefix = staffHoverToggleHtml() + prefix;
+        prefix = staffHoverToggleHtml(target) + prefix;
       }
       s.innerHTML = prefix + html;
     });
@@ -1257,26 +1260,38 @@
     }
   }
   // ---------- Staff-on-hover toggle + popover ----------
-  // Local-only display preference: when on, hovering anything carrying a
-  // data-note attribute (fretboard cells, piano keys, chord/scale grid
-  // cells) shows a small staff-notation popover near the cursor.
-  let _showStaffOnHover = false;
-  try { _showStaffOnHover = localStorage.getItem('sf_staff_hover') === '1'; } catch (e) {}
-  function setStaffOnHover(v) {
-    _showStaffOnHover = !!v;
-    try { localStorage.setItem('sf_staff_hover', _showStaffOnHover ? '1' : '0'); } catch (e) {}
+  // Per-section preference: each section's ♪ button toggles only that
+  // section's hover-staff behaviour, so users can flip notation on for
+  // (say) the fretboard without it firing across the whole site.
+  let _staffSections = new Set();
+  try {
+    const stored = localStorage.getItem('sf_staff_hover_sections');
+    if (stored) JSON.parse(stored).forEach(function (id) { _staffSections.add(id); });
+  } catch (e) {}
+  function setStaffOnHover(targetSection, v) {
+    if (v) _staffSections.add(targetSection); else _staffSections.delete(targetSection);
+    try { localStorage.setItem('sf_staff_hover_sections', JSON.stringify([..._staffSections])); } catch (e) {}
     if (window.SF_X) renderSummaryExtras(window.SF_X);
-    if (!_showStaffOnHover) hideStaffTooltip();
+    // Notify the tab editor so it can re-render its own toggle button.
+    if (window.SF_TabHover && typeof window.SF_TabHover.refresh === 'function') {
+      window.SF_TabHover.refresh();
+    }
+    if (_staffSections.size === 0) hideStaffTooltip();
   }
-  function staffHoverToggleHtml() {
-    const on = _showStaffOnHover;
+  // Exposed so tab.js (and any other module) can ask whether its section
+  // should render the popover for hovered notes.
+  window.SF_StaffHover = {
+    isOn: function (sectionId) { return _staffSections.has(sectionId); },
+    set:  setStaffOnHover
+  };
+  function staffHoverToggleHtml(targetSection) {
+    const on = _staffSections.has(targetSection);
     const title = on
-      ? 'Staff hover on — click to hide note popovers'
-      : 'Staff hover off — click to show staff notation on hover';
-    // ♪ glyph reads as "music notation"; same on-state styling pattern
-    // as the compact-grid button.
+      ? 'Staff hover on for this section — click to hide popovers here'
+      : 'Staff hover off — click to show staff notation when hovering this section';
     return '<button type="button" class="section_staff' + (on ? ' section_staff_on' : '')
-         + '" title="' + escAttr(title) + '" aria-label="' + escAttr(title)
+         + '" data-staff-target="' + escAttr(targetSection) + '"'
+         + ' title="' + escAttr(title) + '" aria-label="' + escAttr(title)
          + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
          + '<span class="staff_icon" aria-hidden="true">♪</span>'
          + '</button>';
@@ -1345,29 +1360,35 @@
     tip.style.top  = y + 'px';
     tip.style.display = 'block';
   }
+  // Returns the section ID containing the given element, or null. Used to
+  // gate the popover so each section's ♪ toggle controls only its own
+  // hover behaviour.
+  function _staffSectionFor(el) {
+    const sec = el && el.closest && el.closest('.section');
+    return sec ? sec.id : null;
+  }
+  function _shouldShowStaffFor(cell) {
+    const sectionId = _staffSectionFor(cell);
+    return !!(sectionId && _staffSections.has(sectionId));
+  }
   function bindStaffHover() {
     if (document.body._staffHoverBound) return;
     document.body._staffHoverBound = true;
     document.body.addEventListener('mouseover', function (e) {
-      if (!_showStaffOnHover) return;
       const cell = e.target.closest && e.target.closest('[data-note]');
-      if (!cell) { hideStaffTooltip(); return; }
+      if (!cell || !_shouldShowStaffFor(cell)) { hideStaffTooltip(); return; }
       showStaffTooltip(cell.getAttribute('data-note'), e.clientX, e.clientY);
     });
     document.body.addEventListener('mousemove', function (e) {
-      if (!_showStaffOnHover || !_staffTooltipEl
-          || _staffTooltipEl.style.display === 'none') return;
+      if (!_staffTooltipEl || _staffTooltipEl.style.display === 'none') return;
       const cell = e.target.closest && e.target.closest('[data-note]');
-      if (!cell) { hideStaffTooltip(); return; }
+      if (!cell || !_shouldShowStaffFor(cell)) { hideStaffTooltip(); return; }
       const x = Math.min(e.clientX + 18, window.innerWidth - 80);
       const y = Math.min(e.clientY + 18, window.innerHeight - 70);
       _staffTooltipEl.style.left = x + 'px';
       _staffTooltipEl.style.top  = y + 'px';
     });
     document.body.addEventListener('mouseout', function (e) {
-      if (!_showStaffOnHover) return;
-      // Only hide when leaving the cell entirely (not when crossing into
-      // a child element of the cell).
       if (!e.relatedTarget || !e.relatedTarget.closest('[data-note]')) {
         hideStaffTooltip();
       }
@@ -1379,7 +1400,8 @@
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
-      setStaffOnHover(!_showStaffOnHover);
+      const target = btn.getAttribute('data-staff-target');
+      if (target) setStaffOnHover(target, !_staffSections.has(target));
     }, true);
   }
 
