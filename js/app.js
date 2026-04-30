@@ -891,7 +891,11 @@
       if (on) {
         const bg = HL_PILL_COLORS[ab] || '#888';
         const fg = HL_PILL_LIGHT_TEXT[ab] ? '#fff' : '#000';
-        style = ' style="background:' + bg + ';color:' + fg + ';border-color:' + bg + ';"';
+        // !important on every property — the base .hl_pill rule and the
+        // global a:link rule both use !important, which would otherwise
+        // win over the inline declaration.
+        style = ' style="background:' + bg + ' !important;color:' + fg
+              + ' !important;border-color:' + bg + ' !important;"';
       }
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>'
         + escHtml(a) + escHtml(EXTENSIONS[i]) + '</a>';
@@ -944,7 +948,8 @@
       if (on) {
         const bg = HL_PILL_COLORS[ab] || '#888';
         const fg = HL_PILL_LIGHT_TEXT[ab] ? '#fff' : '#000';
-        style = ' style="background:' + bg + ';color:' + fg + ';border-color:' + bg + ';"';
+        style = ' style="background:' + bg + ' !important;color:' + fg
+              + ' !important;border-color:' + bg + ' !important;"';
       }
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>' + escHtml(note) + '</a>';
     });
@@ -2755,17 +2760,45 @@
     if (fbHost) fbHost.innerHTML = html;
     if (kbHost) kbHost.innerHTML = html;
 
-    // Wire +N pills (delegated, idempotent)
+    // Wire +N pills + anchor-scroll for any link click inside the strip
+    // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
+    // shrinks the strip, which lets every section above it slide up — and
+    // the user sees the page jump toward the URL bar.
     [fbHost, kbHost].forEach(function (host) {
       if (!host || host._extrasBound) return;
       host._extrasBound = true;
+      const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
+        // +N extras pill — local toggle, no navigation.
         const pill = e.target.closest && e.target.closest('.identify_pill');
-        if (!pill) return;
+        if (pill) {
+          e.preventDefault();
+          e.stopPropagation();
+          const lbl = pill.getAttribute('data-extras');
+          setIdentifyExtras(lbl === 'All' ? Infinity : +lbl);
+          return;
+        }
+        // Any link inside the strip (Clear picks, chord chips). Capture the
+        // anchor's viewport position before the URL change and adjust scroll
+        // afterward so the section the user is interacting with stays put.
+        const link = e.target.closest && e.target.closest('a');
+        if (!link) return;
+        let url;
+        try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+        if (url.origin !== window.location.origin) return;
+        if (url.pathname !== window.location.pathname) return;
         e.preventDefault();
-        e.stopPropagation();   // keep the link interceptor from navigating
-        const lbl = pill.getAttribute('data-extras');
-        setIdentifyExtras(lbl === 'All' ? Infinity : +lbl);
+        e.stopPropagation();
+        const anchorEl = document.querySelector(anchorSel);
+        const before = anchorEl ? anchorEl.getBoundingClientRect().top : null;
+        navigateTo(url.search || '?');
+        if (before !== null) {
+          const el = document.querySelector(anchorSel);
+          if (el) {
+            const delta = el.getBoundingClientRect().top - before;
+            if (delta) window.scrollBy(0, delta);
+          }
+        }
       });
     });
   }
