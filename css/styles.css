@@ -202,7 +202,11 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:8px;     overflow:hidden;                                }
 /* Keyboard sits on a grey piano-body inside the dark section frame —
    matches the fretboard's tabletop colour. */
-.ritz                                      {  background-color:#a8a8a8; padding:0; border-radius:6px; margin:0 6px;   }
+/* Keyboard tabletop also uses the dark grout look — bg #555 shows through
+   between cells via the table's 1px border-spacing. The cells themselves
+   keep their own bg colors (white keys, black keys, label rows). */
+.ritz                                      {  background-color:#555555; padding:0; border-radius:6px; margin:0 6px;   }
+.ritz .waffle                              {  border-spacing: 1px; border-collapse: separate;                         }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
 /* White-key cells (A B C D E F G) get a thin grey vertical border between
@@ -746,9 +750,11 @@ select option                              { color: var(--text); background: var
    flipped chord / scale grids. Their tabletop is #a8a8a8; #2e2e2e on top
    reads as black, so step it up to a light grey that just hints at the
    cell edges. */
-#fretboard, #fretboard td,
-#chord_grid, #chord_grid td,
-#scale_grid, #scale_grid td                { border-color: #555555 !important;                                        }
+/* Cells get no individual border — the table bg shows through the 1px
+   border-spacing as a thin dark grout between every cell. */
+#fretboard td,
+#chord_grid td, #scale_grid td             { border: 0 !important;                                                   }
+#fretboard, #chord_grid, #scale_grid       { border: 0 !important;                                                   }
 /* Cells without an explicit background (chord/scale name labels and degree
    header rows) need one too so they don't show through as the dark grout. */
 #chord_grid .cg_chord_label, #chord_grid .cg_deg_header,
