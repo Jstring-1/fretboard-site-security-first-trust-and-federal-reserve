@@ -202,11 +202,10 @@ table td                                   {  vertical-align:middle;            
                                            {  border-radius:8px;     overflow:hidden;                                }
 /* Keyboard sits on a grey piano-body inside the dark section frame —
    matches the fretboard's tabletop colour. */
-/* Keyboard tabletop also uses the dark grout look — bg #555 shows through
-   between cells via the table's 1px border-spacing. The cells themselves
-   keep their own bg colors (white keys, black keys, label rows). */
-.ritz                                      {  background-color:#555555; padding:0; border-radius:6px; margin:0 6px;   }
-.ritz .waffle                              {  border-spacing: 1px; border-collapse: separate;                         }
+/* Keyboard keeps its piano-look borders + tabletop colour — the grid grout
+   treatment doesn't fit because the cells aren't rounded and rectangular
+   keys would look weird with grout between them. */
+.ritz                                      {  background-color:#a8a8a8; padding:0; border-radius:6px; margin:0 6px;   }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
 /* White-key cells (A B C D E F G) get a thin grey vertical border between
@@ -248,8 +247,8 @@ table td                                   {  vertical-align:middle;            
 .ritz .waffle .s17, .ritz .waffle .s18, .ritz .waffle .s19,
 .ritz .waffle .s23, .ritz .waffle .s25, .ritz .waffle .s26, .ritz .waffle .s27,
 .ritz .waffle .s28, .ritz .waffle .s29, .ritz .waffle .s30
-                                           {  background-color:#a8a8a8 !important; color:#111 !important;              }
-.ritz .waffle .s12, .ritz .waffle .s22     {  color:#111 !important;                                                   }
+                                           {  background-color:#a8a8a8 !important; color:#666 !important;              }
+.ritz .waffle .s12, .ritz .waffle .s22     {  color:#666 !important;                                                   }
 .nut                                       {  border-right:8px solid #5a5a5a !important;                             }
 .nut1                                      {  border-left:8px solid #5a5a5a !important;                              }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
@@ -685,12 +684,15 @@ select option                              { color: var(--text); background: var
    (which sets these cells to bg:#000 with !important). Labels, separators,
    trailing spacers and instrument-range cells become white; the black-key
    cells (s33/s36/s38/s41/s43/s44/s45) stay dark. */
+/* Non-piano-key rows (Octaves, Steel Gauges, EQ band, Frequency Hz,
+   Instrument Ranges, label cells) — text dimmed to a medium grey so the
+   actual piano keys read as the focal point of the section. */
 .ritz .waffle .s0, .ritz .waffle .s10, .ritz .waffle .s11, .ritz .waffle .s12,
 .ritz .waffle .s20, .ritz .waffle .s21, .ritz .waffle .s22, .ritz .waffle .s24,
 .ritz .waffle .s31, .ritz .waffle .s46, .ritz .waffle .s54, .ritz .waffle .s55,
 .ritz .waffle .s56, .ritz .waffle .s57, .ritz .waffle .s59, .ritz .waffle .s61 {
     background-color:#a8a8a8 !important;
-    color:#111 !important;
+    color:#666 !important;
 }
 
 /* Footer "Jimmy Witherfork Strikes Again" — sits on the dark page bg */
