@@ -377,6 +377,34 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_6"] #scale_grid tr     {  height: 16px !important;                                       }
     body[data-print="section_6"] #scale_grid td     {  padding:1px 2px !important; line-height: 1.1 !important;       }
     body[data-print="section_6"] .cg_corner_label   {  font-size: 0.85em !important;                                  }
+
+    /* ===== Section 9: Key Signatures =====
+       Two panels side-by-side × 8 rows each. Tighten padding + font so
+       both panels fit on a single landscape page without the second
+       page wrapping. */
+    body[data-print="section_9"] .ks_grid           {  gap: 8px !important;                                            }
+    body[data-print="section_9"] .ks_panel          {  background: none !important; border: 1px solid #888 !important;
+                                                       break-inside: avoid; page-break-inside: avoid;                   }
+    body[data-print="section_9"] .ks_panel_title    {  background: none !important; padding: 4px 8px !important;
+                                                       font-size: 0.85em !important;                                    }
+    body[data-print="section_9"] .ks_table          {  font-size: 0.78em !important;                                    }
+    body[data-print="section_9"] .ks_table thead th {  padding: 3px 6px !important;                                     }
+    body[data-print="section_9"] .ks_table tbody td {  padding: 2px 6px !important;                                     }
+    body[data-print="section_9"] .ks_table .ks_key  {  width: 60px !important;                                          }
+    body[data-print="section_9"] .ks_table .ks_key .ks_major
+                                                    {  display: none !important;                                        }
+    body[data-print="section_9"] .ks_table .ks_sig_count   {  width: 18px !important; padding-left: 4px !important;     }
+    body[data-print="section_9"] .ks_table .ks_sig_staff   {  width: 36px !important;                                   }
+    body[data-print="section_9"] .ks_table .ks_sig_hand    {  width: 30px !important; padding-right: 4px !important;    }
+    body[data-print="section_9"] .ks_staff          {  transform: scale(0.6) !important;                                }
+    body[data-print="section_9"] .ks_hand           {  width: 14px !important; height: 14px !important;
+                                                       background-size: 70px 14px !important;                           }
+    body[data-print="section_9"] .ks_hand_1         {  background-position:    0 0 !important;                           }
+    body[data-print="section_9"] .ks_hand_2         {  background-position: -14px 0 !important;                          }
+    body[data-print="section_9"] .ks_hand_3         {  background-position: -28px 0 !important;                          }
+    body[data-print="section_9"] .ks_hand_4         {  background-position: -42px 0 !important;                          }
+    body[data-print="section_9"] .ks_hand_5         {  background-position: -56px 0 !important;                          }
+    body[data-print="section_9"] .ks_help           {  display: none !important;                                        }
 }
 
 /* Outside @media print so the property carries into the print render reliably */
