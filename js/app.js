@@ -1135,7 +1135,14 @@
       if (target === 'section_5' || target === 'section_8' || target === 'section_9') { s.innerHTML = ''; return; }
       // Chord (section_3) + Scale (section_6) builders: prepend the
       // compact-mode icon toggle just before the Clear / Key picker.
-      const prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
+      let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
+      // Sections with hoverable note cells (fretboard, keyboard, chord
+      // grid, scale grid) get the staff-on-hover toggle. Toggling from
+      // any of them flips the same global state.
+      if (target === 'section_2' || target === 'section_3'
+          || target === 'section_4' || target === 'section_6') {
+        prefix = staffHoverToggleHtml() + prefix;
+      }
       s.innerHTML = prefix + html;
     });
   }
@@ -1249,6 +1256,133 @@
                                           // freshly rendered key pickers
     }
   }
+  // ---------- Staff-on-hover toggle + popover ----------
+  // Local-only display preference: when on, hovering anything carrying a
+  // data-note attribute (fretboard cells, piano keys, chord/scale grid
+  // cells) shows a small staff-notation popover near the cursor.
+  let _showStaffOnHover = false;
+  try { _showStaffOnHover = localStorage.getItem('sf_staff_hover') === '1'; } catch (e) {}
+  function setStaffOnHover(v) {
+    _showStaffOnHover = !!v;
+    try { localStorage.setItem('sf_staff_hover', _showStaffOnHover ? '1' : '0'); } catch (e) {}
+    if (window.SF_X) renderSummaryExtras(window.SF_X);
+    if (!_showStaffOnHover) hideStaffTooltip();
+  }
+  function staffHoverToggleHtml() {
+    const on = _showStaffOnHover;
+    const title = on
+      ? 'Staff hover on — click to hide note popovers'
+      : 'Staff hover off — click to show staff notation on hover';
+    // ♪ glyph reads as "music notation"; same on-state styling pattern
+    // as the compact-grid button.
+    return '<button type="button" class="section_staff' + (on ? ' section_staff_on' : '')
+         + '" title="' + escAttr(title) + '" aria-label="' + escAttr(title)
+         + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
+         + '<span class="staff_icon" aria-hidden="true">♪</span>'
+         + '</button>';
+  }
+  // Single tooltip element reused across all hovers; lives outside the
+  // sections so its positioning is independent of any layout change.
+  let _staffTooltipEl = null;
+  function getStaffTooltip() {
+    if (_staffTooltipEl) return _staffTooltipEl;
+    _staffTooltipEl = document.createElement('div');
+    _staffTooltipEl.id = 'staff_tooltip';
+    document.body.appendChild(_staffTooltipEl);
+    return _staffTooltipEl;
+  }
+  function hideStaffTooltip() {
+    if (_staffTooltipEl) _staffTooltipEl.style.display = 'none';
+  }
+  // Map sharp-form note letter -> staff y-coordinate for the notehead.
+  // Same coordinate space as keySigStaffSvg (top line F5=y8 .. bottom E4=y32).
+  // Naturals chosen to avoid ledger lines in the visible treble-clef range.
+  const STAFF_Y_FOR_LETTER = {
+    'C': 17, 'D': 14, 'E': 11, 'F': 8, 'G': 26, 'A': 23, 'B': 20
+  };
+  // For flats / sharps we render the natural letter's position with a
+  // ♭ or ♯ glyph immediately to the left of the notehead.
+  function noteOnStaffSvg(note) {
+    if (!note) return '';
+    const letter = note.charAt(0);
+    const accidental = note.length > 1
+      ? (note.indexOf('♯') !== -1 ? '♯' : (note.indexOf('♭') !== -1 ? '♭' : ''))
+      : '';
+    const y = STAFF_Y_FOR_LETTER[letter];
+    if (y === undefined) return '';
+    const totalW = 50, totalH = 38;
+    let s = '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" width="' + totalW
+          + '" height="' + totalH + '" aria-hidden="true">';
+    // 5 staff lines
+    for (let i = 0; i < 5; i++) {
+      const ly = 8 + i * 6;
+      s += '<line x1="0" y1="' + ly + '" x2="' + totalW + '" y2="' + ly
+        +  '" stroke="currentColor" stroke-width="0.7"/>';
+    }
+    // Treble clef
+    s += '<text x="-1" y="34" font-family="\'Noto Music\',\'Bravura\',\'Segoe UI Symbol\',\'Apple Symbols\',serif"'
+      +  ' font-size="26" fill="currentColor">𝄞</text>';
+    // Accidental (if any) sits left of the notehead
+    if (accidental) {
+      const ay = accidental === '♭' ? y + 2 : y + 3.5;
+      s += '<text x="28" y="' + ay
+        +  '" font-size="11" fill="currentColor" font-family="serif">' + accidental + '</text>';
+    }
+    // Notehead — filled ellipse, slanted slightly like real notation
+    const ncx = accidental ? 40 : 36;
+    s += '<ellipse cx="' + ncx + '" cy="' + y + '" rx="3.2" ry="2.4" fill="currentColor"'
+      +  ' transform="rotate(-20 ' + ncx + ' ' + y + ')"/>';
+    s += '</svg>';
+    return s;
+  }
+  function showStaffTooltip(note, clientX, clientY) {
+    const tip = getStaffTooltip();
+    tip.innerHTML = noteOnStaffSvg(note) + '<div class="staff_tip_label">' + escHtml(note) + '</div>';
+    // Place near cursor; clamp to viewport so it never gets cut off.
+    const x = Math.min(clientX + 18, window.innerWidth - 80);
+    const y = Math.min(clientY + 18, window.innerHeight - 70);
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+    tip.style.display = 'block';
+  }
+  function bindStaffHover() {
+    if (document.body._staffHoverBound) return;
+    document.body._staffHoverBound = true;
+    document.body.addEventListener('mouseover', function (e) {
+      if (!_showStaffOnHover) return;
+      const cell = e.target.closest && e.target.closest('[data-note]');
+      if (!cell) { hideStaffTooltip(); return; }
+      showStaffTooltip(cell.getAttribute('data-note'), e.clientX, e.clientY);
+    });
+    document.body.addEventListener('mousemove', function (e) {
+      if (!_showStaffOnHover || !_staffTooltipEl
+          || _staffTooltipEl.style.display === 'none') return;
+      const cell = e.target.closest && e.target.closest('[data-note]');
+      if (!cell) { hideStaffTooltip(); return; }
+      const x = Math.min(e.clientX + 18, window.innerWidth - 80);
+      const y = Math.min(e.clientY + 18, window.innerHeight - 70);
+      _staffTooltipEl.style.left = x + 'px';
+      _staffTooltipEl.style.top  = y + 'px';
+    });
+    document.body.addEventListener('mouseout', function (e) {
+      if (!_showStaffOnHover) return;
+      // Only hide when leaving the cell entirely (not when crossing into
+      // a child element of the cell).
+      if (!e.relatedTarget || !e.relatedTarget.closest('[data-note]')) {
+        hideStaffTooltip();
+      }
+    });
+    // Click handler for the toggle button itself (delegated so it survives
+    // each render of summary_extras).
+    document.body.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.section_staff');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setStaffOnHover(!_showStaffOnHover);
+    }, true);
+  }
+
   // Icon button for the section header — same shape as section_print/help.
   // Two SVGs: "stacked rows" when on (click spreads), "spread grid" when off
   // (click compacts). Lives inside summary_extras so the existing
@@ -3089,6 +3223,7 @@
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindNotePick();          // click fret cells / keyboard keys to pick notes
+    bindStaffHover();        // staff-notation popover when toggle is on
     renderIdentifyStrips(x); // chord-identify strips below fretboard + keyboard
     applyPrintColors();
 

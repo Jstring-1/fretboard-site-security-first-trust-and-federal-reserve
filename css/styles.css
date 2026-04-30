@@ -816,6 +816,31 @@ select option                              { color: var(--text); background: var
 .section_compact_on                        { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
 .section_compact_on:hover                  { background: var(--accent-hi); border-color: #fff;                       }
 .section_compact svg                       { fill: currentColor; display: block;                                     }
+
+/* Staff-hover toggle button: same chip shape as the compact toggle.
+   When on, hovering anything with data-note shows a small staff popover. */
+.section_staff                             { display: inline-flex; align-items: center; justify-content: center;
+                                             width: 28px; height: 22px; padding: 0; margin-right: 4px;
+                                             vertical-align: middle; border-radius: 6px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             font: 600 1em var(--font); cursor: pointer;                              }
+.section_staff:hover                       { background: rgba(255,255,255,0.4); border-color: #fff;                  }
+.section_staff_on                          { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
+.section_staff_on:hover                    { background: var(--accent-hi); border-color: #fff;                       }
+.section_staff .staff_icon                 { line-height: 1; font-size: 1.1em;                                       }
+
+/* Hover popover that shows the note as staff notation. Floats by the
+   cursor; pointer-events:none so it doesn't block underlying clicks. */
+#staff_tooltip                             { position: fixed; display: none; z-index: 9999;
+                                             pointer-events: none;
+                                             background: var(--surface-head); color: var(--text);
+                                             border: 1px solid #5a5a5a; border-radius: 6px;
+                                             padding: 4px 6px;
+                                             box-shadow: 0 6px 18px rgba(0,0,0,0.5);                                  }
+#staff_tooltip svg                         { display: block;                                                          }
+#staff_tooltip .staff_tip_label            { text-align: center; font: 600 0.78em var(--font);
+                                             color: var(--accent-hi); margin-top: 2px;                                }
 /* In compact mode each row has a different filled-cell count, but every
    cell keeps a fixed width so the populated cells still line up vertically
    across rows even though the row's total length varies. */
