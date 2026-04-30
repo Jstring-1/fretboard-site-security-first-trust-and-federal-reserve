@@ -754,21 +754,34 @@
     updateCaptureUI();
   }
 
+  // Backspace: each click steps the cursor back by `step` and erases
+  // whatever sits at the cell now under the cursor. Repeating walks
+  // backward through the row, deleting one entry per click.
   function backCapture() {
-    if (capture.lastWritten) {
-      var lw = capture.lastWritten;
-      var key = lw.row + '_' + lw.col;
-      if (lw.prev) state.cells[key] = lw.prev;
-      else         delete state.cells[key];
-      var inp = grid && grid.querySelector('input[data-r="' + lw.row + '"][data-c="' + lw.col + '"]');
-      if (inp) inp.value = lw.prev || '';
-      capture.cursorCol = lw.col;
+    if (capture.cursorCol === 0) {
+      // At the start of the row already — nothing to step back to. Erase
+      // the very first cell if it has content; otherwise no-op.
+      var k0 = capture.cursorRow + '_0';
+      if (state.cells[k0]) {
+        delete state.cells[k0];
+        var inp0 = grid && grid.querySelector('input[data-r="' + capture.cursorRow + '"][data-c="0"]');
+        if (inp0) inp0.value = '';
+        saveLocal();
+      }
       capture.lastWritten = null;
-      saveLocal();
       updateCaptureUI();
       return;
     }
-    capture.cursorCol = Math.max(0, capture.cursorCol - capture.step);
+    var newCol = Math.max(0, capture.cursorCol - capture.step);
+    capture.cursorCol = newCol;
+    var key = capture.cursorRow + '_' + newCol;
+    if (state.cells[key]) {
+      delete state.cells[key];
+      var inp = grid && grid.querySelector('input[data-r="' + capture.cursorRow + '"][data-c="' + newCol + '"]');
+      if (inp) inp.value = '';
+      saveLocal();
+    }
+    capture.lastWritten = null;
     updateCaptureUI();
   }
 
