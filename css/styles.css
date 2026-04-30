@@ -788,19 +788,26 @@ select option                              { color: var(--text); background: var
    interceptor re-renders in place (no scroll jump). On-state pills are
    coloured per-degree via inline styles set by highlightPillsLinkHtml. */
 /* Both pill rows (notes + degrees) use the same 12-column grid so each
-   note pill sits directly above its matching degree pill. The single
-   All / None pair below them sits in its own centred row. */
+   note pill sits directly above its matching degree pill. Stacked tightly
+   with no padding between rows — they read as one block. */
 .opt_row_highlights.kb_hl_row,
 .opt_row_highlights.fb_hl_row,
 .opt_row_notes.kb_hn_row,
 .opt_row_notes.fb_hn_row                   { display: grid;
-                                             grid-template-columns: repeat(12, minmax(28px, 1fr));
+                                             grid-template-columns: repeat(12, 44px);
+                                             justify-content: center;
                                              align-items: center; gap: 4px;
-                                             padding: 4px 14px; line-height: 1;
+                                             padding: 1px 14px; line-height: 1;
                                              background: transparent; border-radius: 0;                               }
-/* Shared All / None row — flex, centred. */
+/* Shared All / None row — flex, centred. Inherits .hl_pill styling so the
+   buttons match the pill rows above. */
 .opt_row_allnone                           { display: flex; gap: 6px; justify-content: center;
                                              padding: 4px 14px; line-height: 1;                                       }
+.opt_row_allnone a.hl_pill                 { display: inline-block; padding: 3px 12px; font-size: 0.85em;
+                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
+                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
+                                             text-decoration: none; transition: background .12s, border-color .12s; }
+.opt_row_allnone a.hl_pill:hover           { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
 /* Wrap the keyboard's mirror controls in the same padded container as the
    fretboard form (#tunings_drop), so the highlight strip + chord/scale
    chip rows have matching side margins and a consistent gap below. */
