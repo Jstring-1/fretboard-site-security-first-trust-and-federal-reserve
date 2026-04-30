@@ -268,25 +268,41 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
 .tcap_status                               { color: var(--muted); font-size: 0.82em; margin-left: auto;
                                              font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;}
 
-/* Mini-fretboard table */
+/* Mini-fretboard table — styled to match the main site grids: dark
+   "grout" between cells, light tabletop, fret markers + nut indicator
+   identical to the main fretboard. Each cell stacks three lines: the
+   fret number on top, the resulting note in the middle, and the degree
+   relative to the current site key on the bottom. */
 #tab_mini_fretboard                        { overflow-x: auto; -webkit-overflow-scrolling: touch;
                                              margin: 6px 0 0;                                                       }
 .tcap_board                                { border-collapse: separate; border-spacing: 1px;
-                                             background: #555; border-radius: 4px;                                  }
+                                             background: #555; border-radius: 4px;
+                                             font-family: var(--font);                                              }
 .tcap_board td                             { background: #a8a8a8; color: #111;
-                                             min-width: 26px; height: 22px; padding: 0 4px;
-                                             text-align: center; font-size: 0.78em;
-                                             font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;}
-.tcap_board .tcap_label                    { background: #d5d5d5; font-weight: 700;                                  }
-.tcap_board tr.tcap_frets td               { background: transparent; color: var(--muted);                          }
-/* Marker frets (3, 5, 7, 9, 12) read full-strength; the in-between ones
-   render muted via .fret_minor — same convention as the main fretboard. */
-.tcap_board tr.tcap_frets .fret_minor      { font-size: 0.85em; color: #444; opacity: 0.55;                          }
+                                             min-width: 36px; height: 38px; padding: 1px 2px;
+                                             text-align: center; font-size: 0.72em; line-height: 1.05;
+                                             vertical-align: middle;                                                  }
+/* Halved widths for the leftmost label column (string letter) and the
+   second-from-left column (open / nut). */
+.tcap_board .tcap_label                    { width: 18px; min-width: 18px; padding: 0 2px;
+                                             background: #d5d5d5; font-weight: 700; font-size: 0.85em;
+                                             color: #1a1a1a;                                                       }
+.tcap_board td.tcap_nut                    { width: 18px; min-width: 18px; padding: 0 1px;
+                                             border-right: 4px solid #2a2a2a;                                      }
+/* Header row: just fret numbers, no stacked content. */
+.tcap_board tr.tcap_frets td               { background: transparent; color: var(--muted); height: 18px;
+                                             padding: 2px 0; font-size: 0.78em; font-weight: 600;                  }
+.tcap_board tr.tcap_frets .fret_minor      { font-size: 0.85em; color: #555; opacity: 0.5; font-weight: 400;        }
+/* Stacked cell content: number on top, note in the middle, degree below. */
 .tcap_board td.tcap_cell                   { cursor: pointer;                                                       }
-.tcap_board td.tcap_cell:hover             { background: #ffeb00; color: #1a1a00;                                   }
-/* Nut indicator — a thicker right-edge on the open-string column, same
-   visual cue the main fretboard uses to mark fret 0 / nut. */
-.tcap_board td.tcap_nut                    { border-right: 4px solid #2a2a2a;                                       }
+.tcap_board td.tcap_cell > span            { display: block; line-height: 1.05;                                    }
+.tcap_fret_num                             { font-size: 0.75em; color: #555; font-weight: 600;                     }
+.tcap_fret_note                            { font-size: 1em; color: #111; font-weight: 700;                        }
+.tcap_fret_deg                             { font-size: 0.7em; color: #555;                                        }
+.tcap_board td.tcap_cell:hover             { background: var(--accent-hi);                                          }
+.tcap_board td.tcap_cell:hover .tcap_fret_num,
+.tcap_board td.tcap_cell:hover .tcap_fret_note,
+.tcap_board td.tcap_cell:hover .tcap_fret_deg { color: #001014;                                                     }
 
 /* Active tab cursor cell — green outline so the user always knows where the
    next captured fret will land. */

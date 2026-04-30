@@ -3108,6 +3108,11 @@
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindNotePick();          // click fret cells / keyboard keys to pick notes
+    if (window.SF_TabCapture && typeof window.SF_TabCapture.refresh === 'function') {
+      // Site key may have changed — re-render the tab capture mini-fretboard
+      // so its degree labels reflect the new key.
+      window.SF_TabCapture.refresh();
+    }
     renderIdentifyStrips(x); // chord-identify strips below fretboard + keyboard
     applyPrintColors();
 

@@ -622,30 +622,56 @@
     return state.measures * state.beats * state.subdiv;
   }
 
+  // Helpers for the rich cell labels (fret · note · degree).
+  var DEGREES = (DATA.degrees && DATA.degrees.length === 12)
+    ? DATA.degrees.slice()
+    : ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+  function _noteAtFret(openNote, fret) {
+    var idx = ALLNOTES.indexOf(openNote);
+    if (idx < 0) return '';
+    return ALLNOTES[(idx + fret + 12 * 100) % 12];
+  }
+  function _degreeForNote(note, key) {
+    if (!key || !note) return '';
+    var ki = ALLNOTES.indexOf(key);
+    var ni = ALLNOTES.indexOf(note);
+    if (ki < 0 || ni < 0) return '';
+    return DEGREES[(ni - ki + 12) % 12];
+  }
+  function _siteKey() {
+    return (window.SF_X && window.SF_X.k) || '';
+  }
+
   function renderCaptureBoard() {
     if (!capBoard) return;
     var n = state.strings;
-    // Show frets 0–12. Cells small (~26px wide × 22px tall).
     var FRETS = 12;
     // Standard fretboard markers (3 / 5 / 7 / 9 / 12) read full-strength;
     // every other fret number renders muted via .fret_minor.
     var MARKER_FRETS = { 3: 1, 5: 1, 7: 1, 9: 1, 12: 1 };
+    var siteKey = _siteKey();
     var rows = [];
     for (var r = 0; r < n; r++) {
       var label = state.notes[r] || '—';
+      var openNote = _canonNote(state.notes[r]);
       var cells = '<td class="tcap_label">' + escAttr(label) + '</td>';
       for (var f = 0; f <= FRETS; f++) {
         var nutCls = (f === 0) ? ' tcap_nut' : '';
-        cells += '<td class="tcap_cell' + nutCls + '" data-row="' + r + '" data-fret="' + f + '">'
-              +  f + '</td>';
+        var note = openNote ? _noteAtFret(openNote, f) : '';
+        var deg = _degreeForNote(note, siteKey);
+        var inner = '<span class="tcap_fret_num">' + f + '</span>'
+                  + '<span class="tcap_fret_note">' + (note || ' ') + '</span>'
+                  + '<span class="tcap_fret_deg">' + (deg ? '(' + deg + ')' : ' ') + '</span>';
+        cells += '<td class="tcap_cell' + nutCls + '" data-row="' + r
+              +  '" data-fret="' + f + '">' + inner + '</td>';
       }
       rows.push('<tr data-row="' + r + '">' + cells + '</tr>');
     }
     var fretHead = '<tr class="tcap_frets"><td></td>';
     for (var i = 0; i <= FRETS; i++) {
       var nutHeadCls = (i === 0) ? ' tcap_nut' : '';
-      var label = MARKER_FRETS[i] ? String(i) : '<span class="fret_minor">' + i + '</span>';
-      fretHead += '<td class="' + nutHeadCls.trim() + '">' + label + '</td>';
+      var headLabel = MARKER_FRETS[i] ? String(i) : '<span class="fret_minor">' + i + '</span>';
+      fretHead += '<td class="' + nutHeadCls.trim() + '">' + headLabel + '</td>';
     }
     fretHead += '</tr>';
     capBoard.innerHTML = '<table class="tcap_board">'
@@ -887,6 +913,10 @@
       updateCaptureUI();
     });
   }
+
+  // Allow the host page to nudge the mini-fretboard (e.g. after a site
+  // key change) without re-rendering the whole tab grid.
+  window.SF_TabCapture = { refresh: function () { renderCaptureBoard(); } };
 
   function init() {
     captureDom();
