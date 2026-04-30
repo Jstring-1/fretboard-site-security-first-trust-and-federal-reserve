@@ -765,8 +765,15 @@ select option                              { color: var(--text); background: var
 /* Cells without an explicit background (chord/scale name labels and degree
    header rows) need one too so they don't show through as the dark grout. */
 #chord_grid .cg_chord_label, #chord_grid .cg_deg_header,
-#scale_grid .cg_chord_label, #scale_grid .cg_deg_header
+#scale_grid .cg_chord_label, #scale_grid .cg_deg_header,
+#chord_grid .cg_corner_label, #scale_grid .cg_corner_label
                                            { background-color: #a8a8a8;                                              }
+/* Section-name corner labels in the chord/scale grids — quieter than the
+   degree headers, italic so they read as a note about what the grid is. */
+#chord_grid .cg_corner_label,
+#scale_grid .cg_corner_label               { color: #555; font: italic 600 0.78em var(--font);
+                                             letter-spacing: 0.06em; text-transform: uppercase;
+                                             text-align: center;                                                     }
 #fretboard td, #chord_grid td, #scale_grid td
                                            { border-radius: 3px;                                                      }
 /* Cell spacing so the rounded corners actually show up between neighbours

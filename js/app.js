@@ -1301,13 +1301,14 @@
     const DEG_COLS = ['_1_','_b2_','_2_','_b3_','_3_','_4_','_b5_','_5_','_b6_','_6_','_b7_','_7_'];
 
     function buildDegHeader(idAttr) {
-      let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '><td></td>';
+      let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '>'
+            + '<td class="cg_corner_label">Chords</td>';
       DEG_COLS.forEach(function (degId, i) {
         const note = noteLetters[degId];
         s += '<td class="cg_deg_header" id="' + degId + '">'
            + escHtml(note) + '(' + escHtml(DEGREES[i]) + ')</td>';
       });
-      s += '<td></td></tr>';
+      s += '<td class="cg_corner_label">Chords</td></tr>';
       return s;
     }
 
@@ -1380,13 +1381,14 @@
     }
 
     function buildDegHeader(idAttr) {
-      let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '><td></td>';
+      let s = '<tr' + (idAttr ? ' id="' + idAttr + '"' : '') + '>'
+            + '<td class="cg_corner_label">Scales</td>';
       for (const col of COLS) {
         const note = noteLetters[col.degId];
         s += '<td class="cg_deg_header" id="' + col.degId + '">'
            + escHtml(note) + escHtml(col.intervalLabel) + '</td>';
       }
-      s += '<td></td></tr>';
+      s += '<td class="cg_corner_label">Scales</td></tr>';
       return s;
     }
 
