@@ -1530,7 +1530,7 @@
       h +=   '<div class="ks_panel_title">' + escHtml(title) + '</div>';
       h +=   '<table class="ks_table"><thead><tr>'
         +    '<th class="ks_key">Key</th>'
-        +    '<th class="ks_sig">Signature</th>'
+        +    '<th class="ks_sig" colspan="3">Signature</th>'
         +    '<th class="ks_notes">Accidentals</th>'
         +    '</tr></thead><tbody>';
       // The flats panel starts at 1 flat (F major) but the sharps panel
@@ -1551,14 +1551,13 @@
         h += '<tr class="' + cls + '">';
         h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
           +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
-        // One Signature cell that carries all three signals — count text,
-        // staff render, hand-signal sprite — laid out inline so the table
-        // reads as a seamless three-column grid.
-        h += '<td class="ks_sig">'
-          +  '<span class="ks_sig_count">' + escHtml(sig) + '</span>'
-          +  '<span class="ks_sig_staff">' + staff + '</span>'
-          +  '<span class="ks_sig_hand">' + fingers + '</span>'
-          +  '</td>';
+        // Three sub-cells under the single "Signature" header — count,
+        // staff, hand. CSS removes the vertical borders between them so
+        // they read as one column even though each piece keeps its own
+        // grid track for vertical alignment across rows.
+        h += '<td class="ks_sig_count">' + escHtml(sig) + '</td>';
+        h += '<td class="ks_sig_staff">' + staff + '</td>';
+        h += '<td class="ks_sig_hand">'  + fingers + '</td>';
         h += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
         h += '</tr>';
       }
