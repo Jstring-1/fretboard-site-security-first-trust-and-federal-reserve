@@ -1111,23 +1111,24 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table .ks_key a                        { color: inherit; text-decoration: none;                                    }
 .ks_table .ks_key a:hover                  { color: var(--accent-hi);                                                  }
 .ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
-.ks_table .ks_sig                          { width: 140px; color: var(--muted); white-space: nowrap;                   }
+.ks_table .ks_sig                          { width: 70px; color: var(--muted); white-space: nowrap;                    }
+.ks_table .ks_hands                        { width: 80px; padding: 2px 12px; vertical-align: middle;                   }
 /* Jazz hand-signal indicator: sprite from img/fingers-{up,down}.png. Each
    sprite is 5 panels side by side (1, 2, 3, 4, 5 fingers). The display
-   size below scales the source 1164×233 sprite down to 180×36 (so each
-   panel = 36×36). Counts 6 / 7 render two .ks_hand spans side by side. */
-.ks_fingers                                { display: inline-flex; align-items: center; gap: 4px;
-                                             vertical-align: middle; margin-left: 8px;                               }
-.ks_hand                                   { display: inline-block; width: 36px; height: 36px;
-                                             background-repeat: no-repeat; background-size: 180px 36px;
+   size below scales the source 1164×233 sprite down to 140×28 (so each
+   panel = 28×28). Counts 6 / 7 render two .ks_hand spans side by side. */
+.ks_fingers                                { display: inline-flex; align-items: center; gap: 0;
+                                             vertical-align: middle;                                                  }
+.ks_hand                                   { display: inline-block; width: 28px; height: 28px;
+                                             background-repeat: no-repeat; background-size: 140px 28px;
                                              flex-shrink: 0;                                                          }
 .ks_hand_up                                { background-image: url(../img/fingers-up.png);                            }
 .ks_hand_down                              { background-image: url(../img/fingers-down.png);                          }
 .ks_hand_1                                 { background-position:    0 0;                                            }
-.ks_hand_2                                 { background-position: -36px 0;                                            }
-.ks_hand_3                                 { background-position: -72px 0;                                            }
-.ks_hand_4                                 { background-position: -108px 0;                                           }
-.ks_hand_5                                 { background-position: -144px 0;                                           }
+.ks_hand_2                                 { background-position:  -28px 0;                                           }
+.ks_hand_3                                 { background-position:  -56px 0;                                           }
+.ks_hand_4                                 { background-position:  -84px 0;                                           }
+.ks_hand_5                                 { background-position: -112px 0;                                           }
 .ks_hand_mirror                            { transform: scaleX(-1);                                                  }
 .ks_table .ks_notes                        { color: var(--text);                                                       }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);

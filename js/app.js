@@ -1377,6 +1377,7 @@
       h +=   '<table class="ks_table"><thead><tr>'
         +    '<th class="ks_key">Key</th>'
         +    '<th class="ks_sig">Signature</th>'
+        +    '<th class="ks_hands" aria-label="Hand signal"></th>'
         +    '<th class="ks_notes">Accidentals</th>'
         +    '</tr></thead><tbody>';
       for (const r of rows) {
@@ -1388,10 +1389,11 @@
         h += '<tr class="' + cls + '">';
         h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
           +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
+        h += '<td class="ks_sig">' + escHtml(sig) + '</td>';
         const fingers = r.count > 0
           ? fingerSvg(r.count, rows === KEY_SIGS_FLAT ? 'down' : 'up')
           : '';
-        h += '<td class="ks_sig">' + escHtml(sig) + fingers + '</td>';
+        h += '<td class="ks_hands">' + fingers + '</td>';
         h += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
         h += '</tr>';
       }
