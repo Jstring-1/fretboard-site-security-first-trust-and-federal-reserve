@@ -1255,19 +1255,20 @@
     const on = _compactGrids;
     const title = on ? 'Compact mode on — click to show empty cells'
                      : 'Compact mode off — click to hide empty cells';
-    const iconStacked = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-                     + '<rect x="2" y="3" width="12" height="2" rx="1"/>'
-                     + '<rect x="2" y="7" width="12" height="2" rx="1"/>'
-                     + '<rect x="2" y="11" width="12" height="2" rx="1"/></svg>';
-    const iconGrid = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
-                  + '<rect x="1" y="1" width="6" height="6" rx="1"/>'
-                  + '<rect x="9" y="1" width="6" height="6" rx="1"/>'
-                  + '<rect x="1" y="9" width="6" height="6" rx="1"/>'
-                  + '<rect x="9" y="9" width="6" height="6" rx="1"/></svg>';
+    // |<-->|  – two outer bars with a horizontal double-headed arrow.
+    // Same icon for both states; the on-state is signalled by the button's
+    // accent-coloured background, not a different icon.
+    const icon = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+              + '<rect x="1" y="3" width="2" height="10"/>'
+              + '<rect x="13" y="3" width="2" height="10"/>'
+              + '<rect x="4.5" y="7.4" width="7" height="1.2"/>'
+              + '<polygon points="6,5 4,8 6,11"/>'
+              + '<polygon points="10,5 12,8 10,11"/>'
+              + '</svg>';
     return '<button type="button" class="section_compact' + (on ? ' section_compact_on' : '')
          + '" title="' + escAttr(title) + '" aria-label="' + escAttr(title)
          + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
-         + (on ? iconGrid : iconStacked)
+         + icon
          + '</button>';
   }
   function bindCompactToggles() {
