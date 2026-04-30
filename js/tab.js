@@ -828,32 +828,30 @@
     capStepUp && capStepUp.addEventListener('click', function () { capture.step = Math.min(16, capture.step + 1); updateCaptureUI(); });
     capStepDn && capStepDn.addEventListener('click', function () { capture.step = Math.max(1, capture.step - 1); updateCaptureUI(); });
 
-    // Click on any tab input → move the cursor there. Lets the user re-position
-    // without using ⏮ / ▶.
+    // Click / focus on a tab input → move the cursor there. Lets the user
+    // re-position without using ⏮ / ▶. If the clicked cell is already
+    // filled, park the cursor one step BEYOND it so a single ⌫ press
+    // walks back onto the cell and erases it.
+    function _placeCursorFromCell(inp) {
+      var r = +inp.getAttribute('data-r');
+      var c = +inp.getAttribute('data-c');
+      if (!isFinite(r) || !isFinite(c)) return;
+      capture.cursorRow = r;
+      if (inp.value) {
+        capture.cursorCol = Math.min(totalCols() - 1, c + capture.step);
+      } else {
+        capture.cursorCol = c;
+      }
+      updateCaptureUI();
+    }
     if (grid) {
       grid.addEventListener('click', function (e) {
         var inp = e.target.closest && e.target.closest('input:not(.tab_label_input)');
-        if (!inp) return;
-        var r = +inp.getAttribute('data-r');
-        var c = +inp.getAttribute('data-c');
-        if (isFinite(r) && isFinite(c)) {
-          capture.cursorRow = r;
-          capture.cursorCol = c;
-          updateCaptureUI();
-        }
+        if (inp) _placeCursorFromCell(inp);
       });
-      // Focus on a tab cell (via Tab key, click, or arrow nav) → cursor
-      // follows. Keeps the green outline pinned to whatever input the
-      // user actually has focused, so arrow keys + click feel unified.
       grid.addEventListener('focusin', function (e) {
-        var inp = e.target;
-        if (!inp.matches || !inp.matches('input:not(.tab_label_input)')) return;
-        var r = +inp.getAttribute('data-r');
-        var c = +inp.getAttribute('data-c');
-        if (isFinite(r) && isFinite(c)) {
-          capture.cursorRow = r;
-          capture.cursorCol = c;
-          updateCaptureUI();
+        if (e.target.matches && e.target.matches('input:not(.tab_label_input)')) {
+          _placeCursorFromCell(e.target);
         }
       });
     }
