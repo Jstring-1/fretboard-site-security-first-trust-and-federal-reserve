@@ -452,24 +452,14 @@
 
   function renderOptions(x) {
     const root = document.getElementById('options_root');
-    const rev = (x.y === 'y') ? 'rev_' : '';
     let h = '<div id="tunings_drop">';
 
-    // y toggle (Low→High vs High→Low) — bg color indicates state
-    const yState = x.y === 'y' ? 'on' : 'off';
-    const yToggleParams = new URLSearchParams(window.location.search);
-    if (x.y !== 'y') yToggleParams.set('y', 'y'); else yToggleParams.delete('y');
-    const yToggleQs = yToggleParams.toString();
-    const yToggleHref = yToggleQs ? '?' + yToggleQs : '?';
-    const yLabel = x.y === 'y' ? 'H→L' : 'L→H';
-    const yTitle = x.y === 'y'
-      ? 'Tunings displayed High → Low. Click to flip to Low → High.'
-      : 'Tunings displayed Low → High. Click to flip to High → Low.';
-
-    // Row 1: tuning picker + y switch (L→H/H→L now sits to the RIGHT of
-    // the picker and is sized smaller so the picker stays the focal point).
+    // Row 1: tuning picker. The string-direction (y) toggle now lives in
+    // the fretboard's bottom row (replacing the open-string "X" marker)
+    // and only flips the row order on the fretboard — the picker label
+    // stays in the canonical low → high order regardless.
     h += '<div class="opt_row opt_row_main">';
-    const curLabel = '(' + x.strs + '-string) ' + x.name + ' — ' + x[rev + 'notes'] + ' — (' + x[rev + 'dgs'] + ')';
+    const curLabel = '(' + x.strs + '-string) ' + x.name + ' — ' + x.notes + ' — (' + x.dgs + ')';
     h += '<div class="tun_picker" id="tun_picker">';
     h +=   '<button type="button" class="tun_picker_btn inputs" id="tun_picker_btn" aria-haspopup="dialog" aria-expanded="false">';
     h +=     '<span class="tun_btn_main">' + escHtml(curLabel) + '</span>';
@@ -480,7 +470,6 @@
     h +=   '</select>';
     h +=   '<div class="tun_pop" id="tun_pop" hidden role="dialog" aria-label="Choose a tuning"></div>';
     h += '</div>';
-    h += '<a href="' + escHtml(yToggleHref) + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escHtml(yTitle) + '" aria-label="Toggle tuning direction">' + yLabel + '</a>';
     h += '</div>';
 
     // (Key dropdown + Clear live in the section title bars now, not in the form.)
@@ -1015,7 +1004,7 @@
                  + '" aria-label="Toggle string direction">' + yLabel + '</a></td>';
     const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
       '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">Custom Tuning: ' + cyoState.toUpperCase() + '</a>' +
-      '</td>' + f0Cell
+      '</td><td id="f0">X</td>'
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
@@ -1035,7 +1024,11 @@
       str[a] = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim();
     }
 
-    for (let a = 1; a <= x.strs; a++) {
+    // String-direction toggle (y) flips the row order on the fretboard. y=y
+    // walks the strings high-index-first; y=n walks 1..N. The tuning data
+    // itself is untouched so the section header text stays canonical.
+    for (let i = 0; i < x.strs; i++) {
+      const a = (x.y === 'y') ? (x.strs - i) : (i + 1);
       const strizzle = str[a];
       const c = KEYS.indexOf(strizzle.toUpperCase());
       let nutDeg = findKey(x._notedegrees, strizzle.toUpperCase());
@@ -1164,15 +1157,17 @@
   }
 
   function renderSummaryStatus(x) {
-    const rev = (x.y === 'y') ? 'rev_' : '';
     const isCustom = (x.z === 'y');
     // For custom tuning, show the name of the loaded preset if the notes
     // match one in TUNINGS. Falls back to "Custom" for hand-edited tunings.
     const tuningName = isCustom
       ? (findCustomTuningName(x) || 'Custom')
       : x.name;
-    const notesStr = isCustom ? x[rev + 's']    : x[rev + 'notes'];
-    const dgsStr   = isCustom ? x[rev + 'sdgs'] : x[rev + 'dgs'];
+    // Tuning text in the section title bar always reads in canonical
+    // (low → high) order — the y switch only flips fretboard rows, not
+    // this textual representation.
+    const notesStr = isCustom ? x.s    : x.notes;
+    const dgsStr   = isCustom ? x.sdgs : x.dgs;
     const tunEl = document.getElementById('fretboard_summary_tuning');
     if (tunEl) {
       let html = '';
