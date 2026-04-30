@@ -1245,7 +1245,7 @@
       const labelCell = '<td class="' + labelTdCls + '">'
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
-      h += '<tr>' + labelCell;
+      h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
 
       // Bucket the chord's filled slots by basic degree column. SF_GRID_ROWS
       // lists extensions first (rows 0–11) and basic-octave last (rows 12–
@@ -1322,7 +1322,7 @@
       const labelCell = '<td class="' + labelTdCls + '">'
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
-      h += '<tr>' + labelCell;
+      h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
       for (const col of COLS) {
         const degSym = col.intervalLabel.replace(/[()]/g, '');
         if (scaleDegrees[name].indexOf(degSym) !== -1) {

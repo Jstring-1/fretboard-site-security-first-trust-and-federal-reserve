@@ -725,6 +725,11 @@ select option                              { color: var(--text); background: var
 #scale_grid td.cg_selected                 { background: var(--accent-hi);                                            }
 #chord_grid td.cg_selected > a,
 #scale_grid td.cg_selected > a             { color: #000 !important; font-weight: 600;                                }
+/* And paint the empty (#_x_) cells in the selected row the same accent so
+   the entire row reads as one highlighted band. The filled note cells
+   keep their per-degree colours since those carry information. */
+#chord_grid tr.cg_row_selected #_x_,
+#scale_grid tr.cg_row_selected #_x_        { background: var(--accent-hi) !important;                                 }
 /* Muted internal cell borders + soft corners for the fretboard and the
    flipped chord / scale grids. Their tabletop is #cccccc; #2e2e2e on top
    reads as black, so step it up to a light grey that just hints at the
