@@ -652,9 +652,10 @@
     var siteKey = _siteKey();
     var rows = [];
     for (var r = 0; r < n; r++) {
-      var label = state.notes[r] || '—';
+      // The leftmost string-label column was redundant — fret 0's note
+      // already shows the open-string letter. Skip it.
       var openNote = _canonNote(state.notes[r]);
-      var cells = '<td class="tcap_label">' + escAttr(label) + '</td>';
+      var cells = '';
       for (var f = 0; f <= FRETS; f++) {
         var nutCls = (f === 0) ? ' tcap_nut' : '';
         var note = openNote ? _noteAtFret(openNote, f) : '';
@@ -667,7 +668,7 @@
       }
       rows.push('<tr data-row="' + r + '">' + cells + '</tr>');
     }
-    var fretHead = '<tr class="tcap_frets"><td></td>';
+    var fretHead = '<tr class="tcap_frets">';
     for (var i = 0; i <= FRETS; i++) {
       var nutHeadCls = (i === 0) ? ' tcap_nut' : '';
       var headLabel = MARKER_FRETS[i] ? String(i) : '<span class="fret_minor">' + i + '</span>';
