@@ -209,3 +209,62 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
      blank: no labels, no bar-lines. */
   #tab_paper.blank input.tab_label_input     { color: transparent !important;                                          }
 }
+
+/* ====================================================================== */
+/*  Capture-from-fretboard mode (opt-in mini-fretboard inside the Tab     */
+/*  section). Hidden by default since the <details> opens on user click.  */
+/* ====================================================================== */
+.tab_capture                               { margin: 8px 0 12px; padding: 6px 10px;
+                                             background: rgba(255,255,255,0.04);
+                                             border: 1px solid rgba(255,255,255,0.10);
+                                             border-radius: 8px;                                                   }
+.tab_capture > summary                     { cursor: pointer; font-weight: 600; padding: 4px 6px;
+                                             list-style: none;                                                     }
+.tab_capture > summary::-webkit-details-marker { display: none;                                                    }
+.tab_capture > summary::before             { content: "▸"; display: inline-block; margin-right: 8px;
+                                             color: var(--muted); transition: transform .15s;                       }
+.tab_capture[open] > summary::before       { transform: rotate(90deg);                                              }
+.tab_capture_title                         { font-size: 0.95em;                                                    }
+.tab_capture_hint                          { color: var(--muted); font-size: 0.82em; margin-left: 12px;             }
+
+#tab_capture_body.rec_on                   { padding: 8px; border: 2px solid #c0392b; border-radius: 6px;
+                                             background: rgba(192,57,43,0.06);                                       }
+
+.tab_capture_bar                           { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+                                             padding: 6px 4px;                                                      }
+.tcap_btn                                  { display: inline-flex; align-items: center; justify-content: center;
+                                             min-width: 30px; height: 26px; padding: 0 8px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             border-radius: 6px; cursor: pointer; font: 600 0.95em var(--font);     }
+.tcap_btn:hover                            { background: rgba(255,255,255,0.4); border-color: #fff;                  }
+.tcap_btn.on                               { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
+.tcap_btn_rec.on                           { background: #c0392b; border-color: #c0392b; color: #fff;                }
+.tcap_step                                 { display: inline-flex; align-items: center; gap: 4px;
+                                             color: var(--muted); font-size: 0.85em; margin-left: 6px;             }
+.tcap_step_up, .tcap_step_dn               { width: 22px; height: 22px; padding: 0; border-radius: 4px;
+                                             border: 1px solid rgba(255,255,255,0.4);
+                                             background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;       }
+.tcap_step_val                             { display: inline-block; min-width: 18px; text-align: center;
+                                             color: var(--text); font-weight: 600;                                  }
+.tcap_status                               { color: var(--muted); font-size: 0.82em; margin-left: auto;
+                                             font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;}
+
+/* Mini-fretboard table */
+#tab_mini_fretboard                        { overflow-x: auto; -webkit-overflow-scrolling: touch;
+                                             margin: 6px 0 0;                                                       }
+.tcap_board                                { border-collapse: separate; border-spacing: 1px;
+                                             background: #555; border-radius: 4px;                                  }
+.tcap_board td                             { background: #a8a8a8; color: #111;
+                                             min-width: 26px; height: 22px; padding: 0 4px;
+                                             text-align: center; font-size: 0.78em;
+                                             font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;}
+.tcap_board .tcap_label                    { background: #d5d5d5; font-weight: 700;                                  }
+.tcap_board tr.tcap_frets td               { background: transparent; color: var(--muted);                          }
+.tcap_board td.tcap_cell                   { cursor: pointer;                                                       }
+.tcap_board td.tcap_cell:hover             { background: #ffeb00; color: #1a1a00;                                   }
+
+/* Active tab cursor cell — green outline so the user always knows where the
+   next captured fret will land. */
+input.tcap_cursor                          { outline: 2px solid #2ecc71 !important; outline-offset: -2px;
+                                             background: rgba(46,204,113,0.12) !important;                          }

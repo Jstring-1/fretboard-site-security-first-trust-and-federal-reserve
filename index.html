@@ -141,6 +141,26 @@
       <p>Cell navigation: <code>Tab</code> moves right, <code>Enter</code> moves down, arrow keys go any direction.</p>
       <p>String labels (left edge) are editable. <code>↑</code>&nbsp;/&nbsp;<code>↓</code> moves between strings; <code>Enter</code> drops into the first cell on the same row.</p>
     </div>
+    <details id="tab_capture" class="tab_capture">
+      <summary><span class="tab_capture_title">Capture from fretboard</span><span class="tab_capture_hint">Click a fret to write that value into the cursor cell.</span></summary>
+      <div id="tab_capture_body">
+        <div class="tab_capture_bar">
+          <button type="button" class="tcap_btn tcap_btn_rec"   id="tcap_rec"   title="Record on/off — when on, fretboard clicks write to the cursor cell">⏺</button>
+          <button type="button" class="tcap_btn"                id="tcap_chord" title="Chord lock — clicks stack on the same column without advancing the cursor">⫳</button>
+          <button type="button" class="tcap_btn"                id="tcap_next"  title="Advance cursor by the step amount (without writing)">▶</button>
+          <button type="button" class="tcap_btn"                id="tcap_back"  title="Erase last entry; cursor steps back">⌫</button>
+          <button type="button" class="tcap_btn"                id="tcap_rest"  title="Rest — advance cursor without writing anything">⊘</button>
+          <button type="button" class="tcap_btn"                id="tcap_reset" title="Cursor jumps to row 0 column 0">⏮</button>
+          <span class="tcap_step">Step
+            <button type="button" class="tcap_step_dn" id="tcap_step_dn" aria-label="Decrease step">−</button>
+            <span class="tcap_step_val" id="tcap_step_val">1</span>
+            <button type="button" class="tcap_step_up" id="tcap_step_up" aria-label="Increase step">+</button>
+          </span>
+          <span class="tcap_status" id="tcap_status" aria-live="polite"></span>
+        </div>
+        <div id="tab_mini_fretboard"></div>
+      </div>
+    </details>
     <div id="tab_paper">
       <div id="tab_title_block">
         <div id="tab_title_print" class="tab_title_print"></div>
@@ -164,7 +184,7 @@
 
 <footer id="site_footer">
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260429.2221</div>
+  <div id="build_num">20260429.2236</div>
 </footer>
 
 </body>

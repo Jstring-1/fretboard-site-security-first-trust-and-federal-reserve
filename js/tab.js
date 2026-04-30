@@ -15,7 +15,10 @@
   var $ = function (id) { return document.getElementById(id); };
   var ctlTitle, ctlStrings, ctlTuning, ctlMeasures, ctlBeats, ctlSubdiv,
       ctlPerLine, grid, paper, titlePrint, subPrint, btnClear, btnFlip,
-      tabRoot, btnPrint, btnPrintBl, btnShare;
+      tabRoot, btnPrint, btnPrintBl, btnShare,
+      capDetails, capBody, capBoard, capStatus, capStepVal,
+      capRec, capChord, capNext, capBack, capRest, capReset,
+      capStepUp, capStepDn;
 
   function captureDom() {
     ctlTitle    = $('ctl_title');
@@ -36,6 +39,20 @@
     btnPrint    = tabRoot && tabRoot.querySelector('.btn_print');
     btnPrintBl  = tabRoot && tabRoot.querySelector('.btn_print_blank');
     btnShare    = tabRoot && tabRoot.querySelector('.btn_share');
+    // Capture-mode pieces
+    capDetails  = $('tab_capture');
+    capBody     = $('tab_capture_body');
+    capBoard    = $('tab_mini_fretboard');
+    capStatus   = $('tcap_status');
+    capStepVal  = $('tcap_step_val');
+    capRec      = $('tcap_rec');
+    capChord    = $('tcap_chord');
+    capNext     = $('tcap_next');
+    capBack     = $('tcap_back');
+    capRest     = $('tcap_rest');
+    capReset    = $('tcap_reset');
+    capStepUp   = $('tcap_step_up');
+    capStepDn   = $('tcap_step_dn');
   }
 
   // ---- State ---------------------------------------------------------------
@@ -50,6 +67,18 @@
     perLine:  4,
     flipped:  false,      // false = top row is highest pitch (standard)
     cells:    {}          // sparse: "row_col" -> "12h"
+  };
+
+  // ---- Capture mode (mini-fretboard → tab) state ---------------------------
+  // Local-only — none of this lives in the URL. Cursor position survives the
+  // page lifecycle so the user can pick up where they left off.
+  var capture = {
+    rec:       false,    // record on/off
+    chord:     false,    // chord-lock: clicks stack on same column
+    step:      1,        // cursor advance per click (in cells)
+    cursorRow: 0,
+    cursorCol: 0,
+    lastWritten: null    // {row, col, prev} for backspace
   };
 
   // ---- Tuning helpers ------------------------------------------------------
@@ -213,6 +242,11 @@
     // note + fret) so the global staff-hover popover can render the
     // right note when the user toggles it on for this section.
     refreshCellNoteAttrs();
+    // Re-render the mini-fretboard if it's mounted (string count / tuning
+    // changes need to flow into the capture board too) and re-paint the
+    // cursor highlight on the freshly rendered inputs.
+    if (capBoard) renderCaptureBoard();
+    if (capStatus) updateCaptureUI();
   }
 
   // ---- Staff-hover support ------------------------------------------------
@@ -645,6 +679,157 @@
   }
 
   // ---- Init ----------------------------------------------------------------
+  // ---- Capture-mode UI -----------------------------------------------------
+  // Mini-fretboard + control bar that lets the user click a fret to write its
+  // value into the current tab cursor cell. Lives inside section_8 — never
+  // touches the main #fretboard element.
+
+  function totalCols() {
+    return state.measures * state.beats * state.subdiv;
+  }
+
+  function renderCaptureBoard() {
+    if (!capBoard) return;
+    var n = state.strings;
+    // Show frets 0–12. Cells small (~26px wide × 22px tall).
+    var FRETS = 12;
+    var rows = [];
+    for (var r = 0; r < n; r++) {
+      var label = state.notes[r] || '—';
+      var cells = '<td class="tcap_label">' + escAttr(label) + '</td>';
+      for (var f = 0; f <= FRETS; f++) {
+        cells += '<td class="tcap_cell" data-row="' + r + '" data-fret="' + f + '">'
+              +  f + '</td>';
+      }
+      rows.push('<tr data-row="' + r + '">' + cells + '</tr>');
+    }
+    var fretHead = '<tr class="tcap_frets"><td></td>';
+    for (var i = 0; i <= FRETS; i++) {
+      fretHead += '<td>' + i + '</td>';
+    }
+    fretHead += '</tr>';
+    capBoard.innerHTML = '<table class="tcap_board">'
+                       + '<thead>' + fretHead + '</thead>'
+                       + '<tbody>' + rows.join('') + '</tbody></table>';
+    capBoard.querySelectorAll('td.tcap_cell').forEach(function (td) {
+      td.addEventListener('click', onCaptureClick);
+    });
+  }
+
+  function onCaptureClick(e) {
+    if (!capture.rec) return;
+    var td = e.currentTarget;
+    var row  = +td.getAttribute('data-row');
+    var fret = +td.getAttribute('data-fret');
+    writeCapture(row, fret);
+  }
+
+  function writeCapture(row, fret) {
+    var col = capture.cursorCol;
+    var key = row + '_' + col;
+    var prev = state.cells[key] || '';
+    state.cells[key] = String(fret);
+    capture.lastWritten = { row: row, col: col, prev: prev };
+    saveLocal();
+    // Patch the live input + its data-note in place; no full re-render.
+    var inp = grid && grid.querySelector('input[data-r="' + row + '"][data-c="' + col + '"]');
+    if (inp) {
+      inp.value = String(fret);
+      var openNote = _canonNote(state.notes[row]);
+      if (openNote) {
+        var pc = _pitchAtFret(openNote, fret);
+        if (pc) inp.setAttribute('data-note', pc);
+      }
+    }
+    // Advance unless the chord-lock holds the cursor in place.
+    if (!capture.chord) advanceCapture(capture.step);
+    else updateCaptureUI();
+  }
+
+  function advanceCapture(n) {
+    var max = totalCols() - 1;
+    capture.cursorCol = Math.min(max, capture.cursorCol + n);
+    updateCaptureUI();
+  }
+
+  function backCapture() {
+    if (capture.lastWritten) {
+      var lw = capture.lastWritten;
+      var key = lw.row + '_' + lw.col;
+      if (lw.prev) state.cells[key] = lw.prev;
+      else         delete state.cells[key];
+      var inp = grid && grid.querySelector('input[data-r="' + lw.row + '"][data-c="' + lw.col + '"]');
+      if (inp) inp.value = lw.prev || '';
+      capture.cursorCol = lw.col;
+      capture.lastWritten = null;
+      saveLocal();
+      updateCaptureUI();
+      return;
+    }
+    capture.cursorCol = Math.max(0, capture.cursorCol - capture.step);
+    updateCaptureUI();
+  }
+
+  function updateCaptureUI() {
+    if (!capStepVal) return;
+    capStepVal.textContent = String(capture.step);
+    if (capRec)   capRec.classList.toggle('on', capture.rec);
+    if (capChord) capChord.classList.toggle('on', capture.chord);
+    if (capBody)  capBody.classList.toggle('rec_on', capture.rec);
+    // Status text: "REC · m1.b1.s1 · row 4 (G)"
+    if (capStatus) {
+      var col = capture.cursorCol;
+      var beats = state.beats || 4, subdiv = state.subdiv || 1;
+      var measure = Math.floor(col / (beats * subdiv)) + 1;
+      var inMeasure = col % (beats * subdiv);
+      var beat = Math.floor(inMeasure / subdiv) + 1;
+      var sub = (inMeasure % subdiv) + 1;
+      var row = capture.cursorRow;
+      var note = state.notes[row] || '';
+      capStatus.textContent =
+        (capture.rec ? 'REC' : 'idle')
+        + ' · m' + measure + '.b' + beat + '.s' + sub
+        + (capture.chord ? ' · CHORD' : '')
+        + ' · step ' + capture.step;
+    }
+    // Highlight the active tab cursor cell with a green outline.
+    if (grid) {
+      grid.querySelectorAll('input.tcap_cursor').forEach(function (el) {
+        el.classList.remove('tcap_cursor');
+      });
+      var inp = grid.querySelector('input[data-r="' + capture.cursorRow + '"][data-c="' + capture.cursorCol + '"]');
+      if (inp) inp.classList.add('tcap_cursor');
+    }
+  }
+
+  function bindCapture() {
+    if (!capBoard) return;
+    capRec   && capRec  .addEventListener('click', function () { capture.rec = !capture.rec; updateCaptureUI(); });
+    capChord && capChord.addEventListener('click', function () { capture.chord = !capture.chord; updateCaptureUI(); });
+    capNext  && capNext .addEventListener('click', function () { advanceCapture(capture.step); });
+    capBack  && capBack .addEventListener('click', backCapture);
+    capRest  && capRest .addEventListener('click', function () { capture.lastWritten = null; advanceCapture(capture.step); });
+    capReset && capReset.addEventListener('click', function () { capture.cursorCol = 0; capture.cursorRow = 0; updateCaptureUI(); });
+    capStepUp && capStepUp.addEventListener('click', function () { capture.step = Math.min(16, capture.step + 1); updateCaptureUI(); });
+    capStepDn && capStepDn.addEventListener('click', function () { capture.step = Math.max(1, capture.step - 1); updateCaptureUI(); });
+
+    // Click on any tab input → move the cursor there. Lets the user re-position
+    // without using ⏮ / ▶.
+    if (grid) {
+      grid.addEventListener('click', function (e) {
+        var inp = e.target.closest && e.target.closest('input:not(.tab_label_input)');
+        if (!inp) return;
+        var r = +inp.getAttribute('data-r');
+        var c = +inp.getAttribute('data-c');
+        if (isFinite(r) && isFinite(c)) {
+          capture.cursorRow = r;
+          capture.cursorCol = c;
+          updateCaptureUI();
+        }
+      });
+    }
+  }
+
   function init() {
     captureDom();
     // The Tab section is part of the main page now — bail out cleanly if
@@ -657,6 +842,9 @@
     syncStateNotesFromTuning();
     render();
     bindControls();
+    bindCapture();
+    renderCaptureBoard();
+    updateCaptureUI();
   }
 
   if (document.readyState === 'loading') {
