@@ -1245,6 +1245,8 @@
       renderChordGrid(window.SF_X);
       renderScaleGrid(window.SF_X);
       renderSummaryExtras(window.SF_X);   // refresh the icon's on/off state
+      bindAutoSubmit();                   // re-bind change handlers on the
+                                          // freshly rendered key pickers
     }
   }
   // Icon button for the section header — same shape as section_print/help.
