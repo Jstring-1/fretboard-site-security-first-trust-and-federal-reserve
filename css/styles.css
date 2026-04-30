@@ -440,17 +440,20 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                              background: var(--surface-head); color: #fff;
                                              border-bottom: 1px solid #1f1f1f;
                                              display: flex; align-items: center; gap: 6px;
+                                             justify-content: flex-end; position: relative;
                                              /* Pin the height so highlight-text length changes don't grow the bar
                                                 and ripple every section's height. */
                                              height: 56px; box-sizing: border-box;                                    }
 details.collapsible:not([open]) > summary  { border-bottom-color: transparent;                                       }
-details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+/* Title + arrow centered as one click target, ~3× the text width so users
+   can tap-to-toggle without aiming directly at the small text. Sits on top
+   of the absolutely-positioned right-side controls via a higher z-index. */
+details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer;
+                                             position: absolute; left: 50%; transform: translateX(-50%);
+                                             padding: 8px 40px; border-radius: 6px; z-index: 1;                       }
 details.collapsible > summary .summary_title:hover { background: rgba(255,255,255,0.08); }
 /* Outside the title, the cursor stays default — only the title is the toggle. */
 details.collapsible > summary { cursor: default; }
-/* Learn has no status/extras to absorb center space — let the title flex-grow
-   so the ? button still anchors to the right edge. */
-#section_7 > summary > .summary_title    { flex: 1 1 auto;                                                            }
 /* Help (?) button next to each section title */
 .section_help                              { display: inline-block; width: 22px; height: 22px; padding: 0;
                                              margin-left: 8px; vertical-align: middle;
