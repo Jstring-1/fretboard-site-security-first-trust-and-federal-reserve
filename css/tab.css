@@ -268,3 +268,17 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
    next captured fret will land. */
 input.tcap_cursor                          { outline: 2px solid #2ecc71 !important; outline-offset: -2px;
                                              background: rgba(46,204,113,0.12) !important;                          }
+
+/* Modifier popup that appears below a fret cell on hover (Record on). */
+#tcap_modifier_pop                         { position: absolute; display: none; z-index: 1000;
+                                             flex-direction: row; gap: 2px; padding: 4px;
+                                             background: #1a1a1a; border: 1px solid #5a5a5a;
+                                             border-radius: 5px;
+                                             box-shadow: 0 6px 18px rgba(0,0,0,0.55);                                }
+.tcap_mod                                  { width: 22px; height: 22px; padding: 0;
+                                             border: 1px solid rgba(255,255,255,0.4);
+                                             background: rgba(255,255,255,0.08); color: #fff;
+                                             border-radius: 3px; cursor: pointer;
+                                             font: 600 0.85em var(--font);                                          }
+.tcap_mod:hover                            { background: var(--accent-hi); color: #001014;
+                                             border-color: var(--accent-hi);                                        }

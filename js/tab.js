@@ -713,6 +713,23 @@
                        + '<tbody>' + rows.join('') + '</tbody></table>';
     capBoard.querySelectorAll('td.tcap_cell').forEach(function (td) {
       td.addEventListener('click', onCaptureClick);
+      // Linger ~350ms over a cell with Record on → pop a row of fret
+      // modifiers (h, p, /, \, ~, x). Plain click still writes a plain
+      // fret, so users who don't want modifiers never see the popup.
+      td.addEventListener('mouseenter', function () {
+        if (!capture.rec) return;
+        if (capPopupTimer) clearTimeout(capPopupTimer);
+        capPopupTimer = setTimeout(function () {
+          showCapPopup(td, +td.getAttribute('data-row'), +td.getAttribute('data-fret'));
+        }, 350);
+      });
+      td.addEventListener('mouseleave', function () {
+        if (capPopupTimer) { clearTimeout(capPopupTimer); capPopupTimer = null; }
+        // Give the user a moment to enter the popup itself before hiding.
+        setTimeout(function () {
+          if (capPopupEl && !capPopupEl.matches(':hover')) hideCapPopup();
+        }, 120);
+      });
     });
   }
 
@@ -724,17 +741,18 @@
     writeCapture(row, fret);
   }
 
-  function writeCapture(row, fret) {
+  function writeCapture(row, fret, modifier) {
     var col = capture.cursorCol;
     var key = row + '_' + col;
     var prev = state.cells[key] || '';
-    state.cells[key] = String(fret);
+    var written = String(fret) + (modifier || '');
+    state.cells[key] = written;
     capture.lastWritten = { row: row, col: col, prev: prev };
     saveLocal();
     // Patch the live input + its data-note in place; no full re-render.
     var inp = grid && grid.querySelector('input[data-r="' + row + '"][data-c="' + col + '"]');
     if (inp) {
-      inp.value = String(fret);
+      inp.value = written;
       var openNote = _canonNote(state.notes[row]);
       if (openNote) {
         var pc = _pitchAtFret(openNote, fret);
@@ -744,6 +762,52 @@
     // Advance unless the chord-lock holds the cursor in place.
     if (!capture.chord) advanceCapture(capture.step);
     else updateCaptureUI();
+  }
+
+  // ---- Per-fret modifier popup ---------------------------------------------
+  // After the user lingers on a fret cell for a beat, a small row of buttons
+  // (h, p, /, \, ~, x) appears below the cell. Click one to write fret+mod
+  // instead of the plain fret. Plain click on the cell still works.
+  var capPopupEl = null, capPopupTimer = null;
+  function getCapPopup() {
+    if (capPopupEl) return capPopupEl;
+    capPopupEl = document.createElement('div');
+    capPopupEl.id = 'tcap_modifier_pop';
+    document.body.appendChild(capPopupEl);
+    capPopupEl.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('.tcap_mod');
+      if (!btn) return;
+      writeCapture(+btn.getAttribute('data-row'),
+                   +btn.getAttribute('data-fret'),
+                   btn.getAttribute('data-mod'));
+      hideCapPopup();
+    });
+    capPopupEl.addEventListener('mouseleave', hideCapPopup);
+    return capPopupEl;
+  }
+  function showCapPopup(td, row, fret) {
+    var pop = getCapPopup();
+    var mods = [
+      ['h', 'Hammer-on'],
+      ['p', 'Pull-off'],
+      ['/', 'Slide up'],
+      ['\\', 'Slide down'],
+      ['~', 'Vibrato'],
+      ['x', 'Mute']
+    ];
+    pop.innerHTML = mods.map(function (m) {
+      return '<button type="button" class="tcap_mod" data-mod="' + escAttr(m[0])
+        + '" data-row="' + row + '" data-fret="' + fret + '" title="'
+        + escAttr(fret + ' + ' + m[1]) + '">' + escAttr(m[0]) + '</button>';
+    }).join('');
+    var rect = td.getBoundingClientRect();
+    pop.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+    pop.style.left = (rect.left + window.scrollX) + 'px';
+    pop.style.display = 'flex';
+  }
+  function hideCapPopup() {
+    if (capPopupTimer) { clearTimeout(capPopupTimer); capPopupTimer = null; }
+    if (capPopupEl) capPopupEl.style.display = 'none';
   }
 
   function advanceCapture(n) {

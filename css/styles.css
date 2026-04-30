@@ -153,7 +153,11 @@ a:hover                                    {  color:var(--accent-hi);           
 /*********************************************************************************************************************
                             FONT WEIGHTS / STYLES / SPACING / ETC
 *********************************************************************************************************************/
-body                                       {  font-weight:500;                                                       }
+body                                       {  font-weight:500;
+                                              /* Sections may legitimately contain wide tables (the keyboard runs
+                                                 ~1400px). Cap the body so the page doesn't horizontally scroll;
+                                                 each wide section gets its own internal scroll container instead. */
+                                              overflow-x: hidden;                                                    }
 a:hover,a,a:link,a:visited,a:active        {  text-decoration:none;                                                  }
 .finder                                    {  font-weight:normal;                                                    }
 .slant                                     {  font-style:oblique;                                                    }
@@ -207,7 +211,10 @@ table td                                   {  vertical-align:middle;            
    OUTER frame uses the same #555 the grids use as grout, so the keyboard
    reads as part of the same family of cards. */
 .ritz                                      {  background-color:#a8a8a8; padding:0;
-                                              border: 2px solid #555555; border-radius:6px; margin:0 6px;            }
+                                              border: 2px solid #555555; border-radius:6px; margin:0 6px;
+                                              /* Keyboard table is naturally ~1400px wide; let it scroll inside
+                                                 its own card so the body never has to grow to fit it. */
+                                              overflow-x: auto;                                                       }
 /* Slimmer, lighter internal gridlines for the keyboard table cells. */
 .ritz .waffle, .ritz .waffle td            {  border:1px solid rgba(0,0,0,0.08) !important;                            }
 /* White-key cells (A B C D E F G) get a thin grey vertical border between
