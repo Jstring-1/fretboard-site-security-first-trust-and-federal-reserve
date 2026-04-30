@@ -737,10 +737,17 @@ select option                              { color: var(--text); background: var
 /* Make the entire chord/scale name cell the click target — fill the <td>
    with the <a> so users can hit anywhere on the cell, not just the text.
    Applies to the leftmost / rightmost label cell of each chord (or scale)
-   row in the flipped grid. */
+   row in the flipped grid. Text aligns toward the middle of the table:
+   right-aligned on the left edge, left-aligned on the right edge. */
 #chord_grid td.cg_chord_label > a,
-#scale_grid td.cg_chord_label > a          { display: block; padding: 4px 6px; height: 100%;
-                                             text-align: center; text-decoration: none; box-sizing: border-box;       }
+#scale_grid td.cg_chord_label > a          { display: block; padding: 4px 8px; height: 100%;
+                                             text-decoration: none; box-sizing: border-box;                          }
+#chord_grid tr > td.cg_chord_label:first-child > a,
+#scale_grid tr > td.cg_chord_label:first-child > a
+                                           { text-align: right;                                                       }
+#chord_grid tr > td.cg_chord_label:last-child > a,
+#scale_grid tr > td.cg_chord_label:last-child > a
+                                           { text-align: left;                                                        }
 /* When a chord/scale is the active selection, paint the whole label cell
    like a highlighted pill so the grid mirrors the pill row state at a
    glance. */
