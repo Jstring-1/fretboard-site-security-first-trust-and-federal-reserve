@@ -127,9 +127,13 @@ input.tab_label_input::placeholder          { color: var(--muted-dim); font-weig
   @page                                      { size: letter landscape; margin: 0.4in; }
   body                                       { background: #fff !important; color: #000 !important; }
   #title_bar, #page_sub, #build_num,
-  .tab_controls, .tab_help,
+  .tab_controls, .tab_help, .tab_capture,
   details.collapsible > summary .summary_extras,
   details.collapsible > summary .summary_status { display: none !important; }
+  /* Strip the editor wrapper's bg / border / padding in print so its
+     "card" frame doesn't appear above the actual tab paper. */
+  .tab_editor_panel                          { background: none !important; border: none !important;
+                                              padding: 0 !important; margin: 0 !important; }
   details.collapsible                        { background: #fff !important; border: none !important;
                                               box-shadow: none !important; }
   details.collapsible > summary              { background: #fff !important; color: #000 !important;
