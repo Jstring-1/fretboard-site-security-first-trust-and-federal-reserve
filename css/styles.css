@@ -1128,6 +1128,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_hand_3                                 { background-position: -72px 0;                                            }
 .ks_hand_4                                 { background-position: -108px 0;                                           }
 .ks_hand_5                                 { background-position: -144px 0;                                           }
+.ks_hand_mirror                            { transform: scaleX(-1);                                                  }
 .ks_table .ks_notes                        { color: var(--text);                                                       }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }

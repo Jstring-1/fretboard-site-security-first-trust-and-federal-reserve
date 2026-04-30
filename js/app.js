@@ -1356,8 +1356,14 @@
     if (count <= 0) return '';
     const dirCls = direction === 'down' ? 'ks_hand_down' : 'ks_hand_up';
     const hands = count <= 5 ? [count] : [5, count - 5];
+    // The source sprite shows one hand orientation. When two hands are
+    // rendered (6 / 7 keys), mirror the second hand horizontally so the
+    // thumbs face each other — matches what the gesture looks like IRL.
     const html = hands
-      .map(function (n) { return '<span class="ks_hand ' + dirCls + ' ks_hand_' + n + '"></span>'; })
+      .map(function (n, i) {
+        const mirror = (i > 0) ? ' ks_hand_mirror' : '';
+        return '<span class="ks_hand ' + dirCls + ' ks_hand_' + n + mirror + '"></span>';
+      })
       .join('');
     return '<span class="ks_fingers">' + html + '</span>';
   }
