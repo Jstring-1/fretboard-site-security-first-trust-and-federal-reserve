@@ -1363,3 +1363,33 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 @media (max-width: 900px) and (orientation: landscape) {
   #mobile_hint                             { display: none;                                                           }
 }
+
+/* ====================================================================== */
+/*  Auth widget — top-right Clerk sign-in / signed-in pill.               */
+/*  Filled in by js/auth.js once Clerk JS finishes loading.                */
+/* ====================================================================== */
+#auth_widget                                { position: fixed; top: 8px; right: 12px; z-index: 1500;                  }
+.auth_loading                               { color: var(--muted); font-size: 0.78em; opacity: 0.6; padding: 4px 8px; }
+.auth_btn                                   { font: 600 0.85em var(--font); padding: 4px 10px; height: 26px;
+                                              background: rgba(255,255,255,0.10); color: var(--accent);
+                                              border: 1px solid rgba(95,232,224,0.40); border-radius: 4px;
+                                              cursor: pointer;                                                         }
+.auth_btn:hover                             { background: rgba(95,232,224,0.20); color: #fff;
+                                              border-color: var(--accent-hi);                                          }
+.auth_signin                                { background: rgba(95,232,224,0.18);                                       }
+.auth_user                                  { background: rgba(95,232,224,0.25); color: #001014; font-weight: 700;
+                                              min-width: 50px;                                                         }
+.auth_pill                                  { position: relative; display: inline-block;                               }
+.auth_menu                                  { position: absolute; top: 100%; right: 0; margin-top: 4px;
+                                              min-width: 140px; background: #1a1a1a; border: 1px solid #333;
+                                              border-radius: 4px; box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+                                              padding: 4px; z-index: 1600;                                             }
+.auth_menu[hidden]                          { display: none;                                                           }
+.auth_menu_item                             { display: block; width: 100%; text-align: left;
+                                              background: none; border: none; color: var(--text);
+                                              font: 400 0.85em var(--font); padding: 6px 10px;
+                                              border-radius: 3px; cursor: pointer;                                     }
+.auth_menu_item:hover                       { background: rgba(95,232,224,0.18); color: var(--accent-hi);              }
+@media print {
+  #auth_widget                              { display: none !important;                                                }
+}

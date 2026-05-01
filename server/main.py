@@ -18,11 +18,12 @@ import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from server import db
+from server.auth import current_user
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -77,6 +78,14 @@ async def health():
         except Exception as e:
             db_status = f"error: {type(e).__name__}: {e}"
     return {"status": "ok", "db": db_status}
+
+
+@app.get("/api/me")
+async def me(user: dict = Depends(current_user)):
+    """Returns the verified Clerk user_id for the bearer token in the
+    Authorization header, or 401 if no/invalid token. Frontend uses
+    this as a smoke test that auth is wired correctly end-to-end."""
+    return {"user_id": user["user_id"]}
 
 
 # ---- Static-file routing -------------------------------------------------

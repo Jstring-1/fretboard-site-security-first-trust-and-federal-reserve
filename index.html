@@ -84,8 +84,22 @@
 <script defer src="js/app.js"></script>
 <script defer src="js/chord_boxes.js"></script>
 <script defer src="js/tab.js"></script>
+<script defer src="js/auth.js"></script>
+<!-- Clerk JS SDK — async-loaded with the publishable key embedded.
+     Auto-initialises window.Clerk so js/auth.js can render the widget. -->
+<script
+  async
+  crossorigin="anonymous"
+  data-clerk-publishable-key="pk_test_cHJlY2lvdXMtbW9vc2UtMzUuY2xlcmsuYWNjb3VudHMuZGV2JA"
+  src="https://precious-moose-35.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+  type="text/javascript"
+></script>
 </head>
 <body>
+
+<!-- Auth widget mount point — js/auth.js fills this in once Clerk loads.
+     Empty until then so there's no flash of mismatched UI. -->
+<div id="auth_widget" aria-live="polite"></div>
 
 <!-- Mobile-only hint. Shown on portrait phones; hidden on tablets/desktop
      and on landscape phones via the @media rules in styles.css. -->
@@ -202,7 +216,7 @@
 
 <footer id="site_footer">
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260430.2122</div>
+  <div id="build_num">20260430.2148</div>
 </footer>
 
 </body>
