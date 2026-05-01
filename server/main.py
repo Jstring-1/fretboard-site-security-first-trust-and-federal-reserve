@@ -13,18 +13,28 @@ runs `uvicorn main:app`). Local dev:
 """
 from __future__ import annotations
 
+import json
 import os
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from server import auth as auth_module
 from server import db
 from server.auth import current_user
+
+
+class SettingsPayload(BaseModel):
+    """Body shape for PUT /api/settings — a single freeform JSON object
+    we store as the user's `data` JSONB column. Top-level keys are
+    feature areas (e.g. "tab", "song_keys"); the schema inside each is
+    owned by the corresponding frontend module."""
+    data: dict
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -98,6 +108,55 @@ async def me(user: dict = Depends(current_user)):
     Authorization header, or 401 if no/invalid token. Frontend uses
     this as a smoke test that auth is wired correctly end-to-end."""
     return {"user_id": user["user_id"]}
+
+
+@app.get("/api/settings")
+async def get_settings(user: dict = Depends(current_user)):
+    """Read the signed-in user's settings blob. Auto-creates an empty
+    row on first hit so the frontend never has to special-case the
+    'returning user vs. new user' distinction — it always gets back
+    `{data: object}`, possibly an empty `{}` for new accounts."""
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "INSERT INTO user_settings (clerk_user_id) VALUES (%s) "
+                "ON CONFLICT (clerk_user_id) DO NOTHING",
+                (user["user_id"],),
+            )
+            await cur.execute(
+                "SELECT data FROM user_settings WHERE clerk_user_id = %s",
+                (user["user_id"],),
+            )
+            row = await cur.fetchone()
+        await conn.commit()
+    data = (row[0] if row else {}) or {}
+    return {"data": data}
+
+
+@app.put("/api/settings")
+async def put_settings(
+    payload: SettingsPayload,
+    user: dict = Depends(current_user),
+):
+    """Replace the signed-in user's settings blob wholesale. The frontend
+    is the source of truth for the shape — we just store and return it.
+    Future endpoints can offer JSONB-path PATCH semantics if/when bandwidth
+    becomes a concern; for now whole-blob is simplest and fine."""
+    if not isinstance(payload.data, dict):
+        raise HTTPException(status_code=400, detail="data must be an object")
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "INSERT INTO user_settings (clerk_user_id, data) "
+                "VALUES (%s, %s::jsonb) "
+                "ON CONFLICT (clerk_user_id) DO UPDATE "
+                "  SET data = EXCLUDED.data",
+                (user["user_id"], json.dumps(payload.data)),
+            )
+        await conn.commit()
+    return {"ok": True}
 
 
 # ---- Static-file routing -------------------------------------------------

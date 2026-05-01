@@ -97,8 +97,19 @@
       return;
     }
     render();
+    // Kick off settings sync — pulls cloud blob if signed in, applies
+    // tab state if present, otherwise pushes local up. No-op for
+    // anonymous users.
+    if (window.SF_Settings && typeof window.SF_Settings.onAuthChange === 'function') {
+      window.SF_Settings.onAuthChange();
+    }
     if (window.Clerk.addListener) {
-      window.Clerk.addListener(render);
+      window.Clerk.addListener(function () {
+        render();
+        if (window.SF_Settings && typeof window.SF_Settings.onAuthChange === 'function') {
+          window.SF_Settings.onAuthChange();
+        }
+      });
     }
   }
 

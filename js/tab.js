@@ -358,7 +358,14 @@
   var LS_KEY = 'sfp_tab_v1';
 
   function saveLocal() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(serialise())); } catch (_) {}
+    var snap = serialise();
+    try { localStorage.setItem(LS_KEY, JSON.stringify(snap)); } catch (_) {}
+    // Also mirror to the cloud-settings buffer if it's loaded — it
+    // debounces and only PUTs when the user is signed in. No-op
+    // otherwise so the anonymous flow is unchanged.
+    if (window.SF_Settings && typeof window.SF_Settings.queue === 'function') {
+      window.SF_Settings.queue('tab', snap);
+    }
   }
 
   function loadLocal() {
@@ -967,6 +974,32 @@
       window.SF_ChordBoxes.setSiteKey(_siteKey());
     }
   } };
+
+  // Public hook used by the cloud-settings sync module. `applyState`
+  // hot-swaps the entire editor state (e.g. when pulling fresh from
+  // the server on sign-in) and re-renders. `serialise` lets the sync
+  // module read the current state for pushing to the server. Internal
+  // `serialise()` and `deserialise()` would be hoisted by the time
+  // this assignment runs, but we wrap them so callers can't smash
+  // the closure-private `state` reference directly.
+  window.SF_Tab = {
+    serialise: function () { return serialise(); },
+    applyState: function (payload) {
+      if (!payload) return;
+      deserialise(payload);
+      pushToControls();
+      syncStateNotesFromTuning();
+      render();
+      if (window.SF_ChordBoxes && typeof window.SF_ChordBoxes.setBoxes === 'function') {
+        window.SF_ChordBoxes.setBoxes(state.boxes || []);
+      }
+      // Persist locally so a refresh keeps what we just applied. Skip
+      // the SF_Settings.queue side-effect by calling the underlying
+      // localStorage write directly — saveLocal would race with the
+      // sync module that just called us.
+      try { localStorage.setItem(LS_KEY, JSON.stringify(serialise())); } catch (_) {}
+    },
+  };
 
   // ---- Chord boxes wiring -------------------------------------------------
   function pushStringConfigToBoxes() {
