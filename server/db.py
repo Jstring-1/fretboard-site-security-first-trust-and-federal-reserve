@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -27,6 +28,16 @@ ROOT = Path(__file__).resolve().parent.parent
 MIGRATIONS_DIR = ROOT / "migrations"
 
 _pool: Optional[AsyncConnectionPool] = None
+
+
+async def _check_connection(conn: AsyncConnection) -> None:
+    """Ping the connection before the pool lends it out. Railway's Postgres
+    (or its routing proxy) closes idle TCP connections aggressively — once
+    that happens, the pool's still-cached entry is dead and any query on
+    it fails with `SSL SYSCALL error: EOF detected`. Running a cheap
+    `SELECT 1` here catches the stale conn so the pool recycles it before
+    user code ever sees it."""
+    await conn.execute("SELECT 1")
 
 
 async def init_pool() -> AsyncConnectionPool:
@@ -39,7 +50,9 @@ async def init_pool() -> AsyncConnectionPool:
             DATABASE_URL,
             min_size=1,
             max_size=5,
-            open=False,           # explicit open below so init errors surface
+            open=False,                     # explicit open below so init errors surface
+            check=_check_connection,        # ping before lend (stale-conn defence)
+            max_idle=300.0,                 # recycle idle conns after 5 min
         )
         await _pool.open()
     return _pool
