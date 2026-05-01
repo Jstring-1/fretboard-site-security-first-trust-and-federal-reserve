@@ -161,7 +161,7 @@ window.SF_DATA = {
         "aug7": "&hl=1&hl=3&hl=b6&hl=b7",
         "7b5": "&hl=1&hl=3&hl=b5&hl=b7",
         "dim7": "&hl=1&hl=b3&hl=b5&hl=6",
-        "half-dim": "&hl=1&hl=b3&hl=b5&hl=b7",
+        "m7b5": "&hl=1&hl=b3&hl=b5&hl=b7",
         "Maj7": "&hl=1&hl=3&hl=5&hl=7",
         "min-Maj7": "&hl=1&hl=b3&hl=5&hl=7",
         "add9": "&hl=1&hl=2&hl=3&hl=5",
