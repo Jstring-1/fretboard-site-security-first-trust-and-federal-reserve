@@ -22,6 +22,7 @@ from fastapi import Depends, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from server import auth as auth_module
 from server import db
 from server.auth import current_user
 
@@ -64,8 +65,9 @@ app = FastAPI(
 # ---- API routes (registered first so they take priority over statics) ----
 @app.get("/api/health")
 async def health():
-    """Liveness + DB probe. Used after Railway redeploys to confirm both
-    the process and the DB connection came up cleanly."""
+    """Liveness + DB + auth-config probe. Used after Railway redeploys
+    to confirm process, DB, and Clerk JWT verification config all came
+    up cleanly."""
     db_status: str = "skipped"
     if os.environ.get("DATABASE_URL"):
         try:
@@ -77,7 +79,17 @@ async def health():
             db_status = "ok"
         except Exception as e:
             db_status = f"error: {type(e).__name__}: {e}"
-    return {"status": "ok", "db": db_status}
+    # Auth-config diagnostic. We don't echo the publishable key itself —
+    # only whether it's present and what we decoded out of it. Helps
+    # diagnose "auth not configured" 503s on /api/me without redeploys.
+    pk_env = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
+    auth_status = {
+        "pk_env_set": bool(pk_env),
+        "pk_len": len(pk_env),
+        "frontend_api": auth_module.FRONTEND_API or None,
+        "issuer": auth_module.ISSUER or None,
+    }
+    return {"status": "ok", "db": db_status, "auth": auth_status}
 
 
 @app.get("/api/me")
