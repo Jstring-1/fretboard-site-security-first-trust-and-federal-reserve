@@ -322,3 +322,104 @@ input.tcap_cursor                          { outline: 2px solid #2ecc71 !importa
                                              font: 600 0.85em var(--font);                                          }
 .tcap_mod:hover                            { background: var(--accent-hi); color: #001014;
                                              border-color: var(--accent-hi);                                        }
+
+/* ====================================================================== */
+/*  Chord boxes — click-to-fill diagrams that sit above the tab paper.    */
+/*  Lives inside #tab_section_root, right after .tab_editor_panel.         */
+/* ====================================================================== */
+.chord_boxes_section                       { background: var(--surface);
+                                             border-radius: 8px; padding: 0; margin: 0 14px 14px;
+                                             border: 1px solid #2a2a2a;                                              }
+.chord_boxes_section > summary             { cursor: pointer; padding: 8px 12px;
+                                             list-style: none; user-select: none;
+                                             border-bottom: 1px solid #2a2a2a;
+                                             background: #1a1a1a; border-radius: 8px 8px 0 0;                       }
+.chord_boxes_section[open] > summary       { border-radius: 8px 8px 0 0;                                            }
+.chord_boxes_section > summary::-webkit-details-marker { display: none;                                              }
+.chord_boxes_section > summary::before     { content: "▸"; display: inline-block; margin-right: 8px;
+                                             color: var(--muted); transition: transform .15s;                       }
+.chord_boxes_section[open] > summary::before { transform: rotate(90deg);                                            }
+.cb_title                                  { font: 600 0.95em var(--font); color: var(--accent);                    }
+.cb_hint                                   { color: var(--muted); font-size: 0.8em; margin-left: 12px;             }
+.cb_controls                               { display: flex; gap: 8px; padding: 10px 12px 4px;                       }
+
+#chord_boxes_grid                          { display: grid;
+                                             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                                             gap: 14px; padding: 10px 12px 14px;                                    }
+.cb_empty                                  { grid-column: 1 / -1; padding: 18px 4px;
+                                             color: var(--muted); font-size: 0.9em; text-align: center;            }
+.cb_box                                    { background: #fafafa; border-radius: 6px;
+                                             padding: 8px 8px 6px; display: flex; flex-direction: column;
+                                             gap: 4px;                                                              }
+.cb_box_top                                { display: flex; align-items: center; gap: 4px;                          }
+.cb_name                                   { flex: 1 1 auto; min-width: 0; height: 22px;
+                                             padding: 0 4px; box-sizing: border-box;
+                                             font: 700 0.95em var(--font); color: #111;
+                                             background: #fff; border: 1px solid #c0c0c0; border-radius: 3px;       }
+.cb_name:focus                             { outline: none; border-color: var(--accent-hi);                         }
+.cb_basefret_ctl                           { display: inline-flex; align-items: center; gap: 2px;
+                                             font-size: 0.75em; color: #555;                                       }
+.cb_basefret_ctl button                    { width: 18px; height: 18px; padding: 0;
+                                             font: 700 0.95em var(--font); line-height: 16px;
+                                             border: 1px solid #c0c0c0; background: #fff; color: #111;
+                                             border-radius: 3px; cursor: pointer;                                  }
+.cb_basefret_ctl button:hover              { border-color: var(--accent-hi); color: #000;                          }
+.cb_fret_val                               { display: inline-block; min-width: 18px; text-align: center;
+                                             font-weight: 700; color: #111;                                        }
+.cb_remove                                 { width: 22px; height: 22px; padding: 0; line-height: 18px;
+                                             font: 700 1em var(--font); color: #b00;
+                                             background: #fff; border: 1px solid #c0c0c0; border-radius: 3px;
+                                             cursor: pointer;                                                       }
+.cb_remove:hover                           { background: #b00; color: #fff; border-color: #b00;                    }
+
+.cb_svg                                    { width: 100%; height: auto; display: block;
+                                             max-height: 180px;                                                    }
+.cb_svg .cb_nut                            { fill: #111;                                                          }
+.cb_svg .cb_fret                           { stroke: #555; stroke-width: 1;                                        }
+.cb_svg .cb_string                         { stroke: #555; stroke-width: 1;                                        }
+.cb_svg .cb_dot                            { fill: #111; stroke: #111;                                             }
+.cb_svg .cb_x                              { font: 700 14px var(--font); fill: #111;                              }
+.cb_svg .cb_o                              { fill: none; stroke: #111; stroke-width: 1.4;                          }
+.cb_svg .cb_basefret                       { font: 700 11px var(--font); fill: #111;                               }
+.cb_svg .cb_outofview                      { font: 700 11px var(--font); fill: #888;                               }
+.cb_svg rect.cb_hit_header,
+.cb_svg rect.cb_hit_fret                   { fill: transparent; cursor: pointer;                                   }
+.cb_svg rect.cb_hit_header:hover           { fill: rgba(95,232,224,0.18);                                          }
+.cb_svg rect.cb_hit_fret:hover             { fill: rgba(95,232,224,0.18);                                          }
+
+.cb_readout                                { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+                                             gap: 1px; padding: 2px 0;                                            }
+.cb_ro_cell                                { text-align: center; line-height: 1.05;
+                                             font: 600 0.7em var(--font); color: #333;
+                                             padding: 1px 0; min-height: 14px;                                    }
+.cb_ro_note                                { display: block; color: #111; font-weight: 700; font-size: 1.05em;     }
+.cb_ro_deg                                 { display: block; color: #777; font-size: 0.85em;                       }
+.cb_ro_x                                   { color: #b00; font-weight: 700;                                        }
+.cb_ro_blank                               { color: #ccc;                                                          }
+
+/* ---------- Print: chord-boxes / tab-only / boxes-only ----------
+   tab.js sets body[data-print="section_8"] for any of the three modes;
+   it ALSO sets data-print-mode to "all" / "tab" / "boxes" so we can
+   selectively hide pieces. The base @media print rule above hides
+   .tab_controls and .tab_capture, which is correct for all three.    */
+@media print {
+  body[data-print="section_8"] .chord_boxes_section { background: #fff !important;
+                                                       border: none !important;                                     }
+  body[data-print="section_8"] .chord_boxes_section > summary { display: none !important;                          }
+  body[data-print="section_8"] .cb_controls         { display: none !important;                                     }
+  body[data-print="section_8"] .cb_box              { background: #fff !important; padding: 4px 6px 2px !important;
+                                                       page-break-inside: avoid;                                    }
+  body[data-print="section_8"] .cb_remove,
+  body[data-print="section_8"] .cb_basefret_ctl button { display: none !important;                                  }
+  body[data-print="section_8"] .cb_basefret_ctl     { padding: 0 !important;                                        }
+  body[data-print="section_8"] .cb_fret_val         { font-size: 0.7em; color: #555;                                }
+  body[data-print="section_8"] .cb_name             { background: #fff !important; border: none !important;
+                                                       color: #000 !important; font-size: 0.95em !important;
+                                                       padding: 0 !important; height: auto !important;              }
+  body[data-print="section_8"] #chord_boxes_grid    { gap: 10px !important;
+                                                       padding: 4px 0 8px !important;                               }
+  /* boxes-only mode: hide tab paper entirely */
+  body[data-print="section_8"][data-print-mode="boxes"] #tab_paper { display: none !important;                       }
+  /* tab-only mode: hide the chord-boxes section entirely */
+  body[data-print="section_8"][data-print-mode="tab"]   #chord_boxes_section { display: none !important;             }
+}

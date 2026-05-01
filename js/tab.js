@@ -15,10 +15,11 @@
   var $ = function (id) { return document.getElementById(id); };
   var ctlTitle, ctlStrings, ctlTuning, ctlMeasures, ctlBeats, ctlSubdiv,
       ctlPerLine, grid, paper, titlePrint, subPrint, btnClear, btnFlip,
-      tabRoot, btnPrint, btnPrintBl, btnShare,
+      tabRoot, btnPrint, btnPrintBl, btnPrintTab, btnPrintBoxes, btnShare,
       capDetails, capBody, capBoard, capStatus, capStepVal,
       capRec, capChord, capNext, capBack, capRest, capReset,
-      capStepUp, capStepDn;
+      capStepUp, capStepDn,
+      cbSection, cbGrid, cbAdd, cbClear;
 
   function captureDom() {
     ctlTitle    = $('ctl_title');
@@ -38,7 +39,14 @@
     tabRoot     = $('tab_section_root');
     btnPrint    = tabRoot && tabRoot.querySelector('.btn_print');
     btnPrintBl  = tabRoot && tabRoot.querySelector('.btn_print_blank');
+    btnPrintTab = tabRoot && tabRoot.querySelector('.btn_print_tab');
+    btnPrintBoxes = tabRoot && tabRoot.querySelector('.btn_print_boxes');
     btnShare    = tabRoot && tabRoot.querySelector('.btn_share');
+    // Chord-boxes pieces
+    cbSection   = $('chord_boxes_section');
+    cbGrid      = $('chord_boxes_grid');
+    cbAdd       = $('cb_add');
+    cbClear     = $('cb_clear');
     // Capture-mode pieces
     capDetails  = $('tab_capture');
     capBody     = $('tab_capture_body');
@@ -66,7 +74,8 @@
     subdiv:   2,
     perLine:  4,
     flipped:  false,      // false = top row is highest pitch (standard)
-    cells:    {}          // sparse: "row_col" -> "12h"
+    cells:    {},         // sparse: "row_col" -> "12h"
+    boxes:    []          // chord boxes: [{name, baseFret, fingers:[null|'x'|0|N,...]}]
   };
 
   // ---- Capture mode (mini-fretboard → tab) state ---------------------------
@@ -310,6 +319,7 @@
       .replace(/([A-Ga-g])b$/, '$1♭');
     if (v !== raw) inp.value = v;
     state.notes[r] = v;
+    pushStringConfigToBoxes();
     saveLocal();
   }
 
@@ -370,7 +380,8 @@
       perLine: state.perLine,
       flipped: state.flipped,
       notes: state.notes,
-      cells: state.cells
+      cells: state.cells,
+      boxes: state.boxes
     };
   }
   function deserialise(o) {
@@ -385,6 +396,7 @@
     if (typeof o.flipped === 'boolean')   state.flipped  = o.flipped;
     if (Array.isArray(o.notes))           state.notes    = o.notes;
     if (o.cells && typeof o.cells === 'object') state.cells = o.cells;
+    if (Array.isArray(o.boxes))           state.boxes    = o.boxes;
   }
 
   // ---- URL share -----------------------------------------------------------
@@ -447,6 +459,7 @@
       });
       populateTuningSelect();
       render();
+      pushStringConfigToBoxes();
       saveLocal();
     });
 
@@ -454,6 +467,7 @@
       state.tuning = ctlTuning.value;
       syncStateNotesFromTuning();
       render();
+      pushStringConfigToBoxes();
       saveLocal();
     });
 
@@ -492,21 +506,35 @@
       });
       state.cells = newCells;
       render();
+      pushStringConfigToBoxes();
       saveLocal();
     });
 
     // Print routing: set body[data-print]="section_8" so the main-site CSS
-    // hides every other section while the tab prints. Restore on afterprint.
-    function _printRouted(blankSnap) {
+    // hides every other section while the tab prints. `mode` selects which
+    // sub-piece is visible — "all" (boxes + tab), "tab" (tab paper only),
+    // or "boxes" (chord boxes only). Set as body[data-print-mode] so the
+    // CSS in tab.css can flip pieces on/off without JS reaching for them.
+    function _printRouted(blankSnap, mode) {
       var sec = document.getElementById('section_8');
       var restoreClosed = false;
       if (sec && sec.tagName === 'DETAILS' && !sec.open) {
         restoreClosed = true;
         sec.open = true;
       }
+      // Force the chord-boxes section open during print modes that need it.
+      var cbWasClosed = false;
+      if (cbSection && cbSection.tagName === 'DETAILS' && !cbSection.open
+          && (mode === 'all' || mode === 'boxes')) {
+        cbWasClosed = true;
+        cbSection.open = true;
+      }
       document.body.setAttribute('data-print', 'section_8');
+      document.body.setAttribute('data-print-mode', mode || 'all');
       function cleanup() {
         document.body.removeAttribute('data-print');
+        document.body.removeAttribute('data-print-mode');
+        if (cbWasClosed && cbSection) cbSection.open = false;
         if (restoreClosed && sec) sec.open = false;
         if (blankSnap) {
           paper.classList.remove('blank');
@@ -527,8 +555,23 @@
     btnPrint.addEventListener('click', function (e) {
       e.preventDefault();
       paper.classList.remove('blank');
-      _printRouted(null);
+      _printRouted(null, 'all');
     });
+
+    if (btnPrintTab) {
+      btnPrintTab.addEventListener('click', function (e) {
+        e.preventDefault();
+        paper.classList.remove('blank');
+        _printRouted(null, 'tab');
+      });
+    }
+    if (btnPrintBoxes) {
+      btnPrintBoxes.addEventListener('click', function (e) {
+        e.preventDefault();
+        paper.classList.remove('blank');
+        _printRouted(null, 'boxes');
+      });
+    }
 
     btnPrintBl.addEventListener('click', function (e) {
       e.preventDefault();
@@ -566,7 +609,7 @@
       subPrint.textContent = '';
       paper.classList.add('blank');
       render();
-      _printRouted(snap);
+      _printRouted(snap, 'tab');
     });
 
     // Browsers strip placeholder text from <input> elements when printing,
@@ -915,8 +958,38 @@
   }
 
   // Allow the host page to nudge the mini-fretboard (e.g. after a site
-  // key change) without re-rendering the whole tab grid.
-  window.SF_TabCapture = { refresh: function () { renderCaptureBoard(); } };
+  // key change) without re-rendering the whole tab grid. The same hook
+  // pushes the new site key into the chord-box readouts so degrees stay
+  // in sync when the user changes key in the main UI.
+  window.SF_TabCapture = { refresh: function () {
+    renderCaptureBoard();
+    if (window.SF_ChordBoxes && typeof window.SF_ChordBoxes.setSiteKey === 'function') {
+      window.SF_ChordBoxes.setSiteKey(_siteKey());
+    }
+  } };
+
+  // ---- Chord boxes wiring -------------------------------------------------
+  function pushStringConfigToBoxes() {
+    if (!window.SF_ChordBoxes) return;
+    window.SF_ChordBoxes.setStringConfig(state.strings, state.notes.slice());
+  }
+
+  function bindChordBoxes() {
+    if (!cbGrid || !window.SF_ChordBoxes) return;
+    window.SF_ChordBoxes.mount({
+      mount:        cbGrid,
+      stringCount:  state.strings,
+      stringNotes:  state.notes.slice(),
+      siteKey:      _siteKey(),
+      initial:      state.boxes,
+      onChange:     function (boxes) {
+        state.boxes = boxes;
+        saveLocal();
+      }
+    });
+    if (cbAdd)   cbAdd  .addEventListener('click', function () { window.SF_ChordBoxes.addBox(); });
+    if (cbClear) cbClear.addEventListener('click', function () { window.SF_ChordBoxes.clearAll(); });
+  }
 
   function init() {
     captureDom();
@@ -931,6 +1004,7 @@
     render();
     bindControls();
     bindCapture();
+    bindChordBoxes();
     renderCaptureBoard();
     updateCaptureUI();
   }
