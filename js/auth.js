@@ -6,6 +6,38 @@
 (function () {
   'use strict';
 
+  // Clerk Appearance config — matches the site's dark theme + cyan
+  // accent so the sign-in modal and user-profile overlays don't look
+  // like a foreign element. Passed both to Clerk.load() (so the
+  // initial load picks it up) and to each openSignIn / openUserProfile
+  // call (defensive — works even if auto-init beat us to load()).
+  var APPEARANCE = {
+    variables: {
+      colorPrimary:                  '#5fe8e0',
+      colorTextOnPrimaryBackground:  '#001014',
+      colorBackground:               '#1a1a1a',
+      colorText:                     '#f0f0f0',
+      colorTextSecondary:            '#888',
+      colorNeutral:                  '#f0f0f0',
+      colorInputBackground:          '#0e0e0e',
+      colorInputText:                '#f0f0f0',
+      colorDanger:                   '#ef4444',
+      colorSuccess:                  '#5fe8e0',
+      colorWarning:                  '#fbbf24',
+      borderRadius:                  '6px',
+      fontFamily:                    'Optima, "Avenir Next", "Helvetica Neue", system-ui, sans-serif',
+      fontSize:                      '0.95rem'
+    },
+    elements: {
+      // Card border + shadow so it reads as a panel against the dark page.
+      card:        { border: '1px solid #2e2e2e', boxShadow: '0 12px 36px rgba(0,0,0,0.7)' },
+      // Drop the Clerk dev-mode footer's noisy default styling.
+      footer:      { background: 'transparent' },
+      // Make the "Sign up" / "Sign in" cross-link match the accent.
+      footerActionLink: { color: '#5fe8e0' }
+    }
+  };
+
   // The widget's mount point is created on first render — the DOM only
   // needs an empty target div to exist. Falling back to body if absent.
   function mount() {
@@ -38,7 +70,7 @@
     if (!user) {
       el.innerHTML = '<button class="auth_btn auth_signin" type="button">Sign in</button>';
       el.querySelector('.auth_signin').addEventListener('click', function () {
-        Clerk.openSignIn();
+        Clerk.openSignIn({ appearance: APPEARANCE });
       });
       return;
     }
@@ -65,7 +97,7 @@
       if (!btn) return;
       var act = btn.getAttribute('data-act');
       menu.hidden = true;
-      if (act === 'profile') Clerk.openUserProfile();
+      if (act === 'profile') Clerk.openUserProfile({ appearance: APPEARANCE });
       else if (act === 'signout') Clerk.signOut();
     });
     document.addEventListener('click', function () { menu.hidden = true; }, { once: true });
@@ -91,7 +123,7 @@
       return;
     }
     try {
-      await window.Clerk.load();
+      await window.Clerk.load({ appearance: APPEARANCE });
     } catch (e) {
       console.error('[auth] Clerk.load() failed:', e);
       return;
