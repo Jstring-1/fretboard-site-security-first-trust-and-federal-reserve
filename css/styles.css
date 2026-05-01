@@ -1372,14 +1372,14 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /*  rule still wins (it uses !important; we don't), so paper output is    */
 /*  unaffected.                                                            */
 /* ====================================================================== */
-#section_2  { --tint-body: #101420; --tint-head: #1e202c; --tint-border: #1a1f2c;  /* Fretboard — blue   */ }
-#section_5  { --tint-body: #14182a; --tint-head: #20243a; --tint-border: #1f2540;  /* Tunings  — lt blue */ }
-#section_4  { --tint-body: #0e1616; --tint-head: #1c2424; --tint-border: #1a2828;  /* Keyboard — teal    */ }
-#section_3  { --tint-body: #180e1a; --tint-head: #2a1c2c; --tint-border: #2c1c2e;  /* Chord    — plum    */ }
-#section_6  { --tint-body: #0e1610; --tint-head: #1c241e; --tint-border: #1c2c20;  /* Scale    — forest  */ }
-#section_8  { --tint-body: #1a140e; --tint-head: #2a221c; --tint-border: #2c241c;  /* Tab      — amber   */ }
-#section_9  { --tint-body: #120e1c; --tint-head: #201c2a; --tint-border: #221d33;  /* Key sigs — indigo  */ }
-#section_7  { --tint-body: #16180e; --tint-head: #24261c; --tint-border: #28281c;  /* Learn    — olive   */ }
+#section_2  { --tint-body: #0e1628; --tint-head: #1e2640; --tint-border: #1a223a;  /* Fretboard — blue   */ }
+#section_5  { --tint-body: #161e34; --tint-head: #242e4c; --tint-border: #1f2a48;  /* Tunings  — lt blue */ }
+#section_4  { --tint-body: #061a1c; --tint-head: #163032; --tint-border: #142a2c;  /* Keyboard — teal    */ }
+#section_3  { --tint-body: #1c0e1c; --tint-head: #321c34; --tint-border: #2c1a30;  /* Chord    — plum    */ }
+#section_6  { --tint-body: #08180c; --tint-head: #182e1e; --tint-border: #14281a;  /* Scale    — forest  */ }
+#section_8  { --tint-body: #1e1608; --tint-head: #322820; --tint-border: #2c241a;  /* Tab      — amber   */ }
+#section_9  { --tint-body: #100e22; --tint-head: #221c3c; --tint-border: #1f1d36;  /* Key sigs — indigo  */ }
+#section_7  { --tint-body: #1c0a10; --tint-head: #34181e; --tint-border: #2c1820;  /* Learn    — maroon  */ }
 
 #section_2, #section_3, #section_4, #section_5,
 #section_6, #section_7, #section_8, #section_9   { background-color: var(--tint-body);
