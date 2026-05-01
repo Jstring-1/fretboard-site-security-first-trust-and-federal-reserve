@@ -1,3 +1,6 @@
 .claude/
 # Legacy PHP source kept locally for reference — not shipped, not edited.
 _legacy/
+# Personal book/score PDFs for scratchpad indexing experiments — never
+# committed (copyright + size). Drop files here for me to inspect.
+_books/

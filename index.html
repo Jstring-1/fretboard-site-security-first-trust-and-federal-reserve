@@ -82,6 +82,7 @@
 <script defer src="js/chord_lookup.js"></script>
 <script defer src="js/sortable.js"></script>
 <script defer src="js/app.js"></script>
+<script defer src="js/chord_boxes.js"></script>
 <script defer src="js/tab.js"></script>
 </head>
 <body>
@@ -136,7 +137,9 @@
       <button type="button" id="btn_clear" class="ctl_btn">Clear notes</button>
       <button type="button" id="btn_low_high" class="ctl_btn" title="Reverse string order (highest at top)">⇅ flip strings</button>
       <button type="button" class="btn_print_blank ctl_btn" title="Print blank tab pages">Print blank</button>
-      <button type="button" class="btn_print ctl_btn" title="Print current tab">Print</button>
+      <button type="button" class="btn_print_tab ctl_btn" title="Print tab only (no chord boxes)">Print tab</button>
+      <button type="button" class="btn_print_boxes ctl_btn" title="Print chord boxes only">Print boxes</button>
+      <button type="button" class="btn_print ctl_btn" title="Print everything (chord boxes + tab)">Print all</button>
     </div>
     <div class="tab_help">
       <p>Type a fret number (0–99) into a cell.</p>
@@ -165,6 +168,17 @@
       </div>
     </details>
     </div><!-- /.tab_editor_panel -->
+    <details id="chord_boxes_section" class="chord_boxes_section" open>
+      <summary>
+        <span class="cb_title">Chord boxes</span>
+        <span class="cb_hint">Click a fret to place a dot. Click above the box to toggle × (mute) or ○ (open). Use −/+ to slide the box up the neck.</span>
+      </summary>
+      <div class="cb_controls">
+        <button type="button" id="cb_add" class="ctl_btn">+ Add box</button>
+        <button type="button" id="cb_clear" class="ctl_btn">Clear all</button>
+      </div>
+      <div id="chord_boxes_grid"></div>
+    </details>
     <div id="tab_paper">
       <div id="tab_title_block">
         <div id="tab_title_print" class="tab_title_print"></div>
@@ -188,7 +202,7 @@
 
 <footer id="site_footer">
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260430.1024</div>
+  <div id="build_num">20260430.1938</div>
 </footer>
 
 </body>
