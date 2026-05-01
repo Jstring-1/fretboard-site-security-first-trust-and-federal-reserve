@@ -274,6 +274,26 @@
     var nf = boxes[idx].baseFret + delta;
     if (nf < 1) nf = 1;
     if (nf > MAX_FRET) nf = MAX_FRET;
+    var actualDelta = nf - boxes[idx].baseFret;
+    if (actualDelta !== 0) {
+      // Slide fretted dots with the box so the chord SHAPE moves up/down
+      // the neck rather than the box "panning over" pinned dots. Open
+      // ('o' / 0) and muted ('x') markers stay as-is — those aren't
+      // fret numbers, they're string-state flags.
+      var fingers = boxes[idx].fingers;
+      for (var i = 0; i < fingers.length; i++) {
+        var f = fingers[i];
+        if (typeof f === 'number' && f > 0) {
+          var nfDot = f + actualDelta;
+          // Drop dots that would slide below the nut — they don't make
+          // sense on a fretted instrument. Mark as open if delta drove
+          // the dot to fret 0 exactly so a user dialling DOWN doesn't
+          // silently lose the string.
+          if (nfDot < 1) fingers[i] = 'o';
+          else            fingers[i] = nfDot;
+        }
+      }
+    }
     boxes[idx].baseFret = nf;
     render();
     _emit();
