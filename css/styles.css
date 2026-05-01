@@ -1365,6 +1365,36 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 }
 
 /* ====================================================================== */
+/*  Per-section dark tints — subtle hue shift so each section reads as    */
+/*  its own panel. Body + summary header + border all pick up the tint    */
+/*  from --tint-body / --tint-head / --tint-border tokens defined per     */
+/*  section ID. Print mode's `.section { background: none !important }`   */
+/*  rule still wins (it uses !important; we don't), so paper output is    */
+/*  unaffected.                                                            */
+/* ====================================================================== */
+#section_2  { --tint-body: #101420; --tint-head: #1e202c; --tint-border: #1a1f2c;  /* Fretboard — blue   */ }
+#section_5  { --tint-body: #14182a; --tint-head: #20243a; --tint-border: #1f2540;  /* Tunings  — lt blue */ }
+#section_4  { --tint-body: #0e1616; --tint-head: #1c2424; --tint-border: #1a2828;  /* Keyboard — teal    */ }
+#section_3  { --tint-body: #180e1a; --tint-head: #2a1c2c; --tint-border: #2c1c2e;  /* Chord    — plum    */ }
+#section_6  { --tint-body: #0e1610; --tint-head: #1c241e; --tint-border: #1c2c20;  /* Scale    — forest  */ }
+#section_8  { --tint-body: #1a140e; --tint-head: #2a221c; --tint-border: #2c241c;  /* Tab      — amber   */ }
+#section_9  { --tint-body: #120e1c; --tint-head: #201c2a; --tint-border: #221d33;  /* Key sigs — indigo  */ }
+#section_7  { --tint-body: #16180e; --tint-head: #24261c; --tint-border: #28281c;  /* Learn    — olive   */ }
+
+#section_2, #section_3, #section_4, #section_5,
+#section_6, #section_7, #section_8, #section_9   { background-color: var(--tint-body);
+                                                    border-color: var(--tint-border);                                  }
+#section_2 > summary, #section_3 > summary, #section_4 > summary, #section_5 > summary,
+#section_6 > summary, #section_7 > summary, #section_8 > summary, #section_9 > summary
+                                                  { background: var(--tint-head);                                        }
+/* Hover on the section title — keep the same accent feel but lift slightly
+   above the (now tinted) header so the click target still reads as live. */
+#section_2 > summary:hover, #section_3 > summary:hover, #section_4 > summary:hover,
+#section_5 > summary:hover, #section_6 > summary:hover, #section_7 > summary:hover,
+#section_8 > summary:hover, #section_9 > summary:hover
+                                                  { background: var(--tint-head);                                        }
+
+/* ====================================================================== */
 /*  Auth widget — top-right Clerk sign-in / signed-in pill.               */
 /*  Filled in by js/auth.js once Clerk JS finishes loading.                */
 /* ====================================================================== */
