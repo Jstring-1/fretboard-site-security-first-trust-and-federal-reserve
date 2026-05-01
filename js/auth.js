@@ -6,6 +6,22 @@
 (function () {
   'use strict';
 
+  // Admin allow-list. Sign-in alone doesn't grant admin — only Clerk
+  // user IDs in this list flip body[data-admin="true"], which CSS uses
+  // to gate admin-only UI (e.g. the Tab editor pre-launch). Frontend
+  // gating only — fine for "hide WIP UI from casual users", not for
+  // protecting secret content.
+  var ADMIN_USER_IDS = [
+    'user_3D6pP9Gad4nTmmp5tJGq858ar77',  // kylejester@gmail.com
+  ];
+
+  function _applyAdminFlag() {
+    var u = window.Clerk && window.Clerk.user;
+    var isAdmin = !!(u && ADMIN_USER_IDS.indexOf(u.id) !== -1);
+    if (isAdmin) document.body.setAttribute('data-admin', 'true');
+    else         document.body.removeAttribute('data-admin');
+  }
+
   // Clerk Appearance config — matches the site's dark theme + cyan
   // accent so the sign-in modal and user-profile overlays don't look
   // like a foreign element. Passed both to Clerk.load() (so the
@@ -129,6 +145,7 @@
       return;
     }
     render();
+    _applyAdminFlag();
     // Kick off settings sync — pulls cloud blob if signed in, applies
     // tab state if present, otherwise pushes local up. No-op for
     // anonymous users.
@@ -138,6 +155,7 @@
     if (window.Clerk.addListener) {
       window.Clerk.addListener(function () {
         render();
+        _applyAdminFlag();
         if (window.SF_Settings && typeof window.SF_Settings.onAuthChange === 'function') {
           window.SF_Settings.onAuthChange();
         }
@@ -152,6 +170,10 @@
   window.SF_Auth = {
     isSignedIn: function () {
       return !!(window.Clerk && window.Clerk.loaded && window.Clerk.user);
+    },
+    isAdmin: function () {
+      var u = window.Clerk && window.Clerk.user;
+      return !!(u && ADMIN_USER_IDS.indexOf(u.id) !== -1);
     },
     getToken: async function () {
       if (!window.Clerk || !window.Clerk.session) return null;
