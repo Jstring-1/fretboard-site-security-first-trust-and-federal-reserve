@@ -1194,15 +1194,19 @@
   function renderSummaryExtras(x) {
     const slots = document.querySelectorAll('.summary_extras');
     if (!slots.length) return;
-    let opts = '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
-    for (const a of ALLNOTES) {
-      opts += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
+    function pickerHtml(sectionKey) {
+      // Pre-select the section's effective key (override or global).
+      // The first <option> wins selection in HTML; the rest fill out
+      // the dropdown with every choice.
+      let opts = '<option value="' + escHtml(sectionKey) + '">' + escHtml(sectionKey) + '</option>';
+      for (const a of ALLNOTES) {
+        opts += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
+      }
+      return '<span class="section_key_picker"><label>Key: <select class="inputs" name="k">' +
+          opts +
+        '</select></label></span>' +
+        '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
     }
-    const html =
-      '<span class="section_key_picker"><label>Key: <select class="inputs" name="k">' +
-        opts +
-      '</select></label></span>' +
-      '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
     slots.forEach(function (s) {
       const target = s.getAttribute('data-summary-for');
       // Sections that don't need the Key picker / Clear button:
@@ -1212,10 +1216,20 @@
       // Tab editor (section_8) has its own controls inside the section —
       // nothing for the summary header.
       if (target === 'section_8') { s.innerHTML = ''; return; }
+      // Compute this section's effective key. In linked mode every
+      // section sees the global k. In unlinked mode, fold any
+      // s<n>_k= override on top by routing through stateForSection,
+      // which re-runs parseState on a virtual URL — guaranteeing the
+      // displayed key matches whatever the renderer just rendered.
+      let sectionKey = x.k;
+      if (target && /^section_\d+$/.test(target)) {
+        const sx = stateForSection(target, x);
+        if (sx && sx.k) sectionKey = sx.k;
+      }
       // Chord (section_3) + Scale (section_6) builders: prepend the
       // compact-mode icon toggle just before the Clear / Key picker.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
-      s.innerHTML = prefix + html;
+      s.innerHTML = prefix + pickerHtml(sectionKey);
     });
   }
 
@@ -2106,8 +2120,16 @@
     // sync handler keeps every section's key picker at the same value. Falls
     // back to window.SF_X.k (parsed state) if no picker is in the DOM yet,
     // so the URL always carries k= once any change fires.
+    //
+    // In UNLINKED mode each picker shows its own section's effective key,
+    // so reading from "the first picker" can clobber the global k. Use
+    // window.SF_X.k (the parsed global) instead — it survives unchanged
+    // until the user explicitly toggles back to Linked.
+    const _unlinkedNow = document.body.getAttribute('data-apply-all') === 'off';
     const _kPick = document.querySelector('.section_key_picker select[name="k"]');
-    if (_kPick) {
+    if (_unlinkedNow && window.SF_X && window.SF_X.k) {
+      parts.push('k=' + urlNote(window.SF_X.k));
+    } else if (_kPick) {
       pushSelect(_kPick);
     } else if (window.SF_X && window.SF_X.k) {
       parts.push('k=' + urlNote(window.SF_X.k));
@@ -2175,6 +2197,16 @@
         const _v = _curParams.get('s' + i);
         if (_v != null) parts.push('s' + i + '=' + _v);
       }
+    }
+
+    // Preserve unlinked-mode metadata so a tuning / chord-form change
+    // doesn't accidentally re-link everything: keep the u flag and
+    // every section-namespaced override (s<num>_k, s<num>_hl, ...).
+    if (_unlinkedNow) {
+      if (_curParams.get('u') === '1') parts.push('u=1');
+      _curParams.forEach(function (v, k) {
+        if (/^s\d+_/.test(k)) parts.push(k + '=' + encodeURIComponent(v));
+      });
     }
 
     navigateTo('?' + parts.join('&'));
@@ -2342,17 +2374,21 @@
       const params = new URLSearchParams(window.location.search);
       const wasUnlinked = params.get('u') === '1';
       if (wasUnlinked) {
-        // Re-link → strip u + every s<n>_* override; everything
-        // collapses back to the global state.
-        params.delete('u');
-        Array.from(params.keys())
-          .filter(k => /^s\d+_/.test(k))
-          .forEach(k => params.delete(k));
+        // Re-link → snap the global state to the FRETBOARD's current
+        // effective view (its overrides become the new globals).
+        // virtualSearchForSection already drops u= and every s<n>_*
+        // prefix, then folds section_2's overrides on top of globals,
+        // so the resulting query is exactly the linked-mode URL we
+        // want — no full reset, no other section's overrides leak.
+        const newSearch = virtualSearchForSection('section_2', window.location.search);
+        navigateTo(newSearch ? ('?' + newSearch) : '?');
       } else {
+        // Engage unlinked → flip the flag, leave existing state alone
+        // so the current view becomes each section's starting point.
         params.set('u', '1');
+        const qs = params.toString();
+        navigateTo(qs ? ('?' + qs) : '?');
       }
-      const qs = params.toString();
-      navigateTo(qs ? ('?' + qs) : '?');
     });
   }
 
