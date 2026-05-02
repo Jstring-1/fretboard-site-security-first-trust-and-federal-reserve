@@ -20,6 +20,10 @@
     var isAdmin = !!(u && ADMIN_USER_IDS.indexOf(u.id) !== -1);
     if (isAdmin) document.body.setAttribute('data-admin', 'true');
     else         document.body.removeAttribute('data-admin');
+    // Recompute SF_Features visibility too — admin status feeds into it.
+    if (window.SF_Features && typeof window.SF_Features.applyToBody === 'function') {
+      window.SF_Features.applyToBody();
+    }
   }
 
   // Clerk Appearance config — matches the site's dark theme + cyan

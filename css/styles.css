@@ -1372,12 +1372,16 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /*  rule still wins (it uses !important; we don't), so paper output is    */
 /*  unaffected.                                                            */
 /* ====================================================================== */
-/* Admin-gated UI. Hidden by default; auth.js flips body[data-admin]
-   when a Clerk user_id from its allow-list is signed in. Frontend-only
-   gating — fine for hiding work-in-progress sections from casual
-   visitors, not for protecting sensitive content. */
-#section_8                                  { display: none;                                                            }
-body[data-admin="true"] #section_8          { display: block;                                                           }
+/* Feature-flag gating. Mark DOM nodes with class="feature_<name>" — the
+   matching `body[data-features~="<name>"]` rule un-hides them once
+   js/features.js decides the feature is visible (per its stage table:
+   'admin' / 'public' / 'hidden'). Adding a new feature gate is two
+   lines here + an entry in js/features.js's FLAGS table. */
+.feature_tab,
+.feature_sheetmusic                         { display: none;                                                            }
+body[data-features~="tab"] .feature_tab     { display: block;                                                            }
+body[data-features~="sheetmusic"] .feature_sheetmusic
+                                            { display: block;                                                            }
 
 #section_2  { --tint-body: #0e1628; --tint-head: #1e2640; --tint-border: #1a223a;  /* Fretboard — blue   */ }
 #section_5  { --tint-body: #161e34; --tint-head: #242e4c; --tint-border: #1f2a48;  /* Tunings  — lt blue */ }
@@ -1387,18 +1391,25 @@ body[data-admin="true"] #section_8          { display: block;                   
 #section_8  { --tint-body: #1e1608; --tint-head: #322820; --tint-border: #2c241a;  /* Tab      — amber   */ }
 #section_9  { --tint-body: #100e22; --tint-head: #221c3c; --tint-border: #1f1d36;  /* Key sigs — indigo  */ }
 #section_7  { --tint-body: #1c0a10; --tint-head: #34181e; --tint-border: #2c1820;  /* Learn    — maroon  */ }
+#section_10 { --tint-body: #14181e; --tint-head: #242a36; --tint-border: #1f2532;  /* Sheet music — slate */ }
+
+.sm_placeholder                             { padding: 24px 32px; color: var(--muted);
+                                              font: 400 0.95em var(--font); line-height: 1.55;
+                                              max-width: 720px; margin: 0 auto;                                       }
 
 #section_2, #section_3, #section_4, #section_5,
-#section_6, #section_7, #section_8, #section_9   { background-color: var(--tint-body);
-                                                    border-color: var(--tint-border);                                  }
+#section_6, #section_7, #section_8, #section_9, #section_10
+                                                   { background-color: var(--tint-body);
+                                                     border-color: var(--tint-border);                                  }
 #section_2 > summary, #section_3 > summary, #section_4 > summary, #section_5 > summary,
-#section_6 > summary, #section_7 > summary, #section_8 > summary, #section_9 > summary
+#section_6 > summary, #section_7 > summary, #section_8 > summary, #section_9 > summary,
+#section_10 > summary
                                                   { background: var(--tint-head);                                        }
 /* Hover on the section title — keep the same accent feel but lift slightly
    above the (now tinted) header so the click target still reads as live. */
 #section_2 > summary:hover, #section_3 > summary:hover, #section_4 > summary:hover,
 #section_5 > summary:hover, #section_6 > summary:hover, #section_7 > summary:hover,
-#section_8 > summary:hover, #section_9 > summary:hover
+#section_8 > summary:hover, #section_9 > summary:hover, #section_10 > summary:hover
                                                   { background: var(--tint-head);                                        }
 
 /* ====================================================================== */
