@@ -442,7 +442,77 @@
     x._self = '?';
     x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z + x.url_s + x.url_pk;
 
+    // ---- Unlinked mode + per-section overrides ---------------------------
+    // ?u=1 flips the page into "each section drives its own state" mode.
+    // While unlinked, params named like s<num>_<key> (e.g. s4_k=D,
+    // s4_hl=1,b3,5) override the same key for that section only. Stripped
+    // automatically when the user re-Links via the toggle button.
+    x._unlinked = (params.get('u') === '1');
+    x._sectionOverrides = {};
+    if (x._unlinked) {
+      for (const [k, v] of params.entries()) {
+        const m = k.match(/^s(\d+)_(.+)$/);
+        if (!m) continue;
+        const sec = 'section_' + m[1];
+        const field = m[2];
+        x._sectionOverrides[sec] = x._sectionOverrides[sec] || {};
+        x._sectionOverrides[sec][field] = v;
+      }
+    }
+
     return x;
+  }
+
+  // Build a "virtual" query string for a section by stripping any
+  // s<n>_* prefixed keys from the URL and overlaying that section's
+  // overrides on top of the global params. Pass the result back into
+  // parseState() to get a fully-derived per-section state with all
+  // the mask helpers (_hl_set, _pk_set, etc.) recomputed properly.
+  function virtualSearchForSection(sectionId, baseSearch) {
+    const m = String(sectionId || '').match(/^section_(\d+)$/);
+    if (!m) return baseSearch;
+    const sNum = m[1];
+    const inP = new URLSearchParams(baseSearch);
+    const sectionOverrides = {};   // field → comma-joined raw value
+    inP.forEach((v, k) => {
+      const mm = k.match(/^s(\d+)_(.+)$/);
+      if (mm && mm[1] === sNum) sectionOverrides[mm[2]] = v;
+    });
+    const out = new URLSearchParams();
+    inP.forEach((v, k) => {
+      if (/^s\d+_/.test(k)) return;       // drop ALL section overrides from base
+      if (k === 'u')        return;       // virtual URL parses as "linked"
+      // hl / pk / s are multi/special — preserve their relative order
+      out.append(k, v);
+    });
+    // Apply this section's overrides on top
+    for (const [field, raw] of Object.entries(sectionOverrides)) {
+      // Multi-value fields go comma-separated when prefixed; expand
+      // back to repeated keys so the parser path matches the canonical
+      // global form.
+      if (field === 'hl' || field === 'pk') {
+        // strip any existing
+        const exist = out.getAll(field);
+        if (exist.length) {
+          // delete all instances
+          out.delete(field);
+        }
+        raw.split(',').forEach(p => p && out.append(field, p));
+      } else {
+        out.set(field, raw);
+      }
+    }
+    return out.toString();
+  }
+
+  // Resolve the right state for a particular section: when unlinked,
+  // re-parse the URL with that section's overrides folded in; when
+  // linked, just return the global x.
+  function stateForSection(sectionId, x) {
+    if (!x || !x._unlinked) return x;
+    if (!x._sectionOverrides[sectionId]) return x;
+    const virt = virtualSearchForSection(sectionId, window.location.search);
+    return parseState(virt);
   }
 
   function findKey(obj, val) {
@@ -2141,11 +2211,21 @@
       //                        section override. URL state untouched, so
       //                        other sections keep whatever key they had.
       if (e && e.target && e.target.matches && e.target.matches('select[name="k"]')) {
-        const applyAllOff = document.body.getAttribute('data-apply-all') === 'off';
-        if (applyAllOff) {
+        const unlinked = document.body.getAttribute('data-apply-all') === 'off';
+        if (unlinked) {
+          // Project the new key onto the current URL as a section-
+          // namespaced param so it persists + is shareable. Other
+          // sections + the global k stay put.
           const sectionEl = e.target.closest('details.section, details.collapsible');
-          if (sectionEl) rerenderSectionWithKey(sectionEl.id, e.target.value);
-          return;  // do NOT navigate — would clobber the other sections' keys
+          if (sectionEl) {
+            const fakeLinkSearch = '?k=' + encodeURIComponent(urlNote(e.target.value));
+            const merged = mergeSectionOverrideUrl(sectionEl.id, fakeLinkSearch);
+            if (merged != null) {
+              navigateTo(merged);
+              return;
+            }
+          }
+          return;  // safety: don't fall through to global navigate
         }
         document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
           if (sel !== e.target) sel.value = e.target.value;
@@ -2196,37 +2276,84 @@
     rerenderSectionWithState(sectionId, x);
   }
 
-  // ---- Apply-all toggle button (fretboard summary) ------------------
-  // Bound once on first applyState run (the button is in static HTML
-  // so it survives re-renders). Reads / writes localStorage so the
-  // user's preference persists across reloads.
+  // Take a "linked-style" URL (the kind the chord/scale/keysig links
+  // pre-build, e.g. `?k=A&hl=1&hl=3&hl=5`) and merge its params into
+  // the CURRENT URL as section-namespaced overrides for `sectionId`.
+  // Used by the link interceptor when the page is in unlinked mode.
+  // Returns the new query string (with leading "?"), or null if the
+  // section ID doesn't match the s<num>_* convention.
+  function mergeSectionOverrideUrl(sectionId, linkSearch) {
+    const m = String(sectionId || '').match(/^section_(\d+)$/);
+    if (!m) return null;
+    const sNum = m[1];
+    const cur = new URLSearchParams(window.location.search);
+    const link = new URLSearchParams(linkSearch);
+
+    // Drop existing overrides for this section so the new click wins
+    // wholesale (avoids stale s4_hl=… plus a fresh s4_k=… colliding).
+    Array.from(cur.keys())
+      .filter(k => k.startsWith('s' + sNum + '_'))
+      .forEach(k => cur.delete(k));
+
+    // Project each interesting link param into a section-namespaced one.
+    // Multi-value fields (hl, pk) compress to a single comma-joined value
+    // — virtualSearchForSection expands them back at parse time.
+    const single = ['k', 'x', 'y', 'z', 's'];
+    single.forEach(f => {
+      if (link.has(f)) cur.set('s' + sNum + '_' + f, link.get(f));
+    });
+    ['hl', 'pk'].forEach(f => {
+      const arr = link.getAll(f);
+      if (arr.length) cur.set('s' + sNum + '_' + f, arr.join(','));
+      // hl can also arrive as a single comma value via the gathered form
+      // — `link.has(f)` covers nothing extra in that case.
+    });
+
+    // Make sure the unlinked flag stays on; otherwise on next render
+    // we'd parse the s<n>_* params as junk.
+    cur.set('u', '1');
+    const qs = cur.toString();
+    return qs ? ('?' + qs) : '?';
+  }
+
+  // ---- Linked / Unlinked toggle (fretboard summary) -----------------
+  // URL is the source of truth: `u=1` → unlinked (each section can
+  // hold its own state via s<n>_* params). No `u` → linked (one
+  // global state, current behavior). The toggle navigates the URL,
+  // so reload + share preserve whichever mode you were in.
   let _applyAllBound = false;
+  function paintApplyAllToggle() {
+    const $btn = document.getElementById('apply_all_toggle');
+    if (!$btn) return;
+    const params = new URLSearchParams(window.location.search);
+    const unlinked = params.get('u') === '1';
+    document.body.setAttribute('data-apply-all', unlinked ? 'off' : 'on');
+    $btn.classList.toggle('on', !unlinked);
+    $btn.textContent = unlinked ? 'Unlinked' : 'Linked';
+    $btn.setAttribute('aria-pressed', unlinked ? 'false' : 'true');
+  }
   function bindApplyAllToggle() {
+    paintApplyAllToggle();          // always repaint to reflect URL state
     if (_applyAllBound) return;
     const $btn = document.getElementById('apply_all_toggle');
     if (!$btn) return;
     _applyAllBound = true;
-    function refresh() {
-      const off = localStorage.getItem('sf_apply_all') === 'off';
-      document.body.setAttribute('data-apply-all', off ? 'off' : 'on');
-      $btn.classList.toggle('on', !off);
-      $btn.textContent = off ? 'Apply: off' : 'Apply: all';
-      $btn.setAttribute('aria-pressed', off ? 'false' : 'true');
-    }
     $btn.addEventListener('click', function () {
-      const turningOn = (localStorage.getItem('sf_apply_all') === 'off');
-      localStorage.setItem('sf_apply_all', turningOn ? 'on' : 'off');
-      refresh();
-      if (turningOn && window.SF_X) {
-        // Re-engaging "Apply: all" — drop any per-section overrides and
-        // re-sync everything to the URL state.
-        document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
-          sel.value = window.SF_X.k;
-        });
-        applyState();
+      const params = new URLSearchParams(window.location.search);
+      const wasUnlinked = params.get('u') === '1';
+      if (wasUnlinked) {
+        // Re-link → strip u + every s<n>_* override; everything
+        // collapses back to the global state.
+        params.delete('u');
+        Array.from(params.keys())
+          .filter(k => /^s\d+_/.test(k))
+          .forEach(k => params.delete(k));
+      } else {
+        params.set('u', '1');
       }
+      const qs = params.toString();
+      navigateTo(qs ? ('?' + qs) : '?');
     });
-    refresh();
   }
 
   // Wire the custom-tuning preset loader. When the user picks a preset
@@ -2279,19 +2406,20 @@
       if (url.origin !== window.location.origin) return;
       if (url.pathname !== window.location.pathname) return;
       e.preventDefault();
-      // "Apply: all" off → state-mutating clicks (chord cells, scale
-      // cells, keysig rows, highlight pills) only re-render the section
-      // they live in. URL state stays put so other sections keep their
-      // current view. Engaged → fall through to global navigateTo.
-      const applyAllOff = document.body.getAttribute('data-apply-all') === 'off';
-      if (applyAllOff) {
+      // "Unlinked" mode → state-mutating clicks (chord cells, scale
+      // cells, keysig rows, highlight pills) write section-namespaced
+      // params (s<n>_k, s<n>_hl, s<n>_x, ...) onto the CURRENT URL
+      // instead of replacing it. This way other sections keep their
+      // overrides AND the unlinked state survives reload + share.
+      const unlinked = document.body.getAttribute('data-apply-all') === 'off';
+      if (unlinked) {
         const sectionEl = a.closest('details.section, details.collapsible');
         if (sectionEl) {
-          // Parse the link's would-be URL into a state object without
-          // actually navigating, then re-render only this section.
-          const xo = parseState(url.search || '');
-          rerenderSectionWithState(sectionEl.id, xo);
-          return;
+          const merged = mergeSectionOverrideUrl(sectionEl.id, url.search || '');
+          if (merged != null) {
+            navigateTo(merged);
+            return;
+          }
         }
       }
       navigateTo(url.search || '?');
@@ -3193,14 +3321,23 @@
     const x = parseState();
     window.SF_X = x;
     renderTitle(x);
-    renderFretboard(x);     // creates #options_root in the middle column
-    renderOptions(x);       // fills it
-    renderChordGrid(x);
-    renderScaleGrid(x);
+    // When the URL says "unlinked", each section gets its own state
+    // built by overlaying that section's s<n>_* overrides onto the
+    // global params. Sections without overrides use the global x.
+    // Linked mode (default) → every section sees the same x.
+    const xFB = stateForSection('section_2', x);
+    const xKB = stateForSection('section_4', x);
+    const xCG = stateForSection('section_3', x);
+    const xSG = stateForSection('section_6', x);
+    const xKS = stateForSection('section_9', x);
+    renderFretboard(xFB);   // creates #options_root in the middle column
+    renderOptions(x);       // form below the fretboard mirrors the GLOBAL state
+    renderChordGrid(xCG);
+    renderScaleGrid(xSG);
     renderTuningsTable(x);
-    renderKeySignatures(x);
-    applyKeyboardColors(x);
-    renderKeyboardPicks(x);
+    renderKeySignatures(xKS);
+    applyKeyboardColors(xKB);
+    renderKeyboardPicks(xKB);
     bindTuningPicker(x);
     applyCollapseFromUrl();
 
