@@ -159,6 +159,79 @@ async def put_settings(
     return {"ok": True}
 
 
+# ---- Songs (chord-extracted catalogue) -----------------------------------
+# Both endpoints below are public reads — chord progressions aren't
+# sensitive, and gating on auth would force us to flip both UI + API
+# when we eventually open the Sheet Music section to all users. The
+# admin-only visibility gate is on the frontend section, not the data.
+
+@app.get("/api/songs/search")
+async def search_songs(
+    q: str = "",
+    only_chords: bool = False,
+    limit: int = 200,
+):
+    """Search the chord-extracted song catalogue.
+
+    - `q` (optional): substring match against title, case-insensitive
+    - `only_chords` (optional): restrict to rows where chord data
+      actually landed (skip TOC-only entries)
+    - `limit` (optional, max 500): result cap
+
+    Returns a `results` array of light row records — the per-song
+    chord/degree arrays come from `/api/songs/{id}` so the search
+    payload stays small even with thousands of hits.
+    """
+    limit = max(1, min(500, int(limit) if limit else 200))
+    where: list[str] = []
+    params: list = []
+    if q:
+        where.append("title_upper LIKE %s")
+        params.append(f"%{q.upper()}%")
+    if only_chords:
+        where.append("has_chords = true")
+    sql = (
+        "SELECT id, book, pdf_page, title, song_key AS key, "
+        "       time_signature, confidence, has_chords "
+        "FROM songs"
+    )
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    # Rank: shorter titles surface first (better matches for short
+    # queries), then alphabetical for stable order.
+    sql += " ORDER BY length(title), title_upper, book LIMIT %s"
+    params.append(limit)
+
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql, params)
+            cols = [d.name for d in cur.description]
+            rows = await cur.fetchall()
+    return {"results": [dict(zip(cols, r)) for r in rows]}
+
+
+@app.get("/api/songs/{song_id}")
+async def get_song(song_id: int):
+    """Full chord-data record for one song. Frontend uses this to render
+    the chord-progression chart panel."""
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT id, book, pdf_page, title, song_key AS key, "
+                "       time_signature, confidence, chords, degrees, "
+                "       sections, notes "
+                "FROM songs WHERE id = %s",
+                (song_id,),
+            )
+            cols = [d.name for d in cur.description]
+            row = await cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="song not found")
+    return dict(zip(cols, row))
+
+
 # ---- Static-file routing -------------------------------------------------
 # Explicit allow-list. The previous `python3 -m http.server` would happily
 # serve `.git/HEAD`, `nixpacks.toml`, `requirements.txt`, etc. — we tighten
