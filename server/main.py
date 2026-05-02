@@ -19,7 +19,9 @@ import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from typing import Optional
+
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -35,6 +37,44 @@ class SettingsPayload(BaseModel):
     feature areas (e.g. "tab", "song_keys"); the schema inside each is
     owned by the corresponding frontend module."""
     data: dict
+
+
+class SongImportItem(BaseModel):
+    book: str
+    pdf_page: int
+    title: str
+    key: Optional[str] = None
+    time_signature: Optional[str] = None
+    confidence: Optional[str] = None
+    chords: list = []
+    degrees: list = []
+    sections: Optional[list] = None
+    notes: Optional[str] = None
+
+
+class SongImportPayload(BaseModel):
+    """Body shape for POST /api/songs/import — one batch of song rows.
+    The local importer chunks the full _all.json into batches and POSTs
+    them serially so individual failures stay small + recoverable."""
+    songs: list[SongImportItem]
+
+
+def require_admin_key(request: Request) -> None:
+    """Static-key guard for admin-only server-to-server endpoints.
+
+    The chord-data importer runs on the operator's laptop — it has
+    a JSON file but no Clerk session. Forcing it through the user-
+    auth pipeline would mean copying short-lived JWTs around. A
+    dedicated `ADMIN_API_KEY` env var is the right tool: random
+    string set on Railway and matched by the local script's env.
+    Returns 503 if the server doesn't have one configured (no key
+    means no admin pipe), 401 if the client's header is wrong."""
+    expected = os.environ.get("ADMIN_API_KEY", "")
+    if not expected:
+        raise HTTPException(status_code=503, detail="admin import not configured")
+    given = request.headers.get("x-admin-key", "")
+    if not given or given != expected:
+        raise HTTPException(status_code=401, detail="invalid admin key")
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -209,6 +249,59 @@ async def search_songs(
             cols = [d.name for d in cur.description]
             rows = await cur.fetchall()
     return {"results": [dict(zip(cols, r)) for r in rows]}
+
+
+@app.post("/api/songs/import")
+async def import_songs(
+    payload: SongImportPayload,
+    request: Request,
+):
+    """Bulk-upsert chord-extracted songs. Admin-only via X-Admin-Key
+    header — see require_admin_key. Designed to be called many times
+    in a row by `_books/_publish_chords.py`, each request carrying a
+    chunk (typically 500 rows) so an individual failure doesn't blow
+    away the whole publish.
+
+    Idempotent — (book, pdf_page, title) is the natural key, so
+    re-publishing the same JSON just refreshes whatever changed."""
+    require_admin_key(request)
+
+    rows: list[tuple] = []
+    for s in payload.songs:
+        # Defensive: the Vision extractor occasionally produces bad
+        # rows. Skip silently — the importer will still report a
+        # smaller "upserted" count than "received".
+        if not s.title or not s.book or s.pdf_page is None:
+            continue
+        rows.append((
+            s.book, int(s.pdf_page), s.title,
+            s.key, s.time_signature, s.confidence,
+            s.chords or [], s.degrees or [],
+            json.dumps(s.sections or []),
+            s.notes,
+        ))
+
+    if rows:
+        sql = (
+            "INSERT INTO songs ("
+            "  book, pdf_page, title, song_key, time_signature, confidence,"
+            "  chords, degrees, sections, notes"
+            ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s) "
+            "ON CONFLICT (book, pdf_page, title) DO UPDATE SET "
+            "  song_key       = EXCLUDED.song_key,"
+            "  time_signature = EXCLUDED.time_signature,"
+            "  confidence     = EXCLUDED.confidence,"
+            "  chords         = EXCLUDED.chords,"
+            "  degrees        = EXCLUDED.degrees,"
+            "  sections       = EXCLUDED.sections,"
+            "  notes          = EXCLUDED.notes"
+        )
+        pool = db.get_pool()
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.executemany(sql, rows)
+            await conn.commit()
+    return {"received": len(payload.songs), "upserted": len(rows)}
 
 
 @app.get("/api/songs/{song_id}")
