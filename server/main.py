@@ -73,6 +73,26 @@ class SongEditPayload(BaseModel):
     notes:          Optional[str]  = None
 
 
+class TabImportItem(BaseModel):
+    """One row in the bulk-tab-import payload. Mirrors what
+    _books/_tab_extract.py emits per song after consolidation —
+    measures is the full JSONB blob of bar-by-bar note events."""
+    book:           str
+    pdf_page:       int
+    title:          str
+    tuning:         Optional[str]  = None
+    strings:        Optional[int]  = None
+    key:            Optional[str]  = None
+    time_signature: Optional[str]  = None
+    measures:       list           = []
+    notes:          Optional[str]  = None
+    confidence:     Optional[str]  = None
+
+
+class TabImportPayload(BaseModel):
+    tabs: list[TabImportItem]
+
+
 def require_admin_key(request: Request) -> None:
     """Static-key guard for admin-only server-to-server endpoints.
 
@@ -476,6 +496,139 @@ async def edit_song(
     # Return the fresh row so the client can re-render without an
     # extra GET round-trip — degrees come back re-derived.
     return await get_song(song_id)
+
+
+# ---- Tabs (tablature catalogue) -----------------------------------------
+
+@app.post("/api/tabs/import")
+async def import_tabs(
+    payload: TabImportPayload,
+    request: Request,
+):
+    """Bulk-upsert tablature rows. Admin-only via X-Admin-Key header,
+    same shape as /api/songs/import. Idempotent — natural key is
+    (book, pdf_page, title)."""
+    require_admin_key(request)
+
+    rows: list[tuple] = []
+    for t in payload.tabs:
+        if not t.title or not t.book or t.pdf_page is None:
+            continue
+        rows.append((
+            t.book, int(t.pdf_page), t.title,
+            t.tuning, t.strings, t.key, t.time_signature,
+            json.dumps(t.measures or []),
+            t.notes, t.confidence,
+        ))
+
+    if rows:
+        sql = (
+            "INSERT INTO tabs ("
+            "  book, pdf_page, title, tuning, strings, song_key,"
+            "  time_signature, measures, notes, confidence"
+            ") VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s) "
+            "ON CONFLICT (book, pdf_page, title) DO UPDATE SET "
+            "  tuning         = EXCLUDED.tuning,"
+            "  strings        = EXCLUDED.strings,"
+            "  song_key       = EXCLUDED.song_key,"
+            "  time_signature = EXCLUDED.time_signature,"
+            "  measures       = EXCLUDED.measures,"
+            "  notes          = EXCLUDED.notes,"
+            "  confidence     = EXCLUDED.confidence"
+        )
+        pool = db.get_pool()
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.executemany(sql, rows)
+            await conn.commit()
+    return {"received": len(payload.tabs), "upserted": len(rows)}
+
+
+@app.get("/api/tabs/books")
+async def list_tab_books():
+    """Distinct book names in the tabs catalogue + row counts."""
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT book, "
+                "       COUNT(*)::int AS total, "
+                "       SUM(CASE WHEN has_data THEN 1 ELSE 0 END)::int AS data_count "
+                "FROM tabs GROUP BY book ORDER BY book"
+            )
+            cols = [d.name for d in cur.description]
+            rows = await cur.fetchall()
+    return {"books": [dict(zip(cols, r)) for r in rows]}
+
+
+@app.get("/api/tabs/search")
+async def search_tabs(
+    q: str = "",
+    only_data: bool = True,
+    confidence: str = "high",
+    book: str = "",
+    limit: int = 200,
+):
+    """Title-substring search over the tabs catalogue. Same param
+    shape as /api/songs/search — only_data filters to rows where
+    measures actually landed (skip TOC-only / parse-failed entries),
+    confidence is 'high' / 'med' / 'all'."""
+    limit = max(1, min(500, int(limit) if limit else 200))
+    where: list[str] = []
+    params: list = []
+    if q:
+        where.append("title_upper LIKE %s")
+        params.append(f"%{q.upper()}%")
+    if only_data:
+        where.append("has_data = true")
+    if book:
+        where.append("book = %s")
+        params.append(book)
+    confidence = (confidence or "high").lower()
+    if confidence == "high":
+        where.append("confidence = 'high'")
+    elif confidence == "med":
+        where.append("confidence IN ('high', 'medium')")
+
+    sql = (
+        "SELECT id, book, pdf_page, title, tuning, strings, "
+        "       song_key AS key, time_signature, confidence, has_data "
+        "FROM tabs"
+    )
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY length(title), title_upper, book LIMIT %s"
+    params.append(limit)
+
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql, params)
+            cols = [d.name for d in cur.description]
+            rows = await cur.fetchall()
+    return {"results": [dict(zip(cols, r)) for r in rows]}
+
+
+@app.get("/api/tabs/{tab_id}")
+async def get_tab(tab_id: int):
+    """Full record for one tab — measures array included so the
+    client can render the diagram or hand the data to the existing
+    Tab editor."""
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT id, book, pdf_page, title, tuning, strings, "
+                "       song_key AS key, time_signature, confidence, "
+                "       measures, notes "
+                "FROM tabs WHERE id = %s",
+                (tab_id,),
+            )
+            cols = [d.name for d in cur.description]
+            row = await cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="tab not found")
+    return dict(zip(cols, row))
 
 
 # ---- Static-file routing -------------------------------------------------
