@@ -298,11 +298,17 @@
     }
   }
   function renderSong(s) {
+    // Per-song UI state — survives view ↔ edit toggles within the same
+    // song, resets when the user clicks a different result.
     var origKey = parseKey(s.key) || makeKey(0, 'major');
     var overrideKey = null;
     var barMode = 'auto';   // 'auto' | 'as_extracted' | 'one_per_bar'
 
     function activeKey() { return overrideKey || origKey; }
+    function isAdmin() {
+      return !!(window.SF_Auth && window.SF_Auth.isAdmin && window.SF_Auth.isAdmin());
+    }
+
     function rebuild() {
       var k = activeKey();
       var ds = overrideKey ? recomputeDegrees(s.chords, s.degrees, k) : (s.degrees || []);
@@ -325,46 +331,152 @@
     }
     function resetKey() { overrideKey = null; rebuild(); }
 
-    var head = '<div class="sm_head">'
-      + '<div class="sm_title">' + esc(s.title || '?') + '</div>'
-      + '<div class="sm_meta">'
-      +   '<span class="sm_meta_label">' + esc(s.book || '') + '</span>'
-      +   ' · key '
-      +   '<button class="sm_keystep" data-d="-1" title="Down a semitone">◀</button>'
-      +   ' <b class="sm_keylabel">' + esc(activeKey().label) + '</b> '
-      +   '<button class="sm_keystep" data-d="1" title="Up a semitone">▶</button>'
-      +   ' <button class="sm_keymode" title="Toggle major / minor">M / m</button>'
-      +   ' <button class="sm_keyreset" title="Reset to detected key" style="display:none">↺</button>'
-      +   ' · bars '
-      +   '<select class="sm_barmode" title="How to split chords into bars when Claude under-emitted bar lines">'
-      +     '<option value="auto" selected>auto</option>'
-      +     '<option value="as_extracted">as extracted</option>'
-      +     '<option value="one_per_bar">1 chord / bar</option>'
-      +   '</select>'
-      +   (s.time_signature ? ' · ' + esc(s.time_signature) : '')
-      +   ' · confidence <b>' + esc(s.confidence || '?') + '</b>'
-      + '</div>'
-      + '</div>';
-    var notes = s.notes ? '<div class="sm_notes">' + esc(s.notes) + '</div>' : '';
-    $viewer.innerHTML = head
-      + '<div class="sm_chartwrap">' + chartHtml(s.chords, s.degrees, barMode) + '</div>'
-      + notes;
+    function renderView() {
+      var editAffordance = isAdmin()
+        ? ' · <button class="sm_edit_btn" title="Edit chord data (admin only)">edit</button>'
+        : '';
+      var head = '<div class="sm_head">'
+        + '<div class="sm_title">' + esc(s.title || '?') + '</div>'
+        + '<div class="sm_meta">'
+        +   '<span class="sm_meta_label">' + esc(s.book || '') + '</span>'
+        +   ' · key '
+        +   '<button class="sm_keystep" data-d="-1" title="Down a semitone">◀</button>'
+        +   ' <b class="sm_keylabel">' + esc(activeKey().label) + '</b> '
+        +   '<button class="sm_keystep" data-d="1" title="Up a semitone">▶</button>'
+        +   ' <button class="sm_keymode" title="Toggle major / minor">M / m</button>'
+        +   ' <button class="sm_keyreset" title="Reset to detected key" style="display:none">↺</button>'
+        +   ' · bars '
+        +   '<select class="sm_barmode" title="How to split chords into bars when Claude under-emitted bar lines">'
+        +     '<option value="auto"' + (barMode === 'auto' ? ' selected' : '') + '>auto</option>'
+        +     '<option value="as_extracted"' + (barMode === 'as_extracted' ? ' selected' : '') + '>as extracted</option>'
+        +     '<option value="one_per_bar"' + (barMode === 'one_per_bar' ? ' selected' : '') + '>1 chord / bar</option>'
+        +   '</select>'
+        +   (s.time_signature ? ' · ' + esc(s.time_signature) : '')
+        +   ' · confidence <b>' + esc(s.confidence || '?') + '</b>'
+        +   editAffordance
+        + '</div>'
+        + '</div>';
+      var notes = s.notes ? '<div class="sm_notes">' + esc(s.notes) + '</div>' : '';
+      $viewer.innerHTML = head
+        + '<div class="sm_chartwrap">' + chartHtml(s.chords, s.degrees, barMode) + '</div>'
+        + notes;
 
-    Array.prototype.forEach.call($viewer.querySelectorAll('.sm_keystep'),
-      function (b) {
-        b.addEventListener('click', function () { step(+b.getAttribute('data-d')); });
-      });
-    var modeBtn = $viewer.querySelector('.sm_keymode');
-    if (modeBtn) modeBtn.addEventListener('click', toggleMode);
-    var resetBtn = $viewer.querySelector('.sm_keyreset');
-    if (resetBtn) resetBtn.addEventListener('click', resetKey);
-    var barSel = $viewer.querySelector('.sm_barmode');
-    if (barSel) {
-      barSel.addEventListener('change', function () {
-        barMode = barSel.value;
-        rebuild();
-      });
+      Array.prototype.forEach.call($viewer.querySelectorAll('.sm_keystep'),
+        function (b) {
+          b.addEventListener('click', function () { step(+b.getAttribute('data-d')); });
+        });
+      var modeBtn = $viewer.querySelector('.sm_keymode');
+      if (modeBtn) modeBtn.addEventListener('click', toggleMode);
+      var resetBtn = $viewer.querySelector('.sm_keyreset');
+      if (resetBtn) resetBtn.addEventListener('click', resetKey);
+      var barSel = $viewer.querySelector('.sm_barmode');
+      if (barSel) {
+        barSel.addEventListener('change', function () {
+          barMode = barSel.value;
+          rebuild();
+        });
+      }
+      var editBtn = $viewer.querySelector('.sm_edit_btn');
+      if (editBtn) editBtn.addEventListener('click', renderEdit);
     }
+
+    function renderEdit() {
+      // Whitespace-tokenised chord text. `|` are bar markers, `%` are
+      // continue-previous placeholders. Rebuild the array on save by
+      // splitting on whitespace.
+      var chordText = (s.chords || []).join(' ');
+      var conf = String(s.confidence || 'high').toLowerCase();
+      $viewer.innerHTML = ''
+        + '<div class="sm_head">'
+        +   '<div class="sm_title">' + esc(s.title || '?') + '</div>'
+        +   '<div class="sm_meta">editing — admin · '
+        +     '<span class="sm_meta_label">' + esc(s.book || '') + '</span>'
+        +     ' · pdf p' + (s.pdf_page == null ? '?' : s.pdf_page)
+        +   '</div>'
+        + '</div>'
+        + '<div class="sm_edit">'
+        +   '<label class="sm_edit_label">'
+        +     '<span class="sm_edit_lbl">Chords</span>'
+        +     '<span class="sm_edit_hint">space-separated · "|" = bar line · "%" = continue prev</span>'
+        +     '<textarea class="sm_edit_chords" spellcheck="false" rows="6">' + esc(chordText) + '</textarea>'
+        +   '</label>'
+        +   '<div class="sm_edit_row">'
+        +     '<label class="sm_edit_field"><span class="sm_edit_lbl">Key</span>'
+        +       '<input class="sm_edit_key" value="' + escAttr(s.key || '') + '" placeholder="e.g. Eb major">'
+        +     '</label>'
+        +     '<label class="sm_edit_field"><span class="sm_edit_lbl">Time</span>'
+        +       '<input class="sm_edit_ts" value="' + escAttr(s.time_signature || '') + '" placeholder="4/4">'
+        +     '</label>'
+        +     '<label class="sm_edit_field"><span class="sm_edit_lbl">Confidence</span>'
+        +       '<select class="sm_edit_conf">'
+        +         '<option value="high"'   + (conf === 'high'   ? ' selected' : '') + '>high</option>'
+        +         '<option value="medium"' + (conf === 'medium' ? ' selected' : '') + '>medium</option>'
+        +         '<option value="low"'    + (conf === 'low'    ? ' selected' : '') + '>low</option>'
+        +       '</select>'
+        +     '</label>'
+        +   '</div>'
+        +   '<div class="sm_edit_actions">'
+        +     '<button class="sm_save">Save</button>'
+        +     '<button class="sm_cancel">Cancel</button>'
+        +     '<span class="sm_edit_status"></span>'
+        +   '</div>'
+        + '</div>';
+
+      $viewer.querySelector('.sm_save').addEventListener('click', save);
+      $viewer.querySelector('.sm_cancel').addEventListener('click', renderView);
+    }
+
+    async function save() {
+      var status = $viewer.querySelector('.sm_edit_status');
+      var saveBtn = $viewer.querySelector('.sm_save');
+      status.textContent = 'saving…';
+      saveBtn.disabled = true;
+
+      var chordText = $viewer.querySelector('.sm_edit_chords').value || '';
+      var newChords = chordText.split(/\s+/).filter(Boolean);
+      var payload = {
+        chords:         newChords,
+        key:            $viewer.querySelector('.sm_edit_key').value || '',
+        time_signature: $viewer.querySelector('.sm_edit_ts').value || '',
+        confidence:     $viewer.querySelector('.sm_edit_conf').value,
+      };
+
+      var tok = window.SF_Auth ? await window.SF_Auth.getToken() : null;
+      if (!tok) {
+        status.textContent = 'sign in required';
+        saveBtn.disabled = false;
+        return;
+      }
+      try {
+        var r = await fetch('/api/songs/' + s.id, {
+          method:  'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + tok,
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) {
+          var msg = '';
+          try { msg = (await r.json()).detail || ''; } catch (_) { msg = await r.text(); }
+          status.textContent = 'error ' + r.status + (msg ? (': ' + msg.slice(0, 200)) : '');
+          saveBtn.disabled = false;
+          return;
+        }
+        var fresh = await r.json();
+        // Splice the fresh row into our local copy so the next render
+        // reflects what's now stored. origKey rebinds in case key changed.
+        Object.keys(fresh).forEach(function (k) { s[k] = fresh[k]; });
+        origKey = parseKey(s.key) || makeKey(0, 'major');
+        overrideKey = null;
+        renderView();
+      } catch (e) {
+        status.textContent = 'network error';
+        saveBtn.disabled = false;
+      }
+    }
+
+    renderView();
   }
 
   function esc(s) {

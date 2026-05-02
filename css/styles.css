@@ -1463,6 +1463,48 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 .sm_deg_suffix                              { font-size: 0.72em; vertical-align: super; opacity: 0.95;               }
 .sm_chord, .sm_deg_unit                     { white-space: nowrap;                                                    }
 .sm_notes                                   { color: var(--muted); font-size: 0.82em; font-style: italic; margin-top: 8px; }
+
+/* Inline edit panel — admin only. Reveals replacing the chart. */
+.sm_edit_btn                                { background: rgba(255,255,255,0.06); color: var(--accent-hi);
+                                              border: 1px solid rgba(95,232,224,0.30); border-radius: 3px;
+                                              font: 600 0.82em var(--font); padding: 0 8px; height: 19px; line-height: 17px;
+                                              cursor: pointer; vertical-align: baseline;                              }
+.sm_edit_btn:hover                          { background: rgba(95,232,224,0.18); color: #fff;                        }
+.sm_edit                                    { background: rgba(0,0,0,0.35); border-radius: 4px;
+                                              padding: 12px 14px; margin-top: 10px;
+                                              display: flex; flex-direction: column; gap: 10px;                      }
+.sm_edit_label                              { display: flex; flex-direction: column; gap: 4px;                        }
+.sm_edit_lbl                                { color: var(--muted); font-size: 0.78em; text-transform: uppercase;
+                                              letter-spacing: 0.06em; font-weight: 600;                              }
+.sm_edit_hint                               { color: var(--muted-dim); font-size: 0.78em; font-style: italic;        }
+.sm_edit_chords                             { width: 100%; box-sizing: border-box;
+                                              background: #0b0e14; color: var(--text);
+                                              border: 1px solid #2a3344; border-radius: 4px;
+                                              padding: 8px 10px;
+                                              font: 400 0.95em ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+                                              line-height: 1.4; resize: vertical; min-height: 100px;                  }
+.sm_edit_chords:focus                       { outline: none; border-color: var(--accent-hi);                          }
+.sm_edit_row                                { display: flex; gap: 12px; flex-wrap: wrap;                              }
+.sm_edit_field                              { display: flex; flex-direction: column; gap: 4px; flex: 1 1 140px;       }
+.sm_edit_field input,
+.sm_edit_field select                       { height: 30px; padding: 0 8px; box-sizing: border-box;
+                                              background: #0b0e14; color: var(--text);
+                                              border: 1px solid #2a3344; border-radius: 4px;
+                                              font: 400 0.9em var(--font);                                            }
+.sm_edit_field input:focus,
+.sm_edit_field select:focus                 { outline: none; border-color: var(--accent-hi);                          }
+.sm_edit_actions                            { display: flex; align-items: center; gap: 8px;                           }
+.sm_save, .sm_cancel                        { height: 30px; padding: 0 14px; cursor: pointer;
+                                              border-radius: 4px; font: 600 0.9em var(--font);                        }
+.sm_save                                    { background: var(--accent-hi); color: #001014;
+                                              border: 1px solid var(--accent-hi);                                     }
+.sm_save:hover                              { background: #fff; border-color: #fff;                                   }
+.sm_save:disabled                           { opacity: 0.6; cursor: not-allowed;                                      }
+.sm_cancel                                  { background: rgba(255,255,255,0.06); color: var(--text);
+                                              border: 1px solid #2a3344;                                              }
+.sm_cancel:hover                            { border-color: var(--accent-hi); color: var(--accent-hi);                }
+.sm_edit_status                             { color: var(--muted); font-size: 0.85em; margin-left: auto;
+                                              font-style: italic;                                                     }
 @media print {
   #section_10                              { display: none !important;                                                }
 }

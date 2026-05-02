@@ -151,3 +151,25 @@ async def optional_user(request: Request) -> Optional[dict]:
     except HTTPException:
         return None
     return {"user_id": claims.get("sub", ""), "claims": claims}
+
+
+# Admin allow-list for browser-driven admin actions (e.g. inline edits
+# on the Sheet Music viewer). Comma-separated Clerk user IDs in the
+# ADMIN_USER_IDS env var. Sourced separately from ADMIN_API_KEY (which
+# guards server-to-server admin pipes like the chord-data importer).
+ADMIN_USER_IDS = {
+    u.strip()
+    for u in os.environ.get("ADMIN_USER_IDS", "").split(",")
+    if u.strip()
+}
+
+
+async def current_admin_user(request: Request) -> dict:
+    """Hard-required auth + admin gate. 401 if no valid Clerk token,
+    403 if the user isn't in the ADMIN_USER_IDS allow-list. Use as a
+    FastAPI Depends() on any endpoint that mutates shared catalog data
+    from the browser."""
+    user = await current_user(request)
+    if user["user_id"] not in ADMIN_USER_IDS:
+        raise HTTPException(status_code=403, detail="admin only")
+    return user

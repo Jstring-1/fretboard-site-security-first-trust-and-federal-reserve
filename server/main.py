@@ -28,7 +28,7 @@ from pydantic import BaseModel
 
 from server import auth as auth_module
 from server import db
-from server.auth import current_user
+from server.auth import current_admin_user, current_user
 from server.music import derive_degrees
 
 
@@ -58,6 +58,18 @@ class SongImportPayload(BaseModel):
     The local importer chunks the full _all.json into batches and POSTs
     them serially so individual failures stay small + recoverable."""
     songs: list[SongImportItem]
+
+
+class SongEditPayload(BaseModel):
+    """Body shape for PUT /api/songs/{id} — an admin's inline edit.
+    Every field is optional; only the ones included in the JSON body
+    get written. Lets the frontend send a tight payload (just the
+    field that changed) without forcing a round-trip read first."""
+    chords:         Optional[list] = None
+    key:            Optional[str]  = None
+    time_signature: Optional[str]  = None
+    confidence:     Optional[str]  = None
+    notes:          Optional[str]  = None
 
 
 def require_admin_key(request: Request) -> None:
@@ -374,6 +386,61 @@ async def get_song(song_id: int):
         out.get("key"),
     )
     return out
+
+
+@app.put("/api/songs/{song_id}")
+async def edit_song(
+    song_id: int,
+    payload: SongEditPayload,
+    user: dict = Depends(current_admin_user),
+):
+    """Apply an admin's inline edit. Any field set on the payload gets
+    persisted; omitted fields stay as-is. When `chords` is sent we also
+    blank out the stored `degrees` array — the GET endpoint re-derives
+    degrees on every read from chords + key, so stale Claude-produced
+    degree values would just confuse later reads / debug.
+
+    Gated by current_admin_user (Clerk JWT + ADMIN_USER_IDS allow-list).
+    Returns the freshly-read row so the client can re-render without
+    a separate GET."""
+    sets: list[str] = []
+    params: list = []
+    if payload.chords is not None:
+        sets.append("chords = %s")
+        params.append(payload.chords)
+        # Reset Claude's degrees so the on-read derivation has a clean
+        # slate. The chord-quality suffix won't carry through, which is
+        # the right call when the chord text is being rewritten.
+        sets.append("degrees = %s")
+        params.append([])
+    if payload.key is not None:
+        sets.append("song_key = %s"); params.append(payload.key or None)
+    if payload.time_signature is not None:
+        sets.append("time_signature = %s"); params.append(payload.time_signature or None)
+    if payload.confidence is not None:
+        conf = (payload.confidence or "").lower()
+        if conf and conf not in ("high", "medium", "low"):
+            raise HTTPException(status_code=400,
+                detail="confidence must be high|medium|low")
+        sets.append("confidence = %s"); params.append(conf or None)
+    if payload.notes is not None:
+        sets.append("notes = %s"); params.append(payload.notes or None)
+
+    if not sets:
+        raise HTTPException(status_code=400, detail="no fields to update")
+
+    params.append(song_id)
+    sql = f"UPDATE songs SET {', '.join(sets)} WHERE id = %s"
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(sql, params)
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="song not found")
+        await conn.commit()
+    # Return the fresh row so the client can re-render without an
+    # extra GET round-trip — degrees come back re-derived.
+    return await get_song(song_id)
 
 
 # ---- Static-file routing -------------------------------------------------
