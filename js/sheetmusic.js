@@ -14,7 +14,7 @@
 (function () {
   'use strict';
 
-  var root, $search, $only, $conf, $stats, $results, $viewer;
+  var root, $search, $only, $conf, $book, $stats, $results, $viewer;
   var searchTimer = null;
 
   // ---------- Note-theory helpers (parallel to _demo.html) ----------------
@@ -170,6 +170,7 @@
       +   '<label class="sm_only_label">'
       +     '<input type="checkbox" class="sm_only" checked> ♪ chord data only'
       +   '</label>'
+      +   '<select class="sm_book" title="Filter by source fake-book"><option value="">All books</option></select>'
       +   '<select class="sm_conf" title="Filter by extraction confidence — many medium / low rows are mis-read by the Vision pass">'
       +     '<option value="high" selected>High confidence</option>'
       +     '<option value="med">Medium+</option>'
@@ -184,6 +185,7 @@
     $search  = root.querySelector('.sm_search');
     $only    = root.querySelector('.sm_only');
     $conf    = root.querySelector('.sm_conf');
+    $book    = root.querySelector('.sm_book');
     $stats   = root.querySelector('.sm_stats');
     $results = root.querySelector('.sm_results');
     $viewer  = root.querySelector('.sm_viewer');
@@ -191,9 +193,40 @@
     $search.addEventListener('input', queueSearch);
     $only.addEventListener('change', search);
     $conf.addEventListener('change', search);
+    $book.addEventListener('change', search);
     $results.addEventListener('click', onResultClick);
 
+    // Populate the book dropdown asynchronously — search can run with
+    // empty book filter while the list loads, so this doesn't block.
+    populateBooks();
     search();
+  }
+
+  async function populateBooks() {
+    try {
+      var r = await fetch('/api/songs/books');
+      if (!r.ok) return;
+      var d = await r.json();
+      var list = (d && d.books) || [];
+      var html = '<option value="">All books</option>';
+      for (var i = 0; i < list.length; i++) {
+        var b = list[i];
+        // Trim the trailing " - Real_Fake Books.pdf" suffix that's on
+        // every entry — visual noise. Keep the .pdf extension off the
+        // display, but use the full string as the option value so the
+        // server-side filter still matches the row exactly.
+        var pretty = String(b.book || '')
+          .replace(/\.pdf$/i, '')
+          .replace(/\s*-\s*Real_Fake Books\s*$/i, '');
+        html += '<option value="' + escAttr(b.book) + '">'
+             +    esc(pretty) + ' (' + (b.chord_count || 0) + ')'
+             +  '</option>';
+      }
+      $book.innerHTML = html;
+    } catch (e) { /* leave dropdown as just "All books" on error */ }
+  }
+  function escAttr(s) {
+    return esc(s).replace(/"/g, '&quot;');
   }
   function queueSearch() {
     if (searchTimer) clearTimeout(searchTimer);
@@ -203,9 +236,11 @@
     var q = ($search.value || '').trim();
     var only = $only.checked ? '1' : '0';
     var conf = $conf.value || 'high';
+    var book = $book ? ($book.value || '') : '';
     var url = '/api/songs/search?q=' + encodeURIComponent(q)
             + '&only_chords=' + only
             + '&confidence=' + encodeURIComponent(conf)
+            + (book ? '&book=' + encodeURIComponent(book) : '')
             + '&limit=300';
     try {
       var r = await fetch(url);

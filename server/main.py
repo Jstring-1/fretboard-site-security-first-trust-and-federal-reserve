@@ -206,11 +206,32 @@ async def put_settings(
 # when we eventually open the Sheet Music section to all users. The
 # admin-only visibility gate is on the frontend section, not the data.
 
+@app.get("/api/songs/books")
+async def list_books():
+    """Return every distinct book name in the catalogue with row counts.
+    Frontend uses this to populate the book-filter dropdown."""
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT book, "
+                "       COUNT(*)::int AS total, "
+                "       SUM(CASE WHEN has_chords THEN 1 ELSE 0 END)::int AS chord_count "
+                "FROM songs "
+                "GROUP BY book "
+                "ORDER BY book"
+            )
+            cols = [d.name for d in cur.description]
+            rows = await cur.fetchall()
+    return {"books": [dict(zip(cols, r)) for r in rows]}
+
+
 @app.get("/api/songs/search")
 async def search_songs(
     q: str = "",
     only_chords: bool = False,
     confidence: str = "high",
+    book: str = "",
     limit: int = 200,
 ):
     """Search the chord-extracted song catalogue.
@@ -235,6 +256,9 @@ async def search_songs(
         params.append(f"%{q.upper()}%")
     if only_chords:
         where.append("has_chords = true")
+    if book:
+        where.append("book = %s")
+        params.append(book)
     confidence = (confidence or "high").lower()
     if confidence == "high":
         where.append("confidence = 'high'")
