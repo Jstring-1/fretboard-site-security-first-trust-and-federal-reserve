@@ -80,7 +80,20 @@
   }
 
   // ---------- Chart layout (port of demo's splitMeasures + chartHtml) -----
-  function splitMeasures(chords, degrees) {
+  // Bar-interpretation mode controls how we map a flat chords[] array
+  // onto measures:
+  //   'auto'         — trust Claude's `|` markers, but if the resulting
+  //                    avg chords/bar is > 2 we assume bar lines were
+  //                    under-emitted and re-split one chord per bar.
+  //   'as_extracted' — take `|` markers literally, even if some bars
+  //                    end up packing many chords. Useful when Claude
+  //                    actually nailed it and 'auto' over-corrects.
+  //   'one_per_bar'  — ignore bar lines entirely; every chord gets its
+  //                    own measure. Best fallback when Claude emitted
+  //                    NO bar lines and the song is a typical fake-
+  //                    book "1 chord per bar" form.
+  function splitMeasures(chords, degrees, mode) {
+    mode = mode || 'auto';
     var raw = [];
     var cBuf = [], dBuf = [];
     for (var i = 0; i < (chords || []).length; i++) {
@@ -93,27 +106,39 @@
       }
     }
     if (cBuf.length || dBuf.length) raw.push({ c: cBuf, d: dBuf });
-    var filled = raw.filter(function (m) { return m.c.length; });
-    var total = filled.reduce(function (n, m) { return n + m.c.length; }, 0);
-    var avg = filled.length ? total / filled.length : 0;
-    var ms = raw;
-    if (avg > 2) {
-      ms = [];
-      for (var k = 0; k < raw.length; k++) {
-        var m = raw[k];
-        if (!m.c.length) { ms.push(m); continue; }
+
+    function explode(rows) {
+      var out = [];
+      for (var k = 0; k < rows.length; k++) {
+        var m = rows[k];
+        if (!m.c.length) { out.push(m); continue; }
         for (var j = 0; j < m.c.length; j++) {
-          ms.push({ c: [m.c[j]], d: [m.d[j] || ''] });
+          out.push({ c: [m.c[j]], d: [m.d[j] || ''] });
         }
       }
+      return out;
     }
+
+    var ms;
+    if (mode === 'one_per_bar') {
+      ms = explode(raw);
+    } else if (mode === 'as_extracted') {
+      ms = raw;
+    } else {
+      // 'auto'
+      var filled = raw.filter(function (m) { return m.c.length; });
+      var total = filled.reduce(function (n, m) { return n + m.c.length; }, 0);
+      var avg = filled.length ? total / filled.length : 0;
+      ms = (avg > 2) ? explode(raw) : raw;
+    }
+
     for (var n = 0; n < ms.length; n++) {
       if (!ms[n].c.length) { ms[n].c = ['%']; ms[n].d = ['%']; }
     }
     return ms;
   }
-  function chartHtml(chords, degrees) {
-    var measures = splitMeasures(chords, degrees);
+  function chartHtml(chords, degrees, mode) {
+    var measures = splitMeasures(chords, degrees, mode);
     if (!measures.length) return '';
     function bar(m) {
       var cs = m.c.map(function (c) { return '<span class="sm_chord">' + esc(c) + '</span>'; }).join(' ');
@@ -240,13 +265,14 @@
   function renderSong(s) {
     var origKey = parseKey(s.key) || makeKey(0, 'major');
     var overrideKey = null;
+    var barMode = 'auto';   // 'auto' | 'as_extracted' | 'one_per_bar'
 
     function activeKey() { return overrideKey || origKey; }
     function rebuild() {
       var k = activeKey();
       var ds = overrideKey ? recomputeDegrees(s.chords, s.degrees, k) : (s.degrees || []);
       var chartWrap = $viewer.querySelector('.sm_chartwrap');
-      if (chartWrap) chartWrap.innerHTML = chartHtml(s.chords, ds);
+      if (chartWrap) chartWrap.innerHTML = chartHtml(s.chords, ds, barMode);
       var lab = $viewer.querySelector('.sm_keylabel');
       if (lab) lab.textContent = k.label;
       var reset = $viewer.querySelector('.sm_keyreset');
@@ -274,13 +300,19 @@
       +   '<button class="sm_keystep" data-d="1" title="Up a semitone">▶</button>'
       +   ' <button class="sm_keymode" title="Toggle major / minor">M / m</button>'
       +   ' <button class="sm_keyreset" title="Reset to detected key" style="display:none">↺</button>'
+      +   ' · bars '
+      +   '<select class="sm_barmode" title="How to split chords into bars when Claude under-emitted bar lines">'
+      +     '<option value="auto" selected>auto</option>'
+      +     '<option value="as_extracted">as extracted</option>'
+      +     '<option value="one_per_bar">1 chord / bar</option>'
+      +   '</select>'
       +   (s.time_signature ? ' · ' + esc(s.time_signature) : '')
       +   ' · confidence <b>' + esc(s.confidence || '?') + '</b>'
       + '</div>'
       + '</div>';
     var notes = s.notes ? '<div class="sm_notes">' + esc(s.notes) + '</div>' : '';
     $viewer.innerHTML = head
-      + '<div class="sm_chartwrap">' + chartHtml(s.chords, s.degrees) + '</div>'
+      + '<div class="sm_chartwrap">' + chartHtml(s.chords, s.degrees, barMode) + '</div>'
       + notes;
 
     Array.prototype.forEach.call($viewer.querySelectorAll('.sm_keystep'),
@@ -291,6 +323,13 @@
     if (modeBtn) modeBtn.addEventListener('click', toggleMode);
     var resetBtn = $viewer.querySelector('.sm_keyreset');
     if (resetBtn) resetBtn.addEventListener('click', resetKey);
+    var barSel = $viewer.querySelector('.sm_barmode');
+    if (barSel) {
+      barSel.addEventListener('change', function () {
+        barMode = barSel.value;
+        rebuild();
+      });
+    }
   }
 
   function esc(s) {

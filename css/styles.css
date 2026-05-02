@@ -1439,6 +1439,11 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
                                               cursor: pointer; vertical-align: baseline; margin: 0 1px;             }
 .sm_meta button:hover                       { background: rgba(95,232,224,0.18); color: #fff;                        }
 .sm_keylabel                                { display: inline-block; min-width: 5.5em; text-align: center;           }
+.sm_meta select.sm_barmode                  { background: rgba(255,255,255,0.06); color: var(--accent-hi);
+                                              border: 1px solid rgba(95,232,224,0.30); border-radius: 3px;
+                                              font: 600 0.82em var(--font); padding: 1px 4px; height: 19px;
+                                              cursor: pointer; vertical-align: baseline; margin: 0 1px;             }
+.sm_meta select.sm_barmode:focus            { outline: none; border-color: var(--accent-hi);                          }
 .sm_chartwrap                               { padding-top: 4px;                                                       }
 .sm_chart                                   { display: flex; flex-direction: column; gap: 10px;
                                               background: rgba(0,0,0,0.35); padding: 12px 14px; border-radius: 4px;
