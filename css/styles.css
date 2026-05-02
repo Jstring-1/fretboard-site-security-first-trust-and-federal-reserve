@@ -1407,6 +1407,11 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 .sm_only_label                              { display: inline-flex; align-items: center; gap: 4px;
                                               color: var(--muted); font-size: 0.85em; cursor: pointer;
                                               white-space: nowrap;                                                     }
+.sm_conf                                    { background: #0b0e14; color: var(--text);
+                                              border: 1px solid #2a3344; border-radius: 4px;
+                                              font: 400 0.85em var(--font); padding: 4px 8px; height: 32px;
+                                              cursor: pointer;                                                         }
+.sm_conf:focus                              { outline: none; border-color: var(--accent-hi);                          }
 .sm_stats                                   { color: var(--muted); font-size: 0.78em; margin-left: auto;             }
 .sm_split                                   { display: grid; grid-template-columns: 360px 1fr;
                                               min-height: 480px; height: 70vh;                                       }

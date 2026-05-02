@@ -14,7 +14,7 @@
 (function () {
   'use strict';
 
-  var root, $search, $only, $stats, $results, $viewer;
+  var root, $search, $only, $conf, $stats, $results, $viewer;
   var searchTimer = null;
 
   // ---------- Note-theory helpers (parallel to _demo.html) ----------------
@@ -145,6 +145,11 @@
       +   '<label class="sm_only_label">'
       +     '<input type="checkbox" class="sm_only" checked> ♪ chord data only'
       +   '</label>'
+      +   '<select class="sm_conf" title="Filter by extraction confidence — many medium / low rows are mis-read by the Vision pass">'
+      +     '<option value="high" selected>High confidence</option>'
+      +     '<option value="med">Medium+</option>'
+      +     '<option value="all">All (incl. low)</option>'
+      +   '</select>'
       +   '<span class="sm_stats"></span>'
       + '</div>'
       + '<div class="sm_split">'
@@ -153,12 +158,14 @@
       + '</div>';
     $search  = root.querySelector('.sm_search');
     $only    = root.querySelector('.sm_only');
+    $conf    = root.querySelector('.sm_conf');
     $stats   = root.querySelector('.sm_stats');
     $results = root.querySelector('.sm_results');
     $viewer  = root.querySelector('.sm_viewer');
 
     $search.addEventListener('input', queueSearch);
     $only.addEventListener('change', search);
+    $conf.addEventListener('change', search);
     $results.addEventListener('click', onResultClick);
 
     search();
@@ -170,8 +177,11 @@
   async function search() {
     var q = ($search.value || '').trim();
     var only = $only.checked ? '1' : '0';
+    var conf = $conf.value || 'high';
     var url = '/api/songs/search?q=' + encodeURIComponent(q)
-            + '&only_chords=' + only + '&limit=300';
+            + '&only_chords=' + only
+            + '&confidence=' + encodeURIComponent(conf)
+            + '&limit=300';
     try {
       var r = await fetch(url);
       if (!r.ok) {

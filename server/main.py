@@ -29,6 +29,7 @@ from pydantic import BaseModel
 from server import auth as auth_module
 from server import db
 from server.auth import current_user
+from server.music import derive_degrees
 
 
 class SettingsPayload(BaseModel):
@@ -209,18 +210,22 @@ async def put_settings(
 async def search_songs(
     q: str = "",
     only_chords: bool = False,
+    confidence: str = "high",
     limit: int = 200,
 ):
     """Search the chord-extracted song catalogue.
 
-    - `q` (optional): substring match against title, case-insensitive
-    - `only_chords` (optional): restrict to rows where chord data
-      actually landed (skip TOC-only entries)
-    - `limit` (optional, max 500): result cap
+    - `q`            : substring match against title (case-insensitive)
+    - `only_chords`  : true → restrict to rows with chord data (skip
+                       TOC-only / title-only entries)
+    - `confidence`   : 'high'  (default) — only confidence='high' rows
+                       'med'   — high OR medium
+                       'all'   — every row, including 'low' and unset
+    - `limit`        : 1..500, default 200
 
-    Returns a `results` array of light row records — the per-song
-    chord/degree arrays come from `/api/songs/{id}` so the search
-    payload stays small even with thousands of hits.
+    Returns a `results` array of light row records. Per-song chord/
+    degree arrays come from /api/songs/{id} so this payload stays
+    small even on broad queries.
     """
     limit = max(1, min(500, int(limit) if limit else 200))
     where: list[str] = []
@@ -230,6 +235,12 @@ async def search_songs(
         params.append(f"%{q.upper()}%")
     if only_chords:
         where.append("has_chords = true")
+    confidence = (confidence or "high").lower()
+    if confidence == "high":
+        where.append("confidence = 'high'")
+    elif confidence == "med":
+        where.append("confidence IN ('high', 'medium')")
+    # 'all' (or anything else) → no confidence filter
     sql = (
         "SELECT id, book, pdf_page, title, song_key AS key, "
         "       time_signature, confidence, has_chords "
@@ -307,7 +318,15 @@ async def import_songs(
 @app.get("/api/songs/{song_id}")
 async def get_song(song_id: int):
     """Full chord-data record for one song. Frontend uses this to render
-    the chord-progression chart panel."""
+    the chord-progression chart panel.
+
+    The `degrees` array is RE-DERIVED on every read from `chords` and
+    `song_key` — Claude's original output goes out as `claude_degrees`
+    for debug/comparison. Reason: the Vision pass got keys wrong on a
+    non-trivial fraction of songs (especially minor-key tunes labelled
+    as their relative major), and that error propagates through every
+    degree. Computing fresh here makes the catalogue self-consistent
+    and lets us iterate on the rules without re-running extraction."""
     pool = db.get_pool()
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
@@ -322,7 +341,15 @@ async def get_song(song_id: int):
             row = await cur.fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="song not found")
-    return dict(zip(cols, row))
+    out = dict(zip(cols, row))
+    claude_degrees = list(out.get("degrees") or [])
+    out["claude_degrees"] = claude_degrees
+    out["degrees"] = derive_degrees(
+        out.get("chords") or [],
+        claude_degrees,
+        out.get("key"),
+    )
+    return out
 
 
 # ---- Static-file routing -------------------------------------------------
