@@ -140,11 +140,17 @@
   }
 
   // ---------- parse URL → x ----------
-  function parseState() {
+  function parseState(searchOverride) {
+    // searchOverride: optional `?k=A&hl=…` string. Used by the per-
+    // section rerender path when "Apply: all" is off — we parse the
+    // link's URL into a state object without actually navigating, then
+    // hand that state to a single section's renderer.
     const x = {};
     let def = '';
 
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      (searchOverride != null) ? searchOverride : window.location.search
+    );
     const hasParams = Array.from(params.keys()).length > 0;
 
     if (hasParams) {
@@ -2154,31 +2160,40 @@
     });
   }
 
-  // ---- Per-section key override (used when "Apply: all" is off) -----
-  // Calls only the targeted section's renderer with a shallow-copy state
-  // where `k` is overridden. Other sections keep whatever they were last
-  // rendered with — including their own per-section overrides.
-  function rerenderSectionWithKey(sectionId, k) {
-    if (!window.SF_X || !k) return;
-    const xo = Object.assign({}, window.SF_X, { k: k });
+  // ---- Per-section rerender (used when "Apply: all" is off) ---------
+  // Calls only the targeted section's renderer(s) with the supplied
+  // state object. Used both for key-picker changes (state = SF_X with k
+  // overridden) and for chord/scale/keysig link clicks (state = the
+  // link's URL parsed into a SF_X-shape via parseState).
+  function rerenderSectionWithState(sectionId, x) {
+    if (!x) return;
     switch (sectionId) {
       case 'section_2':
-        if (typeof renderFretboard === 'function') renderFretboard(xo);
+        if (typeof renderFretboard === 'function') renderFretboard(x);
         break;
       case 'section_3':
-        if (typeof renderChordGrid === 'function') renderChordGrid(xo);
+        if (typeof renderChordGrid === 'function') renderChordGrid(x);
         break;
       case 'section_4':
-        if (typeof applyKeyboardColors === 'function') applyKeyboardColors(xo);
-        if (typeof renderKeyboardPicks === 'function') renderKeyboardPicks(xo);
+        if (typeof applyKeyboardColors === 'function') applyKeyboardColors(x);
+        if (typeof renderKeyboardPicks === 'function') renderKeyboardPicks(x);
         break;
       case 'section_6':
-        if (typeof renderScaleGrid === 'function') renderScaleGrid(xo);
+        if (typeof renderScaleGrid === 'function') renderScaleGrid(x);
         break;
       case 'section_9':
-        if (typeof renderKeySignatures === 'function') renderKeySignatures(xo);
+        if (typeof renderKeySignatures === 'function') renderKeySignatures(x);
         break;
     }
+  }
+  function rerenderSectionWithKey(sectionId, k) {
+    // Thin compatibility wrapper. Builds an override state by parsing
+    // the current URL fresh (so other URL params are preserved) and
+    // swapping in the new key, then routes through the generic helper.
+    if (!k) return;
+    const x = parseState();
+    x.k = k;
+    rerenderSectionWithState(sectionId, x);
   }
 
   // ---- Apply-all toggle button (fretboard summary) ------------------
@@ -2263,8 +2278,22 @@
       // External or different-page links: let the browser handle them.
       if (url.origin !== window.location.origin) return;
       if (url.pathname !== window.location.pathname) return;
-      // Same-page nav: route through pushState so we don't reload / scroll.
       e.preventDefault();
+      // "Apply: all" off → state-mutating clicks (chord cells, scale
+      // cells, keysig rows, highlight pills) only re-render the section
+      // they live in. URL state stays put so other sections keep their
+      // current view. Engaged → fall through to global navigateTo.
+      const applyAllOff = document.body.getAttribute('data-apply-all') === 'off';
+      if (applyAllOff) {
+        const sectionEl = a.closest('details.section, details.collapsible');
+        if (sectionEl) {
+          // Parse the link's would-be URL into a state object without
+          // actually navigating, then re-render only this section.
+          const xo = parseState(url.search || '');
+          rerenderSectionWithState(sectionEl.id, xo);
+          return;
+        }
+      }
       navigateTo(url.search || '?');
     });
   }
