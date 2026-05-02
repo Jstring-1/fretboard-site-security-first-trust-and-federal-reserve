@@ -2125,9 +2125,22 @@
 
   function bindAutoSubmit() {
     const handler = function (e) {
-      // Sync every section's key picker to whichever one the user just changed,
-      // so gatherAndNavigate picks up the new value no matter which it reads.
+      // Key-picker changes have two modes depending on the "Apply: all"
+      // toggle in the fretboard summary:
+      //   ENGAGED (default) — propagate the new key to every section's
+      //                        picker, then build a new URL → full re-
+      //                        render. Single global key.
+      //   DISENGAGED        — only the section whose picker changed is
+      //                        re-rendered with the new key as a per-
+      //                        section override. URL state untouched, so
+      //                        other sections keep whatever key they had.
       if (e && e.target && e.target.matches && e.target.matches('select[name="k"]')) {
+        const applyAllOff = document.body.getAttribute('data-apply-all') === 'off';
+        if (applyAllOff) {
+          const sectionEl = e.target.closest('details.section, details.collapsible');
+          if (sectionEl) rerenderSectionWithKey(sectionEl.id, e.target.value);
+          return;  // do NOT navigate — would clobber the other sections' keys
+        }
         document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
           if (sel !== e.target) sel.value = e.target.value;
         });
@@ -2139,6 +2152,66 @@
     ).forEach(function (el) {
       el.addEventListener('change', handler);
     });
+  }
+
+  // ---- Per-section key override (used when "Apply: all" is off) -----
+  // Calls only the targeted section's renderer with a shallow-copy state
+  // where `k` is overridden. Other sections keep whatever they were last
+  // rendered with — including their own per-section overrides.
+  function rerenderSectionWithKey(sectionId, k) {
+    if (!window.SF_X || !k) return;
+    const xo = Object.assign({}, window.SF_X, { k: k });
+    switch (sectionId) {
+      case 'section_2':
+        if (typeof renderFretboard === 'function') renderFretboard(xo);
+        break;
+      case 'section_3':
+        if (typeof renderChordGrid === 'function') renderChordGrid(xo);
+        break;
+      case 'section_4':
+        if (typeof applyKeyboardColors === 'function') applyKeyboardColors(xo);
+        if (typeof renderKeyboardPicks === 'function') renderKeyboardPicks(xo);
+        break;
+      case 'section_6':
+        if (typeof renderScaleGrid === 'function') renderScaleGrid(xo);
+        break;
+      case 'section_9':
+        if (typeof renderKeySignatures === 'function') renderKeySignatures(xo);
+        break;
+    }
+  }
+
+  // ---- Apply-all toggle button (fretboard summary) ------------------
+  // Bound once on first applyState run (the button is in static HTML
+  // so it survives re-renders). Reads / writes localStorage so the
+  // user's preference persists across reloads.
+  let _applyAllBound = false;
+  function bindApplyAllToggle() {
+    if (_applyAllBound) return;
+    const $btn = document.getElementById('apply_all_toggle');
+    if (!$btn) return;
+    _applyAllBound = true;
+    function refresh() {
+      const off = localStorage.getItem('sf_apply_all') === 'off';
+      document.body.setAttribute('data-apply-all', off ? 'off' : 'on');
+      $btn.classList.toggle('on', !off);
+      $btn.textContent = off ? 'Apply: off' : 'Apply: all';
+      $btn.setAttribute('aria-pressed', off ? 'false' : 'true');
+    }
+    $btn.addEventListener('click', function () {
+      const turningOn = (localStorage.getItem('sf_apply_all') === 'off');
+      localStorage.setItem('sf_apply_all', turningOn ? 'on' : 'off');
+      refresh();
+      if (turningOn && window.SF_X) {
+        // Re-engaging "Apply: all" — drop any per-section overrides and
+        // re-sync everything to the URL state.
+        document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
+          sel.value = window.SF_X.k;
+        });
+        applyState();
+      }
+    });
+    refresh();
   }
 
   // Wire the custom-tuning preset loader. When the user picks a preset
@@ -3108,6 +3181,7 @@
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindNotePick();          // click fret cells / keyboard keys to pick notes
+    bindApplyAllToggle();    // one-time wire of the Apply: all chip in fretboard summary
     if (window.SF_TabCapture && typeof window.SF_TabCapture.refresh === 'function') {
       // Site key may have changed — re-render the tab capture mini-fretboard
       // so its degree labels reflect the new key.
