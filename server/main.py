@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -89,6 +90,19 @@ def require_admin_key(request: Request) -> None:
     if not given or given != expected:
         raise HTTPException(status_code=401, detail="invalid admin key")
 
+
+async def resolve_admin(request: Request) -> dict:
+    """Allow EITHER static admin key OR Clerk admin user. Used on
+    endpoints reachable from both the laptop scripts (X-Admin-Key) and
+    the live signed-in admin (Clerk JWT). The static-key path wins
+    when both are present so the demo / importer don't accidentally
+    fall through to a possibly-missing Clerk session."""
+    if request.headers.get("x-admin-key"):
+        require_admin_key(request)
+        return {"user_id": "admin-key", "via": "static"}
+    user = await current_admin_user(request)
+    return {**user, "via": "clerk"}
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -122,6 +136,27 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
     lifespan=lifespan,
+)
+
+# CORS for local-dev / admin tooling. The MAMP-served _books/_demo.html
+# (running at http://localhost) needs to call /api/songs/* on the live
+# host. We only allow localhost origins explicitly — the live site is
+# same-origin so it doesn't need CORS at all. allow_credentials=True
+# is required for Authorization headers.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:80",
+        "http://localhost:8000",
+        "http://localhost:8888",   # MAMP default
+        "http://127.0.0.1",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8888",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Admin-Key"],
 )
 
 
@@ -392,7 +427,7 @@ async def get_song(song_id: int):
 async def edit_song(
     song_id: int,
     payload: SongEditPayload,
-    user: dict = Depends(current_admin_user),
+    actor: dict = Depends(resolve_admin),
 ):
     """Apply an admin's inline edit. Any field set on the payload gets
     persisted; omitted fields stay as-is. When `chords` is sent we also
