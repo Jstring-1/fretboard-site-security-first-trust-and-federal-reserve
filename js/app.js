@@ -1177,59 +1177,81 @@
   }
 
   // Mini key picker for the chord-grid / scale-grid / keyboard sections so the
-  // user can change key without expanding the fretboard section.
+  // user can change key without expanding the fretboard section. Renders a
+  // hidden <select name="k"> (so gatherAndNavigate keeps working unchanged)
+  // plus 12 visible buttons. A click on a button updates the hidden select
+  // and dispatches a change event — the existing pipeline runs from there.
   function keyPickerHtml(x) {
-    let h = '<div class="section_key_picker"><label>Key: <select class="inputs" name="k">';
-    h += '<option value="' + escHtml(x.k) + '">' + escHtml(x.k) + '</option>';
+    return keyButtonsHtml(x.k);
+  }
+  function keyButtonsHtml(currentKey) {
+    let h = '<div class="section_key_picker section_key_row">';
+    // Hidden select for legacy gatherAndNavigate compatibility.
+    h += '<select class="inputs key_hidden_select" name="k">';
     for (const a of ALLNOTES) {
-      h += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
+      const sel = (a === currentKey) ? ' selected' : '';
+      h += '<option value="' + escHtml(a) + '"' + sel + '>' + escHtml(a) + '</option>';
     }
-    h += '</select></label></div>';
+    h += '</select>';
+    for (const a of ALLNOTES) {
+      const cls = (a === currentKey) ? ' active' : '';
+      h += '<button type="button" class="key_btn' + cls + '" '
+         + 'data-key="' + escHtml(a) + '">' + escHtml(a) + '</button>';
+    }
+    h += '</div>';
     return h;
   }
 
-  // Each section's title bar gets its own Key dropdown + Clear link, populated
-  // here on every render so they stay in sync with the URL state. The Tunings
-  // list section (section_5) is intentionally excluded.
+  // Each section's title bar gets its own Clear link, plus a row of 12
+  // chromatic key buttons injected as a sibling element directly below
+  // the summary so they're centred under the section title (not in the
+  // right-side header strip).
   function renderSummaryExtras(x) {
     const slots = document.querySelectorAll('.summary_extras');
     if (!slots.length) return;
-    function pickerHtml(sectionKey) {
-      // Pre-select the section's effective key (override or global).
-      // The first <option> wins selection in HTML; the rest fill out
-      // the dropdown with every choice.
-      let opts = '<option value="' + escHtml(sectionKey) + '">' + escHtml(sectionKey) + '</option>';
-      for (const a of ALLNOTES) {
-        opts += '<option value="' + escHtml(a) + '">' + escHtml(a) + '</option>';
+    function summaryHtml() {
+      // Just the Clear link — the key buttons live below the summary now.
+      return '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
+    }
+    function ensureKeyRow(section, currentKey) {
+      let row = section.querySelector(':scope > .section_key_row_outer');
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'section_key_row_outer';
+        const summary = section.querySelector(':scope > summary');
+        if (summary) summary.after(row);
+        else section.prepend(row);
       }
-      return '<span class="section_key_picker"><label>Key: <select class="inputs" name="k">' +
-          opts +
-        '</select></label></span>' +
-        '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
+      row.innerHTML = keyButtonsHtml(currentKey);
+    }
+    function removeKeyRow(section) {
+      const row = section.querySelector(':scope > .section_key_row_outer');
+      if (row) row.remove();
     }
     slots.forEach(function (s) {
       const target = s.getAttribute('data-summary-for');
-      // Sections that don't need the Key picker / Clear button:
-      //   section_5 = nested tunings list (no chord-state context)
-      //   section_9 = key signatures (read-only reference)
-      if (target === 'section_5' || target === 'section_9') { s.innerHTML = ''; return; }
-      // Tab editor (section_8) has its own controls inside the section —
-      // nothing for the summary header.
-      if (target === 'section_8') { s.innerHTML = ''; return; }
-      // Compute this section's effective key. In linked mode every
-      // section sees the global k. In unlinked mode, fold any
-      // s<n>_k= override on top by routing through stateForSection,
-      // which re-runs parseState on a virtual URL — guaranteeing the
-      // displayed key matches whatever the renderer just rendered.
+      const sectionEl = target ? document.getElementById(target) : null;
+      if (target === 'section_5' || target === 'section_9') {
+        s.innerHTML = '';
+        if (sectionEl) removeKeyRow(sectionEl);
+        return;
+      }
+      if (target === 'section_8') {
+        s.innerHTML = '';
+        if (sectionEl) removeKeyRow(sectionEl);
+        return;
+      }
+      // Compute this section's effective key. Linked → global x.k;
+      // unlinked → routed through stateForSection so any s<n>_k=
+      // override wins.
       let sectionKey = x.k;
       if (target && /^section_\d+$/.test(target)) {
         const sx = stateForSection(target, x);
         if (sx && sx.k) sectionKey = sx.k;
       }
-      // Chord (section_3) + Scale (section_6) builders: prepend the
-      // compact-mode icon toggle just before the Clear / Key picker.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
-      s.innerHTML = prefix + pickerHtml(sectionKey);
+      s.innerHTML = prefix + summaryHtml();
+      if (sectionEl) ensureKeyRow(sectionEl, sectionKey);
     });
   }
 
@@ -2270,6 +2292,22 @@
     ).forEach(function (el) {
       el.addEventListener('change', handler);
     });
+    // Chromatic key buttons in each section. Click → set the matching
+    // hidden <select> and fire a change event so the existing handler
+    // does the rest (URL build, propagation, navigate).
+    if (!document.body.dataset.keyBtnDelegated) {
+      document.body.dataset.keyBtnDelegated = '1';
+      document.addEventListener('click', function (e) {
+        const btn = e.target.closest && e.target.closest('.section_key_row .key_btn');
+        if (!btn) return;
+        const row = btn.closest('.section_key_row');
+        const sel = row && row.querySelector('select.key_hidden_select');
+        const newKey = btn.getAttribute('data-key');
+        if (!sel || !newKey) return;
+        sel.value = newKey;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }
   }
 
   // ---- Per-section rerender (used when "Apply: all" is off) ---------

@@ -83,8 +83,11 @@
   // Bar-interpretation mode controls how we map a flat chords[] array
   // onto measures:
   //   'auto'         — trust Claude's `|` markers, but if the resulting
-  //                    avg chords/bar is > 2 we assume bar lines were
+  //                    avg chords/bar is > 4 we assume bar lines were
   //                    under-emitted and re-split one chord per bar.
+  //                    (Originally > 2; raised so that legitimate 4-
+  //                    chords-per-bar charts — one per beat in 4/4 —
+  //                    don't get over-corrected.)
   //   'as_extracted' — take `|` markers literally, even if some bars
   //                    end up packing many chords. Useful when Claude
   //                    actually nailed it and 'auto' over-corrects.
@@ -94,16 +97,27 @@
   //                    book "1 chord per bar" form.
   function splitMeasures(chords, degrees, mode) {
     mode = mode || 'auto';
+    // The demo's authoring station can write bar-like variants ("||",
+    // "|:", ":|") and rehearsal labels ("[A]", "[1.]"). The live
+    // chord-chart panel doesn't render those annotations yet, so we
+    // collapse the variants to a plain bar and skip the labels — they
+    // shouldn't be visible as bogus chord names while the published
+    // renderer catches up.
     var raw = [];
     var cBuf = [], dBuf = [];
     for (var i = 0; i < (chords || []).length; i++) {
-      if (chords[i] === '|') {
+      var t = chords[i];
+      if (t === '|' || t === '||' || t === '|:' || t === ':|') {
         raw.push({ c: cBuf, d: dBuf });
         cBuf = []; dBuf = [];
-      } else {
-        cBuf.push(chords[i]);
-        dBuf.push((degrees && degrees[i]) || '');
+        continue;
       }
+      if (typeof t === 'string' && t.length >= 3
+          && t.charAt(0) === '[' && t.charAt(t.length - 1) === ']') {
+        continue;          // rehearsal letter / ending bracket — skip silently
+      }
+      cBuf.push(t);
+      dBuf.push((degrees && degrees[i]) || '');
     }
     if (cBuf.length || dBuf.length) raw.push({ c: cBuf, d: dBuf });
 
@@ -129,7 +143,7 @@
       var filled = raw.filter(function (m) { return m.c.length; });
       var total = filled.reduce(function (n, m) { return n + m.c.length; }, 0);
       var avg = filled.length ? total / filled.length : 0;
-      ms = (avg > 2) ? explode(raw) : raw;
+      ms = (avg > 4) ? explode(raw) : raw;
     }
 
     for (var n = 0; n < ms.length; n++) {

@@ -498,6 +498,28 @@ async def edit_song(
     return await get_song(song_id)
 
 
+@app.delete("/api/songs/{song_id}")
+async def delete_song(
+    song_id: int,
+    actor: dict = Depends(resolve_admin),
+):
+    """Hard-delete a song row. Used by the local demo's dedup workflow
+    when the same standard appears in multiple books / pages and the
+    admin is keeping only the best version. Idempotent at the API
+    level: a missing row returns 404 so the caller knows the row never
+    existed (helps surface stale local caches).
+
+    Gated by resolve_admin (accepts Clerk admin JWT or X-Admin-Key)."""
+    pool = db.get_pool()
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM songs WHERE id = %s", (song_id,))
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="song not found")
+        await conn.commit()
+    return {"deleted": song_id}
+
+
 # ---- Tabs (tablature catalogue) -----------------------------------------
 
 @app.post("/api/tabs/import")
