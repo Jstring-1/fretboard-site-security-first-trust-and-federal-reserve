@@ -755,13 +755,14 @@ select option                              { color: var(--text); background: var
 /* Title: bare <h1> at the top of the page, no wrapper section, sits
    directly on the darkest page bg. */
 #site_title                                { text-align: center; letter-spacing: -0.02em;
-                                             margin: 18px 0 12px; padding: 0;
+                                             margin: 18px 0 0; padding: 0;
                                              background: transparent; border: none; box-shadow: none;                }
-/* Build number lives in the footer below the Witherfork link. Quiet,
-   small, just a timestamp for support / debug reference. */
+/* Build number sits snug under the logo — small, quiet, just enough
+   for support / debug reference. (Was in the footer; moved up here so
+   it's discoverable without scrolling to the bottom of the page.) */
 #build_num                                 { text-align: center; font: 400 0.7em var(--font);
                                              color: var(--muted-dim); letter-spacing: 0.06em;
-                                             margin: 4px 0 0; opacity: 0.65;                                          }
+                                             margin: 0 0 12px; opacity: 0.6;                                          }
 
 /* Blurb at the bottom — sits on the light page bg, needs dark text */
 #blurb                                     { font-size: 0.78em; color: #555555; opacity: 0.85; margin: 12px 0;       }

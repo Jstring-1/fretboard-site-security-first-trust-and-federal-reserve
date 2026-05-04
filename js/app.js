@@ -550,13 +550,16 @@
 
     // (Key dropdown + Clear live in the section title bars now, not in the form.)
 
-    // Row 3: note-letter highlight pickers (independent of key). Painted in
-    // a distinct visual treatment so they can coexist with degree highlights.
-    h += notePillsLinkHtml(x, 'fb_hn_row');
-
-    // Row 4: highlight degree pickers (link-style toggle pills, same widget
-    // used above the keyboard so the two sections look identical).
+    // Row 3: highlight degree pickers (link-style toggle pills) — placed
+    // ABOVE the note-letter row so the user reads the abstract degree
+    // first and the concrete pitch directly under it. Note row reorders
+    // when the key changes (root note sits under degree 1).
     h += highlightPillsLinkHtml(x, 'fb_hl_row');
+
+    // Row 4: note-letter pickers, ordered by degree-from-root (so the
+    // root note column-aligns with degree 1, ♭2 with the next note
+    // chromatically up, etc.).
+    h += notePillsLinkHtml(x, 'fb_hn_row');
 
     // Row 5: shared All / None for both pill rows.
     h += allNoneRowHtml('fb_allnone_row');
@@ -989,12 +992,14 @@
     let h = '<div class="opt_row opt_row_notes ' + (rowCls || '') + '">';
     const i1 = KEYS.indexOf(x.k);
     const cur = readHlParam(new URLSearchParams(window.location.search));
-    ALLNOTES.forEach(function (note) {
-      // Map this note → its degree in the current key.
-      const noteIdx = KEYS.indexOf(note);
-      let off = (noteIdx - i1 + 12) % 12;
-      if (i1 < 0 || noteIdx < 0) off = -1;
-      const deg = off >= 0 ? DEGREES[off] : '';
+    // Iterate by DEGREE position (0..11) so the column-order under the
+    // degree row matches degree-by-degree: position 0 = root, position
+    // 1 = ♭2, etc. When the key changes, the notes rotate to keep the
+    // root sitting directly under degree 1.
+    for (let off = 0; off < ALLNOTES.length; off++) {
+      const noteIdx = i1 >= 0 ? (i1 + off) % ALLNOTES.length : off;
+      const note = ALLNOTES[noteIdx];
+      const deg = i1 >= 0 ? DEGREES[off] : '';
       const ab = deg ? flatToB(deg) : '';
       const on = ab && (x['hl_' + ab] === 'y');
       let next;
@@ -1017,7 +1022,7 @@
               + ' !important;border-color:' + bg + ' !important;"';
       }
       h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>' + escHtml(note) + '</a>';
-    });
+    }
     h += '</div>';
     return h;
   }
@@ -1027,8 +1032,10 @@
   function renderKeyboardPicks(x) {
     const root = document.getElementById('kb_picks_root');
     if (!root) return;
-    root.innerHTML = notePillsLinkHtml(x, 'kb_hn_row')
-                   + highlightPillsLinkHtml(x, 'kb_hl_row')
+    // Degree row first, note row second — keeps the abstract / concrete
+    // ordering consistent with the fretboard section.
+    root.innerHTML = highlightPillsLinkHtml(x, 'kb_hl_row')
+                   + notePillsLinkHtml(x, 'kb_hn_row')
                    + allNoneRowHtml('kb_allnone_row')
                    + quickPicksHtml(x, 'kb_quick_picks');
   }
