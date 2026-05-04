@@ -707,7 +707,7 @@ details.collapsible > summary > .summary_title::before
    exactly as before. */
 .summary_keys                              { flex-basis: 100%; min-width: 100%;
                                              display: flex; justify-content: center;
-                                             padding: 0 0 2px; margin-top: -2px;                                       }
+                                             padding: 0 0 2px; margin-top: -8px;                                       }
 .section_key_row                           { display: flex; flex-wrap: wrap; gap: 4px;
                                              justify-content: center; align-items: center;
                                              padding: 0;
@@ -777,7 +777,7 @@ select option                              { color: var(--text); background: var
                                              font: italic 400 0.68em var(--font);
                                              line-height: 1;
                                              color: var(--muted-dim); letter-spacing: 0.06em;
-                                             margin: -2px 0 14px; opacity: 0.55;                                      }
+                                             margin: -10px 0 14px; opacity: 0.55;                                     }
 /* "Build " label injected via CSS so the stamp_build.py regex
    (anchored to <div id="build_num">[0-9.]+</div>) keeps matching the
    raw timestamp without having to learn the prefix. */
