@@ -1185,7 +1185,8 @@
     return keyButtonsHtml(x.k);
   }
   function keyButtonsHtml(currentKey) {
-    let h = '<div class="section_key_picker section_key_row">';
+    let h = '<span class="section_key_picker section_key_row">';
+    h += '<span class="key_label">KEY:</span>';
     // Hidden select for legacy gatherAndNavigate compatibility.
     h += '<select class="inputs key_hidden_select" name="k">';
     for (const a of ALLNOTES) {
@@ -1198,7 +1199,7 @@
       h += '<button type="button" class="key_btn' + cls + '" '
          + 'data-key="' + escHtml(a) + '">' + escHtml(a) + '</button>';
     }
-    h += '</div>';
+    h += '</span>';
     return h;
   }
 
@@ -1213,19 +1214,30 @@
       // Just the Clear link — the key buttons live below the summary now.
       return '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
     }
+    // Key-button row lives INSIDE the section's <summary>, as a sibling
+    // span after the existing summary content. CSS forces it onto a
+    // 100%-width second line so the buttons sit just below the title
+    // — visually part of the header strip, not in the section body.
     function ensureKeyRow(section, currentKey) {
-      let row = section.querySelector(':scope > .section_key_row_outer');
+      const summary = section.querySelector(':scope > summary');
+      if (!summary) return;
+      // Clean up any stale row left behind from the previous structure
+      // (when buttons lived as a sibling of summary).
+      const stale = section.querySelector(':scope > .section_key_row_outer');
+      if (stale) stale.remove();
+      let row = summary.querySelector(':scope > .summary_keys');
       if (!row) {
-        row = document.createElement('div');
-        row.className = 'section_key_row_outer';
-        const summary = section.querySelector(':scope > summary');
-        if (summary) summary.after(row);
-        else section.prepend(row);
+        row = document.createElement('span');
+        row.className = 'summary_keys';
+        summary.appendChild(row);
       }
       row.innerHTML = keyButtonsHtml(currentKey);
     }
     function removeKeyRow(section) {
-      const row = section.querySelector(':scope > .section_key_row_outer');
+      const stale = section.querySelector(':scope > .section_key_row_outer');
+      if (stale) stale.remove();
+      const summary = section.querySelector(':scope > summary');
+      const row = summary && summary.querySelector(':scope > .summary_keys');
       if (row) row.remove();
     }
     slots.forEach(function (s) {

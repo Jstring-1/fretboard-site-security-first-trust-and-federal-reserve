@@ -686,20 +686,28 @@ details.collapsible > summary > .summary_title::before
 .section_key_picker select.inputs:focus    { border-color: #888888; outline: none;                                   }
 .section_key_picker select.inputs option   { color: var(--text); background: var(--bg-elevated);                     }
 
-/* Per-section chromatic key buttons. Replaces the dropdown that used
-   to live in .summary_extras. One row of 12 buttons centred under the
-   section's title. The hidden <select name="k"> inside each row keeps
-   the existing gatherAndNavigate path working — button clicks just
-   update + dispatch a change event on it. */
+/* Per-section chromatic key buttons. Lives inside the section's
+   <summary> as a 100%-width second line just under the title — so the
+   buttons are visually part of the header strip, not the section body
+   (won't get confused with the highlight-degree row that lives in the
+   body below). The hidden <select name="k"> inside each row keeps the
+   existing gatherAndNavigate path working unchanged. */
+details.collapsible > summary              { display: flex; flex-wrap: wrap; align-items: center; }
+.summary_keys                              { flex-basis: 100%; display: flex;                                          }
 .section_key_row                           { display: flex; flex-wrap: wrap; gap: 4px;
-                                             justify-content: center;
-                                             padding: 6px 14px 4px;                                                  }
-.section_key_row .key_hidden_select        { display: none;                                                          }
+                                             justify-content: center; align-items: center;
+                                             width: 100%;
+                                             padding: 4px 0 2px;
+                                             font-weight: normal;                                                     }
+.section_key_row .key_label                { color: var(--muted); font: 600 0.78em monospace;
+                                             letter-spacing: 0.06em; text-transform: uppercase;
+                                             margin-right: 6px;                                                       }
+.section_key_row .key_hidden_select        { display: none;                                                           }
 .section_key_row .key_btn                  { background: #0e0e0e; border: 1px solid #5a5a5a;
                                              border-radius: 5px; color: #f0f0f0;
-                                             font: 600 0.85em inherit; padding: 4px 10px;
-                                             min-width: 36px; cursor: pointer;                                       }
-.section_key_row .key_btn:hover            { border-color: #888;                                                      }
+                                             font: 600 0.85em inherit; padding: 3px 9px;
+                                             min-width: 32px; cursor: pointer;                                        }
+.section_key_row .key_btn:hover            { border-color: #888;                                                       }
 .section_key_row .key_btn.active           { background: rgba(95,232,224,0.20);
                                              border-color: var(--accent); color: var(--accent);                       }
 /* Cover any other selects (per-string custom-tuning dropdowns inside the fretboard) */
