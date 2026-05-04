@@ -506,7 +506,7 @@ details.collapsible:not([open]) > summary  { border-bottom-color: transparent;  
    of the absolutely-positioned right-side controls via a higher z-index. */
 details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer;
                                              position: absolute; left: 50%; transform: translateX(-50%);
-                                             padding: 8px 40px; border-radius: 6px; z-index: 1;                       }
+                                             padding: 4px 40px; border-radius: 6px; z-index: 1;                       }
 /* When a section's summary has the key-button row below the title,
    anchor the title to the top of the bar instead of letting absolute
    positioning leave it floating in the vertical centre of the whole
@@ -707,7 +707,7 @@ details.collapsible > summary > .summary_title::before
    exactly as before. */
 .summary_keys                              { flex-basis: 100%; min-width: 100%;
                                              display: flex; justify-content: center;
-                                             padding: 4px 0 2px;                                                       }
+                                             padding: 0 0 2px; margin-top: -2px;                                       }
 .section_key_row                           { display: flex; flex-wrap: wrap; gap: 4px;
                                              justify-content: center; align-items: center;
                                              padding: 0;
@@ -768,14 +768,20 @@ select option                              { color: var(--text); background: var
 /* Title: bare <h1> at the top of the page, no wrapper section, sits
    directly on the darkest page bg. */
 #site_title                                { text-align: center; letter-spacing: -0.02em;
-                                             margin: 18px 0 -2px; padding: 0;
+                                             margin: 18px 0 0; padding: 0; line-height: 1;
                                              background: transparent; border: none; box-shadow: none;                }
-/* Build number snugs right under the logo (negative margin pulls it
-   tight against the descender of the title). Italic to soften it. */
+/* Build number snugs right under the logo. line-height:1 on both
+   #site_title and #build_num kills the descender / leading extra
+   space, so the only gap left is the negative margin-top here. */
 #build_num                                 { text-align: center;
                                              font: italic 400 0.68em var(--font);
+                                             line-height: 1;
                                              color: var(--muted-dim); letter-spacing: 0.06em;
-                                             margin: 0 0 14px; opacity: 0.55;                                         }
+                                             margin: -2px 0 14px; opacity: 0.55;                                      }
+/* "Build " label injected via CSS so the stamp_build.py regex
+   (anchored to <div id="build_num">[0-9.]+</div>) keeps matching the
+   raw timestamp without having to learn the prefix. */
+#build_num::before                         { content: 'Build '; opacity: 0.8;                                          }
 
 /* Blurb at the bottom — sits on the light page bg, needs dark text */
 #blurb                                     { font-size: 0.78em; color: #555555; opacity: 0.85; margin: 12px 0;       }
