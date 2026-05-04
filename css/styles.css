@@ -493,10 +493,12 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                              background: var(--surface); color: #fff;
                                              border-bottom: 1px solid #1f1f1f;
                                              display: flex; align-items: center; gap: 6px;
+                                             flex-wrap: wrap;
                                              justify-content: flex-end; position: relative;
-                                             /* Pin the height so highlight-text length changes don't grow the bar
-                                                and ripple every section's height. */
-                                             height: 56px; box-sizing: border-box;                                    }
+                                             /* min-height (not height) so the summary can grow when the key-button
+                                                row wraps to a second line below the existing title strip. The
+                                                .summary_keys child has flex-basis:100% to force that wrap. */
+                                             min-height: 56px; box-sizing: border-box;                                }
 details.collapsible:not([open]) > summary  { border-bottom-color: transparent;                                       }
 /* Title + arrow centered as one click target, ~3× the text width so users
    can tap-to-toggle without aiming directly at the small text. Sits on top
@@ -693,7 +695,13 @@ details.collapsible > summary > .summary_title::before
    is a block element which forces a line break inside the summary.
    The summary's dark background extends to contain it, so the buttons
    visually sit in the same header strip as the title above. */
-.summary_keys                              { display: block; width: 100%; margin-top: 4px;                            }
+/* flex-basis:100% forces the summary's flex layout to wrap onto a
+   second line, with this element consuming the full width. The other
+   summary children (title, status, extras, buttons) stay on row 1
+   exactly as before. */
+.summary_keys                              { flex-basis: 100%; min-width: 100%;
+                                             display: flex; justify-content: center;
+                                             padding: 4px 0 2px;                                                       }
 .section_key_row                           { display: flex; flex-wrap: wrap; gap: 4px;
                                              justify-content: center; align-items: center;
                                              padding: 0;
