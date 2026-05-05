@@ -88,6 +88,10 @@ table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;         
 /*********************************************************************************************************************
                             FONT FAMILY
 *********************************************************************************************************************/
+/* Reserve the vertical scrollbar gutter at all times so opening the
+   tunings popup (or any tall popover) doesn't cause the page content
+   to jump left when a scrollbar appears. */
+html { scrollbar-gutter: stable; }
 body { font-family: var(--font); }
 /*********************************************************************************************************************
                             FONT SIZES
