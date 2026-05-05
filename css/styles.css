@@ -6,7 +6,7 @@
        page  (deepest, almost-black)  →  section body (lifted)  →  section
        header (brightest of the three, sits like a tab on top of the body).
      Inputs / popovers reuse --bg-elevated (mid-tone). */
-  --bg:            #2e2e2e;   /* page background — slightly lighter than section headers so sections read as darker tiles */
+  --bg:            #000000;   /* page background — pure black */
   --bg-elevated:   #1c1c1c;   /* inputs / popovers / dropdowns */
   --bg-hover:      #2a2a2a;
   --surface:       #141414;   /* section body — lifted from the page */
