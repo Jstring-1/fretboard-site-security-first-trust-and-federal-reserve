@@ -44,7 +44,8 @@ Live at https://slantfinder.pro / https://www.slantfinder.pro.
   No Cloudflare, no URL Redirect.
 - The Tab editor's data + chord-extracted catalogues live in
   Postgres (Railway-internal `postgres.railway.internal:5432`).
-- Static dev served by MAMP at `http://localhost` (port varies).
+- Local repo: `C:\Users\KJ-NoJesteringStudio\GitHub\SlantFinder.pro`.
+  Static dev served by any local HTTP server (e.g. `python -m http.server`).
 
 
 ## Required env vars on Railway service
@@ -189,7 +190,7 @@ How this works in code:
 Lifespan hook (`server.db.run_migrations`) runs `migrations/*.sql`
 in lexical order on startup. `_migrations` table tracks applied work.
 
-CORS allows localhost dev origins so the MAMP-served `_demo.html`
+CORS allows localhost dev origins so locally-served `_demo.html`
 can reach the live API. Live origins are same-origin.
 
 Auth dependencies in `server/auth.py`:

@@ -158,7 +158,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS for local-dev / admin tooling. The MAMP-served _books/_demo.html
+# CORS for local-dev / admin tooling. The locally-served _books/_demo.html
 # (running at http://localhost) needs to call /api/songs/* on the live
 # host. We only allow localhost origins explicitly — the live site is
 # same-origin so it doesn't need CORS at all. allow_credentials=True
@@ -169,7 +169,7 @@ app.add_middleware(
         "http://localhost",
         "http://localhost:80",
         "http://localhost:8000",
-        "http://localhost:8888",   # MAMP default
+        "http://localhost:8888",
         "http://127.0.0.1",
         "http://127.0.0.1:8000",
         "http://127.0.0.1:8888",
