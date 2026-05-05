@@ -509,7 +509,7 @@ details.collapsible:not([open]) > summary  { border-bottom-color: transparent;  
    can tap-to-toggle without aiming directly at the small text. Sits on top
    of the absolutely-positioned right-side controls via a higher z-index. */
 details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer;
-                                             position: absolute; left: 50%; transform: translateX(-50%);
+                                             position: absolute; top: 0; left: 50%; transform: translateX(-50%);
                                              padding: 4px 40px; border-radius: 6px; z-index: 1;                       }
 /* When a section's summary has the key-button row below the title,
    anchor the title to the top of the bar instead of letting absolute
