@@ -499,7 +499,11 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                                 summary's content is shorter than its min-height. */
                                              align-content: flex-start;
                                              justify-content: flex-end; position: relative;
-                                             min-height: 32px; box-sizing: border-box;                                }
+                                             min-height: 54px; box-sizing: border-box;                                }
+/* Nested sub-section summaries (e.g. Tunings inside Fretboard) keep the
+   shorter 32px strip — only the top-level section heads match the taller
+   "with key buttons" strip. */
+details.collapsible.nested_section > summary { min-height: 32px;                                                       }
 details.collapsible:not([open]) > summary  { border-bottom-color: transparent;                                       }
 /* Title + arrow centered as one click target, ~3× the text width so users
    can tap-to-toggle without aiming directly at the small text. Sits on top
