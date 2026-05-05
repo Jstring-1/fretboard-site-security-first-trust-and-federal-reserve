@@ -1303,10 +1303,10 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table tbody .ks_sig_count,
 .ks_table tbody .ks_sig_staff,
 .ks_table tbody .ks_sig_hand               { padding: 4px 6px; vertical-align: middle; text-align: center;            }
-.ks_table tbody .ks_sig_count              { width: 25px; color: var(--text); font-weight: 600;
+.ks_table tbody .ks_sig_count              { width: 18px; color: var(--text); font-weight: 600;
                                              padding-left: 6px;                                                        }
-.ks_table tbody .ks_sig_staff              { width: 45px; color: var(--text);                                          }
-.ks_table tbody .ks_sig_hand               { width: 40px; padding-right: 6px;                                          }
+.ks_table tbody .ks_sig_staff              { width: 32px; color: var(--text);                                          }
+.ks_table tbody .ks_sig_hand               { width: 26px; padding-right: 4px;                                          }
 /* Shrink the staff + hand glyphs to fit the halved sub-columns. */
 .ks_table .ks_staff                        { transform: scale(0.7); transform-origin: left center;                    }
 .ks_table .ks_fingers                      { margin-left: 0;                                                          }
@@ -1334,7 +1334,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_hand_4                                 { background-position:  -84px 0;                                           }
 .ks_hand_5                                 { background-position: -112px 0;                                           }
 .ks_hand_mirror                            { transform: scaleX(-1);                                                  }
-.ks_table .ks_notes                        { color: var(--text);                                                       }
+.ks_table .ks_notes                        { color: var(--text); white-space: nowrap; padding-right: 14px;             }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 
