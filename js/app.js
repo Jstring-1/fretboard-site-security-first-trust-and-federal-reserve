@@ -3286,7 +3286,7 @@
             degsStr = degs.join(' ');
             tip = name + '\nDegrees: ' + degsStr + '\nNotes: ' + notes.join(' ');
           }
-          const isEngaged = root === x.k && degSetsEqual(degsStr, x.hl);
+          const isEngaged = root === xs.k && degSetsEqual(degsStr, xs.hl);
           let href;
           if (isEngaged) {
             // Disengage: clear hl, keep everything else (including pk).
