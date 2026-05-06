@@ -813,7 +813,7 @@
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
-      const tip = degsAndNotesTip(label, chipDegs, x.k);
+      const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
       h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
     }
     h += '  </div>';
@@ -824,7 +824,7 @@
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
-      const tip = degsAndNotesTip(label, chipDegs, x.k);
+      const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
       h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
     }
     h += '  </div>';
@@ -899,9 +899,10 @@
   // notes for the current site key. e.g.
   //   "Maj7\nDegrees: 1 3 5 7\nNotes: A C♯ E G♯"
   // degsStr arrives space-separated ("1 ♭3 5"); key is x.k.
-  function degsAndNotesTip(label, degsStr, key) {
+  function degsAndNotesTip(label, degsStr, key, kind) {
     const degs = String(degsStr || '').split(' ').filter(function (d) { return d.length; });
-    if (!degs.length) return label;
+    const head = (kind === 'chord' ? 'CHORD: ' : kind === 'scale' ? 'SCALE: ' : '') + label;
+    if (!degs.length) return head;
     const notes = (function () {
       const i1 = KEYS.indexOf(key);
       if (i1 < 0) return [];
@@ -910,7 +911,7 @@
         return off < 0 ? '' : KEYS[i1 + off];
       }).filter(Boolean);
     })();
-    let tip = label + '\nDegrees: ' + degs.join(' ');
+    let tip = head + '\nDegrees: ' + degs.join(' ');
     if (notes.length) tip += '\nNotes: ' + notes.join(' ');
     return tip;
   }
@@ -1473,7 +1474,7 @@
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
-      const tip = degsAndNotesTip(label, chipDegs, x.k);
+      const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
       const labelCell = '<td class="' + labelTdCls + '">'
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
@@ -1555,7 +1556,7 @@
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
-      const tip = degsAndNotesTip(label, chipDegs, x.k);
+      const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
       const labelCell = '<td class="' + labelTdCls + '">'
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
