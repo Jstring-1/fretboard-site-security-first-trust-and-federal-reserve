@@ -53,7 +53,7 @@
     const g = ctx.createGain();
     g.gain.value = 0;
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(0.22, t0 + 0.01);   // 10ms attack
+    g.gain.linearRampToValueAtTime(0.55, t0 + 0.01);   // 10ms attack
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     osc.connect(g).connect(ctx.destination);
     osc.start(t0);
