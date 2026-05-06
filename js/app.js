@@ -1676,28 +1676,29 @@
       const direction = isFlat ? 'down' : 'up';
       const staff = keySigStaffSvg(r.count, direction);
       const fingers = r.count > 0 ? fingerSvg(r.count, direction) : '';
+      const href = escHtml(buildKeySetHref(r.setKey));
       let row = '<tr class="' + cls + '">';
-      row += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
+      row += '<td class="ks_notes"><a href="' + href + '">' + escHtml(r.notes) + '</a></td>';
+      row += '<td class="ks_key"><a href="' + href + '">'
         +    escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
       row += '<td class="ks_sig_count">' + escHtml(sig) + '</td>';
       row += '<td class="ks_sig_staff">' + staff + '</td>';
       row += '<td class="ks_sig_hand">'  + fingers + '</td>';
-      row += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
       row += '</tr>';
       return row;
     }
-    let h = '<div class="ks_panel">';
-    h +=   '<table class="ks_table">'
-      +    '<thead><tr>'
-      +    '<th class="ks_key">Key</th>'
-      +    '<th class="ks_sig" colspan="3">Signature</th>'
-      +    '<th class="ks_notes">Accidentals</th>'
-      +    '</tr></thead><tbody>';
+    let h = '<div class="ks_layout">';
+    h +=   '<div class="ks_panel">';
+    h +=     '<table class="ks_table"><tbody>';
     // Sharps reversed: most-sharps first, C major last (the 0-row).
     for (const r of KEY_SIGS_SHARP.slice().reverse()) h += rowHtml(r, false);
     // Flats in natural order: 1 flat first (F major) … 7 flats last (C♭).
     for (const r of KEY_SIGS_FLAT) h += rowHtml(r, true);
-    h += '</tbody></table></div>';
+    h +=   '</tbody></table></div>';
+    // Right half: placeholder slot for future content (chord diagrams,
+    // notation tips, etc). Empty for now so the table sits on the left.
+    h +=   '<div class="ks_side"></div>';
+    h += '</div>';
     root.innerHTML = h;
   }
 

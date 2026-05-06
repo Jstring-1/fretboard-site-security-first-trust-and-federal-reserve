@@ -1286,6 +1286,14 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              padding: 12px 18px;
                                              min-width: 0; max-width: 100%; box-sizing: border-box;                    }
 .ks_grid > *                               { min-width: 0;                                                              }
+/* New 2-column layout: combined key-sig table on the left, placeholder
+   slot on the right. Each side gets exactly half the section width. */
+.ks_layout                                 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+                                             padding: 12px 18px;
+                                             min-width: 0; max-width: 100%; box-sizing: border-box;                    }
+.ks_layout > *                             { min-width: 0;                                                              }
+.ks_side                                   { background: var(--bg-elevated); border: 1px solid #2a2a2a;
+                                             border-radius: 6px; min-height: 200px;                                    }
 .ks_panel                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
                                              border-radius: 6px; overflow: hidden;
                                              /* Grid items default to `min-width: auto`, which lets them grow
@@ -1299,7 +1307,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              border-bottom: 1px solid #1f1f1f;                                         }
 .ks_table                                  { width: 100%; max-width: 100%; min-width: 0;
                                              border-collapse: collapse; table-layout: auto;
-                                             font: 400 0.92em var(--font); color: var(--accent);                       }
+                                             font: 400 1.15em var(--font); color: var(--accent);                       }
 .ks_table .ks_col_key                      { width: 64px;                                                              }
 .ks_table .ks_col_sig_count                { width: 26px;                                                              }
 .ks_table .ks_col_sig_staff                { width: 50px;                                                              }
@@ -1316,8 +1324,10 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table tbody tr.ks_row_current td       { background: rgba(95,232,224,0.14); color: var(--accent-hi); font-weight: 600; }
 .ks_table tbody tr:hover td                { background: rgba(255,255,255,0.04);                                       }
 .ks_table .ks_key                          { white-space: nowrap;                                                      }
-.ks_table .ks_key a                        { color: inherit; text-decoration: none;                                    }
-.ks_table .ks_key a:hover                  { color: var(--accent-hi);                                                  }
+.ks_table .ks_key a,
+.ks_table .ks_notes a                      { color: inherit; text-decoration: none; display: block;                    }
+.ks_table .ks_key a:hover,
+.ks_table .ks_notes a:hover                { color: var(--accent-hi);                                                  }
 .ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
 /* Three sub-cells under the single "Signature" header. Each piece keeps
    its own grid track so values line up vertically across rows, but the
@@ -1330,15 +1340,15 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              padding-left: 4px; padding-right: 4px;                                    }
 .ks_table tbody .ks_sig_staff              { color: var(--text); padding-left: 0; padding-right: 0;                    }
 .ks_table tbody .ks_sig_hand               { padding-left: 0; padding-right: 4px;                                      }
-/* Shrink the staff + hand glyphs to fit the halved sub-columns. */
-.ks_table .ks_staff                        { transform: scale(0.55); transform-origin: left center;                    }
+/* Staff + hand glyph sizes scaled up to match the larger 1.15em font. */
+.ks_table .ks_staff                        { transform: scale(0.85); transform-origin: left center;                    }
 .ks_table .ks_fingers                      { margin-left: 0;                                                          }
-.ks_table .ks_hand                         { width: 18px; height: 18px; background-size: 90px 18px;                   }
+.ks_table .ks_hand                         { width: 26px; height: 26px; background-size: 130px 26px;                  }
 .ks_table .ks_hand_1                       { background-position:    0 0;                                              }
-.ks_table .ks_hand_2                       { background-position: -18px 0;                                             }
-.ks_table .ks_hand_3                       { background-position: -36px 0;                                             }
-.ks_table .ks_hand_4                       { background-position: -54px 0;                                             }
-.ks_table .ks_hand_5                       { background-position: -72px 0;                                             }
+.ks_table .ks_hand_2                       { background-position: -26px 0;                                             }
+.ks_table .ks_hand_3                       { background-position: -52px 0;                                             }
+.ks_table .ks_hand_4                       { background-position: -78px 0;                                             }
+.ks_table .ks_hand_5                       { background-position: -104px 0;                                            }
 .ks_staff                                  { color: var(--text); display: inline-block; vertical-align: middle;        }
 /* Jazz hand-signal indicator: sprite from img/fingers-{up,down}.png. Each
    sprite is 5 panels side by side (1, 2, 3, 4, 5 fingers). The display
@@ -1363,9 +1373,11 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                                 panel — content-driven width has no min-width with normal
                                                 wrapping, so the table can shrink to its container. */
                                              white-space: normal; word-spacing: 0.05em;
-                                             text-align: left; padding-left: 14px;
+                                             /* Accidentals column lives on the LEFT of the table; right-align
+                                                so the rightmost characters sit adjacent to the Key column. */
+                                             text-align: right; padding-right: 14px;
                                              min-width: 0;                                                              }
-.ks_table thead th.ks_notes                { text-align: left;                                                          }
+.ks_table thead th.ks_notes                { text-align: right;                                                          }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 
