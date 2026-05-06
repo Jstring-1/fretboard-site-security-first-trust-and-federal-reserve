@@ -1707,6 +1707,16 @@
   // 12 wedges, 30° each, top = C major / A minor, going clockwise through
   // the sharps (G, D, A, …) to the bottom (F♯/G♭) and then up through the
   // flats. Three positions show enharmonic spellings (B/C♭, F♯/G♭, C♯/D♭).
+  // Chromatic semitone offsets keyed by the URL-encoded note name. Used
+  // to compute degree labels relative to the currently selected key.
+  const COF_SEMI = {
+    'C': 0,  'Cs': 1, 'Db': 1, 'D': 2, 'Ds': 3, 'Eb': 3, 'E': 4, 'Fb': 4,
+    'F': 5,  'Es': 5, 'Fs': 6, 'Gb': 6, 'G': 7, 'Gs': 8, 'Ab': 8, 'A': 9,
+    'As': 10,'Bb': 10,'B': 11, 'Cb': 11,
+  };
+  // Roman-numeral scale degrees (major-scale frame) for the 12 chromatic
+  // intervals from a chosen tonic.
+  const COF_DEGREES = ['I','♭II','II','♭III','III','IV','♭V','V','♭VI','VI','♭VII','VII'];
   function circleOfFifthsSvg(x) {
     // [majorLabel, majorSetKey, minorLabel, minorSetKey, enharmonicMajor?, enharmonicMajorSetKey?]
     const POS = [
@@ -1756,6 +1766,9 @@
 
     // Highlighted current key — match against major OR minor setKey.
     const curK = urlNote(x.k);
+    // Tonic semitone for degree labels. Falls back to 0 (C) if the
+    // selected key isn't recognised (shouldn't happen in practice).
+    const tonicSemi = COF_SEMI[curK] != null ? COF_SEMI[curK] : 0;
 
     for (let i = 0; i < 12; i++) {
       const slot     = POS[i];
@@ -1766,8 +1779,15 @@
       const a1 = i * 30 + 15;
       const labAng = i * 30;   // wedge centre
 
-      const majActive = (urlNote(majKey) === curK) || (enKey && urlNote(enKey) === curK);
-      const minActive = (urlNote(minKey) === curK);
+      // Major + relative minor share the same key signature, so they
+      // sit in the same wedge position on the circle. Highlight BOTH
+      // when the user has selected any of: this wedge's major, its
+      // enharmonic major (B/C♭, F♯/G♭, C♯/D♭), or its relative minor.
+      const wedgeActive = (urlNote(majKey) === curK)
+        || (enKey && urlNote(enKey) === curK)
+        || (urlNote(minKey) === curK);
+      const majActive = wedgeActive;
+      const minActive = wedgeActive;
 
       // Outer (major) wedge — wrapped in <a> so it's clickable.
       s += '<a class="cof_wedge cof_maj' + (majActive ? ' cof_active' : '') + '" href="'
@@ -1778,6 +1798,15 @@
       const [lx, ly] = pt((R_OUT + R_MID) / 2, labAng);
       s += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" class="cof_lab cof_lab_maj"'
         +  ' text-anchor="middle" dominant-baseline="central">' + escHtml(majLabel) + '</text>';
+      // Degree label (relative to the currently selected key) just to the
+      // right of the major note text, in parentheses.
+      const wedgeSemi = COF_SEMI[urlNote(majKey)];
+      if (wedgeSemi != null) {
+        const interval = ((wedgeSemi - tonicSemi) + 12) % 12;
+        const degText  = '(' + COF_DEGREES[interval] + ')';
+        s += '<text x="' + (lx + 18).toFixed(1) + '" y="' + ly.toFixed(1) + '" class="cof_lab cof_lab_deg"'
+          +  ' text-anchor="start" dominant-baseline="central">' + escHtml(degText) + '</text>';
+      }
       // Enharmonic small label (e.g. C♭ next to B), tucked outward.
       if (enLabel) {
         const [ex, ey] = pt((R_OUT + R_MID) / 2 + 12, labAng + 7);
@@ -2592,8 +2621,12 @@
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
       const raw = a.getAttribute('href');
       if (!raw) return;
+      // Build the URL from the raw href attribute, NOT `a.href`. SVG <a>
+      // elements (e.g. inside the Circle of Fifths) expose `a.href` as
+      // an SVGAnimatedString, which makes `new URL(a.href, …)` throw and
+      // skip our interceptor → browser does a full reload (scrolls to top).
       let url;
-      try { url = new URL(a.href, window.location.href); } catch (_) { return; }
+      try { url = new URL(raw, window.location.href); } catch (_) { return; }
       // External or different-page links: let the browser handle them.
       if (url.origin !== window.location.origin) return;
       if (url.pathname !== window.location.pathname) return;

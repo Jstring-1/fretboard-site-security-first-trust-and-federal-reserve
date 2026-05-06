@@ -1307,6 +1307,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .cof_lab_maj                               { font-size: 18px;                                                          }
 .cof_lab_min                               { font-size: 13px; fill: var(--muted);                                       }
 .cof_lab_enh                               { font-size: 11px; fill: var(--muted-dim);                                  }
+.cof_lab_deg                               { font-size: 10px; fill: var(--muted); font-weight: 400;
+                                             font-style: italic; letter-spacing: 0.02em;                                }
 .cof_wedge:hover .cof_lab                  { fill: var(--accent-hi);                                                  }
 .ks_panel                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
                                              border-radius: 6px; overflow: hidden;
