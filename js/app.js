@@ -1695,11 +1695,113 @@
     // Flats in natural order: 1 flat first (F major) … 7 flats last (C♭).
     for (const r of KEY_SIGS_FLAT) h += rowHtml(r, true);
     h +=   '</tbody></table></div>';
-    // Right half: placeholder slot for future content (chord diagrams,
-    // notation tips, etc). Empty for now so the table sits on the left.
-    h +=   '<div class="ks_side"></div>';
+    // Right half: an interactive circle of fifths. Each outer wedge is a
+    // major key, each inner wedge is its relative minor — clicking either
+    // applies that key (same href as the table on the left).
+    h +=   '<div class="ks_side">' + circleOfFifthsSvg(x) + '</div>';
     h += '</div>';
     root.innerHTML = h;
+  }
+
+  // -------- Circle of Fifths (SVG) ---------------------------------------
+  // 12 wedges, 30° each, top = C major / A minor, going clockwise through
+  // the sharps (G, D, A, …) to the bottom (F♯/G♭) and then up through the
+  // flats. Three positions show enharmonic spellings (B/C♭, F♯/G♭, C♯/D♭).
+  function circleOfFifthsSvg(x) {
+    // [majorLabel, majorSetKey, minorLabel, minorSetKey, enharmonicMajor?, enharmonicMajorSetKey?]
+    const POS = [
+      ['C',  'C',  'Am',  'A'],                         //  0  top
+      ['G',  'G',  'Em',  'E'],                         //  1
+      ['D',  'D',  'Bm',  'B'],                         //  2
+      ['A',  'A',  'F♯m', 'Fs'],                        //  3
+      ['E',  'E',  'C♯m', 'Cs'],                        //  4
+      ['B',  'B',  'G♯m', 'Gs', 'C♭', 'Cb'],            //  5
+      ['F♯', 'Fs', 'D♯m', 'Ds', 'G♭', 'Gb'],            //  6  bottom
+      ['C♯', 'Cs', 'A♯m', 'As', 'D♭', 'Db'],            //  7
+      ['A♭', 'Ab', 'Fm',  'F'],                         //  8
+      ['E♭', 'Eb', 'Cm',  'C'],                         //  9
+      ['B♭', 'Bb', 'Gm',  'G'],                         // 10
+      ['F',  'F',  'Dm',  'D'],                         // 11
+    ];
+    const SIZE  = 360;
+    const CX    = SIZE / 2;
+    const CY    = SIZE / 2;
+    const R_OUT = 175;   // outer ring outer radius
+    const R_MID = 120;   // outer ring inner radius / inner ring outer
+    const R_IN  = 65;    // inner ring inner radius (centre hole edge)
+    const R_HOLE= 35;    // empty centre circle visible radius
+    const STROKE = '#5a5a5a';
+    const FILL_MAJ = 'rgba(255,255,255,0.06)';
+    const FILL_MIN = 'rgba(255,255,255,0.02)';
+
+    function pt(r, deg) {
+      const rad = (deg - 90) * Math.PI / 180;
+      return [CX + r * Math.cos(rad), CY + r * Math.sin(rad)];
+    }
+    // Annular wedge path between rOuter / rInner from degStart → degEnd (clockwise).
+    function wedgePath(rOuter, rInner, degStart, degEnd) {
+      const [x1, y1] = pt(rOuter, degStart);
+      const [x2, y2] = pt(rOuter, degEnd);
+      const [x3, y3] = pt(rInner, degEnd);
+      const [x4, y4] = pt(rInner, degStart);
+      const large = (degEnd - degStart) > 180 ? 1 : 0;
+      return 'M ' + x1.toFixed(2) + ' ' + y1.toFixed(2)
+        +  ' A ' + rOuter + ' ' + rOuter + ' 0 ' + large + ' 1 ' + x2.toFixed(2) + ' ' + y2.toFixed(2)
+        +  ' L ' + x3.toFixed(2) + ' ' + y3.toFixed(2)
+        +  ' A ' + rInner + ' ' + rInner + ' 0 ' + large + ' 0 ' + x4.toFixed(2) + ' ' + y4.toFixed(2)
+        +  ' Z';
+    }
+
+    let s = '<svg class="cof_svg" viewBox="0 0 ' + SIZE + ' ' + SIZE + '" xmlns="http://www.w3.org/2000/svg" aria-label="Circle of fifths">';
+
+    // Highlighted current key — match against major OR minor setKey.
+    const curK = urlNote(x.k);
+
+    for (let i = 0; i < 12; i++) {
+      const slot     = POS[i];
+      const majLabel = slot[0], majKey = slot[1];
+      const minLabel = slot[2], minKey = slot[3];
+      const enLabel  = slot[4], enKey  = slot[5];
+      const a0 = i * 30 - 15;
+      const a1 = i * 30 + 15;
+      const labAng = i * 30;   // wedge centre
+
+      const majActive = (urlNote(majKey) === curK) || (enKey && urlNote(enKey) === curK);
+      const minActive = (urlNote(minKey) === curK);
+
+      // Outer (major) wedge — wrapped in <a> so it's clickable.
+      s += '<a class="cof_wedge cof_maj' + (majActive ? ' cof_active' : '') + '" href="'
+        +  escHtml(buildKeySetHref(majKey)) + '">';
+      s += '<path d="' + wedgePath(R_OUT, R_MID, a0, a1) + '" fill="' + (majActive ? 'rgba(95,232,224,0.22)' : FILL_MAJ)
+        +  '" stroke="' + STROKE + '" stroke-width="1"/>';
+      // Major label
+      const [lx, ly] = pt((R_OUT + R_MID) / 2, labAng);
+      s += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" class="cof_lab cof_lab_maj"'
+        +  ' text-anchor="middle" dominant-baseline="central">' + escHtml(majLabel) + '</text>';
+      // Enharmonic small label (e.g. C♭ next to B), tucked outward.
+      if (enLabel) {
+        const [ex, ey] = pt((R_OUT + R_MID) / 2 + 12, labAng + 7);
+        s += '<text x="' + ex.toFixed(1) + '" y="' + ey.toFixed(1) + '" class="cof_lab cof_lab_enh"'
+          +  ' text-anchor="middle" dominant-baseline="central">' + escHtml(enLabel) + '</text>';
+      }
+      s += '</a>';
+
+      // Inner (minor) wedge.
+      s += '<a class="cof_wedge cof_min' + (minActive ? ' cof_active' : '') + '" href="'
+        +  escHtml(buildKeySetHref(minKey)) + '">';
+      s += '<path d="' + wedgePath(R_MID, R_IN, a0, a1) + '" fill="' + (minActive ? 'rgba(95,232,224,0.22)' : FILL_MIN)
+        +  '" stroke="' + STROKE + '" stroke-width="1"/>';
+      const [mx, my] = pt((R_MID + R_IN) / 2, labAng);
+      s += '<text x="' + mx.toFixed(1) + '" y="' + my.toFixed(1) + '" class="cof_lab cof_lab_min"'
+        +  ' text-anchor="middle" dominant-baseline="central">' + escHtml(minLabel) + '</text>';
+      s += '</a>';
+    }
+
+    // Empty centre hole — draw a filled circle so the donut reads cleanly.
+    s += '<circle cx="' + CX + '" cy="' + CY + '" r="' + R_HOLE + '" fill="var(--bg-elevated)" stroke="' + STROKE + '" stroke-width="1"/>';
+
+    s += '</svg>';
+    return s;
   }
 
   function renderTuningsTable(x) {

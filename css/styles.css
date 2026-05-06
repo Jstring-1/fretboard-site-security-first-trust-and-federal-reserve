@@ -1293,7 +1293,21 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              min-width: 0; max-width: 100%; box-sizing: border-box;                    }
 .ks_layout > *                             { min-width: 0;                                                              }
 .ks_side                                   { background: var(--bg-elevated); border: 1px solid #2a2a2a;
-                                             border-radius: 6px; min-height: 200px;                                    }
+                                             border-radius: 6px; min-height: 200px;
+                                             display: flex; align-items: center; justify-content: center;
+                                             padding: 18px;                                                              }
+/* Circle of Fifths SVG — interactive, click-to-set-key wedges. */
+.cof_svg                                   { width: 100%; max-width: 380px; height: auto; display: block;              }
+.cof_wedge                                 { cursor: pointer; outline: none;                                            }
+.cof_wedge path                            { transition: fill 120ms ease;                                              }
+.cof_wedge:hover path                      { fill: rgba(95,232,224,0.14);                                                }
+.cof_wedge.cof_active path                 { fill: rgba(95,232,224,0.28);                                                }
+.cof_lab                                   { fill: var(--text); font-family: var(--font); font-weight: 700;
+                                             pointer-events: none; user-select: none;                                  }
+.cof_lab_maj                               { font-size: 18px;                                                          }
+.cof_lab_min                               { font-size: 13px; fill: var(--muted);                                       }
+.cof_lab_enh                               { font-size: 11px; fill: var(--muted-dim);                                  }
+.cof_wedge:hover .cof_lab                  { fill: var(--accent-hi);                                                  }
 .ks_panel                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
                                              border-radius: 6px; overflow: hidden;
                                              /* Grid items default to `min-width: auto`, which lets them grow
