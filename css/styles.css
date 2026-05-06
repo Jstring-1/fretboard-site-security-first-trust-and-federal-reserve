@@ -1283,7 +1283,9 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
    Key Signatures section — side-by-side reference tables
    ============================================================ */
 .ks_grid                                   { display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-                                             padding: 12px 18px;                                                       }
+                                             padding: 12px 18px;
+                                             min-width: 0; max-width: 100%; box-sizing: border-box;                    }
+.ks_grid > *                               { min-width: 0;                                                              }
 .ks_panel                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
                                              border-radius: 6px; overflow: hidden;
                                              /* Grid items default to `min-width: auto`, which lets them grow
@@ -1295,11 +1297,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              color: var(--accent-hi); letter-spacing: 0.08em;
                                              text-transform: uppercase; background: #161616;
                                              border-bottom: 1px solid #1f1f1f;                                         }
-.ks_table                                  { width: 100%; border-collapse: collapse;
-                                             /* Use the global `table { table-layout: fixed }` (line 199). With a
-                                                <colgroup> defining all 5 column widths explicitly, the colspan-3
-                                                thead "Signature" label is purely cosmetic and doesn't confuse the
-                                                column-width algorithm. */
+.ks_table                                  { width: 100%; max-width: 100%; min-width: 0;
+                                             border-collapse: collapse; table-layout: auto;
                                              font: 400 0.92em var(--font); color: var(--accent);                       }
 .ks_table .ks_col_key                      { width: 64px;                                                              }
 .ks_table .ks_col_sig_count                { width: 26px;                                                              }
@@ -1358,8 +1357,14 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_hand_4                                 { background-position:  -84px 0;                                           }
 .ks_hand_5                                 { background-position: -112px 0;                                           }
 .ks_hand_mirror                            { transform: scaleX(-1);                                                  }
-.ks_table .ks_notes                        { color: var(--text); white-space: nowrap;
-                                             text-align: right; padding-right: 14px;                                    }
+.ks_table .ks_notes                        { color: var(--text);
+                                             /* Allow wrapping if needed so the longest accidentals string
+                                                ("B♭ E♭ A♭ D♭ G♭ C♭") never forces the table wider than the
+                                                panel — content-driven width has no min-width with normal
+                                                wrapping, so the table can shrink to its container. */
+                                             white-space: normal; word-spacing: 0.05em;
+                                             text-align: right; padding-right: 14px;
+                                             min-width: 0;                                                              }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 

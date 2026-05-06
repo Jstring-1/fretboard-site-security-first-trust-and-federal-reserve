@@ -1672,13 +1672,6 @@
       // to honour. The thead keeps the colspan-3 "Signature" label for
       // visual grouping; the <col>s handle layout.
       h +=   '<table class="ks_table">'
-        +    '<colgroup>'
-        +      '<col style="width:60px">'
-        +      '<col style="width:24px">'
-        +      '<col style="width:46px">'
-        +      '<col style="width:40px">'
-        +      '<col>'
-        +    '</colgroup>'
         +    '<thead><tr>'
         +    '<th class="ks_key">Key</th>'
         +    '<th class="ks_sig" colspan="3">Signature</th>'
