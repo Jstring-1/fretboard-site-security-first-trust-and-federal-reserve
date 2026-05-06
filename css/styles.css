@@ -551,6 +551,16 @@ details.collapsible > summary { cursor: default; }
                                              color: #001014;                                                           }
 .section_apply_all.on:hover                { background: #fff; border-color: #fff; color: #001014;                     }
 @media print { .section_apply_all          { display: none !important; }                                                }
+/* Audio toggle (♪): off = subtle outline, on = filled accent. Sits to
+   the right of the Linked toggle in the Fretboard summary. */
+.section_audio_toggle                      { display: inline-block; margin-left: 4px; padding: 2px 10px;
+                                             border: 1px solid rgba(255,255,255,0.55); border-radius: 12px;
+                                             background: rgba(255,255,255,0.18); color: #fff; cursor: pointer;
+                                             font: 600 0.95em inherit; line-height: 18px;                                }
+.section_audio_toggle:hover                { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+.section_audio_toggle.on                   { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
+.section_audio_toggle.on:hover             { background: #fff; border-color: #fff; color: #001014;                     }
+@media print { .section_audio_toggle       { display: none !important; }                                                }
 /* CSV export pill — same shape as the Print pill so the right-side row
    reads as a consistent set of action chips. */
 .section_export                            { display: inline-block; margin-left: 4px; padding: 2px 10px;

@@ -17,6 +17,98 @@
   const GRID = D.grid;
   const TUNINGS = D.tunings;
 
+  // ---------- audio (Web Audio API synth, off by default) -------------
+  // Persistence in localStorage so the user's preference survives reload
+  // without polluting the URL. Opt-in: nothing plays unless the ♪ toggle
+  // in the Fretboard summary is on.
+  let _audioCtx = null;
+  function audioOn() {
+    return localStorage.getItem('sf_audio') === 'on';
+  }
+  function setAudioOn(on) {
+    if (on) localStorage.setItem('sf_audio', 'on');
+    else    localStorage.removeItem('sf_audio');
+  }
+  function ensureAudioCtx() {
+    if (_audioCtx) return _audioCtx;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    _audioCtx = new Ctx();
+    return _audioCtx;
+  }
+  function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+  // Play a single note as a triangle-wave synth blip with a short
+  // attack/release envelope. Polyphonic by design — each call spins up
+  // its own oscillator + gain node so rapid clicks layer cleanly.
+  function playMidi(m, durSec) {
+    if (!audioOn()) return;
+    const ctx = ensureAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') { try { ctx.resume(); } catch (_) {} }
+    const t0 = ctx.currentTime;
+    const dur = (typeof durSec === 'number' && durSec > 0) ? durSec : 0.9;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = midiToFreq(m);
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.22, t0 + 0.01);   // 10ms attack
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }
+
+  // Pitch-class lookup keyed by display note name (sharp form as KEYS uses).
+  const NOTE_PC = {
+    'C':0, 'C♯':1, 'D':2, 'D♯':3, 'E':4, 'F':5,
+    'F♯':6, 'G':7, 'G♯':8, 'A':9, 'A♯':10, 'B':11,
+    // Flat aliases for tunings stored that way (rare in this app's data).
+    'D♭':1, 'E♭':3, 'G♭':6, 'A♭':8, 'B♭':10, 'C♭':11
+  };
+  function notePc(n) {
+    const k = String(n || '').replace('#', '♯').replace('b', '♭');
+    return NOTE_PC[k] != null ? NOTE_PC[k] : 0;
+  }
+
+  // Given an array of string note letters in LOW-TO-HIGH pitch order,
+  // produce a parallel array of MIDI numbers using the heuristic:
+  //  - lowest string lands closest to a per-string-count target
+  //  - each subsequent string steps up by the smallest non-negative
+  //    semitone delta from the previous (same letter ⇒ +12)
+  // Handles standard guitar (40,45,50,55,59,64), bass (28..43), uke
+  // (treated as ascending — re-entrant high-G uke will sound an octave
+  // low, fixable later via per-string ± buttons).
+  const _STR_COUNT_TARGET = { 4: 28, 5: 23, 6: 40, 7: 35, 8: 36, 9: 33, 10: 33, 11: 31, 12: 38 };
+  function fretboardStringMidis(lowToHighNotes) {
+    const N = lowToHighNotes.length;
+    const target = _STR_COUNT_TARGET[N] || 40;
+    const midis = [];
+    let prev = -1;
+    for (let i = 0; i < N; i++) {
+      const p = notePc(lowToHighNotes[i]);
+      let m;
+      if (i === 0) {
+        // Closest MIDI in [12,108] with (m % 12 === p) to the target
+        let best = 60, diff = Infinity;
+        for (let k = 12; k <= 108; k++) {
+          if (k % 12 !== p) continue;
+          const d = Math.abs(k - target);
+          if (d < diff) { best = k; diff = d; }
+        }
+        m = best;
+      } else {
+        let step = ((p - (prev % 12)) + 12) % 12;
+        if (step === 0) step = 12;
+        m = prev + step;
+      }
+      midis.push(m);
+      prev = m;
+    }
+    return midis;
+  }
+
   // ---------- helpers ----------
   // URL with every current param except hl — used by every Clear button so
   // clearing only drops the highlight, not the key/tuning/collapsed sections.
@@ -1145,6 +1237,22 @@
       str[a] = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim();
     }
 
+    // Compute open-string MIDI for every string (1..N) using the heuristic
+    // in fretboardStringMidis. Convention here: s1 is the TOP row (highest
+    // pitch) so the lowest pitch is sN — feed the helper in low-to-high
+    // order and remap the result back by string number.
+    const _midiByStr = (function () {
+      const lowToHigh = [];
+      for (let a = x.strs; a >= 1; a--) lowToHigh.push(str[a].toUpperCase());
+      const midis = fretboardStringMidis(lowToHigh);
+      const out = {};
+      for (let i = 0; i < midis.length; i++) {
+        // i=0 corresponds to a=N (lowest pitch), i=N-1 to a=1 (highest).
+        out[x.strs - i] = midis[i];
+      }
+      return out;
+    })();
+
     // String-direction toggle (y) flips the row order on the fretboard. y=y
     // walks the strings high-index-first; y=n walks 1..N. The tuning data
     // itself is untouched so the section header text stays canonical.
@@ -1165,7 +1273,8 @@
         h += '<option value="' + escHtml(note) + '">' + escHtml(note) + '</option>';
       }
       h += '</select></td>';
-      h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
+      const _openMidi = _midiByStr[a];
+      h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" data-midi="' + _openMidi + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
 
       for (let b = 1; b <= 12; b++) {
         const cb = c + b;
@@ -1174,7 +1283,7 @@
         let fbId = (x['hl_' + flatToB(degAtFret)] === 'y') ? flatToB(degAtFret) : 'no_highlight';
         const cls = (b === 1) ? 'nut1' : 'fb_td';
         const cellPkCls = (x._pk_set && x._pk_set.has(noteAtFret)) ? ' note_pk' : '';
-        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" id="_' + fbId + '_">' + escHtml(noteAtFret) + '(' + escHtml(degAtFret || '') + ')</td>';
+        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">' + escHtml(noteAtFret) + '(' + escHtml(degAtFret || '') + ')</td>';
       }
       h += '</tr>';
     }
@@ -2587,6 +2696,36 @@
     $btn.textContent = unlinked ? 'Unlinked' : 'Linked';
     $btn.setAttribute('aria-pressed', unlinked ? 'false' : 'true');
   }
+  // ---- Audio toggle (♪) — Fretboard summary ----------------------
+  let _audioToggleBound = false;
+  function paintAudioToggle() {
+    const $btn = document.getElementById('audio_toggle');
+    if (!$btn) return;
+    const on = audioOn();
+    $btn.classList.toggle('on', on);
+    $btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    $btn.title = on
+      ? 'Audio on — click again to mute. Notes play when you click a fret or key.'
+      : 'Audio off — click to play notes when you click a fret or key.';
+  }
+  function bindAudioToggle() {
+    paintAudioToggle();
+    if (_audioToggleBound) return;
+    const $btn = document.getElementById('audio_toggle');
+    if (!$btn) return;
+    _audioToggleBound = true;
+    $btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const turningOn = !audioOn();
+      setAudioOn(turningOn);
+      paintAudioToggle();
+      // Pre-warm the AudioContext on the activating gesture so the
+      // first played note doesn't have any user-gesture latency.
+      if (turningOn) ensureAudioCtx();
+    });
+  }
+
   function bindApplyAllToggle() {
     paintApplyAllToggle();          // always repaint to reflect URL state
     if (_applyAllBound) return;
@@ -2952,6 +3091,38 @@
         });
       });
     }
+    // Assign data-midi by walking white- and black-key cells in DOM order.
+    // The visible piano spans A0 (MIDI 21) → C8 (MIDI 108). White keys
+    // step through the diatonic offsets [0,2,3,5,7,8,10] from each A.
+    // Black keys step through [1,4,6,9,11].
+    (function () {
+      const tbl = document.getElementById('keyboard');
+      if (!tbl) return;
+      const rows = tbl.querySelectorAll('tr');
+      // Find the black-key and white-key rows by inspecting their first td label.
+      let whiteRow = null, blackRow = null;
+      rows.forEach(function (r) {
+        const first = r.querySelector('td');
+        if (!first) return;
+        const txt = (first.textContent || '').trim().toLowerCase();
+        if (txt === 'white keys') whiteRow = r;
+        else if (txt === 'black keys') blackRow = r;
+      });
+      const WHITE_OFF = [0, 2, 3, 5, 7, 8, 10];   // A B C D E F G from A
+      const BLACK_OFF = [1, 4, 6, 9, 11];         // A♯ C♯ D♯ F♯ G♯
+      function assign(row, offs) {
+        if (!row) return;
+        const cells = row.querySelectorAll('td[data-note]');
+        cells.forEach(function (cell, idx) {
+          const cycle = Math.floor(idx / offs.length);
+          const pos   = idx % offs.length;
+          const midi  = 21 + 12 * cycle + offs[pos];
+          cell.setAttribute('data-midi', String(midi));
+        });
+      }
+      assign(whiteRow, WHITE_OFF);
+      assign(blackRow, BLACK_OFF);
+    })();
     // If any highlights are set, dim notes outside the set so the chosen ones pop.
     // White keys dimmed → plain white bg with text close to white (label fades).
     // Black keys dimmed → label color close to the dark cell bg (also fades).
@@ -3088,6 +3259,14 @@
       const note = cell.getAttribute('data-note');
       if (!note) return;
       e.preventDefault();
+      // Audio playback (off by default, toggled via the ♪ button in the
+      // Fretboard summary). Reads data-midi from the cell — independent
+      // of the chord-identifier pick logic that follows.
+      if (audioOn()) {
+        const midiStr = cell.getAttribute('data-midi');
+        const m = midiStr ? parseInt(midiStr, 10) : NaN;
+        if (!isNaN(m)) playMidi(m);
+      }
       // Section-aware: in unlinked mode each section has its own picks
       // so the fretboard click writes s2_pk and the keyboard click
       // writes s4_pk. Linked mode keeps the global `pk`.
@@ -3621,6 +3800,7 @@
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindNotePick();          // click fret cells / keyboard keys to pick notes
     bindApplyAllToggle();    // one-time wire of the Apply: all chip in fretboard summary
+    bindAudioToggle();       // one-time wire of the ♪ audio toggle in fretboard summary
     if (window.SF_TabCapture && typeof window.SF_TabCapture.refresh === 'function') {
       // Site key may have changed — re-render the tab capture mini-fretboard
       // so its degree labels reflect the new key.
