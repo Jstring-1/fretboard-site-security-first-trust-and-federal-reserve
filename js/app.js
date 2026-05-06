@@ -1664,57 +1664,40 @@
   function renderKeySignatures(x) {
     const root = document.getElementById('key_signatures_root');
     if (!root) return;
-    function buildTable(rows, title) {
-      let h = '<div class="ks_panel">';
-      h +=   '<div class="ks_panel_title">' + escHtml(title) + '</div>';
-      // <colgroup> defines the 5 actual column widths so `table-layout:
-      // fixed` (set on `table` globally) has explicit per-column tracks
-      // to honour. The thead keeps the colspan-3 "Signature" label for
-      // visual grouping; the <col>s handle layout.
-      h +=   '<table class="ks_table">'
-        +    '<thead><tr>'
-        +    '<th class="ks_key">Key</th>'
-        +    '<th class="ks_sig" colspan="3">Signature</th>'
-        +    '<th class="ks_notes">Accidentals</th>'
-        +    '</tr></thead><tbody>';
-      // The flats panel starts at 1 flat (F major) but the sharps panel
-      // starts at 0 sharps (C major). Reuse C major at the top of the
-      // flats panel too so rows for N flats / N sharps line up.
-      const renderRows = (rows === KEY_SIGS_FLAT)
-        ? [KEY_SIGS_SHARP[0]].concat(rows)
-        : rows;
-      for (const r of renderRows) {
-        const isCurrent = (urlNote(r.setKey) === urlNote(x.k));
-        const cls = 'ks_row' + (isCurrent ? ' ks_row_current' : '');
-        const sig = r.count === 0
-          ? '0'
-          : r.count + (rows === KEY_SIGS_FLAT ? '♭' : '♯');
-        const direction = rows === KEY_SIGS_FLAT ? 'down' : 'up';
-        const staff = keySigStaffSvg(r.count, direction);
-        const fingers = r.count > 0 ? fingerSvg(r.count, direction) : '';
-        h += '<tr class="' + cls + '">';
-        h += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
-          +  escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
-        // Three sub-cells under the single "Signature" header — count,
-        // staff, hand. CSS removes the vertical borders between them so
-        // they read as one column even though each piece keeps its own
-        // grid track for vertical alignment across rows.
-        h += '<td class="ks_sig_count">' + escHtml(sig) + '</td>';
-        h += '<td class="ks_sig_staff">' + staff + '</td>';
-        h += '<td class="ks_sig_hand">'  + fingers + '</td>';
-        h += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
-        h += '</tr>';
-      }
-      h += '</tbody></table></div>';
-      return h;
+    // Build a single combined table: sharps top→bottom = C# (7♯) … C (0),
+    // then flats top→bottom = F (1♭) … C♭ (7♭). C major sits in the
+    // middle as the shared 0-accidental row.
+    function rowHtml(r, isFlat) {
+      const isCurrent = (urlNote(r.setKey) === urlNote(x.k));
+      const cls = 'ks_row' + (isCurrent ? ' ks_row_current' : '');
+      const sig = r.count === 0
+        ? '0'
+        : r.count + (isFlat ? '♭' : '♯');
+      const direction = isFlat ? 'down' : 'up';
+      const staff = keySigStaffSvg(r.count, direction);
+      const fingers = r.count > 0 ? fingerSvg(r.count, direction) : '';
+      let row = '<tr class="' + cls + '">';
+      row += '<td class="ks_key"><a href="' + escHtml(buildKeySetHref(r.setKey)) + '">'
+        +    escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
+      row += '<td class="ks_sig_count">' + escHtml(sig) + '</td>';
+      row += '<td class="ks_sig_staff">' + staff + '</td>';
+      row += '<td class="ks_sig_hand">'  + fingers + '</td>';
+      row += '<td class="ks_notes">' + escHtml(r.notes) + '</td>';
+      row += '</tr>';
+      return row;
     }
-    let h = '<div class="ks_grid">';
-    h +=   buildTable(KEY_SIGS_SHARP, 'Sharps');
-    h +=   buildTable(KEY_SIGS_FLAT,  'Flats');
-    h += '</div>';
-    h += '<div class="ks_help">Click a key to set it. Hand-signal flow: '
-      +  'fingers up = sharps, fingers down = flats — '
-      +  '3 up → A major, 2 down → B♭ major.</div>';
+    let h = '<div class="ks_panel">';
+    h +=   '<table class="ks_table">'
+      +    '<thead><tr>'
+      +    '<th class="ks_key">Key</th>'
+      +    '<th class="ks_sig" colspan="3">Signature</th>'
+      +    '<th class="ks_notes">Accidentals</th>'
+      +    '</tr></thead><tbody>';
+    // Sharps reversed: most-sharps first, C major last (the 0-row).
+    for (const r of KEY_SIGS_SHARP.slice().reverse()) h += rowHtml(r, false);
+    // Flats in natural order: 1 flat first (F major) … 7 flats last (C♭).
+    for (const r of KEY_SIGS_FLAT) h += rowHtml(r, true);
+    h += '</tbody></table></div>';
     root.innerHTML = h;
   }
 
