@@ -1667,7 +1667,19 @@
     function buildTable(rows, title) {
       let h = '<div class="ks_panel">';
       h +=   '<div class="ks_panel_title">' + escHtml(title) + '</div>';
-      h +=   '<table class="ks_table"><thead><tr>'
+      // <colgroup> defines the 5 actual column widths so `table-layout:
+      // fixed` (set on `table` globally) has explicit per-column tracks
+      // to honour. The thead keeps the colspan-3 "Signature" label for
+      // visual grouping; the <col>s handle layout.
+      h +=   '<table class="ks_table">'
+        +    '<colgroup>'
+        +      '<col class="ks_col_key">'
+        +      '<col class="ks_col_sig_count">'
+        +      '<col class="ks_col_sig_staff">'
+        +      '<col class="ks_col_sig_hand">'
+        +      '<col class="ks_col_notes">'
+        +    '</colgroup>'
+        +    '<thead><tr>'
         +    '<th class="ks_key">Key</th>'
         +    '<th class="ks_sig" colspan="3">Signature</th>'
         +    '<th class="ks_notes">Accidentals</th>'
