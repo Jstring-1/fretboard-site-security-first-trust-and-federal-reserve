@@ -1363,8 +1363,9 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                                 panel — content-driven width has no min-width with normal
                                                 wrapping, so the table can shrink to its container. */
                                              white-space: normal; word-spacing: 0.05em;
-                                             text-align: right; padding-right: 14px;
+                                             text-align: left; padding-left: 14px;
                                              min-width: 0;                                                              }
+.ks_table thead th.ks_notes                { text-align: left;                                                          }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 
