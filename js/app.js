@@ -940,14 +940,43 @@
   }
 
   // Mirror of buildHlHref for the chord-identifier pick set.
-  function buildPkHref(pkList) {
+  // Build a URL that updates the chord-identifier pick set. In linked
+  // mode the picks are global (`pk=…`); in unlinked mode each section
+  // owns its own picks via `s<n>_pk=…`, so callers pass a sectionId so
+  // the fretboard and keyboard identifiers don't share state.
+  function buildPkHref(pkList, sectionId) {
+    const unlinked = document.body.getAttribute('data-apply-all') === 'off';
     const p = new URLSearchParams(window.location.search);
+    if (unlinked && sectionId) {
+      const m = String(sectionId).match(/^section_(\d+)$/);
+      if (m) {
+        const key = 's' + m[1] + '_pk';
+        p.delete(key);
+        if (pkList.length) {
+          p.set(key, pkList.map(function (n) { return urlNote(n); }).join(','));
+        }
+        p.set('u', '1');
+        const qs = p.toString();
+        return qs ? '?' + qs : '?';
+      }
+    }
     p.delete('pk');
     let qs = p.toString();
     if (pkList.length) {
       qs += (qs ? '&' : '') + 'pk=' + pkList.map(function (n) { return urlNote(n); }).join(',');
     }
     return qs ? '?' + qs : '?';
+  }
+  // Read the section's effective pk array. Falls back to the global
+  // pk= when there's no section override (or in linked mode).
+  function readPkArrForSection(sectionId) {
+    const params = new URLSearchParams(window.location.search);
+    const unlinked = params.get('u') === '1';
+    const m = String(sectionId || '').match(/^section_(\d+)$/);
+    if (unlinked && m && params.has('s' + m[1] + '_pk')) {
+      return String(params.get('s' + m[1] + '_pk') || '').split(',').filter(Boolean);
+    }
+    return readPkParam(params);
   }
 
   function highlightPillsLinkHtml(x, rowCls) {
@@ -3059,7 +3088,12 @@
       const note = cell.getAttribute('data-note');
       if (!note) return;
       e.preventDefault();
-      const cur = readPkParam(new URLSearchParams(window.location.search))
+      // Section-aware: in unlinked mode each section has its own picks
+      // so the fretboard click writes s2_pk and the keyboard click
+      // writes s4_pk. Linked mode keeps the global `pk`.
+      const _isKb = !!e.target.closest('.ritz');
+      const sectionId = _isKb ? 'section_4' : 'section_2';
+      const cur = readPkArrForSection(sectionId)
         .map(function (v) {
           const f = bToFlat(sharpToHash(v));
           const FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
@@ -3067,7 +3101,7 @@
         });
       const i = cur.indexOf(note);
       const next = i === -1 ? cur.concat([note]) : cur.filter(function (n) { return n !== note; });
-      const href = buildPkHref(next);
+      const href = buildPkHref(next, sectionId);
       const qs = href.slice(1);
       const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
       // Anchor scroll to the clicked element so the page doesn't appear to
@@ -3075,8 +3109,7 @@
       // table is rebuilt by applyState; the keyboard table is static. Either
       // way we find the anchor again by id/class after the re-render and
       // compensate for any vertical delta.
-      const isKb = !!e.target.closest('.ritz');
-      const anchorSel = isKb ? '#section_4' : '#fretboard';
+      const anchorSel = _isKb ? '#section_4' : '#fretboard';
       const anchorBefore = (function () {
         const el = document.querySelector(anchorSel);
         return el ? el.getBoundingClientRect().top : null;
@@ -3195,12 +3228,16 @@
     return '?' + canonicalQS(p);
   }
 
-  function renderIdentifyStrips(x) {
+  function renderIdentifyStrips(xFB, xKB) {
     const fbHost = document.getElementById('fb_identify_root');
     const kbHost = document.getElementById('kb_identify_root');
     if (!fbHost && !kbHost) return;
 
-    const pkArr = String(x.pk || '').split(' ').filter(function (v) { return v.length; });
+    // Each section gets its OWN identify strip (rendered from its own
+    // section state) so picks don't leak across in unlinked mode.
+    function buildHtml(xs, sectionId) {
+
+    const pkArr = String(xs.pk || '').split(' ').filter(function (v) { return v.length; });
     let html;
     if (pkArr.length < 3) {
       const rem = 3 - pkArr.length;
@@ -3212,9 +3249,9 @@
            + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
            + '</div>';
     } else {
-      const selMask = pkSetToMask(x._pk_set);
+      const selMask = pkSetToMask(xs._pk_set);
       const buckets = classifyChords(selMask);
-      const clearHref = buildPkHref([]);
+      const clearHref = buildPkHref([], sectionId);
 
       function chipsHtml(items, extractName) {
         if (!items.length) return '<span class="identify_empty">none</span>';
@@ -3298,9 +3335,11 @@
         + '  </div>'
         + '</div>';
     }
+      return html;
+    }
 
-    if (fbHost) fbHost.innerHTML = html;
-    if (kbHost) kbHost.innerHTML = html;
+    if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
+    if (kbHost) kbHost.innerHTML = buildHtml(xKB, 'section_4');
 
     // Wire +N pills + anchor-scroll for any link click inside the strip
     // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
@@ -3587,7 +3626,7 @@
       // so its degree labels reflect the new key.
       window.SF_TabCapture.refresh();
     }
-    renderIdentifyStrips(x); // chord-identify strips below fretboard + keyboard
+    renderIdentifyStrips(xFB, xKB); // chord-identify strips below fretboard + keyboard
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time

@@ -1045,7 +1045,7 @@ select option                              { color: var(--text); background: var
                                              margin-bottom: 8px; padding-bottom: 6px;
                                              border-bottom: 1px solid rgba(255,255,255,0.08);                         }
 .identify_picks                            { color: var(--text); font-weight: 600;                                    }
-.identify_clear                            { margin-left: auto; color: var(--muted); font-size: 0.85em;
+.identify_clear                            { color: var(--muted); font-size: 0.85em;
                                              text-decoration: underline;                                              }
 .identify_clear:hover                      { color: var(--text);                                                      }
 .identify_row                              { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
