@@ -1300,7 +1300,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table tbody tr:last-child td           { border-bottom: none;                                                      }
 .ks_table tbody tr.ks_row_current td       { background: rgba(95,232,224,0.14); color: var(--accent-hi); font-weight: 600; }
 .ks_table tbody tr:hover td                { background: rgba(255,255,255,0.04);                                       }
-.ks_table .ks_key                          { width: 90px; white-space: nowrap;                                         }
+.ks_table .ks_key                          { width: 70px; white-space: nowrap;                                         }
 .ks_table .ks_key a                        { color: inherit; text-decoration: none;                                    }
 .ks_table .ks_key a:hover                  { color: var(--accent-hi);                                                  }
 .ks_table .ks_key .ks_major                { color: var(--muted-dim); font-size: 0.85em; margin-left: 2px;             }
@@ -1311,12 +1311,12 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table tbody .ks_sig_count,
 .ks_table tbody .ks_sig_staff,
 .ks_table tbody .ks_sig_hand               { padding: 4px 6px; vertical-align: middle; text-align: center;            }
-.ks_table tbody .ks_sig_count              { width: 18px; color: var(--text); font-weight: 600;
+.ks_table tbody .ks_sig_count              { width: 28px; color: var(--text); font-weight: 600;
                                              padding-left: 6px;                                                        }
-.ks_table tbody .ks_sig_staff              { width: 32px; color: var(--text);                                          }
-.ks_table tbody .ks_sig_hand               { width: 26px; padding-right: 4px;                                          }
+.ks_table tbody .ks_sig_staff              { width: 56px; color: var(--text); padding-left: 0; padding-right: 0;       }
+.ks_table tbody .ks_sig_hand               { width: 50px; padding-left: 0; padding-right: 4px;                         }
 /* Shrink the staff + hand glyphs to fit the halved sub-columns. */
-.ks_table .ks_staff                        { transform: scale(0.7); transform-origin: left center;                    }
+.ks_table .ks_staff                        { transform: scale(0.55); transform-origin: left center;                    }
 .ks_table .ks_fingers                      { margin-left: 0;                                                          }
 .ks_table .ks_hand                         { width: 18px; height: 18px; background-size: 90px 18px;                   }
 .ks_table .ks_hand_1                       { background-position:    0 0;                                              }
@@ -1342,7 +1342,9 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_hand_4                                 { background-position:  -84px 0;                                           }
 .ks_hand_5                                 { background-position: -112px 0;                                           }
 .ks_hand_mirror                            { transform: scaleX(-1);                                                  }
-.ks_table .ks_notes                        { color: var(--text); white-space: nowrap; padding-right: 14px;             }
+.ks_table .ks_notes                        { color: var(--text); white-space: nowrap;
+                                             text-align: right; padding-right: 14px;
+                                             overflow: hidden; text-overflow: ellipsis;                                 }
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 

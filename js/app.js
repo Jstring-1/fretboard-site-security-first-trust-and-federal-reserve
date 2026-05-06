@@ -701,9 +701,17 @@
       // focus the filter input for instant typing
       setTimeout(function () {
         const f = pop.querySelector('.tun_pop_filter');
-        if (f) f.focus();
+        if (f) f.focus({ preventScroll: true });
         const selRow = pop.querySelector('.tun_pop_row_selected');
-        if (selRow) selRow.scrollIntoView({ block: 'center' });
+        // Manual scroll-within-popup so the selected row centers in the
+        // popup's own scrollable body — `scrollIntoView` would also
+        // scroll the page itself, causing a visible jump on open.
+        const popBody = pop.querySelector('.tun_pop_body');
+        if (selRow && popBody) {
+          const rowTop    = selRow.offsetTop;
+          const rowHeight = selRow.offsetHeight;
+          popBody.scrollTop = rowTop - (popBody.clientHeight - rowHeight) / 2;
+        }
       }, 0);
       document.addEventListener('mousedown', onDocDown, true);
       document.addEventListener('keydown', onKeydown, true);
