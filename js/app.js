@@ -1779,13 +1779,13 @@
       const a1 = i * 30 + 15;
       const labAng = i * 30;   // wedge centre
 
-      // Major + relative minor share the same key signature, so they
-      // sit in the same wedge position on the circle. Highlight BOTH
-      // when the user has selected any of: this wedge's major, its
-      // enharmonic major (B/C♭, F♯/G♭, C♯/D♭), or its relative minor.
+      // Major + relative minor share the same key signature so they sit
+      // in the same wedge position. Highlight by major name only — if
+      // we ALSO matched the minor name, picking "A" would light up both
+      // position 3 (A major) AND position 0 (C major, whose relative
+      // minor is Am), which is misleading. Major-only keeps it 1:1.
       const wedgeActive = (urlNote(majKey) === curK)
-        || (enKey && urlNote(enKey) === curK)
-        || (urlNote(minKey) === curK);
+        || (enKey && urlNote(enKey) === curK);
       const majActive = wedgeActive;
       const minActive = wedgeActive;
 
@@ -1798,15 +1798,6 @@
       const [lx, ly] = pt((R_OUT + R_MID) / 2, labAng);
       s += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" class="cof_lab cof_lab_maj"'
         +  ' text-anchor="middle" dominant-baseline="central">' + escHtml(majLabel) + '</text>';
-      // Degree label (relative to the currently selected key) just to the
-      // right of the major note text, in parentheses.
-      const wedgeSemi = COF_SEMI[urlNote(majKey)];
-      if (wedgeSemi != null) {
-        const interval = ((wedgeSemi - tonicSemi) + 12) % 12;
-        const degText  = '(' + COF_DEGREES[interval] + ')';
-        s += '<text x="' + (lx + 18).toFixed(1) + '" y="' + ly.toFixed(1) + '" class="cof_lab cof_lab_deg"'
-          +  ' text-anchor="start" dominant-baseline="central">' + escHtml(degText) + '</text>';
-      }
       // Enharmonic small label (e.g. C♭ next to B), tucked outward.
       if (enLabel) {
         const [ex, ey] = pt((R_OUT + R_MID) / 2 + 12, labAng + 7);
