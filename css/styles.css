@@ -1285,7 +1285,12 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_grid                                   { display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
                                              padding: 12px 18px;                                                       }
 .ks_panel                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
-                                             border-radius: 6px; overflow: hidden;                                     }
+                                             border-radius: 6px; overflow: hidden;
+                                             /* Grid items default to `min-width: auto`, which lets them grow
+                                                past their `1fr` allocation if their content (the table) is
+                                                wider. min-width: 0 forces the panel to obey its 1fr share so
+                                                the table inside can't push it wider than half the grid. */
+                                             min-width: 0;                                                              }
 .ks_panel_title                            { padding: 8px 12px; font: 600 0.78em var(--font);
                                              color: var(--accent-hi); letter-spacing: 0.08em;
                                              text-transform: uppercase; background: #161616;
