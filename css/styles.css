@@ -1291,6 +1291,13 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              text-transform: uppercase; background: #161616;
                                              border-bottom: 1px solid #1f1f1f;                                         }
 .ks_table                                  { width: 100%; border-collapse: collapse;
+                                             /* Override the global `table { table-layout: fixed }` (line 199) — with
+                                                a colspan-3 thead cell over 5 tbody columns, fixed layout silently
+                                                ignores the per-cell widths declared on the tbody columns and just
+                                                splits space proportionally. Auto layout lets every column shrink
+                                                to fit its real content, which leaves all the leftover for the
+                                                accidentals column. */
+                                             table-layout: auto;
                                              font: 400 0.92em var(--font); color: var(--accent);                       }
 .ks_table thead th                         { text-align: center; padding: 6px 12px;
                                              font: 600 0.78em var(--font); color: var(--muted);
@@ -1312,7 +1319,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_table tbody .ks_sig_staff,
 .ks_table tbody .ks_sig_hand               { padding: 4px 6px; vertical-align: middle; text-align: center;            }
 .ks_table tbody .ks_sig_count              { width: 28px; color: var(--text); font-weight: 600;
-                                             padding-left: 6px;                                                        }
+                                             padding-left: 4px; padding-right: 4px;                                    }
 .ks_table tbody .ks_sig_staff              { width: 56px; color: var(--text); padding-left: 0; padding-right: 0;       }
 .ks_table tbody .ks_sig_hand               { width: 50px; padding-left: 0; padding-right: 4px;                         }
 /* Shrink the staff + hand glyphs to fit the halved sub-columns. */
