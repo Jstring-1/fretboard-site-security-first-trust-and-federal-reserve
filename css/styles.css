@@ -1045,7 +1045,21 @@ select option                              { color: var(--text); background: var
 
 /* ---------- Chord identify strip (below fretboard / keyboard) ---------- */
 #fb_identify_root, #kb_identify_root       { padding: 8px 18px 4px;                                                  }
-.identify_strip                            { background: rgba(255,255,255,0.04); border-radius: 6px;
+/* Per-strip Chord ID toggle pill — pinned to the right edge of the
+   identify strip so it sits in the same plane as the section's print
+   button. On = filled accent, off = subtle outline. */
+.identify_toggle                           { position: absolute; top: 6px; right: 8px;
+                                             padding: 2px 10px; border-radius: 12px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             font: 600 0.78em var(--font); cursor: pointer;
+                                             letter-spacing: 0.06em;                                                    }
+.identify_toggle:hover                     { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+.identify_toggle.on                        { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
+.identify_toggle.on:hover                  { background: #fff; border-color: #fff; color: #001014;                     }
+@media print { .identify_toggle            { display: none !important; }                                               }
+
+.identify_strip                            { position: relative; background: rgba(255,255,255,0.04); border-radius: 6px;
                                              padding: 10px 14px; font-size: 0.9em; line-height: 1.45;                }
 .identify_hint                             { color: var(--muted); font-style: italic;                                }
 .identify_hint .identify_count             { color: #ffeb00;                                                          }

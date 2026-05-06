@@ -60,6 +60,21 @@
     osc.stop(t0 + dur + 0.05);
   }
 
+  // ---------- chord-ID toggle (per-section, on by default) ------------
+  // Each chord-identifier strip (fretboard + keyboard) has its own ID
+  // toggle. localStorage stores 'off' explicitly — anything else (or
+  // missing) defaults to ON.
+  function _idKey(sectionId) {
+    return sectionId === 'section_4' ? 'sf_chord_id_kb' : 'sf_chord_id_fb';
+  }
+  function chordIdOn(sectionId) {
+    return localStorage.getItem(_idKey(sectionId)) !== 'off';
+  }
+  function setChordIdOn(sectionId, on) {
+    if (on) localStorage.removeItem(_idKey(sectionId));
+    else    localStorage.setItem(_idKey(sectionId), 'off');
+  }
+
   // Pitch-class lookup keyed by display note name (sharp form as KEYS uses).
   const NOTE_PC = {
     'C':0, 'C♯':1, 'D':2, 'D♯':3, 'E':4, 'F':5,
@@ -3272,6 +3287,8 @@
       // writes s4_pk. Linked mode keeps the global `pk`.
       const _isKb = !!e.target.closest('.ritz');
       const sectionId = _isKb ? 'section_4' : 'section_2';
+      // Chord ID off for this section → don't pick. Audio above still played.
+      if (!chordIdOn(sectionId)) return;
       const cur = readPkArrForSection(sectionId)
         .map(function (v) {
           const f = bToFlat(sharpToHash(v));
@@ -3416,6 +3433,24 @@
     // section state) so picks don't leak across in unlinked mode.
     function buildHtml(xs, sectionId) {
 
+    const idOn = chordIdOn(sectionId);
+    function idToggleHtml() {
+      return '<button type="button" class="identify_toggle' + (idOn ? ' on' : '')
+        + '" data-section="' + sectionId + '" aria-pressed="' + (idOn ? 'true' : 'false')
+        + '" title="' + (idOn
+            ? 'Chord ID on — click to disable.'
+            : 'Chord ID off — click to enable.')
+        + '">ID</button>';
+    }
+    if (!idOn) {
+      // Chord ID disabled for this section. Show a minimal strip with
+      // just the toggle on the right so the user can flip it back on.
+      return '<div class="identify_strip identify_hint">'
+           + '<span class="identify_label">Chord ID:</span> off'
+           + idToggleHtml()
+           + '</div>';
+    }
+
     const pkArr = String(xs.pk || '').split(' ').filter(function (v) { return v.length; });
     let html;
     if (pkArr.length < 3) {
@@ -3426,6 +3461,7 @@
            + ' fret cell' + (rem === 1 ? '' : 's') + ' or piano key'
            + (rem === 1 ? '' : 's') + ' to identify a chord '
            + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
+           + idToggleHtml()
            + '</div>';
     } else {
       const selMask = pkSetToMask(xs._pk_set);
@@ -3490,6 +3526,7 @@
 
       html = ''
         + '<div class="identify_strip">'
+        + idToggleHtml()
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
         + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
@@ -3529,6 +3566,24 @@
       host._extrasBound = true;
       const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
+        // ID toggle (per section). When LINKED, flip both sides at once
+        // so they stay in lockstep; UNLINKED keeps each side independent.
+        const idBtn = e.target.closest && e.target.closest('.identify_toggle');
+        if (idBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const sec = idBtn.getAttribute('data-section');
+          const turningOn = !chordIdOn(sec);
+          const linked = document.body.getAttribute('data-apply-all') !== 'off';
+          if (linked) {
+            setChordIdOn('section_2', turningOn);
+            setChordIdOn('section_4', turningOn);
+          } else {
+            setChordIdOn(sec, turningOn);
+          }
+          applyState();
+          return;
+        }
         // +N extras pill — local toggle, no navigation.
         const pill = e.target.closest && e.target.closest('.identify_pill');
         if (pill) {
