@@ -1667,8 +1667,17 @@
     // Build a single combined table: sharps top→bottom = C# (7♯) … C (0),
     // then flats top→bottom = F (1♭) … C♭ (7♭). C major sits in the
     // middle as the shared 0-accidental row.
+    // Three of the FLAT-side rows share a setKey with their SHARP-side
+    // enharmonic twin (B/C♭, F♯/G♭, C♯/D♭). We only want ONE row to
+    // light up for the current key — sharps render first, so the sharp
+    // row wins and the flat-side dupe stays unhighlighted.
+    const _curKnorm = urlNote(x.k);
+    const _seenActive = Object.create(null);
     function rowHtml(r, isFlat) {
-      const isCurrent = (urlNote(r.setKey) === urlNote(x.k));
+      const setKnorm = urlNote(r.setKey);
+      const matches  = (setKnorm === _curKnorm);
+      const isCurrent = matches && !_seenActive[setKnorm];
+      if (isCurrent) _seenActive[setKnorm] = true;
       const cls = 'ks_row' + (isCurrent ? ' ks_row_current' : '');
       const sig = r.count === 0
         ? '0'
@@ -1728,9 +1737,14 @@
       ['B',  'B',  'G♯m', 'Gs', 'C♭', 'Cb'],            //  5
       ['F♯', 'Fs', 'D♯m', 'Ds', 'G♭', 'Gb'],            //  6  bottom
       ['C♯', 'Cs', 'A♯m', 'As', 'D♭', 'Db'],            //  7
-      ['A♭', 'Ab', 'Fm',  'F'],                         //  8
-      ['E♭', 'Eb', 'Cm',  'C'],                         //  9
-      ['B♭', 'Bb', 'Gm',  'G'],                         // 10
+      // The app's canonical KEYS list is sharp-only, so flat keys round-trip
+      // through their sharp enharmonic on URL state (the key-sig table on
+      // the left does the same — its B♭/E♭/A♭ rows have setKey A♯/D♯/G♯).
+      // Use those same setKeys here so clicking the circle highlights the
+      // matching row in the table.
+      ['A♭', 'Gs', 'Fm',  'F'],                         //  8
+      ['E♭', 'Ds', 'Cm',  'C'],                         //  9
+      ['B♭', 'As', 'Gm',  'G'],                         // 10
       ['F',  'F',  'Dm',  'D'],                         // 11
     ];
     const SIZE  = 360;
@@ -1806,9 +1820,12 @@
       }
       s += '</a>';
 
-      // Inner (minor) wedge.
+      // Inner (minor) wedge — link to the wedge's MAJOR setKey so that
+      // clicking the relative minor still highlights the same wedge
+      // position. (Picking the minor's root would jump highlighting to
+      // a different wedge whose major key shares that root.)
       s += '<a class="cof_wedge cof_min' + (minActive ? ' cof_active' : '') + '" href="'
-        +  escHtml(buildKeySetHref(minKey)) + '">';
+        +  escHtml(buildKeySetHref(majKey)) + '">';
       s += '<path d="' + wedgePath(R_MID, R_IN, a0, a1) + '" fill="' + (minActive ? 'rgba(95,232,224,0.22)' : FILL_MIN)
         +  '" stroke="' + STROKE + '" stroke-width="1"/>';
       const [mx, my] = pt((R_MID + R_IN) / 2, labAng);
