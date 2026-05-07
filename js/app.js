@@ -1930,6 +1930,17 @@
     // row wins and the flat-side dupe stays unhighlighted.
     const _curKnorm = urlNote(x.k);
     const _seenActive = Object.create(null);
+    // Colour-code the accidental notes by their natural letter (F C G D A E B)
+    // — light, desaturated tints so the column reads clearer at a glance.
+    function colorizeAccidentals(notes) {
+      const s = String(notes || '').trim();
+      if (!s || s === '—') return escHtml(s);
+      return s.split(' ').filter(function (n) { return n.length; })
+        .map(function (n) {
+          const letter = n.charAt(0);
+          return '<span class="ks_acc ks_acc_' + letter + '">' + escHtml(n) + '</span>';
+        }).join(' ');
+    }
     function rowHtml(r, isFlat) {
       const setKnorm = urlNote(r.setKey);
       const matches  = (setKnorm === _curKnorm);
@@ -1944,7 +1955,7 @@
       const fingers = r.count > 0 ? fingerSvg(r.count, direction) : '';
       const href = escHtml(buildKeySetHref(r.setKey));
       let row = '<tr class="' + cls + '">';
-      row += '<td class="ks_notes"><a href="' + href + '">' + escHtml(r.notes) + '</a></td>';
+      row += '<td class="ks_notes"><a href="' + href + '">' + colorizeAccidentals(r.notes) + '</a></td>';
       row += '<td class="ks_key"><a href="' + href + '">'
         +    escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
       row += '<td class="ks_sig_count">' + escHtml(sig) + '</td>';

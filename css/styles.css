@@ -744,7 +744,7 @@ details.collapsible > summary > .summary_title::before
                                              justify-content: center; align-items: center;
                                              padding: 0;
                                              font-weight: normal;                                                     }
-.section_key_row .key_label                { color: var(--muted); font: 600 0.78em monospace;
+.section_key_row .key_label                { color: var(--muted); font: 600 1em monospace;
                                              letter-spacing: 0.06em; text-transform: uppercase;
                                              margin-right: 6px;                                                       }
 .section_key_row .key_hidden_select        { display: none;                                                           }
@@ -1440,6 +1440,17 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              text-align: right; padding-right: 14px;
                                              min-width: 0;                                                              }
 .ks_table thead th.ks_notes                { text-align: right;                                                          }
+/* Light, desaturated tints for the seven natural letters in the
+   accidentals column — picks colour-by-letter so the same note keeps
+   the same colour across rows. Soft enough to read on the dark panel. */
+.ks_acc                                    { font-weight: 600;                                                          }
+.ks_acc_F                                  { color: #f3c89e;                                                            } /* peach    */
+.ks_acc_C                                  { color: #efe4a3;                                                            } /* cream    */
+.ks_acc_G                                  { color: #b8dfb0;                                                            } /* mint     */
+.ks_acc_D                                  { color: #a8d8d8;                                                            } /* aqua     */
+.ks_acc_A                                  { color: #a8c4e0;                                                            } /* sky      */
+.ks_acc_E                                  { color: #c8b4e0;                                                            } /* lavender */
+.ks_acc_B                                  { color: #e8b8cc;                                                            } /* rose     */
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 
