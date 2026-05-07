@@ -1218,7 +1218,12 @@
   function notePillsLinkHtml(x, rowCls) {
     let h = '<div class="opt_row opt_row_notes ' + (rowCls || '') + '">';
     const i1 = KEYS.indexOf(x.k);
-    const cur = readHlParam(new URLSearchParams(window.location.search));
+    // Section-aware: use the SECTION's effective hl (x.hl) instead of
+    // the global URL — mirrors the highlightPillsLinkHtml fix so
+    // unlinked-mode pills toggle cumulatively against this section.
+    const cur = String(x.hl || '').split(' ')
+                                  .filter(function (v) { return v && v !== 'nothing'; })
+                                  .map(function (v) { return flatToB(v); });
     // Iterate by DEGREE position (0..11) so the column-order under the
     // degree row matches degree-by-degree: position 0 = root, position
     // 1 = ♭2, etc. When the key changes, the notes rotate to keep the
