@@ -3522,11 +3522,14 @@
         +    '" data-shift="1"' + dis
         +    ' title="Shift picks up 1 semitone (→)">▶</button>';
     }
-    // Clear button — only meaningful once chord results are showing
-    // (≥3 picks). Sits in the same right-side cluster as ◀ / ▶ / ID.
+    // Clear control — anchor link (so it goes through the proven link
+    // interceptor + anchor-scroll path) styled to match the toggle/shift
+    // pills. Only meaningful once chord results are showing (≥3 picks).
     function idClearHtml() {
-      return '<button type="button" class="identify_clear_btn" data-section="' + sectionId
-        +    '" title="Clear picks">Clear</button>';
+      const href = buildPkHref([], sectionId);
+      return '<a class="identify_clear_btn" href="' + escHtml(href)
+        +    '" data-section="' + sectionId
+        +    '" title="Clear picks">Clear</a>';
     }
     if (!idOn) {
       // Chord ID disabled for this section. Show a minimal strip with
@@ -3651,17 +3654,6 @@
       host._extrasBound = true;
       const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
-        // Clear button (replaces the legacy "Clear picks" link).
-        const clearBtn = e.target.closest && e.target.closest('.identify_clear_btn');
-        if (clearBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-          const sec  = clearBtn.getAttribute('data-section');
-          const href = buildPkHref([], sec);
-          history.replaceState(null, '', window.location.pathname + href);
-          applyState();
-          return;
-        }
         // ← / → arrows: chromatically shift every pick in this section
         // by ±1 semitone. Yellow .note_pk highlights on the fretboard
         // slide accordingly because the URL pk= rewrite re-renders.
