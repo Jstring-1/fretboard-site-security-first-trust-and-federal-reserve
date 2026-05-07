@@ -121,6 +121,12 @@
     const params = new URLSearchParams(window.location.search);
     params.delete('hl');
     params.delete('pk');
+    // Emit explicit empty hl= and pk= so the unlinked-mode merger can
+    // distinguish "click intends to clear" from "click didn't touch
+    // these fields" (the latter would leave the section override alone
+    // and the highlights / picks wouldn't actually clear).
+    params.set('hl', '');
+    params.set('pk', '');
     const qs = params.toString();
     // Always include the leading "?" so the link interceptor catches it.
     return qs ? '?' + qs : '?';
@@ -993,7 +999,10 @@
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const chipDegs = fragToDegrees(GRID[a]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
+      // Selected → empty `hl=` so the merger explicitly clears s<n>_hl
+      // (without it, an absent hl param would leave the section override
+      // intact and the chip would stay highlighted).
+      const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
       h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
@@ -1004,7 +1013,7 @@
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
+      const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const cls = 'qp_link' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
       h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
@@ -1716,7 +1725,10 @@
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const chipDegs = fragToDegrees(GRID[a]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(GRID[a]));
+      // Selected → empty `hl=` so the merger explicitly clears s<n>_hl
+      // (without it, an absent hl param would leave the section override
+      // intact and the chip would stay highlighted).
+      const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
       const labelCell = '<td class="' + labelTdCls + '">'
@@ -1798,7 +1810,7 @@
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
-      const href = isSelected ? x._hilight_url : (x._hilight_url + hlMultiToCsv(SCALES[name]));
+      const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
       const labelCell = '<td class="' + labelTdCls + '">'
