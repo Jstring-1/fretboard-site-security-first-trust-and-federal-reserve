@@ -1115,9 +1115,9 @@
     const p = new URLSearchParams(window.location.search);
     p.delete('hl');
     let qs = p.toString();
-    if (hlList.length) {
-      qs += (qs ? '&' : '') + 'hl=' + hlList.join(',');
-    }
+    // Always emit `hl=` (even when empty) so unlinked-mode merging can
+    // distinguish "click intends to clear" from "click didn't touch hl".
+    qs += (qs ? '&' : '') + 'hl=' + (hlList.length ? hlList.join(',') : '');
     return qs ? '?' + qs : '?';
   }
 
@@ -1163,7 +1163,14 @@
 
   function highlightPillsLinkHtml(x, rowCls) {
     let h = '<div class="opt_row opt_row_highlights ' + (rowCls || '') + '">';
-    const cur = readHlParam(new URLSearchParams(window.location.search));
+    // Use the section's EFFECTIVE highlight set (`x.hl`) — not the
+    // global URL's `hl=` — so that in unlinked mode the pills toggle
+    // against this section's s<n>_hl, instead of the empty global.
+    // x.hl is space-joined ("1 ♭3 5"); convert to the array form the
+    // builder uses (with ♭ already → "b" for URL safety).
+    const cur = String(x.hl || '').split(' ')
+                                  .filter(function (v) { return v && v !== 'nothing'; })
+                                  .map(function (v) { return flatToB(v); });
     DEGREES.forEach(function (a, i) {
       const ab = flatToB(a);
       const on = (x['hl_' + ab] === 'y');
@@ -2741,24 +2748,38 @@
     const cur = new URLSearchParams(window.location.search);
     const link = new URLSearchParams(linkSearch);
 
-    // Drop existing overrides for this section so the new click wins
-    // wholesale (avoids stale s4_hl=… plus a fresh s4_k=… colliding).
-    Array.from(cur.keys())
-      .filter(k => k.startsWith('s' + sNum + '_'))
-      .forEach(k => cur.delete(k));
-
     // Project each interesting link param into a section-namespaced one.
-    // Multi-value fields (hl, pk) compress to a single comma-joined value
-    // — virtualSearchForSection expands them back at parse time.
+    // ONLY touch the fields the link actually sets — don't blanket-drop
+    // every s<n>_* param up front, or unrelated overrides for this
+    // section get wiped out (e.g. clicking a degree pill, whose href
+    // only carries hl, used to drop s2_pk and other section state).
+    //
+    // For single-value fields, also skip the projection when the link's
+    // value equals the current GLOBAL — that means the click is just
+    // preserving k=/x=/etc. (a hl-pill click, say) and shouldn't clobber
+    // a section override that intentionally diverges from global.
     const single = ['k', 'x', 'y', 'z', 's'];
     single.forEach(f => {
-      if (link.has(f)) cur.set('s' + sNum + '_' + f, link.get(f));
+      const k = 's' + sNum + '_' + f;
+      if (link.has(f)) {
+        const linkVal   = link.get(f);
+        const curGlobal = cur.get(f);
+        if (linkVal !== curGlobal) cur.set(k, linkVal);
+      }
     });
     ['hl', 'pk'].forEach(f => {
-      const arr = link.getAll(f);
-      if (arr.length) cur.set('s' + sNum + '_' + f, arr.join(','));
-      // hl can also arrive as a single comma value via the gathered form
-      // — `link.has(f)` covers nothing extra in that case.
+      const k = 's' + sNum + '_' + f;
+      // Three cases for hl / pk on the click link:
+      //   - link has a non-empty value → write it (the click sets it).
+      //   - link has an explicit empty value (`hl=` / `pk=`) → caller is
+      //       saying "clear this field" → drop the section override.
+      //   - link doesn't carry the field at all → click didn't touch it,
+      //       leave the existing section override alone.
+      if (link.has(f)) {
+        const arr = link.getAll(f).filter(function (v) { return v.length; });
+        if (arr.length) cur.set(k, arr.join(','));
+        else            cur.delete(k);
+      }
     });
 
     // Make sure the unlinked flag stays on; otherwise on next render
@@ -3339,8 +3360,13 @@
       if (!cell) return;
       // Don't capture clicks on form controls inside cells (the s1..sN selects).
       if (e.target.closest('select, input, button, a')) return;
-      const note = cell.getAttribute('data-note');
+      let note = cell.getAttribute('data-note');
       if (!note) return;
+      // Normalize flat-spelled tuning notes (e.g. nut "B♭") into the
+      // sharp-form the pick set uses so toggling a flat-named cell
+      // matches an existing sharp-named pick (A♯ ≡ B♭).
+      const _FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
+      note = _FLAT_TO_SHARP[note] || note;
       e.preventDefault();
       // Audio playback (off by default, toggled via the ♪ button in the
       // Fretboard summary). Reads data-midi from the cell — independent
