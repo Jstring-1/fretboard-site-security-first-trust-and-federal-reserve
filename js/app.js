@@ -2792,19 +2792,24 @@
     });
     ['hl', 'pk'].forEach(f => {
       const k = 's' + sNum + '_' + f;
-      // Three cases for hl / pk on the click link:
-      //   - link has a non-empty value → write it (the click sets it).
-      //   - link has an explicit empty value (`hl=` / `pk=`) → caller is
-      //       clearing this field → keep the section override but with
-      //       an empty value, so the section stays "cleared" instead of
-      //       inheriting the global value.
-      //   - link doesn't carry the field at all → click didn't touch it,
-      //       leave the existing section override alone.
-      if (link.has(f)) {
-        const arr = link.getAll(f).filter(function (v) { return v.length; });
-        if (arr.length) cur.set(k, arr.join(','));
-        else            cur.set(k, '');
-      }
+      if (!link.has(f)) return;            // click didn't touch this field
+      // Skip if the link's value is identical to the current global —
+      // that means the click is just preserving the URL field, not
+      // changing it (e.g. a hl pill click whose href still carries
+      // pk=… from the URL). Without this guard, every pill click would
+      // overwrite the section's picks with the global picks.
+      const linkAll = link.getAll(f).join(',');
+      const curAll  = cur.getAll(f).join(',');
+      if (linkAll === curAll) return;
+      // Otherwise the click is changing this field for the section.
+      // Three cases:
+      //   - non-empty value → write the new value.
+      //   - explicit empty (`hl=` / `pk=`) → keep the section override
+      //       but with an empty value, so the section stays cleared
+      //       instead of inheriting the global value.
+      const arr = link.getAll(f).filter(function (v) { return v.length; });
+      if (arr.length) cur.set(k, arr.join(','));
+      else            cur.set(k, '');
     });
 
     // Make sure the unlinked flag stays on; otherwise on next render
