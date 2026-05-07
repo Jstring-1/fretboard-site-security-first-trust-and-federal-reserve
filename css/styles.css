@@ -567,10 +567,9 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                                 summary's content is shorter than its min-height. */
                                              align-content: flex-start;
                                              justify-content: flex-end; position: relative;
-                                             min-height: 38px; box-sizing: border-box;                                }
-/* Nested sub-section summaries match the top-level slim height for a
-   uniform look across all section headers. */
-details.collapsible.nested_section > summary { min-height: 38px;                                                       }
+                                             height: 38px; min-height: 38px; box-sizing: border-box;                  }
+/* Nested sub-section summaries match the top-level slim height. */
+details.collapsible.nested_section > summary { height: 38px; min-height: 38px;                                         }
 /* Key-button row, hosted directly below the summary inside the section
    body. Centred and visually grouped with the section content. */
 .section_key_row_outer                     { display: flex; justify-content: center;
@@ -882,15 +881,32 @@ select option                              { color: var(--text); background: var
    middle, global controls (Linked / Audio / Clear) on the right.
    Pinned so the controls follow the user as they scroll. */
 .site_header_sticky                        { position: sticky; top: 0; z-index: 100;
-                                             display: flex; align-items: center; gap: 14px;
+                                             /* 3-col grid keeps the logo perfectly centred while the
+                                                tuning text sits left-aligned and the controls sit at
+                                                the right edge. min-width: 0 on the side cells lets
+                                                them shrink so the logo never gets pushed off-centre. */
+                                             display: grid; grid-template-columns: 1fr auto 1fr;
+                                             align-items: center; gap: 14px;
                                              padding: 6px 16px;
                                              background: var(--bg);
                                              border-bottom: 1px solid #1f1f1f;                                          }
-#site_tuning                               { flex: 1 1 auto; min-width: 0;
-                                             margin: 0; overflow: hidden; text-overflow: ellipsis;
-                                             white-space: nowrap;                                                       }
+#site_tuning                               { min-width: 0; margin: 0;
+                                             overflow: hidden; text-overflow: ellipsis;
+                                             white-space: nowrap; justify-self: start;                                  }
 #site_global_controls                      { display: inline-flex; align-items: center; gap: 6px;
-                                             flex: 0 0 auto;                                                            }
+                                             justify-self: end; min-width: 0;                                           }
+/* The Clerk auth widget originally floats fixed at top:right; once it
+   lives inside the sticky header we want it inline with the other
+   controls, sized to match. */
+#site_global_controls #auth_widget         { position: static !important; top: auto; right: auto;
+                                             display: inline-flex; align-items: center;                                  }
+/* Make the Linked / Audio / Clear / Account pills share the same shape
+   so they sit on a clean right-side row. */
+#site_global_controls .section_apply_all,
+#site_global_controls .section_audio_toggle,
+#site_global_controls .section_clear,
+#site_global_controls .auth_btn            { height: 26px; padding: 2px 12px; font: 600 0.82em var(--font);
+                                             border-radius: 13px; line-height: 1;                                       }
 @media print { .site_header_sticky         { display: none !important; }                                               }
 
 /* Per-section action buttons (compact / Clear / Print / ?) — pinned

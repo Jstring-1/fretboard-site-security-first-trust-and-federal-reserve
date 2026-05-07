@@ -159,32 +159,32 @@
 </head>
 <body>
 
-<!-- Auth widget mount point — js/auth.js fills this in once Clerk loads.
-     Empty until then so there's no flash of mismatched UI. -->
-<div id="auth_widget" aria-live="polite"></div>
-
 <!-- Mobile-only hint. Shown on portrait phones; hidden on tablets/desktop
      and on landscape phones via the @media rules in styles.css. -->
 <div id="mobile_hint" role="note">
   SlantFinder is a desktop tool — rotate to landscape (or open on a wider screen) for the best experience. Tables here scroll sideways on touch.
 </div>
 
-<!-- Sticky site header: logo on the left, current tuning indicator in the
-     middle, global controls (Linked / Audio / Clear) on the right. Stays
-     pinned at the top so the controls follow the user as they scroll. -->
+<!-- Sticky site header: tuning indicator on the left, logo centered,
+     global controls (Linked / Audio / Clear / Account) on the right.
+     Stays pinned at the top so the controls follow the user as they scroll. -->
 <header id="site_header" class="site_header_sticky">
-  <h1 id="site_title"><a href="?"><span class="sr_only">SlantFinder — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Slant</span><span class="finder" aria-hidden="true">Finder</span><span class="pro" aria-hidden="true">.pro</span></a></h1>
   <span id="site_tuning" class="summary_tuning"></span>
+  <h1 id="site_title"><a href="?"><span class="sr_only">SlantFinder — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Slant</span><span class="finder" aria-hidden="true">Finder</span><span class="pro" aria-hidden="true">.pro</span></a></h1>
   <span id="site_global_controls">
     <button type="button" id="apply_all_toggle" class="section_apply_all" title="Linked: all sections share one key/chord/scale.&#10;Unlinked: each section has its own.">Linked</button>
     <button type="button" id="audio_toggle" class="section_audio_toggle" aria-pressed="false" title="Audio off — click to play notes when you click a fret or key.">♪</button>
     <a id="site_clear" class="section_clear" href="?">Clear</a>
+    <!-- Auth widget mount point — js/auth.js fills this in once Clerk loads.
+         Lives inside the global controls so the Account pill aligns with the
+         other buttons. Empty until Clerk loads. -->
+    <div id="auth_widget" aria-live="polite"></div>
   </span>
 </header>
 <!-- SEO-friendly intro lede: visible to crawlers, hidden for sighted users
      so the layout stays minimal. -->
 <p id="seo_lede" class="sr_only">SlantFinder is a free, browser-based music tool: build chords across 28+ types, audition 16 scales (including modes, pentatonic, and blues), identify chords from notes you played, explore a fretboard for any 4- to 12-string instrument across 176 alternate tunings, see every key signature with the circle of fifths, and edit guitar tablature inline. Works for guitar, bass, ukulele, banjo, mandolin, lap steel, and pedal steel.</p>
-<div id="build_num">20260507.1040</div>
+<div id="build_num">20260507.1047</div>
 
 <details id="section_2" class="collapsible section" open><summary><span class="summary_title">Fretboard</span><span class="summary_status"></span></summary>
   <div class="section_actions"><span class="summary_extras" data-summary-for="section_2"></span><button type="button" class="section_print" data-print-section="section_2" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About">?</button></div>
