@@ -283,24 +283,39 @@
     } catch (_) {}
   }
 
-  // Read the active highlight degrees from URL params. Accepts both the
-  // legacy multi-key form ?hl=1&hl=b3&hl=5 and the compact comma-separated
-  // form ?hl=1,b3,5 — splits on commas across every hl key seen.
+  // Tokenize a single hl value into degree symbols. Accepts ALL three
+  // historical forms transparently:
+  //   - separator-free  ?hl=1b35     (current canonical, shortest URL)
+  //   - comma-separated ?hl=1,b3,5   (legacy emitted form, ~2026-05)
+  //   - multi-key       ?hl=1&hl=b3&hl=5   (oldest legacy)
+  // Degree alphabet is unambiguous: each token is `b?[1-7]`, so a run
+  // like "1b35" parses left-to-right as 1 / b3 / 5 with no ambiguity.
+  function _tokenizeHl(v) {
+    const s = String(v || '').trim();
+    if (!s.length) return [];
+    if (s.indexOf(',') !== -1) {
+      return s.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+    }
+    return s.match(/b?[1-7]/g) || [];
+  }
   function readHlParam(params) {
-    return params.getAll('hl')
-      .flatMap(function (v) { return v.split(','); })
-      .map(function (s) { return s.trim(); })
-      .filter(function (s) { return s.length; });
+    return params.getAll('hl').flatMap(_tokenizeHl);
   }
 
-  // Click-to-pick set for the chord identifier — comma-separated note letters
-  // with 's'/'b' (e.g. ?pk=A,Cs,E). Independent of hl since the picks drive
-  // a separate UI (yellow ring + identify strip), not degree highlighting.
+  // Pick-set tokenizer. Each note is `[A-G]` followed by an optional
+  // sharp / flat modifier (`s`, `b`, `♯`, or `♭`). Same three input
+  // forms as hl: separator-free (?pk=ACsE), comma (?pk=A,Cs,E), or
+  // multi-key (?pk=A&pk=Cs&pk=E).
+  function _tokenizePk(v) {
+    const s = String(v || '').trim();
+    if (!s.length) return [];
+    if (s.indexOf(',') !== -1) {
+      return s.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+    }
+    return s.match(/[A-G][sb♯♭]?/g) || [];
+  }
   function readPkParam(params) {
-    return params.getAll('pk')
-      .flatMap(function (v) { return v.split(','); })
-      .map(function (s) { return s.trim(); })
-      .filter(function (s) { return s.length; });
+    return params.getAll('pk').flatMap(_tokenizePk);
   }
 
   // Read the custom-tuning strings from URL params. Accepts:
@@ -557,7 +572,7 @@
     if (x.hl === undefined || x.hl === null) x.hl = '';
     const hlArr = String(x.hl).split(' ').filter(v => v !== '' && v !== 'nothing');
     // Compact single-key form for emitted URLs (?hl=1,b3,5).
-    x.url_hl = hlArr.length ? 'hl=' + hlArr.map(flatToB).join(',') + '&' : '';
+    x.url_hl = hlArr.length ? 'hl=' + hlArr.map(flatToB).join('') + '&' : '';
     // Legacy multi-key form, kept ONLY for matching against SCALES / CHORDS /
     // GRID values in data.js (which are still expressed as &hl=…&hl=…). Not
     // emitted into any URL. If we later regen data.js with the compact form,
@@ -577,7 +592,7 @@
     const pkArr = String(x.pk).split(' ').filter(function (v) { return v.length; });
     x._pk_set = new Set(pkArr);
     x.url_pk = pkArr.length
-      ? 'pk=' + pkArr.map(function (n) { return urlNote(n); }).join(',') + '&'
+      ? 'pk=' + pkArr.map(function (n) { return urlNote(n); }).join('') + '&'
       : '';
 
     // notedegrees: degree → note based on current key
@@ -695,7 +710,11 @@
           // delete all instances
           out.delete(field);
         }
-        raw.split(',').forEach(p => p && out.append(field, p));
+        // Tokenize the section override using the same parser the global
+        // path uses, so legacy comma overrides AND the new separator-free
+        // form both expand back to repeated `?hl=…` / `?pk=…` keys.
+        const tokens = (field === 'hl' ? _tokenizeHl(raw) : _tokenizePk(raw));
+        tokens.forEach(p => p && out.append(field, p));
       } else {
         out.set(field, raw);
       }
@@ -1139,18 +1158,20 @@
       .map(function (s) { return s.slice(4); });
     if (!matches.length) return frag;
     const stripped = String(frag).replace(/&hl=[^&]+/g, '');
-    return stripped + '&hl=' + matches.join(',');
+    return stripped + '&hl=' + matches.join('');
   }
 
-  // Build a URL with the given hl list as a single comma-separated `hl=`
-  // param (preserves every other current param exactly).
+  // Build a URL with the given hl list as a single separator-free `hl=`
+  // param (preserves every other current param exactly). Tokens are
+  // unambiguously parseable as b?[1-7] so no separator is needed —
+  // saves the `%2C`-encoded commas the old form used.
   function buildHlHref(hlList) {
     const p = new URLSearchParams(window.location.search);
     p.delete('hl');
     let qs = p.toString();
     // Always emit `hl=` (even when empty) so unlinked-mode merging can
     // distinguish "click intends to clear" from "click didn't touch hl".
-    qs += (qs ? '&' : '') + 'hl=' + (hlList.length ? hlList.join(',') : '');
+    qs += (qs ? '&' : '') + 'hl=' + (hlList.length ? hlList.join('') : '');
     return qs ? '?' + qs : '?';
   }
 
@@ -1172,7 +1193,7 @@
         // global pk. Without this, unclicking the last pick made the
         // global picks reappear.
         if (pkList.length) {
-          p.set(key, pkList.map(function (n) { return urlNote(n); }).join(','));
+          p.set(key, pkList.map(function (n) { return urlNote(n); }).join(''));
         } else {
           p.set(key, '');
         }
@@ -1184,7 +1205,7 @@
     p.delete('pk');
     let qs = p.toString();
     if (pkList.length) {
-      qs += (qs ? '&' : '') + 'pk=' + pkList.map(function (n) { return urlNote(n); }).join(',');
+      qs += (qs ? '&' : '') + 'pk=' + pkList.map(function (n) { return urlNote(n); }).join('');
     }
     return qs ? '?' + qs : '?';
   }
@@ -1195,7 +1216,7 @@
     const unlinked = params.get('u') === '1';
     const m = String(sectionId || '').match(/^section_(\d+)$/);
     if (unlinked && m && params.has('s' + m[1] + '_pk')) {
-      return String(params.get('s' + m[1] + '_pk') || '').split(',').filter(Boolean);
+      return _tokenizePk(params.get('s' + m[1] + '_pk') || '');
     }
     return readPkParam(params);
   }
@@ -1713,6 +1734,28 @@
       e.stopPropagation();
       setCompactGrids(!compactGridsOn());
     }, true);   // capture so it runs before bindSummaryExtras' stopPropagation
+  }
+
+  // Make every cell in a chord-grid / scale-grid row act as a click on
+  // that row's chord/scale link. The leftmost + rightmost cells already
+  // wrap the chord name in an <a>; this delegate handles clicks on the
+  // interior note cells so the entire row is a target.
+  function bindGridRowClicks() {
+    if (document.body._gridRowBound) return;
+    document.body._gridRowBound = true;
+    document.body.addEventListener('click', function (e) {
+      // Don't hijack clicks already on something interactive.
+      if (e.target.closest('a, button, input, select, th')) return;
+      const tr = e.target.closest && e.target.closest(
+        '#chord_grid tbody tr, #scale_grid tbody tr, #chord_grid > tbody > tr, #scale_grid > tbody > tr'
+      );
+      if (!tr) return;
+      // chord_grid / scale_grid have no thead/tbody wrapper — match any
+      // tr that's a direct child of #chord_grid or #scale_grid.
+      const a = tr.querySelector('a[href]');
+      if (!a) return;
+      a.click();
+    });
   }
 
   function renderChordGrid(x) {
@@ -2356,7 +2399,7 @@
   function _degsToHlCsv(degs) {
     return 'hl=' + degs.map(function (d) {
       return String(d).replace('♭', 'b').replace('♯', '#');
-    }).join(',');
+    }).join('');
   }
   // Play a list of MIDI numbers simultaneously (chord blip) and then
   // schedule the next chord after `gap` seconds. `chords` is an array
@@ -3680,6 +3723,7 @@
 
     refresh();
 
+    // Input listener attaches per-render (input is recreated each time).
     input.addEventListener('input', function () {
       const value = String(input.value || '').slice(0, 64);
       if (input.value !== value) input.value = value;
@@ -3689,15 +3733,35 @@
       _filterDebounce = setTimeout(function () { persist(value, s.strs); }, 300);
     });
 
+    // Click delegate on the stable parent — guard against multiple
+    // re-renders stacking redundant listeners on the same root.
+    if (root._fcBound) return;
+    root._fcBound = true;
     root.addEventListener('click', function (e) {
       const btn = e.target.closest && e.target.closest('.tunings_str_btn');
       if (!btn) return;
       e.preventDefault();
+      e.stopPropagation();
       const want = btn.getAttribute('data-strs') || '';
       const cur = urlState();
       const nextStrs = (cur.strs === want) ? '' : want;
       persist(cur.text, nextStrs);
       refresh();
+    });
+    // Whole-row click → trigger that row's first anchor link (the
+    // tuning's name / notes cell). Lets the user click anywhere in
+    // the row instead of having to hit the small text targets.
+    root.addEventListener('click', function (e) {
+      // Bail when the click was on something interactive — input,
+      // button, header (sort), or an anchor (let the link interceptor
+      // handle that). Otherwise translate the row click into a click
+      // on the first anchor in that row.
+      if (e.target.closest('a, button, input, th, .tunings_filter_bar')) return;
+      const tr = e.target.closest && e.target.closest('#tunings tbody tr');
+      if (!tr) return;
+      const a = tr.querySelector('a[href]');
+      if (!a) return;
+      a.click();
     });
   }
 
@@ -4803,6 +4867,7 @@
     bindAutoSubmit();        // so the change-listener catches them
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
+    bindGridRowClicks();     // whole-row click → triggers row's chord/scale link
     bindNotePick();          // click fret cells / keyboard keys to pick notes
     bindApplyAllToggle();    // one-time wire of the Apply: all chip in fretboard summary
     bindAudioToggle();       // one-time wire of the ♪ audio toggle in fretboard summary

@@ -706,7 +706,7 @@ details.collapsible > summary { cursor: default; }
    centered row, persisted via ?f= and ?fc= so a user who only plays
    6-string can pin "6-string" once and keep it across reloads. */
 .tunings_filter_bar                        { display: flex; flex-direction: column; align-items: center;
-                                             gap: 8px; padding: 10px 14px;                                             }
+                                             gap: 8px; padding: 0 14px 10px;                                           }
 .tunings_filter_input                      { flex: 0 1 auto; width: min(360px, 100%); padding: 6px 10px;
                                              font: 400 0.95em var(--font); color: var(--accent);
                                              background: var(--bg-elevated); border: 1px solid #2a2a2a;
@@ -1653,10 +1653,10 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /* ============================================================== */
 
 /* ----- Diatonic Chord Chart (inside Chord Builder) ----- */
-.dia_chart                                 { padding: 12px 18px; background: rgba(255,255,255,0.02);
+.dia_chart                                 { padding: 8px 18px; background: rgba(255,255,255,0.02);
                                              border-top: 1px solid rgba(255,255,255,0.05);                              }
 .dia_head                                  { display: flex; align-items: center; gap: 12px;
-                                             margin-bottom: 10px;                                                       }
+                                             margin-bottom: 6px;                                                        }
 .dia_title                                 { font: 600 0.92em var(--font); color: var(--accent-hi);
                                              letter-spacing: 0.04em;                                                    }
 .dia_toggle                                { padding: 2px 10px; border-radius: 12px;
@@ -1667,22 +1667,23 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .dia_toggle:hover                          { background: rgba(255,255,255,0.4); border-color: #fff;                    }
 .dia_toggle.on                             { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
 .dia_row                                   { display: grid; grid-template-columns: repeat(7, 1fr);
-                                             gap: 6px; margin-bottom: 10px;                                             }
-.dia_cell                                  { display: flex; flex-direction: column; align-items: center;
-                                             padding: 8px 4px; border-radius: 6px;
+                                             gap: 6px; margin-bottom: 6px;                                              }
+.dia_cell                                  { display: flex; flex-direction: row; align-items: center;
+                                             justify-content: center; gap: 6px;
+                                             padding: 4px 6px; border-radius: 6px;
                                              border: 1px solid rgba(255,255,255,0.1);
                                              background: rgba(255,255,255,0.04);
                                              color: var(--text); text-decoration: none;
                                              transition: background 100ms;                                              }
 .dia_cell:hover                            { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
-.dia_roman                                 { font: 600 1.05em var(--font); letter-spacing: 0.03em;                     }
+.dia_roman                                 { font: 600 0.95em var(--font); letter-spacing: 0.03em;
+                                             color: var(--muted);                                                       }
 /* Fixed-width label so a ♯-containing chord name (e.g. "C♯m") doesn't
-   reflow the cell vs a plain one ("C"). Same trick on every place that
-   shows a key-derived note label below. */
-.dia_chord                                 { font: 600 1.1em var(--font); margin: 4px 0 2px;
-                                             display: inline-block; min-width: 3.2em; text-align: center;               }
-.dia_fn                                    { font: 600 0.7em monospace; letter-spacing: 0.1em;
-                                             padding: 1px 6px; border-radius: 8px; opacity: 0.85;                       }
+   reflow the cell vs a plain one ("C"). */
+.dia_chord                                 { font: 600 1em var(--font);
+                                             display: inline-block; min-width: 3em; text-align: center;                 }
+.dia_fn                                    { font: 600 0.65em monospace; letter-spacing: 0.08em;
+                                             padding: 1px 5px; border-radius: 8px; opacity: 0.85;                       }
 /* Function colour bands — light, desaturated. */
 .dia_fn_T                                  { border-color: rgba(168, 196, 224, 0.35); }
 .dia_fn_T .dia_fn                          { background: rgba(168, 196, 224, 0.22); color: #cfe0f0;                    }
@@ -1699,20 +1700,22 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .dia_swatch.dia_fn_D                       { background: #e8b8cc;                                                       }
 
 /* ----- Inversions Panel (inside Chord Builder) ----- */
-.inv_panel                                 { padding: 10px 18px;                                                       }
-.inv_intro                                 { font: 400 0.85em var(--font); color: var(--muted); margin-bottom: 8px;    }
-.inv_grid                                  { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-                                             gap: 8px;                                                                  }
-.inv_cell                                  { padding: 8px; border-radius: 6px;
+.inv_panel                                 { padding: 6px 18px;                                                        }
+.inv_intro                                 { font: 400 0.82em var(--font); color: var(--muted); margin-bottom: 4px;    }
+.inv_grid                                  { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                                             gap: 6px;                                                                  }
+.inv_cell                                  { display: flex; flex-direction: row; align-items: center;
+                                             gap: 8px; padding: 4px 8px; border-radius: 6px;
                                              background: rgba(255,255,255,0.04);
-                                             border: 1px solid rgba(255,255,255,0.1);                                  }
-.inv_label                                 { font: 600 0.78em var(--font); color: var(--accent-hi);
-                                             letter-spacing: 0.04em; margin-bottom: 6px;                                }
-.inv_notes                                 { display: flex; gap: 6px; margin-bottom: 4px;                              }
-.inv_note                                  { padding: 2px 8px; border-radius: 4px;
-                                             background: rgba(255,255,255,0.08); font-weight: 600;                     }
+                                             border: 1px solid rgba(255,255,255,0.1);                                   }
+.inv_label                                 { font: 600 0.74em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.04em; flex: 0 0 auto;                                    }
+.inv_notes                                 { display: flex; gap: 4px; flex: 1 1 auto;                                   }
+.inv_note                                  { padding: 1px 6px; border-radius: 4px;
+                                             background: rgba(255,255,255,0.08); font-weight: 600;
+                                             font-size: 0.85em;                                                          }
 .inv_note_bass                             { background: var(--accent-hi); color: #001014;                              }
-.inv_bass                                  { font: 400 0.75em var(--font); color: var(--muted);                          }
+.inv_bass                                  { font: 400 0.7em var(--font); color: var(--muted); flex: 0 0 auto;          }
 
 /* ----- Progressions Section ----- */
 .prog_panel                                { padding: 8px 18px;                                                        }
@@ -1742,41 +1745,47 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              display: inline-block; min-width: 2.4em; text-align: center;               }
 
 /* ----- Modes Visualizer (inside Scale Builder) ----- */
-.modes_panel                               { padding: 12px 18px; background: rgba(255,255,255,0.02);
+.modes_panel                               { padding: 8px 18px; background: rgba(255,255,255,0.02);
                                              border-top: 1px solid rgba(255,255,255,0.05);                              }
-.modes_intro                               { font: 400 0.85em var(--font); color: var(--muted); margin-bottom: 10px;   }
+.modes_intro                               { font: 400 0.85em var(--font); color: var(--muted); margin-bottom: 6px;    }
 .modes_grid                                { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;            }
-.mode_cell                                 { display: flex; flex-direction: column; align-items: center;
-                                             padding: 8px 4px; border-radius: 6px;
+.mode_cell                                 { display: grid;
+                                             grid-template-columns: max-content max-content 1fr;
+                                             grid-template-areas: "root name sig"
+                                                                  "root name char";
+                                             align-items: center; column-gap: 6px;
+                                             padding: 4px 8px; border-radius: 6px;
                                              background: rgba(255,255,255,0.04);
                                              border: 1px solid rgba(255,255,255,0.1);
                                              color: var(--text); text-decoration: none;                                 }
 .mode_cell:hover                           { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
 .mode_cell.mode_major                      { border-color: rgba(184, 223, 176, 0.35);                                  }
 .mode_cell.mode_minor                      { border-color: rgba(168, 196, 224, 0.35);                                  }
-.mode_root                                 { font: 700 1.1em var(--font);
-                                             display: inline-block; min-width: 1.6em; text-align: center;               }
-.mode_name                                 { font: 600 0.85em var(--font); color: var(--accent-hi); margin: 4px 0 2px;  }
-.mode_sig                                  { font: 600 0.72em monospace; color: var(--muted-dim);
-                                             letter-spacing: 0.02em; min-height: 1em;                                   }
-.mode_char                                 { font: 400 0.7em monospace; color: var(--muted);
-                                             margin-top: 2px; min-height: 1em;                                          }
+.mode_root                                 { grid-area: root; font: 700 1em var(--font);
+                                             display: inline-block; min-width: 1.4em; text-align: center;               }
+.mode_name                                 { grid-area: name; font: 600 0.82em var(--font); color: var(--accent-hi);   }
+.mode_sig                                  { grid-area: sig; font: 600 0.68em monospace; color: var(--muted-dim);
+                                             letter-spacing: 0.02em;                                                    }
+.mode_char                                 { grid-area: char; font: 400 0.65em monospace; color: var(--muted);          }
 
-/* Chord / scale grid label cells: stack the chord/scale name above its
-   degree formula (and step pattern for scales) inside the same <a>. */
-.cg_label_name                             { display: block; font-weight: 600;                                           }
-.cg_label_formula                          { display: block; font: 400 0.72em monospace;
-                                             color: var(--muted-dim); letter-spacing: 0.02em;
-                                             margin-top: 1px;                                                            }
-.cg_label_steps                            { display: block; font: 400 0.66em monospace;
-                                             color: var(--muted-dim); letter-spacing: 0.02em;                            }
+/* Chord / scale grid label cells: chord/scale name + degree formula
+   on a single row to keep grid rows short. Step pattern for scales
+   sits in the title (tooltip) instead of taking visual space. */
+.cg_label_name                             { font-weight: 600;                                                          }
+.cg_label_formula                          { font: 400 0.72em monospace; color: var(--muted-dim);
+                                             letter-spacing: 0.02em; margin-left: 6px;                                  }
+.cg_label_steps                            { display: none;                                                             }
 #chord_grid td.cg_selected .cg_label_formula,
 #scale_grid td.cg_selected .cg_label_formula,
-#scale_grid td.cg_selected .cg_label_steps { color: rgba(0,16,20,0.7);                                                   }
-/* Slightly more vertical room for the stacked label content. */
-#chord_grid tr, #scale_grid tr             { height: auto;                                                              }
+#scale_grid td.cg_selected .cg_label_steps { color: rgba(0,16,20,0.7);                                                  }
 #chord_grid td.cg_chord_label,
-#scale_grid td.cg_chord_label              { padding: 4px 0;                                                            }
+#scale_grid td.cg_chord_label              { padding: 2px 0;                                                            }
+/* Whole-row pointer affordance — every cell in a chord/scale row is
+   clickable via the bindGridRowClicks delegate. */
+#chord_grid tbody tr, #scale_grid tbody tr,
+#chord_grid > tbody > tr, #scale_grid > tbody > tr
+                                           { cursor: pointer;                                                           }
+#tunings tbody tr                          { cursor: pointer;                                                           }
 
 /* Roman-numeral legend items inside the diatonic chart legend. */
 .dia_legend_sep                            { width: 1px; height: 14px; background: rgba(255,255,255,0.15); margin: 0 4px; }
