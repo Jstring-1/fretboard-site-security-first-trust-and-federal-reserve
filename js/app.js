@@ -3651,6 +3651,17 @@
       host._extrasBound = true;
       const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
+        // Clear button (replaces the legacy "Clear picks" link).
+        const clearBtn = e.target.closest && e.target.closest('.identify_clear_btn');
+        if (clearBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const sec  = clearBtn.getAttribute('data-section');
+          const href = buildPkHref([], sec);
+          history.replaceState(null, '', window.location.pathname + href);
+          applyState();
+          return;
+        }
         // ← / → arrows: chromatically shift every pick in this section
         // by ±1 semitone. Yellow .note_pk highlights on the fretboard
         // slide accordingly because the URL pk= rewrite re-renders.

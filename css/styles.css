@@ -1051,13 +1051,15 @@ select option                              { color: var(--text); background: var
 .identify_btns                             { position: absolute; top: 6px; right: 8px;
                                              display: inline-flex; align-items: center; gap: 4px;                      }
 .identify_toggle,
-.identify_shift                            { padding: 2px 10px; border-radius: 12px;
+.identify_shift,
+.identify_clear_btn                        { padding: 2px 10px; border-radius: 12px;
                                              border: 1px solid rgba(255,255,255,0.55);
                                              background: rgba(255,255,255,0.18); color: #fff;
                                              font: 600 0.78em var(--font); cursor: pointer;
                                              letter-spacing: 0.06em;                                                    }
 .identify_toggle:hover,
-.identify_shift:hover                      { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+.identify_shift:hover,
+.identify_clear_btn:hover                  { background: rgba(255,255,255,0.4); border-color: #fff;                    }
 .identify_toggle.on                        { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
 .identify_toggle.on:hover                  { background: #fff; border-color: #fff; color: #001014;                     }
 .identify_shift                            { padding: 2px 8px;                                                          }
