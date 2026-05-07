@@ -60,20 +60,10 @@
     osc.stop(t0 + dur + 0.05);
   }
 
-  // ---------- chord-ID toggle (per-section, on by default) ------------
-  // Each chord-identifier strip (fretboard + keyboard) has its own ID
-  // toggle. localStorage stores 'off' explicitly — anything else (or
-  // missing) defaults to ON.
-  function _idKey(sectionId) {
-    return sectionId === 'section_4' ? 'sf_chord_id_kb' : 'sf_chord_id_fb';
-  }
-  function chordIdOn(sectionId) {
-    return localStorage.getItem(_idKey(sectionId)) !== 'off';
-  }
-  function setChordIdOn(sectionId, on) {
-    if (on) localStorage.removeItem(_idKey(sectionId));
-    else    localStorage.setItem(_idKey(sectionId), 'off');
-  }
+  // Chord-ID toggle. Thin wrappers over the unified settings registry
+  // so legacy call sites keep their same shape.
+  function chordIdOn(sectionId)        { return getSetting('chord_id', sectionId); }
+  function setChordIdOn(sectionId, on) { setSetting('chord_id', !!on, sectionId); }
 
   // Pitch-class lookup keyed by display note name (sharp form as KEYS uses).
   const NOTE_PC = {
@@ -175,7 +165,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'cmp', 'ext', 'u'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -193,6 +183,91 @@
       params.getAll(k).forEach(function (v) { out.append(k, v); });
     });
     return out.toString();
+  }
+
+  // ---------- Settings registry (URL > localStorage > default) ----------
+  // Single source-of-truth for non-state-driving display toggles.
+  //   - URL is authoritative when the param is present (so a shared
+  //     bookmark reproduces the receiver's view exactly).
+  //   - localStorage is the user's persistent preference when the URL
+  //     is bare.
+  //   - Built-in `def` is the third tier.
+  // setSetting writes to BOTH stores so the toggle survives reload AND
+  // shows up in the URL for sharing. Per-section settings (e.g. chord
+  // ID) namespace under `s<N>_<key>` when the page is unlinked; in
+  // linked mode they collapse to a single global URL key.
+  // NOTE: audio is intentionally NOT in this registry — it stays
+  // localStorage-only so a shared URL never auto-enables sound.
+  const SETTINGS = {
+    chord_id: {
+      url:    'id',  ls: 'sf_chord_id',  perSection: true,
+      parse:  function (v) { return v !== '0' && v !== 'off'; },
+      lsFmt:  function (v) { return v ? '' : 'off'; },     // '' → remove
+      urlFmt: function (v) { return v ? '' : '0'; },       // default = on
+      def:    true,
+    },
+    compact: {
+      url:    'cmp', ls: 'sf_compact_grids',
+      parse:  function (v) { return v === '1' || v === 'on' || v === 'true'; },
+      lsFmt:  function (v) { return v ? '1' : ''; },
+      urlFmt: function (v) { return v ? '1' : ''; },
+      def:    false,
+    },
+    extras: {
+      url:    'ext', ls: 'sf_identify_extras',
+      parse:  function (v) { return v === 'all' ? Infinity : (parseInt(v, 10) || 1); },
+      lsFmt:  function (v) { return v === 1 ? '' : (v === Infinity ? 'all' : String(v)); },
+      urlFmt: function (v) { return v === 1 ? '' : (v === Infinity ? 'all' : String(v)); },
+      def:    1,
+    },
+  };
+  function _settingURLKey(name, sectionId) {
+    const cfg = SETTINGS[name];
+    if (!cfg) return null;
+    const linked = document.body.getAttribute('data-apply-all') !== 'off';
+    if (sectionId && cfg.perSection && !linked) {
+      const m = String(sectionId).match(/^section_(\d+)$/);
+      if (m) return 's' + m[1] + '_' + cfg.url;
+    }
+    return cfg.url;
+  }
+  function _settingLSKey(name, sectionId) {
+    const cfg = SETTINGS[name];
+    if (!cfg) return null;
+    if (sectionId && cfg.perSection) {
+      const suffix = sectionId === 'section_4' ? '_kb' : '_fb';
+      return cfg.ls + suffix;
+    }
+    return cfg.ls;
+  }
+  function getSetting(name, sectionId) {
+    const cfg = SETTINGS[name];
+    if (!cfg) return null;
+    const params = new URLSearchParams(window.location.search);
+    const urlKey = _settingURLKey(name, sectionId);
+    if (params.has(urlKey)) return cfg.parse(params.get(urlKey));
+    try {
+      const v = localStorage.getItem(_settingLSKey(name, sectionId));
+      if (v != null) return cfg.parse(v);
+    } catch (_) {}
+    return cfg.def;
+  }
+  function setSetting(name, value, sectionId) {
+    const cfg = SETTINGS[name];
+    if (!cfg) return;
+    const urlVal = cfg.urlFmt(value);
+    const lsVal  = cfg.lsFmt(value);
+    const params = new URLSearchParams(window.location.search);
+    const urlKey = _settingURLKey(name, sectionId);
+    if (urlVal === '') params.delete(urlKey);
+    else               params.set(urlKey, urlVal);
+    const qs = canonicalQS(params);
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+    const lsKey = _settingLSKey(name, sectionId);
+    try {
+      if (lsVal === '') localStorage.removeItem(lsKey);
+      else              localStorage.setItem(lsKey, lsVal);
+    } catch (_) {}
   }
 
   // Read the active highlight degrees from URL params. Accepts both the
@@ -1530,13 +1605,11 @@
 
   // Compact grid mode — when on, the chord/scale grids skip empty (#_x_)
   // cells so each row reads as just the populated notes side by side.
-  // Local-only preference; doesn't go into the URL since it's a display
-  // toggle, not a sharable state.
-  let _compactGrids = false;
-  try { _compactGrids = localStorage.getItem('sf_compact_grids') === '1'; } catch (e) {}
+  // Lives in the unified settings registry: URL `cmp=1` (omitted when
+  // off) plus localStorage fallback.
+  function compactGridsOn() { return getSetting('compact'); }
   function setCompactGrids(v) {
-    _compactGrids = !!v;
-    try { localStorage.setItem('sf_compact_grids', _compactGrids ? '1' : '0'); } catch (e) {}
+    setSetting('compact', !!v);
     if (window.SF_X) {
       renderChordGrid(window.SF_X);
       renderScaleGrid(window.SF_X);
@@ -1554,7 +1627,7 @@
   // (click compacts). Lives inside summary_extras so the existing
   // bindSummaryExtras handler keeps clicks from toggling the parent <details>.
   function compactToggleHtml() {
-    const on = _compactGrids;
+    const on = compactGridsOn();
     const title = on ? 'Compact mode on — click to show empty cells'
                      : 'Compact mode off — click to hide empty cells';
     // |<-->|  – two outer bars with a horizontal double-headed arrow.
@@ -1581,7 +1654,7 @@
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
-      setCompactGrids(!_compactGrids);
+      setCompactGrids(!compactGridsOn());
     }, true);   // capture so it runs before bindSummaryExtras' stopPropagation
   }
 
@@ -1617,7 +1690,7 @@
       return s;
     }
 
-    const compact = _compactGrids;
+    const compact = compactGridsOn();
     let h = '<table id="chord_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
     h += buildDegHeader('above_chord_grid', { cornersOnly: compact });
     let chordIdx = 0;
@@ -1700,7 +1773,7 @@
       return s;
     }
 
-    const compact = _compactGrids;
+    const compact = compactGridsOn();
     let h = '<table id="scale_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
     h += buildDegHeader('above_scale_grid', { cornersOnly: compact });
     for (const name in SCALES) {
@@ -3242,23 +3315,18 @@
   };
   const PC_TO_NOTE = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
-  // Default "+N" cap for the "Selected ⊂ Chord" identify bucket. Stored on
-  // the URL-suppressed local-only side so the choice doesn't leak into share
-  // links — picks themselves do, the cap pref does not.
-  let _identifyExtras = 1;        // 1 / 2 / Infinity ("All")
-  try {
-    const stored = localStorage.getItem('sf_identify_extras');
-    if (stored === '1' || stored === '2' || stored === 'all') {
-      _identifyExtras = stored === 'all' ? Infinity : +stored;
-    }
-  } catch (e) {}
-
+  // "+N" cap for the "Selected ⊂ Chord" identify bucket — handled by
+  // the unified settings registry: URL `ext=2` / `ext=all` plus
+  // localStorage fallback. Default 1.
+  function getIdentifyExtras() { return getSetting('extras'); }
   function setIdentifyExtras(v) {
-    _identifyExtras = v;
-    try {
-      localStorage.setItem('sf_identify_extras', v === Infinity ? 'all' : String(v));
-    } catch (e) {}
-    if (window.SF_X) renderIdentifyStrips(window.SF_X);
+    setSetting('extras', v);
+    if (window.SF_X) {
+      // Re-render with the same per-section states we last saw.
+      const xFB = stateForSection('section_2', window.SF_X);
+      const xKB = stateForSection('section_4', window.SF_X);
+      renderIdentifyStrips(xFB, xKB);
+    }
   }
 
   // Toggle the clicked note in the pk= URL list. Suppresses default link
@@ -3363,7 +3431,7 @@
     const exact = [];
     const subset = [];
     const superset = [];
-    const extrasCap = _identifyExtras;
+    const extrasCap = getIdentifyExtras();
     for (let i = 0; i < data.length; i++) {
       const m = data[i][0];
       const name = data[i][1];
@@ -3517,7 +3585,7 @@
         }).join('');
       }
 
-      const extras = _identifyExtras;
+      const extras = getIdentifyExtras();
       const extrasPills = ['1', '2', 'All'].map(function (lbl) {
         const v = lbl === 'All' ? Infinity : +lbl;
         const on = (extras === v) ? ' identify_pill_on' : '';
