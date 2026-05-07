@@ -85,6 +85,20 @@ table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;         
 #_6_                                       {  background-color:#0cc016;  accent-color:#0cc016;                       }
 #_b7_                                      {  background-color:#a64d79;  accent-color:#a64d79;                       }
 #_7_                                       {  background-color:#ff00ff;  accent-color:#ff00ff;                       }
+/* Screen-reader-only utility: kept in the DOM so crawlers and assistive
+   tech read it, but invisible (and not focusable) for sighted users. */
+.sr_only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 /*********************************************************************************************************************
                             FONT FAMILY
 *********************************************************************************************************************/

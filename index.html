@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 
 <!-- Primary SEO -->
-<title>SlantFinder.pro — Fretboard, Chord, Scale, Keyboard &amp; Tab Tool</title>
-<meta name="description" content="Free interactive fretboard, chord builder, scale builder, piano keyboard, tab editor, chord identifier, and 176-tuning database for 4- to 12-string fretted instruments — guitar, bass, ukulele, banjo, lap and pedal steel.">
-<meta name="keywords" content="fretboard, chord finder, chord identifier, scale builder, tab editor, music theory tool, guitar, bass, ukulele, banjo, lap steel, pedal steel, alternate tunings, key signatures, slant finder">
+<title>SlantFinder — Guitar Chord & Scale Finder, Piano Keyboard, Fretboard & Tab Editor</title>
+<meta name="description" content="Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, chord identifier, circle of fifths, and 176-tuning database. Works for guitar, bass, ukulele, banjo, mandolin, lap & pedal steel.">
+<meta name="keywords" content="guitar chord finder, guitar scales, chord builder, scale finder, chord identifier, fretboard, piano keyboard, piano scales, music theory practice, circle of fifths, key signatures, tab editor, transpose tool, alternate tunings, ukulele chords, bass scales, banjo, mandolin, lap steel, pedal steel">
 <meta name="author" content="SlantFinder.pro">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#0a0a0a">
@@ -15,10 +15,10 @@
 
 <!-- Open Graph (Facebook / LinkedIn / iMessage previews) -->
 <meta property="og:site_name" content="SlantFinder.pro">
-<meta property="og:title" content="SlantFinder.pro — Fretboard, Chord, Scale, Keyboard &amp; Tab Tool">
+<meta property="og:title" content="SlantFinder — Guitar Chord & Scale Finder, Piano Keyboard, Fretboard & Tab Editor">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://slantfinder.pro/">
-<meta property="og:description" content="Free interactive fretboard, chord builder, scale builder, piano keyboard, tab editor, chord identifier, and 176-tuning database for fretted instruments — guitar, bass, ukulele, banjo, lap and pedal steel.">
+<meta property="og:description" content="Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, chord identifier, circle of fifths, and 176-tuning database. Works for guitar, bass, ukulele, banjo, mandolin, lap & pedal steel.">
 <meta property="og:image" content="https://slantfinder.pro/img/android-chrome-384x384.png">
 <meta property="og:image:width" content="384">
 <meta property="og:image:height" content="384">
@@ -26,8 +26,8 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SlantFinder.pro — Fretboard, Chord, Scale &amp; Tab Tool">
-<meta name="twitter:description" content="Interactive fretboard, chord/scale builder, chord identifier, tab editor, and 176-tuning database for guitar, bass, uke, banjo, and steel.">
+<meta name="twitter:title" content="SlantFinder — Guitar Chord & Scale Finder, Piano Keyboard, Fretboard">
+<meta name="twitter:description" content="Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, circle of fifths, and 176-tuning database for guitar, bass, uke, banjo, and steel.">
 <meta name="twitter:image" content="https://slantfinder.pro/img/android-chrome-384x384.png">
 
 <!-- Structured data: WebApplication so Google understands what the page is. -->
@@ -35,26 +35,85 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "SlantFinder.pro",
+  "name": "SlantFinder",
+  "alternateName": "SlantFinder.pro",
   "url": "https://slantfinder.pro/",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Web",
   "browserRequirements": "Requires JavaScript",
   "isAccessibleForFree": true,
-  "description": "Interactive fretboard, chord builder, scale builder, chord identifier, piano keyboard, tab editor, and 176-tuning database for 4- to 12-string fretted instruments — guitar, bass, ukulele, banjo, lap and pedal steel.",
+  "description": "Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, chord identifier, circle of fifths, and 176-tuning database. Works for guitar, bass, ukulele, banjo, mandolin, lap and pedal steel.",
   "featureList": [
-    "176 tunings across guitar, bass, ukulele, banjo, lap and pedal steel",
-    "Interactive fretboard for 4- to 12-string instruments in any tuning and key",
-    "Chord builder grid covering 28+ chord types",
+    "Guitar chord builder grid covering 28+ chord types",
     "Scale builder grid covering 16 scales (modes, pentatonic, blues, etc.)",
     "Click-to-pick chord identifier — name the notes you played",
-    "Piano keyboard view with octave-correct frequencies and string-gauge reference",
+    "Interactive fretboard for 4- to 12-string instruments in any key",
+    "Piano keyboard view with octave-correct frequencies and degree colouring",
+    "Circle of fifths and Key Signatures reference with treble-clef staves",
     "In-page tab editor with fretboard-click capture, print and handwriting blanks",
-    "Key Signatures reference with treble-clef staff and hand-signal indicators",
     "Endless music-theory practice quiz",
+    "176 alternate tunings across guitar, bass, ukulele, banjo, lap and pedal steel",
     "Every selection is bookmarkable / shareable via URL state"
   ],
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<!-- FAQPage schema — eligible for rich-result FAQ snippets. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I find a chord on guitar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pick a key in SlantFinder's Fretboard or Chord Builder section, then click any chord type in the chord grid (maj, min, 7, m7, dim, sus, etc.) to highlight every position of that chord across the entire fretboard in your chosen tuning."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I identify a chord by the notes I'm playing?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use the Chord ID feature: click the fret cells (or piano keys) for the notes you're playing. Once you've selected three or more notes, SlantFinder lists every matching chord — exact matches, chords contained in your selection, and chords your selection could complete with one or two extra notes."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the relative minor of a major key?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The relative minor sits a minor third (three semitones) below the major root and shares the same key signature. The Circle of Fifths in the Key Signatures section pairs each major key with its relative minor — e.g. C major / A minor, G major / E minor, F major / D minor."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I read a key signature?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sharps and flats next to the treble clef tell you which notes are altered for the entire piece. The Key Signatures section in SlantFinder shows the staff for every major key, the count of sharps or flats, the accidental notes themselves, and a hand-signal mnemonic (fingers up = sharps, fingers down = flats) for quick recall."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does SlantFinder work for instruments other than guitar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. The fretboard supports 4- to 12-string instruments and includes 176 preset tunings across guitar, bass, ukulele, banjo, mandolin, lap steel, and pedal steel — plus a fully editable Custom tuning. The piano keyboard, chord builder, scale builder, and key signatures sections are instrument-agnostic."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is SlantFinder free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. SlantFinder.pro is free to use in any modern browser, with no signup required for the chord/scale/fretboard tools. Every selection is encoded in the URL so you can bookmark or share an exact view."
+      }
+    }
+  ]
 }
 </script>
 
@@ -110,20 +169,29 @@
   SlantFinder is a desktop tool — rotate to landscape (or open on a wider screen) for the best experience. Tables here scroll sideways on touch.
 </div>
 
-<h1 id="site_title"><a href="?"><span class="slant">Slant</span><span class="finder">Finder</span><span class="pro">.pro</span></a></h1>
-<div id="build_num">20260506.2200</div>
+<h1 id="site_title"><a href="?"><span class="sr_only">SlantFinder — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Slant</span><span class="finder" aria-hidden="true">Finder</span><span class="pro" aria-hidden="true">.pro</span></a></h1>
+<!-- SEO-friendly intro lede: visible to crawlers, hidden for sighted users
+     so the layout stays minimal. -->
+<p id="seo_lede" class="sr_only">SlantFinder is a free, browser-based music tool: build chords across 28+ types, audition 16 scales (including modes, pentatonic, and blues), identify chords from notes you played, explore a fretboard for any 4- to 12-string instrument across 176 alternate tunings, see every key signature with the circle of fifths, and edit guitar tablature inline. Works for guitar, bass, ukulele, banjo, mandolin, lap steel, and pedal steel.</p>
+<div id="build_num">20260507.0809</div>
 
 <details id="section_2" class="collapsible section" open><summary><span class="summary_title">Fretboard</span><span class="summary_tuning" id="fretboard_summary_tuning"></span><span class="summary_status"></span><button type="button" id="apply_all_toggle" class="section_apply_all" title="Linked: all sections share one key/chord/scale.&#10;Unlinked: each section has its own.">Linked</button><button type="button" id="audio_toggle" class="section_audio_toggle" aria-pressed="false" title="Audio off — click to play notes when you click a fret or key.">♪</button><span class="summary_extras" data-summary-for="section_2"></span><button type="button" class="section_print" data-print-section="section_2" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About">?</button></summary>
+  <h2 class="sr_only">Interactive guitar fretboard explorer</h2>
+  <p class="sr_only">Pick a tuning and a key, then highlight any chord or scale to see every position of those notes laid out across the entire fretboard. Supports 4- to 12-string instruments — guitar, bass, ukulele, banjo, mandolin, lap steel, pedal steel — plus a fully editable Custom tuning. Click any fret cell to identify the chord those notes form.</p>
   <div id="fretboard_root"></div>
   <div id="fb_identify_root"></div>
   <br/>
   <details id="section_5" class="collapsible section nested_section" open><summary><span class="summary_title">Tunings List</span><span class="summary_extras" data-summary-for="section_5"></span><button type="button" class="section_export" data-export="tunings" title="Download visible tunings as CSV">CSV</button><button type="button" class="section_print" data-print-section="section_5" aria-label="Print">Print</button><button type="button" class="section_help" data-help="tunings" aria-label="About">?</button></summary><br/>
+    <h3 class="sr_only">176 alternate tunings database</h3>
+    <p class="sr_only">Sortable, filterable list of 176 alternate tunings — standard and drop tunings for guitar and bass, ukulele variations, banjo open tunings, mandolin, lap steel C6 / E13 / A6, and pedal steel E9 / B6 / C6 / Universal. Click any row to load that tuning into the fretboard.</p>
     <div id="tunings_root"></div>
     <br/>
   </details>
 </details>
 
 <details id="section_4" class="collapsible section" open><summary><span class="summary_title">Keyboard</span><span class="summary_status"></span><span class="summary_extras" data-summary-for="section_4"></span><button type="button" class="section_print" data-print-section="section_4" aria-label="Print">Print</button><button type="button" class="section_help" data-help="keyboard" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Interactive piano keyboard with degree colouring</h2>
+  <p class="sr_only">Full piano keyboard from A0 to C8 showing every note, octave numbers, frequencies in Hz, recommended steel-string gauges, 10-band EQ frequencies, and instrument ranges (guitar, bass, vocals). Pick a key and a chord or scale to colour the notes by their scale degree. Click keys to identify chords from the notes you select.</p>
   <div id="kb_picks_root"></div>
   <div id="keyboard_key_root"></div>
   <div class="ritz grid-container" ><table id="keyboard" class="waffle no-grid" cellspacing="0" cellpadding="0"><tbody><tr><td style="height:20px;width:80px;" class="s0" >Octaves</td><td class="s1"  colspan="6">0</td><td class="s2"  colspan="21">1</td><td class="s3"  colspan="21">2</td><td class="s4"  colspan="21">3</td><td class="s5"  colspan="21">4</td><td class="s6"  colspan="21">5</td><td class="s7"  colspan="21">6</td><td class="s8"  colspan="21">7</td><td class="s9"  colspan="3">8</td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s11" >Steel Gauges</td><td class="s12"  colspan="21"></td><td class="s13"  colspan="3">0.072</td><td class="s14"  colspan="3">0.068</td><td class="s15"  colspan="3">0.068</td><td class="s16"  colspan="3">0.060</td><td class="s17"  colspan="3">0.056</td><td class="s18"  colspan="3">0.054</td><td class="s19"  colspan="3">0.048</td><td class="s13"  colspan="3">0.042</td><td class="s14"  colspan="3">0.038</td><td class="s15"  colspan="3">0.036</td><td class="s16"  colspan="3">0.034</td><td class="s17"  colspan="3">0.030</td><td class="s18"  colspan="3">0.028</td><td class="s19"  colspan="3">0.024</td><td class="s13"  colspan="3">0.021</td><td class="s14"  colspan="3">0.018</td><td class="s15"  colspan="3">0.017</td><td class="s16"  colspan="3">0.016</td><td class="s17"  colspan="3">0.014</td><td class="s18"  colspan="3">0.013</td><td class="s19"  colspan="3">0.012</td><td class="s13"  colspan="3">0.011</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s21" ></td></tr><tr><td style="height:20px;" class="s0" >10-band EQ</td><td class="s22"  colspan="3"></td><td class="s23" colspan="3">31.25</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">62.5</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">125</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">250</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">500</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">1k</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">2k</td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s20"  colspan="3"></td><td class="s24"  colspan="3"></td><td class="s23" colspan="3">4k</td><td class="s20"  colspan="3"></td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s0" >Frequency Hz</td><td class="s25"  colspan="3">28</td><td class="s23"  colspan="3">31</td><td class="s26"  colspan="3">33</td><td class="s27"  colspan="3">37</td><td class="s28"  colspan="3">41</td><td class="s29"  colspan="3">44</td><td class="s30"  colspan="3">49</td><td class="s25"  colspan="3">55</td><td class="s23"  colspan="3">62</td><td class="s26"  colspan="3">65</td><td class="s27"  colspan="3">73</td><td class="s28"  colspan="3">82</td><td class="s29"  colspan="3">87</td><td class="s30"  colspan="3">98</td><td class="s25"  colspan="3">110</td><td class="s23"  colspan="3">123</td><td class="s26"  colspan="3">131</td><td class="s27"  colspan="3">147</td><td class="s28"  colspan="3">165</td><td class="s29"  colspan="3">175</td><td class="s30"  colspan="3">196</td><td class="s25"  colspan="3">220</td><td class="s23"  colspan="3">247</td><td class="s26"  colspan="3">262</td><td class="s27"  colspan="3">294</td><td class="s28"  colspan="3">330</td><td class="s29"  colspan="3">349</td><td class="s30"  colspan="3">392</td><td class="s25"  colspan="3">440</td><td class="s23"  colspan="3">494</td><td class="s26"  colspan="3">523</td><td class="s27"  colspan="3">587</td><td class="s28"  colspan="3">659</td><td class="s29"  colspan="3">698</td><td class="s30"  colspan="3">784</td><td class="s25"  colspan="3">880</td><td class="s23"  colspan="3">988</td><td class="s26"  colspan="3">1047</td><td class="s27"  colspan="3">1175</td><td class="s28"  colspan="3">1319</td><td class="s29"  colspan="3">1397</td><td class="s30"  colspan="3">1568</td><td class="s25"  colspan="3">1760</td><td class="s23"  colspan="3">1976</td><td class="s26"  colspan="3">2093</td><td class="s27"  colspan="3">2349</td><td class="s28"  colspan="3">2637</td><td class="s29"  colspan="3">2794</td><td class="s30"  colspan="3">3136</td><td class="s25"  colspan="3">3520</td><td class="s23"  colspan="3">3951</td><td class="s26"  colspan="3">4186</td><td class="s10" ></td></tr><tr><td style="height:58px;" class="s31" >Black Keys</td><td class="s32" colspan="2"></td><td class="s33"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s36"  colspan="2">C♯</td><td class="s37"></td><td class="s38"  colspan="2">D♯</td><td class="s39" colspan="2"></td><td class="s40" colspan="2"></td><td class="s41"  colspan="2">F♯</td><td class="s42"></td><td class="s43"  colspan="2">G♯</td><td class="s32"></td><td class="s44"  colspan="2">A♯</td><td class="s34" colspan="2"></td><td class="s35" colspan="2"></td><td class="s45 softmerge" ><div class="softmerge-inner" style="width:18px;left:-7px">C♯</div></td><td class="s46" ></td></tr><tr><td style="height:58px;" class="s0" >White Keys</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49"  colspan="3">C</td><td class="s50"  colspan="3">D</td><td class="s51"  colspan="3">E</td><td class="s52"  colspan="3">F</td><td class="s53"  colspan="3">G</td><td class="s47"  colspan="3">A</td><td class="s48"  colspan="3">B</td><td class="s49" colspan="3">C</td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s0"  rowspan="2">Instrument Ranges</td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s55"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s57"  colspan="3"></td><td class="s58"  colspan="66">Guitar</td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s55"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s10" ></td></tr><tr><td style="height:20px;" class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s59"  colspan="3"></td><td class="s60"  colspan="66">Bass</td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s56"  colspan="3"></td><td class="s61"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s54"  colspan="3"></td><td class="s10" ></td></tr></tbody></table></div>
@@ -132,16 +200,22 @@
 </details>
 
 <details id="section_3" class="collapsible section" open><summary><span class="summary_title">Chord Builder Grid</span><span class="summary_status"></span><span class="summary_extras" data-summary-for="section_3"></span><button type="button" class="section_print" data-print-section="section_3" aria-label="Print">Print</button><button type="button" class="section_help" data-help="chord_grid" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Chord builder — 28+ chord types in any key</h2>
+  <p class="sr_only">Browse every common chord type — major (maj), minor (min), 7, m7, maj7, m7♭5 (half-diminished), dim, dim7, aug, sus2, sus4, 6, m6, 9, m9, maj9, 11, 13, add9 — laid out as a grid by interval. Pick any cell to highlight that chord across the fretboard and piano keyboard. Hover any chord label to see its degrees and the actual notes in the current key.</p>
   <div id="chord_grid_root"></div>
   <br/>
 </details>
 
 <details id="section_6" class="collapsible section" open><summary><span class="summary_title">Scale Builder Grid</span><span class="summary_status"></span><span class="summary_extras" data-summary-for="section_6"></span><button type="button" class="section_print" data-print-section="section_6" aria-label="Print">Print</button><button type="button" class="section_help" data-help="scale_grid" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Scale builder — modes, pentatonic, blues, and more</h2>
+  <p class="sr_only">All 16 essential scales in any key: major (Ionian), Dorian, Phrygian, Lydian, Mixolydian, natural minor (Aeolian), Locrian, harmonic minor, melodic minor, major pentatonic, minor pentatonic, blues, whole tone, diminished, chromatic, and more. Click any scale to highlight every note across the fretboard and keyboard.</p>
   <div id="scale_grid_root"></div>
   <br/>
 </details>
 
 <details id="section_8" class="collapsible section feature_tab" open><summary><span class="summary_title">Tab</span><span class="summary_extras" data-summary-for="section_8"></span><button type="button" class="section_help" data-help="tab" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">In-page guitar tab editor</h2>
+  <p class="sr_only">Lightweight tab notation editor. Type fret numbers, articulation symbols (h hammer, p pull, / slide up, \ slide down, ~ vibrato, x mute), and use Tab/Enter/arrow keys to navigate cells. Capture frets directly from the mini-fretboard, print blank tab paper for handwriting practice, or print your tab with chord boxes. Supports 4- to 12-string instruments with any tuning.</p>
   <div id="tab_section_root">
     <div class="tab_editor_panel">
     <div class="tab_controls">
@@ -209,6 +283,8 @@
 </details>
 
 <details id="section_10" class="collapsible section feature_sheetmusic" open><summary><span class="summary_title">Sheet Music</span><button type="button" class="section_help" data-help="sheetmusic" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Searchable sheet-music & chord-progression library</h2>
+  <p class="sr_only">Searchable progressions extracted from a 4,000+ jazz / pop fake-book library. Each song shows key, time signature, chord changes, and Nashville-degree analysis so you can transpose chord-by-chord into any key.</p>
   <div id="sheetmusic_root">
     <div class="sm_placeholder">
       Searchable chord progressions extracted from the fake-book library — 4,000+ jazz / pop standards with key, time signature, and Nashville-degree analysis. Currently in admin testing; data wiring is the next stage.
@@ -218,11 +294,15 @@
 </details>
 
 <details id="section_9" class="collapsible section" open><summary><span class="summary_title">Key Signatures</span><span class="summary_status"></span><span class="summary_extras" data-summary-for="section_9"></span><button type="button" class="section_print" data-print-section="section_9" aria-label="Print">Print</button><button type="button" class="section_help" data-help="key_signatures" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Key signatures and circle of fifths reference</h2>
+  <p class="sr_only">Every major key shown with its treble-clef staff, the count of sharps or flats, the actual accidental notes in canonical order, and a hand-signal mnemonic (fingers up = sharps, fingers down = flats). Includes an interactive Circle of Fifths showing each major key paired with its relative minor — click any wedge to set that key.</p>
   <div id="key_signatures_root"></div>
   <br/>
 </details>
 
 <details id="section_7" class="collapsible section" open><summary><span class="summary_title">Learn</span><button type="button" class="section_help" data-help="learn" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Music theory practice quiz</h2>
+  <p class="sr_only">Endless drill on key signatures, sharp / flat counts, the notes that make up each accidental, and chord intervals. Answer as many as you like — every question is randomly generated so the practice never repeats.</p>
   <div id="quiz_root"></div>
   <br/>
 </details>
