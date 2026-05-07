@@ -1,11 +1,13 @@
 """Fretboard.site — FastAPI app.
 
-Serves the static HTML/CSS/JS that makes up the site, plus API routes
-for personalisation (Clerk-backed auth + Postgres-backed user settings).
+Serves the static HTML/CSS/JS that makes up the site, plus public read
+APIs for the chord-extracted song catalogue and admin write APIs gated
+behind a static `X-Admin-Key` header (used by the local importer
+pipeline).
 
-Stage 2 (this commit): connect to Postgres on startup, run any pending
-migrations, expose `/api/health` that reports DB status. Auth + settings
-endpoints land in stages 3-4.
+Authentication via Clerk was removed — the live UI is fully anonymous,
+all per-user state lives in shareable URLs / localStorage. Admin-only
+endpoints now exclusively use the static-key path.
 
 Deployed on Railway via Railpack auto-detect (sees main.py at root,
 runs `uvicorn main:app`). Local dev:
@@ -27,18 +29,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from server import auth as auth_module
 from server import db
-from server.auth import current_admin_user, current_user
 from server.music import derive_degrees
-
-
-class SettingsPayload(BaseModel):
-    """Body shape for PUT /api/settings — a single freeform JSON object
-    we store as the user's `data` JSONB column. Top-level keys are
-    feature areas (e.g. "tab", "song_keys"); the schema inside each is
-    owned by the corresponding frontend module."""
-    data: dict
 
 
 class SongImportItem(BaseModel):
@@ -96,13 +88,11 @@ class TabImportPayload(BaseModel):
 def require_admin_key(request: Request) -> None:
     """Static-key guard for admin-only server-to-server endpoints.
 
-    The chord-data importer runs on the operator's laptop — it has
-    a JSON file but no Clerk session. Forcing it through the user-
-    auth pipeline would mean copying short-lived JWTs around. A
-    dedicated `ADMIN_API_KEY` env var is the right tool: random
-    string set on Railway and matched by the local script's env.
-    Returns 503 if the server doesn't have one configured (no key
-    means no admin pipe), 401 if the client's header is wrong."""
+    The chord-data importer runs on the operator's laptop. A dedicated
+    `ADMIN_API_KEY` env var is the gate: random string set on Railway
+    and matched by the local script's env. Returns 503 if the server
+    doesn't have one configured (no key means no admin pipe), 401 if
+    the client's header is wrong."""
     expected = os.environ.get("ADMIN_API_KEY", "")
     if not expected:
         raise HTTPException(status_code=503, detail="admin import not configured")
@@ -112,16 +102,10 @@ def require_admin_key(request: Request) -> None:
 
 
 async def resolve_admin(request: Request) -> dict:
-    """Allow EITHER static admin key OR Clerk admin user. Used on
-    endpoints reachable from both the laptop scripts (X-Admin-Key) and
-    the live signed-in admin (Clerk JWT). The static-key path wins
-    when both are present so the demo / importer don't accidentally
-    fall through to a possibly-missing Clerk session."""
-    if request.headers.get("x-admin-key"):
-        require_admin_key(request)
-        return {"user_id": "admin-key", "via": "static"}
-    user = await current_admin_user(request)
-    return {**user, "via": "clerk"}
+    """Admin gate for write endpoints. Static `X-Admin-Key` header is
+    now the only path (Clerk JWT auth was retired)."""
+    require_admin_key(request)
+    return {"user_id": "admin-key", "via": "static"}
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -161,8 +145,8 @@ app = FastAPI(
 # CORS for local-dev / admin tooling. The locally-served _books/_demo.html
 # (running at http://localhost) needs to call /api/songs/* on the live
 # host. We only allow localhost origins explicitly — the live site is
-# same-origin so it doesn't need CORS at all. allow_credentials=True
-# is required for Authorization headers.
+# same-origin so it doesn't need CORS at all. The admin pipe sends
+# `X-Admin-Key`; user-facing reads are public.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -174,18 +158,17 @@ app.add_middleware(
         "http://127.0.0.1:8000",
         "http://127.0.0.1:8888",
     ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Admin-Key"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Admin-Key"],
 )
 
 
 # ---- API routes (registered first so they take priority over statics) ----
 @app.get("/api/health")
 async def health():
-    """Liveness + DB + auth-config probe. Used after Railway redeploys
-    to confirm process, DB, and Clerk JWT verification config all came
-    up cleanly."""
+    """Liveness + DB probe. Used after Railway redeploys to confirm
+    the process and DB connection came up cleanly."""
     db_status: str = "skipped"
     if os.environ.get("DATABASE_URL"):
         try:
@@ -197,74 +180,7 @@ async def health():
             db_status = "ok"
         except Exception as e:
             db_status = f"error: {type(e).__name__}: {e}"
-    # Auth-config diagnostic. We don't echo the publishable key itself —
-    # only whether it's present and what we decoded out of it. Helps
-    # diagnose "auth not configured" 503s on /api/me without redeploys.
-    pk_env = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
-    auth_status = {
-        "pk_env_set": bool(pk_env),
-        "pk_len": len(pk_env),
-        "frontend_api": auth_module.FRONTEND_API or None,
-        "issuer": auth_module.ISSUER or None,
-    }
-    return {"status": "ok", "db": db_status, "auth": auth_status}
-
-
-@app.get("/api/me")
-async def me(user: dict = Depends(current_user)):
-    """Returns the verified Clerk user_id for the bearer token in the
-    Authorization header, or 401 if no/invalid token. Frontend uses
-    this as a smoke test that auth is wired correctly end-to-end."""
-    return {"user_id": user["user_id"]}
-
-
-@app.get("/api/settings")
-async def get_settings(user: dict = Depends(current_user)):
-    """Read the signed-in user's settings blob. Auto-creates an empty
-    row on first hit so the frontend never has to special-case the
-    'returning user vs. new user' distinction — it always gets back
-    `{data: object}`, possibly an empty `{}` for new accounts."""
-    pool = db.get_pool()
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                "INSERT INTO user_settings (clerk_user_id) VALUES (%s) "
-                "ON CONFLICT (clerk_user_id) DO NOTHING",
-                (user["user_id"],),
-            )
-            await cur.execute(
-                "SELECT data FROM user_settings WHERE clerk_user_id = %s",
-                (user["user_id"],),
-            )
-            row = await cur.fetchone()
-        await conn.commit()
-    data = (row[0] if row else {}) or {}
-    return {"data": data}
-
-
-@app.put("/api/settings")
-async def put_settings(
-    payload: SettingsPayload,
-    user: dict = Depends(current_user),
-):
-    """Replace the signed-in user's settings blob wholesale. The frontend
-    is the source of truth for the shape — we just store and return it.
-    Future endpoints can offer JSONB-path PATCH semantics if/when bandwidth
-    becomes a concern; for now whole-blob is simplest and fine."""
-    if not isinstance(payload.data, dict):
-        raise HTTPException(status_code=400, detail="data must be an object")
-    pool = db.get_pool()
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                "INSERT INTO user_settings (clerk_user_id, data) "
-                "VALUES (%s, %s::jsonb) "
-                "ON CONFLICT (clerk_user_id) DO UPDATE "
-                "  SET data = EXCLUDED.data",
-                (user["user_id"], json.dumps(payload.data)),
-            )
-        await conn.commit()
-    return {"ok": True}
+    return {"status": "ok", "db": db_status}
 
 
 # ---- Songs (chord-extracted catalogue) -----------------------------------
@@ -455,9 +371,8 @@ async def edit_song(
     degrees on every read from chords + key, so stale Claude-produced
     degree values would just confuse later reads / debug.
 
-    Gated by current_admin_user (Clerk JWT + ADMIN_USER_IDS allow-list).
-    Returns the freshly-read row so the client can re-render without
-    a separate GET."""
+    Gated by `resolve_admin` (static `X-Admin-Key` header). Returns the
+    freshly-read row so the client can re-render without a separate GET."""
     sets: list[str] = []
     params: list = []
     if payload.chords is not None:
@@ -509,7 +424,7 @@ async def delete_song(
     level: a missing row returns 404 so the caller knows the row never
     existed (helps surface stale local caches).
 
-    Gated by resolve_admin (accepts Clerk admin JWT or X-Admin-Key)."""
+    Gated by `resolve_admin` (static `X-Admin-Key` header)."""
     pool = db.get_pool()
     async with pool.connection() as conn:
         async with conn.cursor() as cur:
