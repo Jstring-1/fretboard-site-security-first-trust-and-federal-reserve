@@ -111,8 +111,8 @@ body { font-family: var(--font); }
                             FONT SIZES
 *********************************************************************************************************************/
 body                                       {  font-size:0.95em;                                                      }
-h1,.slant                                  {  font-size:1.85em;                                                      }
-.finder                                    {  font-size:1.75em;                                                      }
+h1,.slant                                  {  font-size:0.92em;                                                      }
+.finder                                    {  font-size:0.88em;                                                      }
 h2                                         {  font-size:1.4em;                                                       }
 .pro                                       {  font-size:.6em;                                                        }
 h3                                         {  font-size:1.05em;                                                      }
@@ -875,9 +875,32 @@ select option                              { color: var(--text); background: var
 
 /* Title: bare <h1> at the top of the page, no wrapper section, sits
    directly on the darkest page bg. */
-#site_title                                { text-align: center; letter-spacing: -0.02em;
-                                             margin: 18px 0 0; padding: 0; line-height: 1;
+#site_title                                { text-align: left; letter-spacing: -0.02em;
+                                             margin: 0; padding: 0; line-height: 1;
                                              background: transparent; border: none; box-shadow: none;                }
+/* Sticky top bar — logo on the left, current tuning indicator in the
+   middle, global controls (Linked / Audio / Clear) on the right.
+   Pinned so the controls follow the user as they scroll. */
+.site_header_sticky                        { position: sticky; top: 0; z-index: 100;
+                                             display: flex; align-items: center; gap: 14px;
+                                             padding: 6px 16px;
+                                             background: var(--bg);
+                                             border-bottom: 1px solid #1f1f1f;                                          }
+#site_tuning                               { flex: 1 1 auto; min-width: 0;
+                                             margin: 0; overflow: hidden; text-overflow: ellipsis;
+                                             white-space: nowrap;                                                       }
+#site_global_controls                      { display: inline-flex; align-items: center; gap: 6px;
+                                             flex: 0 0 auto;                                                            }
+@media print { .site_header_sticky         { display: none !important; }                                               }
+
+/* Per-section action buttons (compact / Clear / Print / ?) — pinned
+   to the top-right of the section body, on the same visual row as
+   the chromatic key-button row when present. */
+details.collapsible.section                { position: relative;                                                       }
+.section_actions                           { position: absolute; top: 8px; right: 12px;
+                                             display: inline-flex; align-items: center; gap: 6px;
+                                             z-index: 2;                                                                }
+@media print { .section_actions            { display: none !important; }                                               }
 /* Build number snugs right under the logo. line-height:1 on both
    #site_title and #build_num kills the descender / leading extra
    space, so the only gap left is the negative margin-top here. */
@@ -1416,8 +1439,13 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_layout > *                             { min-width: 0;                                                              }
 .ks_side                                   { background: var(--bg-elevated); border: 1px solid #2a2a2a;
                                              border-radius: 6px; min-height: 200px;
-                                             display: flex; align-items: center; justify-content: center;
-                                             padding: 18px;                                                              }
+                                             display: flex; flex-direction: column; align-items: center;
+                                             padding: 18px; gap: 14px;                                                  }
+/* "In <key> major" sits inside .ks_side directly below the SVG, full
+   width, no extra panel chrome (the .ks_side already provides it). */
+.ks_in_side                                { width: 100%; background: none !important;
+                                             border: none !important; padding: 0 4px !important;                       }
+.ks_in_side .kx_dl                         { font-size: 0.88em;                                                        }
 /* Circle of Fifths SVG — interactive, click-to-set-key wedges. */
 .cof_svg                                   { width: 100%; max-width: 380px; height: auto; display: block;              }
 .cof_wedge                                 { cursor: pointer; outline: none;                                            }

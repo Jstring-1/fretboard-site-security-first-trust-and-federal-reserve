@@ -1479,6 +1479,11 @@
   // the summary so they're centred under the section title (not in the
   // right-side header strip).
   function renderSummaryExtras(x) {
+    // Keep the sticky-header global Clear link in sync with the
+    // current URL (so it always strips hl/pk while preserving key,
+    // tuning, etc.).
+    const siteClear = document.getElementById('site_clear');
+    if (siteClear) siteClear.setAttribute('href', clearHlHref());
     const slots = document.querySelectorAll('.summary_extras');
     if (!slots.length) return;
     function summaryHtml() {
@@ -1565,7 +1570,7 @@
     // this textual representation.
     const notesStr = isCustom ? x.s    : x.notes;
     const dgsStr   = isCustom ? x.sdgs : x.dgs;
-    const tunEl = document.getElementById('fretboard_summary_tuning');
+    const tunEl = document.getElementById('site_tuning');
     if (tunEl) {
       let html = '';
       html += '<span class="st_lab">Tuning</span>';
@@ -1971,12 +1976,39 @@
     // Flats in natural order: 1 flat first (F major) … 7 flats last (C♭).
     for (const r of KEY_SIGS_FLAT) h += rowHtml(r, true);
     h +=   '</tbody></table></div>';
-    // Right half: an interactive circle of fifths. Each outer wedge is a
-    // major key, each inner wedge is its relative minor — clicking either
-    // applies that key (same href as the table on the left).
-    h +=   '<div class="ks_side">' + circleOfFifthsSvg(x) + '</div>';
+    // Right half: an interactive circle of fifths PLUS the "In <key>
+    // major" cheat-sheet sitting directly below it. Each outer wedge
+    // is a major key, each inner wedge is its relative minor — clicking
+    // either applies that key (same href as the table on the left).
+    h +=   '<div class="ks_side">';
+    h +=     circleOfFifthsSvg(x);
+    h +=     keyContainsHtml(x);
+    h +=   '</div>';
     h += '</div>';
     root.innerHTML = h;
+  }
+
+  // "In <key> major" cheat-sheet — renders into the .ks_side panel
+  // directly below the Circle of Fifths so they share the same column.
+  function keyContainsHtml(x) {
+    const notes = _majorScaleNotes(x.k);
+    if (!notes.length) return '';
+    const i1 = KEYS.indexOf(x.k);
+    const relMinor = KEYS[(i1 + 9) % KEYS.length];
+    const dominant = notes[4];
+    const subdom   = notes[3];
+    function keyHref(k) { return escHtml(buildKeySetHref(k)); }
+    let h = '<div class="kx_block kx_contains kx_in_side">';
+    h +=   '<h3 class="kx_block_title">In ' + escHtml(x.k) + ' major</h3>';
+    h +=   '<dl class="kx_dl">';
+    h +=     '<dt>Notes</dt><dd>' + notes.map(escHtml).join(' · ') + '</dd>';
+    h +=     '<dt>Relative minor</dt><dd><a href="' + keyHref(relMinor) + '">' + escHtml(relMinor) + ' minor</a></dd>';
+    h +=     '<dt>Parallel minor</dt><dd>' + escHtml(x.k) + ' minor (same root, lowered 3 6 7)</dd>';
+    h +=     '<dt>Dominant key (V)</dt><dd><a href="' + keyHref(dominant) + '">' + escHtml(dominant) + ' major</a></dd>';
+    h +=     '<dt>Subdominant key (IV)</dt><dd><a href="' + keyHref(subdom) + '">' + escHtml(subdom) + ' major</a></dd>';
+    h +=   '</dl>';
+    h += '</div>';
+    return h;
   }
 
   // -------- Circle of Fifths (SVG) ---------------------------------------
@@ -2436,20 +2468,6 @@
     h +=   '</div>';
 
     // ----- RIGHT column (sits under the circle of fifths) -----
-    h +=   '<div class="kx_right_stack">';
-
-    // This key contains
-    h +=   '<div class="kx_block kx_contains">';
-    h +=     '<h3 class="kx_block_title">In ' + escHtml(x.k) + ' major</h3>';
-    h +=     '<dl class="kx_dl">';
-    h +=       '<dt>Notes</dt><dd>' + notes.map(escHtml).join(' · ') + '</dd>';
-    h +=       '<dt>Relative minor</dt><dd><a href="' + keyHref(relMinor) + '">' + escHtml(relMinor) + ' minor</a></dd>';
-    h +=       '<dt>Parallel minor</dt><dd>' + escHtml(parMinor) + ' minor (same root, lowered 3 6 7)</dd>';
-    h +=       '<dt>Dominant key (V)</dt><dd><a href="' + keyHref(dominant) + '">' + escHtml(dominant) + ' major</a></dd>';
-    h +=       '<dt>Subdominant key (IV)</dt><dd><a href="' + keyHref(subdom) + '">' + escHtml(subdom) + ' major</a></dd>';
-    h +=     '</dl>';
-    h +=   '</div>';
-
     // 7. Cadences
     h +=   '<div class="kx_block kx_cadences">';
     h +=     '<h3 class="kx_block_title">Cadences</h3>';
@@ -2473,7 +2491,6 @@
     h +=     '</ul>';
     h +=   '</div>';
 
-    h +=   '</div>';   // .kx_right_stack
     h += '</div>';     // .kx_panel
     root.innerHTML = h;
 
