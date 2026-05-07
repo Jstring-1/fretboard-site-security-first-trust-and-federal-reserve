@@ -635,9 +635,12 @@
     // While unlinked, params named like s<num>_<key> (e.g. s4_k=D,
     // s4_hl=1,b3,5) override the same key for that section only. Stripped
     // automatically when the user re-Links via the toggle button.
-    x._unlinked = (params.get('u') === '1');
+    // Unlinked mode is retired — always treat the page as linked. Older
+    // bookmarks containing ?u=1 still load, but section-specific
+    // overrides are ignored so every section reflects the global state.
+    x._unlinked = false;
     x._sectionOverrides = {};
-    if (x._unlinked) {
+    if (false) {
       for (const [k, v] of params.entries()) {
         const m = k.match(/^s(\d+)_(.+)$/);
         if (!m) continue;
@@ -1487,8 +1490,10 @@
     const slots = document.querySelectorAll('.summary_extras');
     if (!slots.length) return;
     function summaryHtml() {
-      // Just the Clear link — the key buttons live below the summary now.
-      return '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
+      // Per-section Clear was removed — the sticky-header Clear handles
+      // it for the whole page. Returning empty so each .summary_extras
+      // slot only carries the section's compact toggle (when any).
+      return '';
     }
     // Key-button row lives at the TOP of the section's content area
     // (just after the <summary>), centred, in a dedicated wrapper div.
@@ -3279,6 +3284,9 @@
   // so reload + share preserve whichever mode you were in.
   let _applyAllBound = false;
   function paintApplyAllToggle() {
+    // Unlinked mode is retired — always force linked so any code still
+    // reading body[data-apply-all] gets a deterministic answer.
+    document.body.setAttribute('data-apply-all', 'on');
     const $btn = document.getElementById('apply_all_toggle');
     if (!$btn) return;
     const params = new URLSearchParams(window.location.search);
