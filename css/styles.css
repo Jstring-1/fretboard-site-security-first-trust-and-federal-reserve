@@ -925,17 +925,52 @@ select option                              { color: var(--text); background: var
 #site_global_controls .section_audio_toggle:hover,
 #site_global_controls .section_clear:hover,
 #site_global_controls .auth_btn:hover      { background: rgba(255,255,255,0.4); border-color: #fff;                    }
-/* Auth dropdown menu: floats below the pill without affecting layout. */
-#site_global_controls .auth_menu           { position: absolute; top: calc(100% + 4px); right: 0;
-                                             background: var(--bg-elevated); border: 1px solid #2a2a2a;
-                                             border-radius: 6px; padding: 4px; min-width: 160px; z-index: 200;
-                                             box-shadow: 0 8px 24px rgba(0,0,0,0.4);                                    }
-#site_global_controls .auth_menu[hidden]   { display: none;                                                             }
-#site_global_controls .auth_menu_item      { display: block; width: 100%; text-align: left;
-                                             padding: 6px 10px; background: none; border: none;
-                                             color: var(--text); font: 500 0.85em var(--font); cursor: pointer;
-                                             border-radius: 4px;                                                        }
-#site_global_controls .auth_menu_item:hover{ background: rgba(255,255,255,0.10);                                        }
+/* ============================================================== */
+/*  Custom Account Modal                                          */
+/* ============================================================== */
+#account_modal                             { position: fixed; inset: 0; z-index: 9999;                                  }
+#account_modal[hidden]                     { display: none !important;                                                  }
+#account_modal .am_backdrop                { position: absolute; inset: 0; background: rgba(0,0,0,0.7);                 }
+#account_modal .am_panel                   { position: absolute; top: 50%; left: 50%;
+                                             transform: translate(-50%, -50%);
+                                             width: min(420px, 92vw);
+                                             background: var(--bg-elevated);
+                                             border: 1px solid #2a2a2a; border-radius: 10px;
+                                             box-shadow: 0 18px 48px rgba(0,0,0,0.6);
+                                             padding: 22px 24px 20px;                                                   }
+#account_modal .am_close                   { position: absolute; top: 6px; right: 8px;
+                                             width: 28px; height: 28px; padding: 0;
+                                             background: none; border: none; color: var(--muted);
+                                             font: 400 24px/1 var(--font); cursor: pointer;                            }
+#account_modal .am_close:hover             { color: var(--accent-hi);                                                   }
+#account_modal .am_title                   { margin: 0 0 14px; font: 600 1.15em var(--font);
+                                             color: var(--accent-hi); letter-spacing: 0.04em;                          }
+#account_modal .am_user                    { display: flex; align-items: center; gap: 14px;
+                                             padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);          }
+#account_modal .am_avatar                  { width: 44px; height: 44px; border-radius: 50%;
+                                             background: rgba(95,232,224,0.18); color: var(--accent-hi);
+                                             display: flex; align-items: center; justify-content: center;
+                                             font: 700 1.2em var(--font);
+                                             background-size: cover; background-position: center;                       }
+#account_modal .am_user_text               { flex: 1 1 auto; min-width: 0;                                              }
+#account_modal .am_name                    { font: 600 1em var(--font); color: var(--text);
+                                             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;            }
+#account_modal .am_email                   { font: 400 0.85em var(--font); color: var(--muted);
+                                             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;            }
+#account_modal .am_meta                    { display: grid; grid-template-columns: max-content 1fr;
+                                             gap: 4px 14px; margin: 14px 0 18px; font-size: 0.88em;                    }
+#account_modal .am_meta dt                 { color: var(--muted); font-weight: 600;                                    }
+#account_modal .am_meta dd                 { margin: 0; color: var(--text);                                             }
+#account_modal .am_actions                 { display: flex; flex-direction: column; gap: 8px;                          }
+#account_modal .am_btn                     { padding: 8px 14px; font: 600 0.92em var(--font);
+                                             background: rgba(255,255,255,0.06); color: var(--text);
+                                             border: 1px solid rgba(255,255,255,0.18); border-radius: 6px;
+                                             cursor: pointer;                                                           }
+#account_modal .am_btn:hover               { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.4); }
+#account_modal .am_btn_primary             { background: var(--accent-hi); color: #001014;
+                                             border-color: var(--accent-hi);                                            }
+#account_modal .am_btn_primary:hover       { background: #fff; border-color: #fff;                                       }
+@media print { #account_modal              { display: none !important; }                                               }
 /* Active/engaged states for the toggles — match the existing accent. */
 #site_global_controls .section_apply_all.on,
 #site_global_controls .section_audio_toggle.on

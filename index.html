@@ -337,9 +337,35 @@
   <br/>
 </details>
 
+<!-- Custom account modal — populated and opened by js/auth.js when the
+     user clicks the account pill in the sticky header. -->
+<div id="account_modal" hidden aria-modal="true" role="dialog" aria-labelledby="account_modal_title">
+  <div class="am_backdrop" data-am-close></div>
+  <div class="am_panel">
+    <button type="button" class="am_close" data-am-close aria-label="Close">×</button>
+    <h2 id="account_modal_title" class="am_title">Account</h2>
+    <div class="am_body">
+      <div class="am_user">
+        <div class="am_avatar"></div>
+        <div class="am_user_text">
+          <div class="am_name" data-am-name>—</div>
+          <div class="am_email" data-am-email>—</div>
+        </div>
+      </div>
+      <dl class="am_meta">
+        <dt>Member since</dt><dd data-am-created>—</dd>
+        <dt>Last sign in</dt><dd data-am-lastsignin>—</dd>
+      </dl>
+      <div class="am_actions">
+        <button type="button" class="am_btn am_btn_primary" data-am-act="signout">Sign out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer id="site_footer">
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260507.1055</div>
+  <div id="build_num">20260507.1100</div>
 </footer>
 
 </body>

@@ -96,31 +96,67 @@
     }
     var email = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
     var label = shortEmail(email) || '✓';
-    el.innerHTML =
-        '<div class="auth_pill">'
-      +   '<button type="button" class="auth_btn auth_user" title="' + escAttr(email) + '">'
-      +     escHtml(label)
-      +   '</button>'
-      +   '<div class="auth_menu" hidden>'
-      +     '<button type="button" class="auth_menu_item" data-act="profile">Manage account</button>'
-      +     '<button type="button" class="auth_menu_item" data-act="signout">Sign out</button>'
-      +   '</div>'
-      + '</div>';
-    var pill = el.querySelector('.auth_pill');
-    var menu = pill.querySelector('.auth_menu');
-    pill.querySelector('.auth_user').addEventListener('click', function (e) {
+    // Single button — clicking opens the custom account modal directly.
+    // Replaces the prior dropdown menu of "Manage account / Sign out".
+    el.innerHTML = '<button type="button" class="auth_btn auth_user" title="'
+                 + escAttr(email) + '">' + escHtml(label) + '</button>';
+    el.querySelector('.auth_user').addEventListener('click', function (e) {
+      e.preventDefault();
       e.stopPropagation();
-      menu.hidden = !menu.hidden;
+      openAccountModal();
     });
-    menu.addEventListener('click', function (e) {
-      var btn = e.target.closest('.auth_menu_item');
-      if (!btn) return;
-      var act = btn.getAttribute('data-act');
-      menu.hidden = true;
-      if (act === 'profile') Clerk.openUserProfile({ appearance: APPEARANCE });
-      else if (act === 'signout') Clerk.signOut();
+  }
+
+  // ---------- custom account modal --------------------------------------
+  function fmtDate(d) {
+    if (!d) return '—';
+    try {
+      var dt = (d instanceof Date) ? d : new Date(d);
+      if (isNaN(dt.getTime())) return '—';
+      return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (_) { return '—'; }
+  }
+  function openAccountModal() {
+    var modal = document.getElementById('account_modal');
+    var Clerk = window.Clerk;
+    var user  = Clerk && Clerk.user;
+    if (!modal || !user) return;
+    var email = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
+    var name  = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.username || email || 'Account';
+    var $name      = modal.querySelector('[data-am-name]');
+    var $email     = modal.querySelector('[data-am-email]');
+    var $created   = modal.querySelector('[data-am-created]');
+    var $lastsign  = modal.querySelector('[data-am-lastsignin]');
+    var $avatar    = modal.querySelector('.am_avatar');
+    if ($name)     $name.textContent  = name;
+    if ($email)    $email.textContent = email;
+    if ($created)  $created.textContent  = fmtDate(user.createdAt);
+    if ($lastsign) $lastsign.textContent = fmtDate(user.lastSignInAt);
+    if ($avatar) {
+      $avatar.style.backgroundImage = user.imageUrl ? ('url(' + user.imageUrl + ')') : 'none';
+      $avatar.textContent = user.imageUrl ? '' : (name.charAt(0) || '?').toUpperCase();
+    }
+    modal.hidden = false;
+    if (modal._bound) return;
+    modal._bound = true;
+    modal.addEventListener('click', function (e) {
+      if (e.target.matches('[data-am-close]')) {
+        e.preventDefault();
+        modal.hidden = true;
+        return;
+      }
+      var act = e.target.getAttribute && e.target.getAttribute('data-am-act');
+      if (act === 'signout') {
+        modal.hidden = true;
+        if (window.Clerk) window.Clerk.signOut();
+      }
     });
-    document.addEventListener('click', function () { menu.hidden = true; }, { once: true });
+    document.addEventListener('keydown', function escHandler(e) {
+      if (e.key === 'Escape') {
+        modal.hidden = true;
+        document.removeEventListener('keydown', escHandler);
+      }
+    });
   }
 
   function escHtml(s) {
