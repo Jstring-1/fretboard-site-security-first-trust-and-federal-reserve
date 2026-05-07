@@ -1133,9 +1133,15 @@
       const m = String(sectionId).match(/^section_(\d+)$/);
       if (m) {
         const key = 's' + m[1] + '_pk';
-        p.delete(key);
+        // Always SET (never just delete) so an "empty picks" state
+        // remains an explicit section override of "none", instead of
+        // dropping the override entirely and silently inheriting the
+        // global pk. Without this, unclicking the last pick made the
+        // global picks reappear.
         if (pkList.length) {
           p.set(key, pkList.map(function (n) { return urlNote(n); }).join(','));
+        } else {
+          p.set(key, '');
         }
         p.set('u', '1');
         const qs = p.toString();
@@ -2777,13 +2783,15 @@
       // Three cases for hl / pk on the click link:
       //   - link has a non-empty value → write it (the click sets it).
       //   - link has an explicit empty value (`hl=` / `pk=`) → caller is
-      //       saying "clear this field" → drop the section override.
+      //       clearing this field → keep the section override but with
+      //       an empty value, so the section stays "cleared" instead of
+      //       inheriting the global value.
       //   - link doesn't carry the field at all → click didn't touch it,
       //       leave the existing section override alone.
       if (link.has(f)) {
         const arr = link.getAll(f).filter(function (v) { return v.length; });
         if (arr.length) cur.set(k, arr.join(','));
-        else            cur.delete(k);
+        else            cur.set(k, '');
       }
     });
 
