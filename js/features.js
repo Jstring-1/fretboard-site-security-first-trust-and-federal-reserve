@@ -31,11 +31,24 @@
     'sheetmusic':  'admin',  // Sheet music / chord-progression viewer (WIP)
   };
 
+  // Admin status comes from the server's /api/admin-ip endpoint, which
+  // checks the caller's IP against an allowlist. Fetched once on load
+  // and cached; applyToBody() runs again once the result lands so any
+  // admin-gated DOM nodes flip on without a reload.
+  var _adminCache = null;
   function isAdminUser() {
-    // Auth was removed when Clerk was retired — admin-gated features
-    // stay hidden in the live site. Local admin work runs through the
-    // X-Admin-Key static-key path on the server, not the browser.
-    return false;
+    return _adminCache === true;
+  }
+  function _fetchAdminStatus() {
+    try {
+      fetch('/api/admin-ip', { credentials: 'omit' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          _adminCache = !!(j && j.admin);
+          applyToBody();
+        })
+        .catch(function () { /* network blip — stay non-admin */ });
+    } catch (_) {}
   }
 
   function isVisible(feature) {
@@ -62,10 +75,16 @@
     flags:        FLAGS,
   };
 
-  // Apply once on load — there's no auth to wait for any more.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyToBody);
-  } else {
+  // Apply once on load with the cached value (likely "not admin"), then
+  // kick off the IP check — when it lands we re-apply so admin-gated
+  // sections flip on without a reload.
+  function _init() {
     applyToBody();
+    _fetchAdminStatus();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _init);
+  } else {
+    _init();
   }
 })();

@@ -1300,6 +1300,8 @@ a.identify_chip_on:visited,
 a.identify_chip_on:active                  { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;
                                              font-weight: 600;                                                         }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
+.identify_filter                           { display: inline-flex; gap: 4px; margin-left: auto;                       }
+.identify_pill_inkey                       { white-space: nowrap;                                                     }
 .identify_pill                             { display: inline-block; padding: 1px 8px; font-size: 0.8em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;

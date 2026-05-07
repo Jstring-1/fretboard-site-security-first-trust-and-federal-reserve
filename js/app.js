@@ -226,6 +226,13 @@
       urlFmt: function (v) { return v === 1 ? '' : (v === Infinity ? 'all' : String(v)); },
       def:    1,
     },
+    inkey: {
+      url:    'ik',  ls: 'sf_identify_inkey',
+      parse:  function (v) { return v === '1' || v === 'on' || v === 'true'; },
+      lsFmt:  function (v) { return v ? '1' : ''; },
+      urlFmt: function (v) { return v ? '1' : ''; },
+      def:    false,
+    },
   };
   function _settingURLKey(name, sectionId) {
     const cfg = SETTINGS[name];
@@ -3971,6 +3978,8 @@
   // "+N" cap for the "Selected ⊂ Chord" identify bucket — handled by
   // the unified settings registry: URL `ext=2` / `ext=all` plus
   // localStorage fallback. Default 1.
+  function getIdentifyInKey() { return !!getSetting('inkey'); }
+  function setIdentifyInKey(v) { setSetting('inkey', !!v); applyState(); }
   function getIdentifyExtras() { return getSetting('extras'); }
   function setIdentifyExtras(v) {
     setSetting('extras', v);
@@ -4083,16 +4092,31 @@
   //   subset:    chord.mask ⊂ sel  (chord lives inside what you played)
   //   superset:  sel ⊂ chord.mask  (you played part of a chord), capped by
   //              the +N extras setting
-  function classifyChords(selMask) {
+  // 12-bit pitch-class mask of the major scale of `key`. Returns 0xFFF
+  // (all bits set, i.e. no filtering) when key is unknown so a bad key
+  // never silently hides every chord.
+  function _majorKeyPcMask(key) {
+    const root = NOTE_TO_PC[key];
+    if (root == null) return 0xFFF;
+    const STEPS = [0, 2, 4, 5, 7, 9, 11];
+    let mask = 0;
+    STEPS.forEach(function (s) { mask |= 1 << ((root + s) % 12); });
+    return mask;
+  }
+  function classifyChords(selMask, keyMask) {
     const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
     const selSize = popcount(selMask);
     const exact = [];
     const subset = [];
     const superset = [];
     const extrasCap = getIdentifyExtras();
+    // When keyMask is provided, drop any chord whose pitch-class mask
+    // contains a note outside the major scale of the current key.
+    const filterKey = (typeof keyMask === 'number' && keyMask !== 0xFFF);
     for (let i = 0; i < data.length; i++) {
       const m = data[i][0];
       const name = data[i][1];
+      if (filterKey && (m & ~keyMask & 0xFFF) !== 0) continue;
       if (m === selMask) {
         exact.push(name);
         continue;
@@ -4212,7 +4236,9 @@
            + '</div>';
     } else {
       const selMask = pkSetToMask(xs._pk_set);
-      const buckets = classifyChords(selMask);
+      const inKeyOnly = getIdentifyInKey();
+      const keyMask = inKeyOnly ? _majorKeyPcMask(xs.k) : 0xFFF;
+      const buckets = classifyChords(selMask, keyMask);
       const clearHref = buildPkHref([], sectionId);
 
       function chipsHtml(items, extractName) {
@@ -4271,12 +4297,20 @@
         return '<a class="identify_pill' + on + '" href="#" data-extras="' + lbl + '">+' + lbl + '</a>';
       }).join('');
 
+      const inKeyPill = '<a class="identify_pill identify_pill_inkey'
+        +    (inKeyOnly ? ' identify_pill_on' : '')
+        +    '" href="#" data-inkey="toggle" title="'
+        +    (inKeyOnly
+              ? 'Showing only chords whose notes all fit ' + xs.k + ' major. Click to show all.'
+              : 'Show only chords whose notes all fit the current key (' + xs.k + ' major).')
+        +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
       html = ''
         + '<div class="identify_strip">'
         + '<span class="identify_btns">' + idArrowsHtml() + idClearHtml() + idToggleHtml() + '</span>'
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
         + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
+        + '    <span class="identify_filter">' + inKeyPill + '</span>'
         + '  </div>'
         + '  <div class="identify_row">'
         + '    <span class="identify_bucket_label">Exact</span>'
@@ -4359,8 +4393,12 @@
         if (pill) {
           e.preventDefault();
           e.stopPropagation();
+          if (pill.getAttribute('data-inkey') === 'toggle') {
+            setIdentifyInKey(!getIdentifyInKey());
+            return;
+          }
           const lbl = pill.getAttribute('data-extras');
-          setIdentifyExtras(lbl === 'All' ? Infinity : +lbl);
+          if (lbl) setIdentifyExtras(lbl === 'All' ? Infinity : +lbl);
           return;
         }
         // Any link inside the strip (Clear picks, chord chips). Capture the

@@ -164,7 +164,39 @@ app.add_middleware(
 )
 
 
+# Admin IP allowlist for visibility-gating WIP frontend sections (Tab,
+# Sheet Music). Override at deploy-time with ADMIN_IPS=ip1,ip2,...; the
+# default below is the operator's home IP. Public reads only — nothing
+# server-side gates on this; it just lets the frontend show/hide WIP UI.
+_DEFAULT_ADMIN_IPS = "66.234.206.36"
+_ADMIN_IPS = {ip.strip() for ip in os.environ.get("ADMIN_IPS", _DEFAULT_ADMIN_IPS).split(",") if ip.strip()}
+
+
+def _client_ip(request: Request) -> str:
+    """Best-effort caller IP. Trusts X-Forwarded-For (Railway proxies all
+    traffic through their edge), falling back to the direct socket peer.
+    First entry of XFF is the original client; subsequent entries are
+    proxies in the chain."""
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        first = xff.split(",")[0].strip()
+        if first:
+            return first
+    return request.client.host if request.client else ""
+
+
 # ---- API routes (registered first so they take priority over statics) ----
+@app.get("/api/admin-ip")
+async def admin_ip(request: Request):
+    """Tell the frontend whether the caller's IP is on the admin allowlist.
+    Used by features.js to gate WIP sections (Tab, Sheet Music) without
+    needing a real auth system. Not a security boundary — the data those
+    sections expose is already public via the /api/songs and /api/tabs
+    endpoints; this just hides incomplete UI from random visitors."""
+    ip = _client_ip(request)
+    return {"admin": ip in _ADMIN_IPS, "ip": ip}
+
+
 @app.get("/api/health")
 async def health():
     """Liveness + DB probe. Used after Railway redeploys to confirm
