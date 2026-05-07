@@ -1784,24 +1784,26 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 #chord_grid td.cg_chord_label,
 #scale_grid td.cg_chord_label              { padding: 2px 0;                                                            }
 
-/* Halve the width of the 12 inner columns (degree headers + content
-   cells) so the whole grid takes up less horizontal space. Label
-   cells on either end keep their full width so chord/scale names
-   like "min-Maj7" don't truncate. table-layout:fixed forces the
-   explicit widths to stick instead of growing to fit content. */
+/* Tighten chord/scale grid widths so the whole table is narrower while
+   keeping the original font size readable. Inner column = 48px (just
+   enough for cell text like "F♯(♭7)"). Label column widths are sized
+   per-grid: chord labels are short ("min-Maj7" = ~50px), scale labels
+   need more room ("Phrygian Dominant"). table-layout:fixed forces the
+   explicit widths to stick. */
 #chord_grid:not(.cg_compact),
 #scale_grid:not(.cg_compact)               { table-layout: fixed;                                                       }
 #chord_grid:not(.cg_compact) td:not(.cg_chord_label):not(.cg_corner_label),
 #scale_grid:not(.cg_compact) td:not(.cg_chord_label):not(.cg_corner_label)
-                                           { width: 36px; min-width: 36px; max-width: 36px;
-                                             padding: 0 1px; font-size: 0.72em;
+                                           { width: 48px; min-width: 48px; max-width: 48px;
+                                             padding: 0 2px;
                                              white-space: nowrap; overflow: hidden;
                                              text-overflow: ellipsis;                                                    }
 #chord_grid:not(.cg_compact) .cg_chord_label,
+#chord_grid:not(.cg_compact) .cg_corner_label
+                                           { width: 56px !important; min-width: 56px;                                  }
 #scale_grid:not(.cg_compact) .cg_chord_label,
-#chord_grid:not(.cg_compact) .cg_corner_label,
 #scale_grid:not(.cg_compact) .cg_corner_label
-                                           { width: 92px; min-width: 92px;                                              }
+                                           { width: 96px !important; min-width: 96px;                                  }
 /* Whole-row pointer affordance — every cell in a chord/scale row is
    clickable via the bindGridRowClicks delegate. */
 #chord_grid tbody tr, #scale_grid tbody tr,
