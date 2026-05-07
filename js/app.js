@@ -1107,6 +1107,20 @@
     })();
     let tip = head + '\nDegrees: ' + degs.join(' ');
     if (notes.length) tip += '\nNotes: ' + notes.join(' ');
+    // Cross-reference: chord ↔ scale containment, so users can see which
+    // scales include this chord (or which chords live in this scale).
+    if (typeof _scalesContainingChord === 'function' &&
+        typeof _chordsInScale === 'function') {
+      if (kind === 'chord') {
+        const hits = _scalesContainingChord(degs);
+        if (hits.length) tip += '\nFound in: ' + hits.slice(0, 6).join(', ')
+                              + (hits.length > 6 ? ' (+' + (hits.length - 6) + ' more)' : '');
+      } else if (kind === 'scale') {
+        const hits = _chordsInScale(degs);
+        if (hits.length) tip += '\nContains chords: ' + hits.slice(0, 8).join(', ')
+                              + (hits.length > 8 ? ' (+' + (hits.length - 8) + ' more)' : '');
+      }
+    }
     return tip;
   }
 
@@ -1733,6 +1747,8 @@
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const chipDegs = fragToDegrees(GRID[a]);
+      const degsArr = chipDegs.split(' ').filter(Boolean);
+      const formula = _formulaFromDegs(degsArr);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       // Selected → empty `hl=` so the merger explicitly clears s<n>_hl
       // (without it, an absent hl param would leave the section override
@@ -1740,8 +1756,10 @@
       const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
+      const labelInner = '<span class="cg_label_name">' + escHtml(label) + '</span>'
+                       + '<span class="cg_label_formula">' + escHtml(formula) + '</span>';
       const labelCell = '<td class="' + labelTdCls + '">'
-                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
+                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + labelInner + '</a>'
                       + '</td>';
       h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
 
@@ -1818,12 +1836,18 @@
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
+      const degsArr = chipDegs.split(' ').filter(Boolean);
+      const formula = _formulaFromDegs(degsArr);
+      const stepPat = _scaleStepPattern(degsArr);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
+      const labelInner = '<span class="cg_label_name">' + escHtml(label) + '</span>'
+                       + '<span class="cg_label_formula">' + escHtml(formula) + '</span>'
+                       + (stepPat ? '<span class="cg_label_steps">' + escHtml(stepPat) + '</span>' : '');
       const labelCell = '<td class="' + labelTdCls + '">'
-                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
+                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + labelInner + '</a>'
                       + '</td>';
       h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
       for (const col of COLS) {
@@ -1950,6 +1974,15 @@
           return '<span class="ks_acc ks_acc_' + letter + '">' + escHtml(n) + '</span>';
         }).join(' ');
     }
+    // Relative minor label for each major key — same key signature, root
+    // on the 6th degree. Pre-tabulated so we get sharp-or-flat spelling
+    // matching the major key's accidental style without round-tripping
+    // through KEYS (which is sharp-only).
+    const REL_MIN = {
+      'C': 'Am',  'G': 'Em',  'D': 'Bm',  'A': 'F♯m', 'E': 'C♯m',
+      'B': 'G♯m', 'F♯':'D♯m', 'C♯':'A♯m', 'F':'Dm',   'B♭':'Gm',
+      'E♭':'Cm',  'A♭':'Fm',  'D♭':'B♭m', 'G♭':'E♭m', 'C♭':'A♭m'
+    };
     function rowHtml(r, isFlat) {
       const setKnorm = urlNote(r.setKey);
       const matches  = (setKnorm === _curKnorm);
@@ -1963,10 +1996,13 @@
       const staff = keySigStaffSvg(r.count, direction);
       const fingers = r.count > 0 ? fingerSvg(r.count, direction) : '';
       const href = escHtml(buildKeySetHref(r.setKey));
+      const relMinor = REL_MIN[r.key] || '';
       let row = '<tr class="' + cls + '">';
       row += '<td class="ks_notes"><a href="' + href + '">' + colorizeAccidentals(r.notes) + '</a></td>';
       row += '<td class="ks_key"><a href="' + href + '">'
-        +    escHtml(r.key) + ' <span class="ks_major">major</span></a></td>';
+        +    escHtml(r.key) + ' <span class="ks_major">major</span>'
+        +    (relMinor ? ' <span class="ks_relmin">/ ' + escHtml(relMinor) + '</span>' : '')
+        +  '</a></td>';
       row += '<td class="ks_sig_count">' + escHtml(sig) + '</td>';
       row += '<td class="ks_sig_staff">' + staff + '</td>';
       row += '<td class="ks_sig_hand">'  + fingers + '</td>';
@@ -1980,7 +2016,16 @@
     for (const r of KEY_SIGS_SHARP.slice().reverse()) h += rowHtml(r, false);
     // Flats in natural order: 1 flat first (F major) … 7 flats last (C♭).
     for (const r of KEY_SIGS_FLAT) h += rowHtml(r, true);
-    h +=   '</tbody></table></div>';
+    h +=   '</tbody></table>';
+    // Enharmonic equivalents — three pairs of keys that sound identical
+    // but spell their accidentals differently. Helps explain why the
+    // table has both B-major and C♭-major rows pointing to the same pitches.
+    h +=   '<div class="ks_enharm">'
+      +    '<strong>Enharmonic spellings</strong> — same pitches, different names: '
+      +    'B = C♭ · F♯ = G♭ · C♯ = D♭. '
+      +    'The simpler spelling (fewer accidentals) is preferred in practice.'
+      +  '</div>';
+    h +=   '</div>';
     // Right half: an interactive circle of fifths PLUS the "In <key>
     // major" cheat-sheet sitting directly below it. Each outer wedge
     // is a major key, each inner wedge is its relative minor — clicking
@@ -2173,16 +2218,16 @@
   // *characteristic note* that distinguishes each mode from its modal
   // siblings. Highlighted separately when the user picks a mode.
   const _MODES = [
-    { name: 'Ionian',     degs: [1,2,3,4,5,6,7],     bright: '',    char: ''      },
-    { name: 'Dorian',     degs: [1,2,'b3',4,5,6,'b7'],bright:'minor',char: '6'    },
-    { name: 'Phrygian',   degs: [1,'b2','b3',4,5,'b6','b7'], bright:'minor', char: 'b2' },
+    { name: 'Ionian',     degs: [1,2,3,4,5,6,7],     bright: '',    char: '',     sig: '(major)'      },
+    { name: 'Dorian',     degs: [1,2,'b3',4,5,6,'b7'],bright:'minor',char: '6',    sig: '♭3 ♭7'        },
+    { name: 'Phrygian',   degs: [1,'b2','b3',4,5,'b6','b7'], bright:'minor', char: 'b2', sig: '♭2 ♭3 ♭6 ♭7' },
     // Lydian's "♯4" is enharmonically the same pitch class as ♭5 — and
     // the scale grid + parseState only accept the flat-side degree
     // alphabet (1-7, ♭). Store as b5 so the row matches.
-    { name: 'Lydian',     degs: [1,2,3,'b5',5,6,7],  bright:'major',char: '♯4'    },
-    { name: 'Mixolydian', degs: [1,2,3,4,5,6,'b7'],  bright:'major',char: 'b7'    },
-    { name: 'Aeolian',    degs: [1,2,'b3',4,5,'b6','b7'], bright:'minor', char: '' },
-    { name: 'Locrian',    degs: [1,'b2','b3',4,'b5','b6','b7'], bright:'minor', char: 'b5' },
+    { name: 'Lydian',     degs: [1,2,3,'b5',5,6,7],  bright:'major',char: '♯4',   sig: '♯4'           },
+    { name: 'Mixolydian', degs: [1,2,3,4,5,6,'b7'],  bright:'major',char: 'b7',   sig: '♭7'           },
+    { name: 'Aeolian',    degs: [1,2,'b3',4,5,'b6','b7'], bright:'minor', char: '', sig: '♭3 ♭6 ♭7 (nat. minor)' },
+    { name: 'Locrian',    degs: [1,'b2','b3',4,'b5','b6','b7'], bright:'minor', char: 'b5', sig: '♭2 ♭3 ♭5 ♭6 ♭7' },
   ];
 
   // Common chord progressions — sequences of Roman numerals over a
@@ -2214,6 +2259,91 @@
     const i1 = KEYS.indexOf(key);
     if (i1 < 0) return [];
     return _MAJOR_STEPS.map(function (n) { return KEYS[i1 + n]; });
+  }
+
+  // Degree-symbol → semitone offset from root. Accepts both the display
+  // form ("♭3") and the URL form ("b3"); 'b' and '♭' are interchangeable.
+  const _DEG_TO_SEMI = (function () {
+    const m = {};
+    DEGREES.forEach(function (d, i) { m[d] = i; });
+    ['1','b2','2','b3','3','4','b5','5','b6','6','b7','7'].forEach(function (d, i) { m[d] = i; });
+    return m;
+  })();
+
+  function _semiStepLabel(s) {
+    return s === 1 ? 'H' : s === 2 ? 'W' : s === 3 ? 'W+H' : s === 4 ? '2W' : (s + 'st');
+  }
+
+  // Walk a scale's degrees as semitone offsets and emit the W-H step
+  // pattern (each step is between consecutive notes; a final wrap step
+  // closes the octave, so a 7-note scale yields 7 steps).
+  function _scaleStepPattern(degsArr) {
+    const semis = degsArr.map(function (d) { return _DEG_TO_SEMI[d]; })
+                         .filter(function (v) { return v != null; })
+                         .sort(function (a, b) { return a - b; });
+    if (semis.length < 2) return '';
+    const steps = [];
+    for (let i = 1; i < semis.length; i++) steps.push(_semiStepLabel(semis[i] - semis[i - 1]));
+    steps.push(_semiStepLabel((semis[0] + 12) - semis[semis.length - 1]));
+    return steps.join('-');
+  }
+
+  // Compact "1-3-5-♭7" formula from a degree set. Display form (♭ not b).
+  function _formulaFromDegs(degsArr) {
+    return degsArr.filter(Boolean).join('-');
+  }
+
+  // Pre-build pitch-class sets for every scale and chord in the data so
+  // tooltip cross-references can do "scales containing chord X" / "chords
+  // contained in scale Y" with a fast subset test on each render.
+  function _pcSetFromFrag(frag) {
+    const out = {};
+    String(frag || '').split('&hl=').slice(1)
+      .map(function (s) { return s.replace(/&.*$/, ''); })
+      .forEach(function (d) {
+        const sym = d.replace(/b/g, '♭');
+        const off = _DEG_TO_SEMI[sym];
+        if (off != null) out[off] = true;
+      });
+    return out;
+  }
+  const _SCALE_PCS = (function () {
+    const m = {};
+    for (const k in SCALES) m[k] = _pcSetFromFrag(SCALES[k]);
+    return m;
+  })();
+  const _CHORD_PCS = (function () {
+    const m = {};
+    for (const k in GRID) m[k] = _pcSetFromFrag(GRID[k]);
+    return m;
+  })();
+  function _pcSetFromDegs(degsArr) {
+    const out = {};
+    degsArr.forEach(function (d) {
+      const off = _DEG_TO_SEMI[d];
+      if (off != null) out[off] = true;
+    });
+    return out;
+  }
+  function _isSubset(small, big) {
+    for (const k in small) if (!big[k]) return false;
+    return true;
+  }
+  function _scalesContainingChord(degsArr) {
+    const target = _pcSetFromDegs(degsArr);
+    const hits = [];
+    for (const name in _SCALE_PCS) {
+      if (_isSubset(target, _SCALE_PCS[name])) hits.push(name.replace(/_/g, ' '));
+    }
+    return hits;
+  }
+  function _chordsInScale(degsArr) {
+    const set = _pcSetFromDegs(degsArr);
+    const hits = [];
+    for (const name in _CHORD_PCS) {
+      if (_isSubset(_CHORD_PCS[name], set)) hits.push(name);
+    }
+    return hits;
   }
   // Convert a degree list (1..7) into a comma-joined hl URL fragment.
   function _degsToHlCsv(degs) {
@@ -2331,6 +2461,10 @@
       +    '<span class="dia_swatch dia_fn_T"></span>Tonic'
       +    '<span class="dia_swatch dia_fn_S"></span>Subdominant'
       +    '<span class="dia_swatch dia_fn_D"></span>Dominant'
+      +    '<span class="dia_legend_sep"></span>'
+      +    '<span class="dia_legend_rn"><strong>I</strong> = major triad</span>'
+      +    '<span class="dia_legend_rn"><strong>i</strong> = minor triad</span>'
+      +    '<span class="dia_legend_rn"><strong>°</strong> = diminished</span>'
       +  '</div>';
     h += '</div>';
     root.innerHTML = h;
@@ -2418,17 +2552,24 @@
     const notes = _majorScaleNotes(x.k);
     if (!notes.length) { root.innerHTML = ''; return; }
     let h = '<div class="modes_panel">';
-    h += '<div class="modes_intro">The 7 modes derived from ' + escHtml(x.k)
-      +  ' major. Each starts on a different scale degree and has its own characteristic note.</div>';
+    h += '<div class="modes_intro">'
+      +  'All 7 modes share the notes of <strong>' + escHtml(x.k) + ' major</strong> '
+      +  '— only the tonal centre changes. Each mode\'s interval signature '
+      +  '(vs. major) gives it its sound.'
+      +  '</div>';
     h += '<div class="modes_grid">';
     _MODES.forEach(function (m, i) {
       const modeRoot = notes[i];
       const href = x._hilight_url + _degsToHlCsv(m.degs);
+      const sigLabel = m.sig || '';
       h += '<a class="mode_cell mode_' + m.bright + '" href="' + escHtml(href)
-        +  '" title="' + escAttr(modeRoot + ' ' + m.name + (m.char ? ' — characteristic: ' + m.char : '')) + '">'
+        +  '" title="' + escAttr(modeRoot + ' ' + m.name + ' — parent: ' + x.k + ' major'
+              + (sigLabel ? ' • vs major: ' + sigLabel : '')
+              + (m.char ? ' • characteristic: ' + m.char : '')) + '">'
         +  '<span class="mode_root">' + escHtml(modeRoot) + '</span>'
         +  '<span class="mode_name">' + escHtml(m.name) + '</span>'
-        +  '<span class="mode_char">' + (m.char ? escHtml(m.char) : '·') + '</span>'
+        +  '<span class="mode_sig">' + escHtml(sigLabel || '·') + '</span>'
+        +  '<span class="mode_char">' + (m.char ? 'char: ' + escHtml(m.char) : '') + '</span>'
         +  '</a>';
     });
     h += '</div></div>';

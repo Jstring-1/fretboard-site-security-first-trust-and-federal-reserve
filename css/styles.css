@@ -1754,8 +1754,44 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .mode_cell.mode_minor                      { border-color: rgba(168, 196, 224, 0.35);                                  }
 .mode_root                                 { font: 700 1.1em var(--font);
                                              display: inline-block; min-width: 1.6em; text-align: center;               }
-.mode_name                                 { font: 600 0.85em var(--font); color: var(--accent-hi); margin: 4px 0;     }
-.mode_char                                 { font: 600 0.75em monospace; color: var(--muted);                          }
+.mode_name                                 { font: 600 0.85em var(--font); color: var(--accent-hi); margin: 4px 0 2px;  }
+.mode_sig                                  { font: 600 0.72em monospace; color: var(--muted-dim);
+                                             letter-spacing: 0.02em; min-height: 1em;                                   }
+.mode_char                                 { font: 400 0.7em monospace; color: var(--muted);
+                                             margin-top: 2px; min-height: 1em;                                          }
+
+/* Chord / scale grid label cells: stack the chord/scale name above its
+   degree formula (and step pattern for scales) inside the same <a>. */
+.cg_label_name                             { display: block; font-weight: 600;                                           }
+.cg_label_formula                          { display: block; font: 400 0.72em monospace;
+                                             color: var(--muted-dim); letter-spacing: 0.02em;
+                                             margin-top: 1px;                                                            }
+.cg_label_steps                            { display: block; font: 400 0.66em monospace;
+                                             color: var(--muted-dim); letter-spacing: 0.02em;                            }
+#chord_grid td.cg_selected .cg_label_formula,
+#scale_grid td.cg_selected .cg_label_formula,
+#scale_grid td.cg_selected .cg_label_steps { color: rgba(0,16,20,0.7);                                                   }
+/* Slightly more vertical room for the stacked label content. */
+#chord_grid tr, #scale_grid tr             { height: auto;                                                              }
+#chord_grid td.cg_chord_label,
+#scale_grid td.cg_chord_label              { padding: 4px 0;                                                            }
+
+/* Roman-numeral legend items inside the diatonic chart legend. */
+.dia_legend_sep                            { width: 1px; height: 14px; background: rgba(255,255,255,0.15); margin: 0 4px; }
+.dia_legend_rn                             { font: 400 0.78em var(--font); color: var(--muted);                         }
+.dia_legend_rn strong                      { color: var(--accent-hi); font-weight: 700;                                  }
+
+/* Relative-minor pairing on the key signatures table. */
+.ks_table .ks_key .ks_relmin               { color: var(--muted); font: 400 0.85em var(--font); margin-left: 4px;       }
+
+/* Enharmonic-equivalents callout under the key sig table. */
+.ks_enharm                                 { padding: 8px 14px; margin: 8px 4px 4px;
+                                             background: rgba(255,255,255,0.03);
+                                             border: 1px solid rgba(255,255,255,0.06);
+                                             border-radius: 6px;
+                                             font: 400 0.82em var(--font); color: var(--muted);
+                                             line-height: 1.45;                                                          }
+.ks_enharm strong                          { color: var(--accent-hi); font-weight: 700;                                  }
 
 /* ----- Key Extras (inside Key Signatures) ----- */
 .kx_panel                                  { display: grid; grid-template-columns: 1fr 1fr;
