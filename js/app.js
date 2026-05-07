@@ -3510,12 +3510,30 @@
             : 'Chord ID off — click to enable.')
         + '">ID</button>';
     }
+    // ← / → buttons that transpose every pick by ±1 semitone, sliding
+    // the yellow .note_pk highlights up or down the neck.
+    function idArrowsHtml() {
+      const pkCount = String(xs.pk || '').split(' ').filter(function (v) { return v.length; }).length;
+      const dis = pkCount === 0 ? ' disabled' : '';
+      return '<button type="button" class="identify_shift" data-section="' + sectionId
+        +    '" data-shift="-1"' + dis
+        +    ' title="Shift picks down 1 semitone (←)">◀</button>'
+        +    '<button type="button" class="identify_shift" data-section="' + sectionId
+        +    '" data-shift="1"' + dis
+        +    ' title="Shift picks up 1 semitone (→)">▶</button>';
+    }
+    // Clear button — only meaningful once chord results are showing
+    // (≥3 picks). Sits in the same right-side cluster as ◀ / ▶ / ID.
+    function idClearHtml() {
+      return '<button type="button" class="identify_clear_btn" data-section="' + sectionId
+        +    '" title="Clear picks">Clear</button>';
+    }
     if (!idOn) {
       // Chord ID disabled for this section. Show a minimal strip with
       // just the toggle on the right so the user can flip it back on.
       return '<div class="identify_strip identify_hint">'
            + '<span class="identify_label">Chord ID:</span> off'
-           + idToggleHtml()
+           + '<span class="identify_btns">' + idToggleHtml() + '</span>'
            + '</div>';
     }
 
@@ -3529,7 +3547,7 @@
            + ' fret cell' + (rem === 1 ? '' : 's') + ' or piano key'
            + (rem === 1 ? '' : 's') + ' to identify a chord '
            + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
-           + idToggleHtml()
+           + '<span class="identify_btns">' + idArrowsHtml() + idToggleHtml() + '</span>'
            + '</div>';
     } else {
       const selMask = pkSetToMask(xs._pk_set);
@@ -3594,11 +3612,10 @@
 
       html = ''
         + '<div class="identify_strip">'
-        + idToggleHtml()
+        + '<span class="identify_btns">' + idArrowsHtml() + idClearHtml() + idToggleHtml() + '</span>'
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
         + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
-        + '    <a class="identify_clear" href="' + escHtml(clearHref) + '">Clear picks</a>'
         + '  </div>'
         + '  <div class="identify_row">'
         + '    <span class="identify_bucket_label">Exact</span>'
@@ -3634,6 +3651,30 @@
       host._extrasBound = true;
       const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
+        // ← / → arrows: chromatically shift every pick in this section
+        // by ±1 semitone. Yellow .note_pk highlights on the fretboard
+        // slide accordingly because the URL pk= rewrite re-renders.
+        const shiftBtn = e.target.closest && e.target.closest('.identify_shift');
+        if (shiftBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (shiftBtn.disabled) return;
+          const sec   = shiftBtn.getAttribute('data-section');
+          const delta = parseInt(shiftBtn.getAttribute('data-shift'), 10) || 0;
+          const PCS   = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+          const cur   = readPkArrForSection(sec);
+          const next  = cur.map(function (n) {
+            const norm = bToFlat(sharpToHash(n));
+            const FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
+            const sharp = FLAT_TO_SHARP[norm] || norm;
+            const i = PCS.indexOf(sharp);
+            return i < 0 ? sharp : PCS[(i + delta + 12) % 12];
+          });
+          const href = buildPkHref(next, sec);
+          history.replaceState(null, '', window.location.pathname + href);
+          applyState();
+          return;
+        }
         // ID toggle (per section). When LINKED, flip both sides at once
         // so they stay in lockstep; UNLINKED keeps each side independent.
         const idBtn = e.target.closest && e.target.closest('.identify_toggle');
