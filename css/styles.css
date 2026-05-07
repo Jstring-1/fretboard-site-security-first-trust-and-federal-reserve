@@ -276,8 +276,14 @@ table td                                   {  vertical-align:middle;            
 .ritz .waffle .s28, .ritz .waffle .s29, .ritz .waffle .s30
                                            {  background-color:#a8a8a8 !important; color:#888 !important;              }
 .ritz .waffle .s12, .ritz .waffle .s22     {  color:#888 !important;                                                   }
-.nut                                       {  border-right:10px solid #2a2a2a !important;                            }
-.nut1                                      {  border-left:10px solid #2a2a2a !important;                             }
+/* The nut: a single thick bone-coloured bar between the open-string
+   column and fret 1, mimicking the actual instrument. Each cell paints
+   half (6px) so together they read as one continuous 12px nut with a
+   subtle inset for depth. */
+.nut                                       {  border-right:6px solid #e8e2d4 !important;
+                                              box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
+.nut1                                      {  border-left:6px solid #e8e2d4 !important;
+                                              box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
 #view_src, #print_btn                      {  border:1px solid #5fe8e0;                                              }
 #hl_button, #hl_button_x                   {  border:1px solid #000000 !important;                                   }
