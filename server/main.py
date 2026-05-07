@@ -1,4 +1,4 @@
-"""SlantFinder.pro — FastAPI app.
+"""Fretboard.site — FastAPI app.
 
 Serves the static HTML/CSS/JS that makes up the site, plus API routes
 for personalisation (Clerk-backed auth + Postgres-backed user settings).
@@ -151,7 +151,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SlantFinder.pro",
+    title="Fretboard.site",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,

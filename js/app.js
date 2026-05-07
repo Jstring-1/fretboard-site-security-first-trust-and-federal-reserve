@@ -1,4 +1,4 @@
-// SlantFinder.pro — client-side rewrite of the PHP renderer.
+// Fretboard.site — client-side rewrite of the PHP renderer.
 // Variable names mirror the original PHP ($x, $rev, $hilight_url) for traceability.
 
 (function () {
@@ -1046,7 +1046,7 @@
   // Two parallel orders of the major keys: sharp side (C through C♯) and
   // flat side (F through C♭). Each row carries:
   //   key      — display name, including unicode accidentals
-  //   setKey   — value to set k= to (SlantFinder uses ♯-spellings only)
+  //   setKey   — value to set k= to (URL state uses ♯-spellings only)
   //   count    — sharps or flats in the signature
   //   notes    — the actual accidental notes in canonical signature order
   const KEY_SIGS_SHARP = [
@@ -2609,13 +2609,13 @@
   const SECTION_HELP = {
     fretboard: [
       '',
-      '  ███████ ██       █████  ███    ██ ████████ ███████ ██ ███    ██ ██████  ███████ ██████',
-      '  ██      ██      ██   ██ ████   ██    ██    ██      ██ ████   ██ ██   ██ ██      ██   ██',
-      '  ███████ ██      ███████ ██ ██  ██    ██    █████   ██ ██ ██  ██ ██   ██ █████   ██████',
-      '       ██ ██      ██   ██ ██  ██ ██    ██    ██      ██ ██  ██ ██ ██   ██ ██      ██   ██',
-      '  ███████ ███████ ██   ██ ██   ████    ██    ██      ██ ██   ████ ██████  ███████ ██   ██ .pro',
+      '  ███████ ██████  ███████ ████████ ██████   ██████   █████  ██████  ██████',
+      '  ██      ██   ██ ██         ██    ██   ██ ██    ██ ██   ██ ██   ██ ██   ██',
+      '  █████   ██████  █████      ██    ██████  ██    ██ ███████ ██████  ██   ██',
+      '  ██      ██   ██ ██         ██    ██   ██ ██    ██ ██   ██ ██  ██  ██   ██',
+      '  ██      ██   ██ ███████    ██    ██████   ██████  ██   ██ ██   ██ ██████  .site',
       '',
-      '  <<<:::-----       SlantFinder.pro       -----:::>>>',
+      '  <<<:::-----       Fretboard.site       -----:::>>>',
       '',
       '  Fretboard visualization tool for 6-, 8-, 10-, and 12-string steel guitars.',
       '',
@@ -2973,7 +2973,7 @@
         e.preventDefault();
         if (btn.getAttribute('data-export') === 'tunings') {
           const stamp = new Date().toISOString().slice(0, 10);
-          downloadCsv('slantfinder-tunings-' + stamp + '.csv', buildTuningsCsv());
+          downloadCsv('fretboard-tunings-' + stamp + '.csv', buildTuningsCsv());
         }
       });
     });

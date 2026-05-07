@@ -1,4 +1,4 @@
-# SlantFinder.pro — agent context
+# Fretboard.site — agent context (formerly SlantFinder.pro)
 
 Read this on every new session before touching code. Captures the
 durable structure + decisions so fresh chats don't have to reverse-
@@ -30,18 +30,21 @@ tab editor, chord identifier, 176-tuning database. Plus an
 admin-gated chord-progression / tablature catalogue extracted via
 Claude Vision from a private fake-book PDF library.
 
-Live at https://slantfinder.pro / https://www.slantfinder.pro.
+Live at https://fretboard.site / https://www.fretboard.site. The legacy
+`slantfinder.pro` domain redirects (301) to fretboard.site via a
+Namecheap URL Redirect Record.
 
 
 ## Deploy
 
-- **Railway** project hosts: SlantFinder service + Postgres service.
+- **Railway** project hosts: Fretboard service + Postgres service.
 - Build: **Railpack** auto-detect. Sees `main.py` at repo root, runs
   `uvicorn main:app`. `main.py` is a 1-line shim re-exporting
   `server.main:app`. Old `nixpacks.toml` is gone.
-- DNS: apex `slantfinder.pro` and `www.slantfinder.pro` both
+- DNS: apex `fretboard.site` and `www.fretboard.site` both
   resolve to Railway via Namecheap (CNAME on `www`, ALIAS on `@`).
-  No Cloudflare, no URL Redirect.
+  No Cloudflare. The retired `slantfinder.pro` is set to a 301 URL
+  Redirect on Namecheap pointing to `https://fretboard.site/`.
 - The Tab editor's data + chord-extracted catalogues live in
   Postgres (Railway-internal `postgres.railway.internal:5432`).
 - Local repo: `C:\Users\KJ-NoJesteringStudio\GitHub\SlantFinder.pro`.
@@ -240,13 +243,13 @@ PowerShell (admin's machine):
   python _consolidate_chords.py
       ↓ (one big _index/_chords/_all.json)
   python _publish_chords.py
-      ↓ (POST batches to https://slantfinder.pro/api/songs/import
+      ↓ (POST batches to https://fretboard.site/api/songs/import
          with X-Admin-Key header)
   Postgres `songs` table
       ↓
   /api/songs/search  /api/songs/{id}
       ↓
-  Sheet Music section on slantfinder.pro
+  Sheet Music section on fretboard.site
 ```
 
 Cached pages skip on re-run, so the importer is idempotent and the

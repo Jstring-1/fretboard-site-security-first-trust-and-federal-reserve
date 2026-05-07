@@ -1,4 +1,4 @@
--- 001_init.sql — initial SlantFinder.pro schema.
+-- 001_init.sql — initial Fretboard.site schema.
 --
 -- One JSONB blob per Clerk user. We store everything personalisable
 -- (saved tabs, chord-box libraries, custom tunings, song-key overrides,

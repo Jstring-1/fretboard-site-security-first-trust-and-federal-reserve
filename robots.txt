@@ -4,4 +4,4 @@ User-agent: *
 Allow: /
 
 # Sitemap index
-Sitemap: https://slantfinder.pro/sitemap.xml
+Sitemap: https://fretboard.site/sitemap.xml
