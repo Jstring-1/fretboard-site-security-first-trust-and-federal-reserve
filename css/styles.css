@@ -1284,6 +1284,7 @@ details.collapsible.section                { position: relative;                
                                              text-transform: uppercase; color: var(--muted); margin-right: 8px;       }
 .identify_head                             { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
                                              margin-bottom: 8px; padding-bottom: 6px;
+                                             padding-right: 150px;  /* reserve space for absolute .identify_btns */
                                              border-bottom: 1px solid rgba(255,255,255,0.08);                         }
 .identify_picks                            { color: var(--text); font-weight: 600;                                    }
 .identify_clear                            { color: var(--muted); font-size: 0.85em;
@@ -1306,7 +1307,10 @@ a.identify_chip_on:visited,
 a.identify_chip_on:active                  { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;
                                              font-weight: 600;                                                         }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
-.identify_filter                           { display: inline-flex; gap: 4px; margin-left: auto;                       }
+/* In-key filter pill sits inline next to the picks readout so it
+   doesn't collide with the absolute-positioned .identify_btns cluster
+   (◀ ▶ Clear ID) anchored to the strip's top-right corner. */
+.identify_filter                           { display: inline-flex; gap: 4px;                                          }
 .identify_pill_inkey                       { white-space: nowrap;                                                     }
 .identify_pill                             { display: inline-block; padding: 1px 8px; font-size: 0.8em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
