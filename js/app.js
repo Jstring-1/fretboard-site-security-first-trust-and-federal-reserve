@@ -1485,22 +1485,21 @@
       // Just the Clear link — the key buttons live below the summary now.
       return '<a href="' + escHtml(clearHlHref()) + '" class="section_clear">Clear</a>';
     }
-    // Key-button row lives INSIDE the section's <summary>, as a sibling
-    // span after the existing summary content. CSS forces it onto a
-    // 100%-width second line so the buttons sit just below the title
-    // — visually part of the header strip, not in the section body.
+    // Key-button row lives at the TOP of the section's content area
+    // (just after the <summary>), centred, in a dedicated wrapper div.
+    // Keeps the summary slim and uniform across all sections.
     function ensureKeyRow(section, currentKey) {
       const summary = section.querySelector(':scope > summary');
       if (!summary) return;
-      // Clean up any stale row left behind from the previous structure
-      // (when buttons lived as a sibling of summary).
-      const stale = section.querySelector(':scope > .section_key_row_outer');
-      if (stale) stale.remove();
-      let row = summary.querySelector(':scope > .summary_keys');
+      // Clean up the legacy in-summary row if any older render left it.
+      const inSummary = summary.querySelector(':scope > .summary_keys');
+      if (inSummary) inSummary.remove();
+      let row = section.querySelector(':scope > .section_key_row_outer');
       if (!row) {
-        row = document.createElement('span');
-        row.className = 'summary_keys';
-        summary.appendChild(row);
+        row = document.createElement('div');
+        row.className = 'section_key_row_outer';
+        // Insert as first child after the summary.
+        summary.insertAdjacentElement('afterend', row);
       }
       row.innerHTML = keyButtonsHtml(currentKey);
     }
@@ -2140,7 +2139,10 @@
     { name: 'Ionian',     degs: [1,2,3,4,5,6,7],     bright: '',    char: ''      },
     { name: 'Dorian',     degs: [1,2,'b3',4,5,6,'b7'],bright:'minor',char: '6'    },
     { name: 'Phrygian',   degs: [1,'b2','b3',4,5,'b6','b7'], bright:'minor', char: 'b2' },
-    { name: 'Lydian',     degs: [1,2,3,'#4',5,6,7],  bright:'major',char: '#4'    },
+    // Lydian's "♯4" is enharmonically the same pitch class as ♭5 — and
+    // the scale grid + parseState only accept the flat-side degree
+    // alphabet (1-7, ♭). Store as b5 so the row matches.
+    { name: 'Lydian',     degs: [1,2,3,'b5',5,6,7],  bright:'major',char: '♯4'    },
     { name: 'Mixolydian', degs: [1,2,3,4,5,6,'b7'],  bright:'major',char: 'b7'    },
     { name: 'Aeolian',    degs: [1,2,'b3',4,5,'b6','b7'], bright:'minor', char: '' },
     { name: 'Locrian',    degs: [1,'b2','b3',4,'b5','b6','b7'], bright:'minor', char: 'b5' },
