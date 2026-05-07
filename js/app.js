@@ -1133,6 +1133,13 @@
     })();
     let tip = head + '\nDegrees: ' + degs.join(' ');
     if (notes.length) tip += '\nNotes: ' + notes.join(' ');
+    // For scales: also include the W-H step pattern (intervals between
+    // consecutive scale tones). Helps make the scale's "shape" portable
+    // — e.g. Major reads as W-W-H-W-W-W-H regardless of key.
+    if (kind === 'scale' && typeof _scaleStepPattern === 'function') {
+      const sp = _scaleStepPattern(degs);
+      if (sp) tip += '\nIntervals: ' + sp;
+    }
     // Cross-reference: chord ↔ scale containment, so users can see which
     // scales include this chord (or which chords live in this scale).
     if (typeof _scalesContainingChord === 'function' &&
@@ -1797,8 +1804,6 @@
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const chipDegs = fragToDegrees(GRID[a]);
-      const degsArr = chipDegs.split(' ').filter(Boolean);
-      const formula = _formulaFromDegs(degsArr);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       // Selected → empty `hl=` so the merger explicitly clears s<n>_hl
       // (without it, an absent hl param would leave the section override
@@ -1806,10 +1811,8 @@
       const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(GRID[a]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
-      const labelInner = '<span class="cg_label_name">' + escHtml(label) + '</span>'
-                       + '<span class="cg_label_formula">' + escHtml(formula) + '</span>';
       const labelCell = '<td class="' + labelTdCls + '">'
-                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + labelInner + '</a>'
+                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
       h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
 
@@ -1886,18 +1889,12 @@
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
-      const degsArr = chipDegs.split(' ').filter(Boolean);
-      const formula = _formulaFromDegs(degsArr);
-      const stepPat = _scaleStepPattern(degsArr);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(SCALES[name]));
       const labelTdCls = 'cg_chord_label' + (isSelected ? ' cg_selected' : '');
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
-      const labelInner = '<span class="cg_label_name">' + escHtml(label) + '</span>'
-                       + '<span class="cg_label_formula">' + escHtml(formula) + '</span>'
-                       + (stepPat ? '<span class="cg_label_steps">' + escHtml(stepPat) + '</span>' : '');
       const labelCell = '<td class="' + labelTdCls + '">'
-                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + labelInner + '</a>'
+                      + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
                       + '</td>';
       h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
       for (const col of COLS) {

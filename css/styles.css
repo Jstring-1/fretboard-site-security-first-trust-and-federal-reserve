@@ -1774,16 +1774,9 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              letter-spacing: 0.02em;                                                    }
 .mode_char                                 { grid-area: char; font: 400 0.65em monospace; color: var(--muted);          }
 
-/* Chord / scale grid label cells: chord/scale name + degree formula
-   on a single row to keep grid rows short. Step pattern for scales
-   sits in the title (tooltip) instead of taking visual space. */
-.cg_label_name                             { font-weight: 600;                                                          }
-.cg_label_formula                          { font: 400 0.72em monospace; color: var(--muted-dim);
-                                             letter-spacing: 0.02em; margin-left: 6px;                                  }
-.cg_label_steps                            { display: none;                                                             }
-#chord_grid td.cg_selected .cg_label_formula,
-#scale_grid td.cg_selected .cg_label_formula,
-#scale_grid td.cg_selected .cg_label_steps { color: rgba(0,16,20,0.7);                                                  }
+/* Chord / scale grid label cells: just the chord/scale name. Degree
+   formula and step pattern live in the hover tooltip (degsAndNotesTip)
+   so the row stays tight. */
 #chord_grid td.cg_chord_label,
 #scale_grid td.cg_chord_label              { padding: 2px 0;                                                            }
 /* Whole-row pointer affordance — every cell in a chord/scale row is
