@@ -900,13 +900,36 @@ select option                              { color: var(--text); background: var
    controls, sized to match. */
 #site_global_controls #auth_widget         { position: static !important; top: auto; right: auto;
                                              display: inline-flex; align-items: center;                                  }
-/* Make the Linked / Audio / Clear / Account pills share the same shape
-   so they sit on a clean right-side row. */
+/* Make the Linked / Audio / Clear / Account pills share the same pill
+   shape so they sit on a clean right-side row. inline-flex centres the
+   text vertically so the Clear anchor doesn't float to the top. */
 #site_global_controls .section_apply_all,
 #site_global_controls .section_audio_toggle,
 #site_global_controls .section_clear,
-#site_global_controls .auth_btn            { height: 26px; padding: 2px 12px; font: 600 0.82em var(--font);
-                                             border-radius: 13px; line-height: 1;                                       }
+#site_global_controls .auth_btn,
+#site_global_controls #auth_widget > *     { display: inline-flex !important; align-items: center; justify-content: center;
+                                             height: 26px; padding: 2px 14px; box-sizing: border-box;
+                                             font: 600 0.82em var(--font); letter-spacing: 0.04em;
+                                             border-radius: 13px; line-height: 1;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff !important;
+                                             text-decoration: none; cursor: pointer; white-space: nowrap;                }
+#site_global_controls .section_apply_all:hover,
+#site_global_controls .section_audio_toggle:hover,
+#site_global_controls .section_clear:hover,
+#site_global_controls .auth_btn:hover,
+#site_global_controls #auth_widget > *:hover
+                                           { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+/* Active/engaged states for the toggles — match the existing accent. */
+#site_global_controls .section_apply_all.on,
+#site_global_controls .section_audio_toggle.on
+                                           { background: var(--accent-hi); border-color: var(--accent-hi);
+                                             color: #001014 !important;                                                  }
+#site_global_controls .section_apply_all.on:hover,
+#site_global_controls .section_audio_toggle.on:hover
+                                           { background: #fff; border-color: #fff;                                       }
+/* The audio toggle is a 1-glyph button — keep it round and tight. */
+#site_global_controls .section_audio_toggle{ padding: 0; width: 26px;                                                   }
 @media print { .site_header_sticky         { display: none !important; }                                               }
 
 /* Per-section action buttons (compact / Clear / Print / ?) — pinned
@@ -924,7 +947,7 @@ details.collapsible.section                { position: relative;                
                                              font: italic 400 0.68em var(--font);
                                              line-height: 1;
                                              color: var(--muted-dim); letter-spacing: 0.06em;
-                                             margin: -10px 0 14px; opacity: 0.55;                                     }
+                                             margin: 6px 0 4px; opacity: 0.55;                                          }
 /* "Build " label injected via CSS so the stamp_build.py regex
    (anchored to <div id="build_num">[0-9.]+</div>) keeps matching the
    raw timestamp without having to learn the prefix. */
