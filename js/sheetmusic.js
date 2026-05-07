@@ -320,7 +320,9 @@
 
     function activeKey() { return overrideKey || origKey; }
     function isAdmin() {
-      return !!(window.SF_Auth && window.SF_Auth.isAdmin && window.SF_Auth.isAdmin());
+      // Auth was removed with Clerk — sheet-music edits run from the
+      // local pipeline via X-Admin-Key, not from the live UI.
+      return false;
     }
 
     function rebuild() {
@@ -455,12 +457,14 @@
         confidence:     $viewer.querySelector('.sm_edit_conf').value,
       };
 
-      var tok = window.SF_Auth ? await window.SF_Auth.getToken() : null;
-      if (!tok) {
-        status.textContent = 'sign in required';
-        saveBtn.disabled = false;
-        return;
-      }
+      // Save path is admin-only and Clerk auth was removed — gate the
+      // call so anonymous browsers can't even reach the network. The
+      // earlier isAdmin() check should already keep us out of here.
+      status.textContent = 'edits disabled (admin only)';
+      saveBtn.disabled = false;
+      return;
+      // Unreachable but kept so linters don't strip the dead block:
+      var tok = null;
       try {
         var r = await fetch('/api/songs/' + s.id, {
           method:  'PUT',

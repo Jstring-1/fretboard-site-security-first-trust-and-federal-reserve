@@ -32,8 +32,10 @@
   };
 
   function isAdminUser() {
-    return !!(window.SF_Auth && typeof window.SF_Auth.isAdmin === 'function'
-              && window.SF_Auth.isAdmin());
+    // Auth was removed when Clerk was retired — admin-gated features
+    // stay hidden in the live site. Local admin work runs through the
+    // X-Admin-Key static-key path on the server, not the browser.
+    return false;
   }
 
   function isVisible(feature) {
@@ -60,8 +62,7 @@
     flags:        FLAGS,
   };
 
-  // First pass — admin status may not yet be known (Clerk hasn't loaded).
-  // auth.js will call applyToBody() again on each auth-state change.
+  // Apply once on load — there's no auth to wait for any more.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', applyToBody);
   } else {
