@@ -423,6 +423,56 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_9"] .ks_hand_4         {  background-position: -42px 0 !important;                          }
     body[data-print="section_9"] .ks_hand_5         {  background-position: -56px 0 !important;                          }
     body[data-print="section_9"] .ks_help           {  display: none !important;                                        }
+
+    /* ===== Tighten new theory components for one-page print =====
+       The chord/scale builder grids and key-sig table are the primary
+       print targets; the supplementary panels (identify strips, key
+       chooser row, inversions, progressions, key extras, quiz sidebar)
+       distract and push everything onto a second page. Hide on prints. */
+    body[data-print] .section_key_row_outer,
+    body[data-print] .identify_strip,
+    body[data-print] #inversions_root,
+    body[data-print] .quiz_sidebar,
+    body[data-print] .dia_legend,
+    body[data-print] .dia_toggle,
+    body[data-print] .modes_intro,
+    body[data-print] .prog_intro,
+    body[data-print] .prog_play,
+    body[data-print] .kx_cad_play,
+    body[data-print] .audio_toggle,
+    body[data-print] .section_apply_all
+                                                    {  display: none !important;                                        }
+
+    /* Section 3 chord builder: hide nested Progressions sub-section so
+       the chord grid + diatonic chart fit on one landscape page. */
+    body[data-print="section_3"] #section_11        {  display: none !important;                                        }
+    body[data-print="section_3"] .dia_chart         {  padding: 4px 12px !important; background: none !important;
+                                                       border-top: 1px solid #888 !important;                            }
+    body[data-print="section_3"] .dia_head          {  margin-bottom: 4px !important;                                  }
+    body[data-print="section_3"] .dia_row           {  gap: 4px !important; margin-bottom: 4px !important;             }
+    body[data-print="section_3"] .dia_cell          {  padding: 4px 2px !important;
+                                                       background: none !important; border-color: #aaa !important;     }
+
+    /* Section 6 scale grid: keep modes visible but compact. */
+    body[data-print="section_6"] .modes_panel       {  padding: 4px 12px !important; background: none !important;
+                                                       border-top: 1px solid #888 !important;                            }
+    body[data-print="section_6"] .modes_grid        {  gap: 4px !important;                                             }
+    body[data-print="section_6"] .mode_cell         {  padding: 4px 2px !important;
+                                                       background: none !important; border-color: #aaa !important;     }
+
+    /* Section 9 key signatures: hide the new key-extras (intervals +
+       contains + cadences) so the staff table and Circle of Fifths
+       still fit on a single landscape page. */
+    body[data-print="section_9"] #key_extras_root   {  display: none !important;                                        }
+
+    /* Hide all-section nav cruft on every print. */
+    body[data-print] #seo_lede,
+    body[data-print] #auth_widget,
+    body[data-print] #mobile_hint,
+    body[data-print] #site_title,
+    body[data-print] #build_num,
+    body[data-print] #site_footer
+                                                    {  display: none !important;                                        }
 }
 
 /* Outside @media print so the property carries into the print render reliably */
@@ -518,10 +568,9 @@ details.collapsible > summary              { border-radius: 10px 10px 0 0; paddi
                                              align-content: flex-start;
                                              justify-content: flex-end; position: relative;
                                              min-height: 38px; box-sizing: border-box;                                }
-/* Nested sub-section summaries (e.g. Tunings inside Fretboard) — same
-   slim height since the key-button rows now live in the section body
-   instead of the header. */
-details.collapsible.nested_section > summary { min-height: 32px;                                                       }
+/* Nested sub-section summaries match the top-level slim height for a
+   uniform look across all section headers. */
+details.collapsible.nested_section > summary { min-height: 38px;                                                       }
 /* Key-button row, hosted directly below the summary inside the section
    body. Centred and visually grouped with the section content. */
 .section_key_row_outer                     { display: flex; justify-content: center;
@@ -776,7 +825,28 @@ select option                              { color: var(--text); background: var
                             LEARN / QUIZ
 *********************************************************************************************************************/
 #section_7                                 { background-color:#0a0a0a;                                                 }
-.quiz_card                                 { padding: 24px 20px 28px; text-align: center;                             }
+/* Quiz layout: subject sidebar on the left, question card on the right. */
+.quiz_layout                               { display: grid; grid-template-columns: 220px 1fr;
+                                             gap: 16px; padding: 16px 18px;                                             }
+.quiz_sidebar                              { display: flex; flex-direction: column; gap: 6px;
+                                             padding: 10px; background: var(--bg-elevated);
+                                             border: 1px solid #2a2a2a; border-radius: 6px;                              }
+.quiz_sidebar_title                        { font: 600 0.78em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.08em; text-transform: uppercase;
+                                             margin-bottom: 4px;                                                         }
+.quiz_subj                                 { padding: 6px 10px; font: 500 0.85em var(--font);
+                                             text-align: left; cursor: pointer;
+                                             border: 1px solid rgba(255,255,255,0.18);
+                                             background: rgba(255,255,255,0.04); color: var(--muted);
+                                             border-radius: 4px;                                                         }
+.quiz_subj:hover                           { background: rgba(255,255,255,0.10); color: var(--text);                    }
+.quiz_subj.on                              { background: rgba(95,232,224,0.18); border-color: var(--accent-hi);
+                                             color: var(--text); font-weight: 600;                                       }
+.quiz_subj.on:hover                        { background: rgba(95,232,224,0.28);                                          }
+@media print { .quiz_sidebar               { display: none !important; }                                                }
+.quiz_card                                 { padding: 24px 20px 28px; text-align: center;
+                                             background: var(--bg-elevated); border: 1px solid #2a2a2a;
+                                             border-radius: 6px;                                                         }
 .quiz_prompt                               { font-size: 1em; opacity: 0.8; margin-bottom: 4px;                        }
 .quiz_showcase                             { display: inline-block; font-size: 1.7em; font-weight: 600;
                                              letter-spacing: 0.06em; padding: 14px 24px; margin: 14px 0 22px;
@@ -1486,7 +1556,11 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              transition: background 100ms;                                              }
 .dia_cell:hover                            { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
 .dia_roman                                 { font: 600 1.05em var(--font); letter-spacing: 0.03em;                     }
-.dia_chord                                 { font: 600 1.1em var(--font); margin: 4px 0 2px;                            }
+/* Fixed-width label so a ♯-containing chord name (e.g. "C♯m") doesn't
+   reflow the cell vs a plain one ("C"). Same trick on every place that
+   shows a key-derived note label below. */
+.dia_chord                                 { font: 600 1.1em var(--font); margin: 4px 0 2px;
+                                             display: inline-block; min-width: 3.2em; text-align: center;               }
 .dia_fn                                    { font: 600 0.7em monospace; letter-spacing: 0.1em;
                                              padding: 1px 6px; border-radius: 8px; opacity: 0.85;                       }
 /* Function colour bands — light, desaturated. */
@@ -1544,7 +1618,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_chip:hover                           { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
 .prog_chip_roman                           { font: 600 0.78em var(--font); color: var(--accent-hi);
                                              letter-spacing: 0.04em;                                                    }
-.prog_chip_name                            { font: 600 0.92em var(--font);                                              }
+.prog_chip_name                            { font: 600 0.92em var(--font);
+                                             display: inline-block; min-width: 2.4em; text-align: center;               }
 
 /* ----- Modes Visualizer (inside Scale Builder) ----- */
 .modes_panel                               { padding: 12px 18px; background: rgba(255,255,255,0.02);
@@ -1559,13 +1634,16 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .mode_cell:hover                           { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
 .mode_cell.mode_major                      { border-color: rgba(184, 223, 176, 0.35);                                  }
 .mode_cell.mode_minor                      { border-color: rgba(168, 196, 224, 0.35);                                  }
-.mode_root                                 { font: 700 1.1em var(--font);                                              }
+.mode_root                                 { font: 700 1.1em var(--font);
+                                             display: inline-block; min-width: 1.6em; text-align: center;               }
 .mode_name                                 { font: 600 0.85em var(--font); color: var(--accent-hi); margin: 4px 0;     }
 .mode_char                                 { font: 600 0.75em monospace; color: var(--muted);                          }
 
 /* ----- Key Extras (inside Key Signatures) ----- */
 .kx_panel                                  { display: grid; grid-template-columns: 1fr 1fr;
                                              gap: 18px; padding: 12px 18px;                                             }
+.kx_right_stack                            { display: flex; flex-direction: column; gap: 18px;
+                                             min-width: 0;                                                              }
 .kx_block                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
                                              border-radius: 6px; padding: 12px 14px;                                    }
 .kx_block_title                            { font: 600 0.85em var(--font); color: var(--accent-hi);
@@ -1594,16 +1672,18 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              background: rgba(255,255,255,0.06); font-size: 0.85em;                    }
 .kx_cad_roman                              { font: 600 0.7em var(--font); color: var(--accent-hi);
                                              letter-spacing: 0.04em;                                                    }
-.kx_cad_name                               { font-weight: 600;                                                          }
+.kx_cad_name                               { font-weight: 600;
+                                             display: inline-block; min-width: 2.4em; text-align: center;               }
 .kx_cad_arrow                              { color: var(--muted-dim); margin: 0 2px;                                   }
 .kx_cad_desc                               { grid-column: 2 / -1; font: 400 0.78em var(--font);
                                              color: var(--muted-dim);                                                   }
 .kx_intv_table                             { width: 100%; border-collapse: collapse; font-size: 0.85em;                }
-.kx_intv_table td                          { padding: 3px 8px; border-bottom: 1px solid rgba(255,255,255,0.04);        }
-.kx_intv_short                             { font: 600 0.85em monospace; color: var(--accent-hi); width: 32px;          }
+.kx_intv_table td                          { padding: 3px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);       }
+.kx_intv_short                             { font: 600 0.95em monospace; color: var(--accent-hi);
+                                             width: 56px; text-align: right;                                            }
 .kx_intv_long                              { color: var(--text);                                                        }
-.kx_intv_semi                              { color: var(--muted-dim); font: 400 0.78em var(--font); width: 50px;       }
-.kx_intv_note                              { font-weight: 600; text-align: right; width: 50px;                          }
+.kx_intv_semi                              { color: var(--muted-dim); font: 400 0.85em var(--font); width: 70px;       }
+.kx_intv_note                              { font-weight: 600; text-align: left; width: 80px;                           }
 
 @media print {
   .dia_toggle, .prog_play, .kx_cad_play   { display: none !important; }

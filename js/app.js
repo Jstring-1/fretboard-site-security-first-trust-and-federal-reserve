@@ -2415,7 +2415,30 @@
 
     let h = '<div class="kx_panel">';
 
-    // 4a. This key contains
+    // ----- LEFT column (sits under the accidentals table) -----
+    h +=   '<div class="kx_block kx_intervals">';
+    h +=     '<h3 class="kx_block_title">Intervals from ' + escHtml(x.k) + '</h3>';
+    h +=     '<table class="kx_intv_table">';
+    const INTERVALS = [
+      ['P1','Perfect unison'], ['m2','Minor 2nd'], ['M2','Major 2nd'],
+      ['m3','Minor 3rd'],      ['M3','Major 3rd'], ['P4','Perfect 4th'],
+      ['TT','Tritone'],        ['P5','Perfect 5th'],['m6','Minor 6th'],
+      ['M6','Major 6th'],      ['m7','Minor 7th'], ['M7','Major 7th'],
+    ];
+    INTERVALS.forEach(function (iv, semi) {
+      const note = KEYS[(i1 + semi) % KEYS.length];
+      h += '<tr><td class="kx_intv_short">' + escHtml(iv[0]) + '</td>'
+        +  '<td class="kx_intv_long">' + escHtml(iv[1]) + '</td>'
+        +  '<td class="kx_intv_semi">' + semi + ' st</td>'
+        +  '<td class="kx_intv_note">' + escHtml(note || '–') + '</td></tr>';
+    });
+    h +=     '</table>';
+    h +=   '</div>';
+
+    // ----- RIGHT column (sits under the circle of fifths) -----
+    h +=   '<div class="kx_right_stack">';
+
+    // This key contains
     h +=   '<div class="kx_block kx_contains">';
     h +=     '<h3 class="kx_block_title">In ' + escHtml(x.k) + ' major</h3>';
     h +=     '<dl class="kx_dl">';
@@ -2450,27 +2473,8 @@
     h +=     '</ul>';
     h +=   '</div>';
 
-    // 5. Interval explorer — table of all 12 intervals from current root
-    h +=   '<div class="kx_block kx_intervals">';
-    h +=     '<h3 class="kx_block_title">Intervals from ' + escHtml(x.k) + '</h3>';
-    h +=     '<table class="kx_intv_table">';
-    const INTERVALS = [
-      ['P1','Perfect unison'], ['m2','Minor 2nd'], ['M2','Major 2nd'],
-      ['m3','Minor 3rd'],      ['M3','Major 3rd'], ['P4','Perfect 4th'],
-      ['TT','Tritone'],        ['P5','Perfect 5th'],['m6','Minor 6th'],
-      ['M6','Major 6th'],      ['m7','Minor 7th'], ['M7','Major 7th'],
-    ];
-    INTERVALS.forEach(function (iv, semi) {
-      const note = KEYS[(i1 + semi) % KEYS.length];
-      h += '<tr><td class="kx_intv_short">' + escHtml(iv[0]) + '</td>'
-        +  '<td class="kx_intv_long">' + escHtml(iv[1]) + '</td>'
-        +  '<td class="kx_intv_semi">' + semi + ' st</td>'
-        +  '<td class="kx_intv_note">' + escHtml(note || '–') + '</td></tr>';
-    });
-    h +=     '</table>';
-    h +=   '</div>';
-
-    h += '</div>';
+    h +=   '</div>';   // .kx_right_stack
+    h += '</div>';     // .kx_panel
     root.innerHTML = h;
 
     // Bind cadence play.
@@ -4253,14 +4257,124 @@
     });
   }
 
-  function generateQuizQuestion(x) {
-    const r = Math.random();
-    if (r < 0.20) return _qKeySignature();
-    if (r < 0.40) return _qKeySignatureCount();
-    if (r < 0.60) return _qScaleByDegrees(x);
-    if (r < 0.80) return _qChordByDegrees(x);
-    return _qInKey();
+  // ----- Quiz category registry -----------------------------------------
+  // Each category gets a toggle in the sidebar so the user can practice
+  // only the topics they want. Disabled set persists in localStorage.
+  function _quizEnabled(id) {
+    let off = [];
+    try { off = JSON.parse(localStorage.getItem('sf_quiz_off') || '[]'); } catch (_) {}
+    return off.indexOf(id) === -1;
   }
+  function _quizSetEnabled(id, on) {
+    let off = [];
+    try { off = JSON.parse(localStorage.getItem('sf_quiz_off') || '[]'); } catch (_) {}
+    const idx = off.indexOf(id);
+    if (on && idx >= 0) off.splice(idx, 1);
+    else if (!on && idx === -1) off.push(id);
+    try { localStorage.setItem('sf_quiz_off', JSON.stringify(off)); } catch (_) {}
+  }
+
+  function generateQuizQuestion(x) {
+    const enabled = _QUIZ_CATEGORIES.filter(function (c) { return _quizEnabled(c.id); });
+    const pool = enabled.length ? enabled : _QUIZ_CATEGORIES;
+    const cat = pool[Math.floor(Math.random() * pool.length)];
+    return cat.gen(x);
+  }
+
+  // ----- Additional question generators (use Tier-1/2 theory data) -----
+  function _qDiatonicChord(x) {
+    const key = _qPickRandom(ALLNOTES);
+    const notes = _majorScaleNotes(key);
+    if (!notes.length) return _qKeySignature();
+    const idx = Math.floor(Math.random() * 7);
+    const dia = _DIATONIC[idx];
+    const root = notes[idx];
+    const target = root + dia.quality;
+    const distractors = [];
+    let safety = 30;
+    while (distractors.length < 3 && safety-- > 0) {
+      const i = Math.floor(Math.random() * 7);
+      if (i === idx) continue;
+      const d2 = _DIATONIC[i];
+      const candidate = notes[i] + d2.quality;
+      if (candidate !== target && distractors.indexOf(candidate) === -1) {
+        distractors.push(candidate);
+      }
+    }
+    while (distractors.length < 3) distractors.push(_qPickRandom(ALLNOTES) + 'm');
+    const choices = _qShuffle([target].concat(distractors));
+    const fnLabel = dia.fn === 'T' ? 'Tonic' : dia.fn === 'S' ? 'Subdominant' : 'Dominant';
+    return {
+      prompt: 'In ' + key + ' major, what is the ' + dia.roman + ' chord?',
+      showcase: dia.roman,
+      showcaseSub: fnLabel,
+      showcaseSubLabel: 'Function',
+      choices: choices,
+      answer: target,
+    };
+  }
+
+  function _qModeByChar(x) {
+    const modesWithChar = _MODES.filter(function (m) { return m.char; });
+    const target = _qPickRandom(modesWithChar);
+    const distractors = _qPickN(_MODES.filter(function (m) { return m.name !== target.name; }), 3);
+    const choices = _qShuffle([target].concat(distractors)).map(function (m) { return m.name; });
+    return {
+      prompt: 'Which mode is characterised by ' + target.char + '?',
+      showcase: target.char,
+      showcaseSub: target.bright === 'major' ? 'Bright (major-like)' : 'Dark (minor-like)',
+      showcaseSubLabel: 'Quality',
+      choices: choices,
+      answer: target.name,
+    };
+  }
+
+  function _qCadenceType(x) {
+    const target = _qPickRandom(_CADENCES);
+    const distractors = _qPickN(_CADENCES.filter(function (c) { return c.name !== target.name; }), 3);
+    const choices = _qShuffle([target].concat(distractors)).map(function (c) { return c.name; });
+    return {
+      prompt: 'What kind of cadence is this?',
+      showcase: target.romans.join(' → '),
+      showcaseSub: target.desc,
+      showcaseSubLabel: 'Hint',
+      choices: choices,
+      answer: target.name,
+    };
+  }
+
+  function _qRelativeMinor(x) {
+    const all = KEY_SIGS_SHARP.concat(KEY_SIGS_FLAT);
+    const target = _qPickRandom(all);
+    const notes = _majorScaleNotes(target.setKey);
+    if (!notes.length) return _qKeySignature();
+    const relMinor = notes[5] + ' minor';
+    const allMinors = ALLNOTES.map(function (n) { return n + ' minor'; });
+    const distractors = _qPickN(allMinors.filter(function (n) { return n !== relMinor; }), 3);
+    const choices = _qShuffle([relMinor].concat(distractors));
+    return {
+      prompt: 'What is the relative minor of ' + target.key + ' major?',
+      showcase: target.key + ' major',
+      showcaseSub: 'Same key signature, lowered 3 6 7',
+      showcaseSubLabel: 'Hint',
+      choices: choices,
+      answer: relMinor,
+    };
+  }
+
+  // Registry — declared after the generators so the function refs resolve.
+  // Order here is the order the toggles render in the sidebar.
+  const _QUIZ_CATEGORIES = [
+    { id: 'sig_byname',  label: 'Key sig by name',        gen: _qKeySignature },
+    { id: 'sig_bycount', label: 'Key sig: # accidentals', gen: _qKeySignatureCount },
+    { id: 'scale_degs',  label: 'Scale by degrees',       gen: _qScaleByDegrees },
+    { id: 'chord_degs',  label: 'Chord by degrees',       gen: _qChordByDegrees },
+    { id: 'in_key',      label: 'Notes → name',           gen: _qInKey },
+    { id: 'diatonic',    label: 'Diatonic chords',        gen: _qDiatonicChord },
+    { id: 'mode_char',   label: 'Modes (by characteristic)', gen: _qModeByChar },
+    { id: 'cadence',     label: 'Cadence types',          gen: _qCadenceType },
+    { id: 'relative',    label: 'Relative minor',         gen: _qRelativeMinor },
+  ];
 
   function _qScaleByDegrees(x) {
     const names = Object.keys(SCALES);
@@ -4370,7 +4484,20 @@
     // notes for the user's chosen key on a sub-line below the degrees.
     const q = generateQuizQuestion(window.SF_X || { k: 'A' });
     _quizCurrent = q;
-    let h = '<div class="quiz_card">';
+    let h = '<div class="quiz_layout">';
+    // Sidebar — one toggle per question category. Click to add / remove
+    // that subject from the rotation.
+    h += '<aside class="quiz_sidebar">';
+    h +=   '<div class="quiz_sidebar_title">Subjects</div>';
+    _QUIZ_CATEGORIES.forEach(function (c) {
+      const on = _quizEnabled(c.id);
+      h += '<button type="button" class="quiz_subj' + (on ? ' on' : '')
+        +  '" data-quiz-cat="' + escAttr(c.id) + '" aria-pressed="' + (on ? 'true' : 'false')
+        +  '" title="' + (on ? 'Remove from quiz' : 'Add to quiz')
+        +  '">' + escHtml(c.label) + '</button>';
+    });
+    h += '</aside>';
+    h += '<div class="quiz_card">';
     h += '<div class="quiz_prompt">' + escHtml(q.prompt) + '</div>';
     h += '<div class="quiz_showcase">' + escHtml(q.showcase) + '</div>';
     // Reserve the showcase-sub slot every render — even when there's no
@@ -4391,13 +4518,23 @@
     h += '</div>';
     h += '<div class="quiz_skip_row"><button type="button" class="quiz_skip">Skip →</button></div>';
     h += '<div class="quiz_feedback"></div>';
-    h += '</div>';
+    h += '</div>';   // .quiz_card
+    h += '</div>';   // .quiz_layout
     root.innerHTML = h;
     root.querySelectorAll('.quiz_choice').forEach(function (btn) {
       btn.addEventListener('click', _quizHandleChoice);
     });
     const skip = root.querySelector('.quiz_skip');
     if (skip) skip.addEventListener('click', renderQuiz);
+    // Subject-toggle sidebar — click flips that category on/off and re-
+    // renders the quiz so the next question respects the new pool.
+    root.querySelectorAll('[data-quiz-cat]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const id = btn.getAttribute('data-quiz-cat');
+        _quizSetEnabled(id, !_quizEnabled(id));
+        renderQuiz();
+      });
+    });
   }
 
   function _quizHandleChoice(e) {
