@@ -4001,7 +4001,11 @@
     const xSG = stateForSection('section_6', x);
     const xKS = stateForSection('section_9', x);
     renderFretboard(xFB);   // creates #options_root in the middle column
-    renderOptions(x);       // form below the fretboard mirrors the GLOBAL state
+    // Form (tuning picker + degree/note pill rows) lives in the FRETBOARD
+    // section, so it must reflect that section's effective state. In
+    // linked mode xFB === x, so this is identical to passing the global
+    // x; in unlinked mode it ensures the pills paint from s2_hl etc.
+    renderOptions(xFB);
     renderChordGrid(xCG);
     renderScaleGrid(xSG);
     renderTuningsTable(x);
