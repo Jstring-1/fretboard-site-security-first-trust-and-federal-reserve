@@ -1451,6 +1451,157 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .ks_acc_A                                  { color: #a8c4e0;                                                            } /* sky      */
 .ks_acc_E                                  { color: #c8b4e0;                                                            } /* lavender */
 .ks_acc_B                                  { color: #e8b8cc;                                                            } /* rose     */
+
+/* ============================================================== */
+/*  Music-theory teaching panels                                  */
+/* ============================================================== */
+
+/* ----- Diatonic Chord Chart (inside Chord Builder) ----- */
+.dia_chart                                 { padding: 12px 18px; background: rgba(255,255,255,0.02);
+                                             border-top: 1px solid rgba(255,255,255,0.05);                              }
+.dia_head                                  { display: flex; align-items: center; gap: 12px;
+                                             margin-bottom: 10px;                                                       }
+.dia_title                                 { font: 600 0.92em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.04em;                                                    }
+.dia_toggle                                { padding: 2px 10px; border-radius: 12px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             font: 600 0.78em var(--font); cursor: pointer;
+                                             letter-spacing: 0.06em; margin-left: auto;                                 }
+.dia_toggle:hover                          { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+.dia_toggle.on                             { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
+.dia_row                                   { display: grid; grid-template-columns: repeat(7, 1fr);
+                                             gap: 6px; margin-bottom: 10px;                                             }
+.dia_cell                                  { display: flex; flex-direction: column; align-items: center;
+                                             padding: 8px 4px; border-radius: 6px;
+                                             border: 1px solid rgba(255,255,255,0.1);
+                                             background: rgba(255,255,255,0.04);
+                                             color: var(--text); text-decoration: none;
+                                             transition: background 100ms;                                              }
+.dia_cell:hover                            { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
+.dia_roman                                 { font: 600 1.05em var(--font); letter-spacing: 0.03em;                     }
+.dia_chord                                 { font: 600 1.1em var(--font); margin: 4px 0 2px;                            }
+.dia_fn                                    { font: 600 0.7em monospace; letter-spacing: 0.1em;
+                                             padding: 1px 6px; border-radius: 8px; opacity: 0.85;                       }
+/* Function colour bands — light, desaturated. */
+.dia_fn_T                                  { border-color: rgba(168, 196, 224, 0.35); }
+.dia_fn_T .dia_fn                          { background: rgba(168, 196, 224, 0.22); color: #cfe0f0;                    }
+.dia_fn_S                                  { border-color: rgba(184, 223, 176, 0.35); }
+.dia_fn_S .dia_fn                          { background: rgba(184, 223, 176, 0.22); color: #d4ecc8;                    }
+.dia_fn_D                                  { border-color: rgba(232, 184, 204, 0.35); }
+.dia_fn_D .dia_fn                          { background: rgba(232, 184, 204, 0.22); color: #f4d2dd;                    }
+.dia_legend                                { display: flex; gap: 14px; align-items: center;
+                                             font: 400 0.78em var(--font); color: var(--muted);                          }
+.dia_swatch                                { display: inline-block; width: 10px; height: 10px;
+                                             border-radius: 2px; margin-right: 4px; vertical-align: middle;             }
+.dia_swatch.dia_fn_T                       { background: #a8c4e0;                                                       }
+.dia_swatch.dia_fn_S                       { background: #b8dfb0;                                                       }
+.dia_swatch.dia_fn_D                       { background: #e8b8cc;                                                       }
+
+/* ----- Inversions Panel (inside Chord Builder) ----- */
+.inv_panel                                 { padding: 10px 18px;                                                       }
+.inv_intro                                 { font: 400 0.85em var(--font); color: var(--muted); margin-bottom: 8px;    }
+.inv_grid                                  { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                                             gap: 8px;                                                                  }
+.inv_cell                                  { padding: 8px; border-radius: 6px;
+                                             background: rgba(255,255,255,0.04);
+                                             border: 1px solid rgba(255,255,255,0.1);                                  }
+.inv_label                                 { font: 600 0.78em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.04em; margin-bottom: 6px;                                }
+.inv_notes                                 { display: flex; gap: 6px; margin-bottom: 4px;                              }
+.inv_note                                  { padding: 2px 8px; border-radius: 4px;
+                                             background: rgba(255,255,255,0.08); font-weight: 600;                     }
+.inv_note_bass                             { background: var(--accent-hi); color: #001014;                              }
+.inv_bass                                  { font: 400 0.75em var(--font); color: var(--muted);                          }
+
+/* ----- Progressions Section ----- */
+.prog_panel                                { padding: 8px 18px;                                                        }
+.prog_intro                                { font: 400 0.88em var(--font); color: var(--muted); margin-bottom: 12px;   }
+.prog_row                                  { display: grid; grid-template-columns: 220px 1fr;
+                                             gap: 14px; align-items: center;
+                                             padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);          }
+.prog_row:last-child                       { border-bottom: none;                                                       }
+.prog_meta                                 { display: flex; align-items: center; gap: 8px;                              }
+.prog_play                                 { width: 24px; height: 24px; border-radius: 50%;
+                                             border: 1px solid rgba(255,255,255,0.4);
+                                             background: rgba(255,255,255,0.08); color: #fff;
+                                             cursor: pointer; font-size: 0.75em; line-height: 1;                       }
+.prog_play:hover                           { background: var(--accent-hi); color: #001014; border-color: var(--accent-hi); }
+.prog_name                                 { font: 600 0.92em var(--font);                                              }
+.prog_style                                { font: 400 0.78em var(--font); color: var(--muted);                         }
+.prog_chords                               { display: flex; flex-wrap: wrap; gap: 6px;                                  }
+.prog_chip                                 { display: inline-flex; flex-direction: column; align-items: center;
+                                             padding: 4px 10px; border-radius: 6px;
+                                             background: rgba(255,255,255,0.04);
+                                             border: 1px solid rgba(255,255,255,0.1);
+                                             color: var(--text); text-decoration: none; min-width: 44px;                }
+.prog_chip:hover                           { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
+.prog_chip_roman                           { font: 600 0.78em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.04em;                                                    }
+.prog_chip_name                            { font: 600 0.92em var(--font);                                              }
+
+/* ----- Modes Visualizer (inside Scale Builder) ----- */
+.modes_panel                               { padding: 12px 18px; background: rgba(255,255,255,0.02);
+                                             border-top: 1px solid rgba(255,255,255,0.05);                              }
+.modes_intro                               { font: 400 0.85em var(--font); color: var(--muted); margin-bottom: 10px;   }
+.modes_grid                                { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;            }
+.mode_cell                                 { display: flex; flex-direction: column; align-items: center;
+                                             padding: 8px 4px; border-radius: 6px;
+                                             background: rgba(255,255,255,0.04);
+                                             border: 1px solid rgba(255,255,255,0.1);
+                                             color: var(--text); text-decoration: none;                                 }
+.mode_cell:hover                           { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.3); }
+.mode_cell.mode_major                      { border-color: rgba(184, 223, 176, 0.35);                                  }
+.mode_cell.mode_minor                      { border-color: rgba(168, 196, 224, 0.35);                                  }
+.mode_root                                 { font: 700 1.1em var(--font);                                              }
+.mode_name                                 { font: 600 0.85em var(--font); color: var(--accent-hi); margin: 4px 0;     }
+.mode_char                                 { font: 600 0.75em monospace; color: var(--muted);                          }
+
+/* ----- Key Extras (inside Key Signatures) ----- */
+.kx_panel                                  { display: grid; grid-template-columns: 1fr 1fr;
+                                             gap: 18px; padding: 12px 18px;                                             }
+.kx_block                                  { background: var(--bg-elevated); border: 1px solid #2a2a2a;
+                                             border-radius: 6px; padding: 12px 14px;                                    }
+.kx_block_title                            { font: 600 0.85em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.06em; text-transform: uppercase;
+                                             margin: 0 0 10px;                                                          }
+.kx_dl                                     { display: grid; grid-template-columns: max-content 1fr;
+                                             gap: 4px 12px; margin: 0; font-size: 0.9em;                               }
+.kx_dl dt                                  { color: var(--muted); font-weight: 600;                                    }
+.kx_dl dd                                  { margin: 0; color: var(--text);                                             }
+.kx_dl a                                   { color: var(--accent-hi); text-decoration: none;                            }
+.kx_dl a:hover                             { text-decoration: underline;                                                }
+.kx_cad_list                               { list-style: none; padding: 0; margin: 0;                                  }
+.kx_cad_row                                { display: grid; grid-template-columns: 24px 80px 1fr;
+                                             gap: 8px; align-items: center; padding: 4px 0;
+                                             border-bottom: 1px solid rgba(255,255,255,0.04);                          }
+.kx_cad_row:last-child                     { border-bottom: none;                                                       }
+.kx_cad_play                               { width: 22px; height: 22px; border-radius: 50%;
+                                             border: 1px solid rgba(255,255,255,0.4);
+                                             background: rgba(255,255,255,0.08); color: #fff;
+                                             cursor: pointer; font-size: 0.7em; line-height: 1;                        }
+.kx_cad_play:hover                         { background: var(--accent-hi); color: #001014; border-color: var(--accent-hi); }
+.kx_cad_name_l                             { font: 600 0.88em var(--font);                                              }
+.kx_cad_chips                              { display: flex; gap: 4px; align-items: center; flex-wrap: wrap;            }
+.kx_cad_chip                               { display: inline-flex; flex-direction: column; align-items: center;
+                                             padding: 2px 8px; border-radius: 4px;
+                                             background: rgba(255,255,255,0.06); font-size: 0.85em;                    }
+.kx_cad_roman                              { font: 600 0.7em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.04em;                                                    }
+.kx_cad_name                               { font-weight: 600;                                                          }
+.kx_cad_arrow                              { color: var(--muted-dim); margin: 0 2px;                                   }
+.kx_cad_desc                               { grid-column: 2 / -1; font: 400 0.78em var(--font);
+                                             color: var(--muted-dim);                                                   }
+.kx_intv_table                             { width: 100%; border-collapse: collapse; font-size: 0.85em;                }
+.kx_intv_table td                          { padding: 3px 8px; border-bottom: 1px solid rgba(255,255,255,0.04);        }
+.kx_intv_short                             { font: 600 0.85em monospace; color: var(--accent-hi); width: 32px;          }
+.kx_intv_long                              { color: var(--text);                                                        }
+.kx_intv_semi                              { color: var(--muted-dim); font: 400 0.78em var(--font); width: 50px;       }
+.kx_intv_note                              { font-weight: 600; text-align: right; width: 50px;                          }
+
+@media print {
+  .dia_toggle, .prog_play, .kx_cad_play   { display: none !important; }
+}
 .ks_help                                   { padding: 0 18px 14px; font: 400 0.82em var(--font);
                                              color: var(--muted); text-align: center;                                  }
 
@@ -1567,6 +1718,7 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 #section_9  { --tint-body: #100e22; --tint-head: #221c3c; --tint-border: #1f1d36;  /* Key sigs — indigo  */ }
 #section_7  { --tint-body: #1c0a10; --tint-head: #34181e; --tint-border: #2c1820;  /* Learn    — maroon  */ }
 #section_10 { --tint-body: #14181e; --tint-head: #242a36; --tint-border: #1f2532;  /* Sheet music — slate */ }
+#section_11 { --tint-body: #1a141e; --tint-head: #2e2438; --tint-border: #281f30;  /* Progressions — orchid */ }
 
 .sm_placeholder                             { padding: 24px 32px; color: var(--muted);
                                               font: 400 0.95em var(--font); line-height: 1.55;
@@ -1690,18 +1842,19 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 }
 
 #section_2, #section_3, #section_4, #section_5,
-#section_6, #section_7, #section_8, #section_9, #section_10
+#section_6, #section_7, #section_8, #section_9, #section_10, #section_11
                                                    { background-color: var(--tint-body);
                                                      border-color: var(--tint-border);                                  }
 #section_2 > summary, #section_3 > summary, #section_4 > summary, #section_5 > summary,
 #section_6 > summary, #section_7 > summary, #section_8 > summary, #section_9 > summary,
-#section_10 > summary
+#section_10 > summary, #section_11 > summary
                                                   { background: var(--tint-head);                                        }
 /* Hover on the section title — keep the same accent feel but lift slightly
    above the (now tinted) header so the click target still reads as live. */
 #section_2 > summary:hover, #section_3 > summary:hover, #section_4 > summary:hover,
 #section_5 > summary:hover, #section_6 > summary:hover, #section_7 > summary:hover,
-#section_8 > summary:hover, #section_9 > summary:hover, #section_10 > summary:hover
+#section_8 > summary:hover, #section_9 > summary:hover, #section_10 > summary:hover,
+#section_11 > summary:hover
                                                   { background: var(--tint-head);                                        }
 
 /* ====================================================================== */

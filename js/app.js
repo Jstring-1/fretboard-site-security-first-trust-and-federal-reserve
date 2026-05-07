@@ -2109,6 +2109,425 @@
     return s;
   }
 
+  // ====================================================================
+  // Music-theory teaching tools — diatonic chart, progressions, modes,
+  // "this key contains", interval explorer, inversions, cadences. All
+  // rooted in the current `x.k` (or section state when unlinked).
+  // ====================================================================
+
+  // Major-scale step pattern (semitones from root): 0,2,4,5,7,9,11.
+  // Use to derive the 7 notes of any major key.
+  const _MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
+
+  // Diatonic chord templates, expressed as the *scale-degree set*
+  // (1..7, no accidentals — the major key signature handles those).
+  // Triads first, 7ths second. Function: T = tonic, S = subdominant,
+  // D = dominant — colour-coded in the chart.
+  const _DIATONIC = [
+    { roman: 'I',     romanLc: 'I',    quality: '',     q7: 'maj7', degs:  [1,3,5],   degs7: [1,3,5,7], fn: 'T' },
+    { roman: 'ii',    romanLc: 'ii',   quality: 'm',    q7: 'm7',   degs:  [2,4,6],   degs7: [2,4,6,1], fn: 'S' },
+    { roman: 'iii',   romanLc: 'iii',  quality: 'm',    q7: 'm7',   degs:  [3,5,7],   degs7: [3,5,7,2], fn: 'T' },
+    { roman: 'IV',    romanLc: 'IV',   quality: '',     q7: 'maj7', degs:  [4,6,1],   degs7: [4,6,1,3], fn: 'S' },
+    { roman: 'V',     romanLc: 'V',    quality: '',     q7: '7',    degs:  [5,7,2],   degs7: [5,7,2,4], fn: 'D' },
+    { roman: 'vi',    romanLc: 'vi',   quality: 'm',    q7: 'm7',   degs:  [6,1,3],   degs7: [6,1,3,5], fn: 'T' },
+    { roman: 'vii°',  romanLc: 'vii',  quality: '°',    q7: 'ø7',   degs:  [7,2,4],   degs7: [7,2,4,6], fn: 'D' },
+  ];
+
+  // 7 modes derived from the major scale — degree-relative set + the
+  // *characteristic note* that distinguishes each mode from its modal
+  // siblings. Highlighted separately when the user picks a mode.
+  const _MODES = [
+    { name: 'Ionian',     degs: [1,2,3,4,5,6,7],     bright: '',    char: ''      },
+    { name: 'Dorian',     degs: [1,2,'b3',4,5,6,'b7'],bright:'minor',char: '6'    },
+    { name: 'Phrygian',   degs: [1,'b2','b3',4,5,'b6','b7'], bright:'minor', char: 'b2' },
+    { name: 'Lydian',     degs: [1,2,3,'#4',5,6,7],  bright:'major',char: '#4'    },
+    { name: 'Mixolydian', degs: [1,2,3,4,5,6,'b7'],  bright:'major',char: 'b7'    },
+    { name: 'Aeolian',    degs: [1,2,'b3',4,5,'b6','b7'], bright:'minor', char: '' },
+    { name: 'Locrian',    degs: [1,'b2','b3',4,'b5','b6','b7'], bright:'minor', char: 'b5' },
+  ];
+
+  // Common chord progressions — sequences of Roman numerals over a
+  // major-key context. Click a progression's ▶ to play the chords
+  // sequentially with the synth (audio toggle must be on).
+  const _PROGRESSIONS = [
+    { name: 'I – IV – V',                 style: 'rock / blues',  romans: ['I','IV','V'] },
+    { name: 'I – V – vi – IV',            style: 'pop',           romans: ['I','V','vi','IV'] },
+    { name: 'ii – V – I',                 style: 'jazz',          romans: ['ii','V','I'] },
+    { name: 'I – vi – IV – V',            style: '50s doo-wop',   romans: ['I','vi','IV','V'] },
+    { name: 'vi – IV – I – V',            style: 'pop minor',     romans: ['vi','IV','I','V'] },
+    { name: 'I – vi – ii – V',            style: 'jazz turnaround', romans: ['I','vi','ii','V'] },
+    { name: 'I – ♭VII – IV',              style: 'rock (mixolydian)', romans: ['I','♭VII','IV'] },
+    { name: '12-bar blues',               style: 'blues',         romans: ['I','I','I','I','IV','IV','I','I','V','IV','I','V'] },
+  ];
+
+  // Cadences — a small reference. Each is a 2-chord progression that
+  // resolves a phrase. The user can audition each from the Key Signatures
+  // section.
+  const _CADENCES = [
+    { name: 'Authentic',  desc: 'V → I — strong resolution',         romans: ['V','I']  },
+    { name: 'Plagal',     desc: 'IV → I — "amen" cadence',           romans: ['IV','I'] },
+    { name: 'Half',       desc: '? → V — pauses on the dominant',    romans: ['I','V']  },
+    { name: 'Deceptive',  desc: 'V → vi — diverts away from tonic',  romans: ['V','vi'] },
+  ];
+
+  // ----- shared helpers --------------------------------------------------
+  function _majorScaleNotes(key) {
+    const i1 = KEYS.indexOf(key);
+    if (i1 < 0) return [];
+    return _MAJOR_STEPS.map(function (n) { return KEYS[i1 + n]; });
+  }
+  // Convert a degree list (1..7) into a comma-joined hl URL fragment.
+  function _degsToHlCsv(degs) {
+    return 'hl=' + degs.map(function (d) {
+      return String(d).replace('♭', 'b').replace('♯', '#');
+    }).join(',');
+  }
+  // Play a list of MIDI numbers simultaneously (chord blip) and then
+  // schedule the next chord after `gap` seconds. `chords` is an array
+  // of arrays of MIDI numbers.
+  function _playChordSequence(chords, gap) {
+    if (!audioOn()) return;
+    if (!chords || !chords.length) return;
+    let t = 0;
+    chords.forEach(function (notes) {
+      setTimeout(function () {
+        notes.forEach(function (m) { playMidi(m, gap * 0.95); });
+      }, t * 1000);
+      t += gap;
+    });
+  }
+  // Resolve a Roman numeral within the current key to: chord name (e.g.
+  // "Dm"), degree set, root note, root MIDI (octave 4 anchor for synth).
+  // Supports ♭VII / ♭III / ♭VI for borrowed-mode progressions.
+  function _resolveRoman(roman, key) {
+    const notes = _majorScaleNotes(key);
+    if (!notes.length) return null;
+    // Major-scale degree intervals (semitones from root).
+    const STEPS = _MAJOR_STEPS;
+    const upper = roman.toUpperCase().replace(/°|Ø|7/g, '');
+    let semis, qual = '', q7 = 'maj7', romanIdx = -1, isMinor = false, isDim = false;
+    // Borrowed (♭) modifier.
+    let flat = false;
+    let r = roman;
+    if (r.indexOf('♭') === 0 || r.indexOf('b') === 0) { flat = true; r = r.slice(1); }
+    isMinor = (r === r.toLowerCase());
+    isDim   = /°|ø/.test(roman);
+    const ru = r.toUpperCase().replace(/°|Ø|7/g, '');
+    const ROMAN_NUM = { 'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7 };
+    const num = ROMAN_NUM[ru];
+    if (!num) return null;
+    let semi = STEPS[num - 1];
+    if (flat) semi = (semi - 1 + 12) % 12;
+    const i1 = KEYS.indexOf(key);
+    const root = KEYS[(i1 + semi) % KEYS.length] || notes[num - 1];
+    // Match the diatonic template if it's an unflattened diatonic roman.
+    const dia = _DIATONIC.find(function (d) {
+      return d.romanLc === ru.toLowerCase() || d.roman === roman || d.roman.replace(/°/g,'') === roman;
+    });
+    let degSet, name7, name3;
+    if (dia && !flat) {
+      degSet = dia.degs;
+      name3  = root + dia.quality;
+      name7  = root + dia.q7;
+    } else {
+      // Borrowed / non-diatonic: assume major triad (most common usage).
+      degSet = [1, 3, 5];
+      name3  = root + (isMinor ? 'm' : (isDim ? '°' : ''));
+      name7  = name3;
+    }
+    return { roman: roman, root: root, name: name3, name7: name7, degs: degSet, semitone: semi };
+  }
+  // Convert a chord (root + qualityFlag) to the MIDI notes for a
+  // synth blip. Plays the triad in 4th-octave range (root ≥ 48).
+  function _chordToMidi(rootName, intervals) {
+    const ROOT_PC = { 'C':0,'C♯':1,'D':2,'D♯':3,'E':4,'F':5,'F♯':6,'G':7,'G♯':8,'A':9,'A♯':10,'B':11 };
+    const pc = ROOT_PC[rootName];
+    if (pc == null) return [];
+    const baseMidi = 48 + pc;          // C4 = 60, anchor root around C3-B3
+    return intervals.map(function (i) { return baseMidi + i; });
+  }
+
+  // ----- 1. Diatonic Chord Chart ----------------------------------------
+  // A row of the 7 diatonic chords for the current key, colour-coded
+  // by harmonic function (T / S / D). Triads by default; click "7ths"
+  // pill to switch to 7th-chord versions.
+  let _diatonic7th = false;
+  function setDiatonic7th(v) {
+    _diatonic7th = !!v;
+    if (window.SF_X) {
+      const xCG = stateForSection('section_3', window.SF_X);
+      renderDiatonicChart(xCG);
+    }
+  }
+  function renderDiatonicChart(x) {
+    const root = document.getElementById('diatonic_root');
+    if (!root) return;
+    const notes = _majorScaleNotes(x.k);
+    if (!notes.length) { root.innerHTML = ''; return; }
+    const FUNC_LABEL = { T: 'tonic', S: 'subdominant', D: 'dominant' };
+    let h = '<div class="dia_chart">';
+    h +=   '<div class="dia_head">'
+      +    '<span class="dia_title">Diatonic chords in ' + escHtml(x.k) + ' major</span>'
+      +    '<button type="button" class="dia_toggle' + (_diatonic7th ? ' on' : '')
+      +      '" data-dia-toggle title="Switch between triads and 7th chords">'
+      +      (_diatonic7th ? '7ths' : 'Triads') + '</button>'
+      +  '</div>';
+    h += '<div class="dia_row">';
+    _DIATONIC.forEach(function (d) {
+      const root = notes[d.degs[0] - 1] || notes[(d.degs[0] - 1) % 7];
+      const quality = _diatonic7th ? d.q7 : d.quality;
+      const chordName = root + quality;
+      const degs = _diatonic7th ? d.degs7 : d.degs;
+      const href = x._hilight_url + _degsToHlCsv(degs);
+      const fnLabel = FUNC_LABEL[d.fn];
+      h += '<a class="dia_cell dia_fn_' + d.fn + '" href="' + escHtml(href)
+        +  '" title="' + escAttr(d.roman + ' (' + fnLabel + ') — ' + chordName) + '">'
+        +  '<span class="dia_roman">' + (_diatonic7th ? d.roman + (d.fn === 'D' && d.roman === 'V' ? '7' : (d.q7 === 'maj7' ? 'maj7' : d.q7 === 'ø7' ? 'ø7' : '7')) : d.roman) + '</span>'
+        +  '<span class="dia_chord">' + escHtml(chordName) + '</span>'
+        +  '<span class="dia_fn">' + d.fn + '</span>'
+        +  '</a>';
+    });
+    h += '</div>';
+    h +=   '<div class="dia_legend">'
+      +    '<span class="dia_swatch dia_fn_T"></span>Tonic'
+      +    '<span class="dia_swatch dia_fn_S"></span>Subdominant'
+      +    '<span class="dia_swatch dia_fn_D"></span>Dominant'
+      +  '</div>';
+    h += '</div>';
+    root.innerHTML = h;
+  }
+
+  // ----- 2. Progressions -------------------------------------------------
+  // Bind diatonic toggle once. The chart re-renders on each applyState
+  // so we delegate from document.body.
+  if (!document.body._diaToggleBound) {
+    document.body._diaToggleBound = true;
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('[data-dia-toggle]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDiatonic7th(!_diatonic7th);
+    });
+  }
+
+  function renderProgressions(x) {
+    const root = document.getElementById('progressions_root');
+    if (!root) return;
+    const notes = _majorScaleNotes(x.k);
+    if (!notes.length) { root.innerHTML = ''; return; }
+    let h = '<div class="prog_panel">';
+    h += '<div class="prog_intro">Common chord progressions in ' + escHtml(x.k)
+      +  ' major. Click a chord to highlight; press ▶ to hear the progression (audio toggle must be on).</div>';
+    _PROGRESSIONS.forEach(function (p, idx) {
+      h += '<div class="prog_row">';
+      h += '<div class="prog_meta">'
+        +  '<button type="button" class="prog_play" data-prog="' + idx + '" title="Play progression">▶</button>'
+        +  '<span class="prog_name">' + escHtml(p.name) + '</span>'
+        +  '<span class="prog_style">' + escHtml(p.style) + '</span>'
+        +  '</div>';
+      h += '<div class="prog_chords">';
+      p.romans.forEach(function (roman) {
+        const r = _resolveRoman(roman, x.k);
+        if (!r) return;
+        const href = x._hilight_url + _degsToHlCsv(r.degs);
+        h += '<a class="prog_chip" href="' + escHtml(href)
+          +  '" title="' + escAttr(roman + ' = ' + r.name) + '">'
+          +  '<span class="prog_chip_roman">' + escHtml(roman) + '</span>'
+          +  '<span class="prog_chip_name">' + escHtml(r.name) + '</span>'
+          +  '</a>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div>';
+    root.innerHTML = h;
+    // Bind play buttons.
+    if (root._progBound) return;
+    root._progBound = true;
+    root.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.prog_play');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const idx = +btn.getAttribute('data-prog');
+      const prog = _PROGRESSIONS[idx];
+      if (!prog) return;
+      const xCur = window.SF_X;
+      if (!xCur) return;
+      const chords = prog.romans.map(function (roman) {
+        const r = _resolveRoman(roman, xCur.k);
+        if (!r) return [];
+        // Triad intervals for the chord quality.
+        const baseQ = r.name.replace(r.root, '');
+        const intervals = baseQ === 'm'  ? [0,3,7]
+                        : baseQ === '°'  ? [0,3,6]
+                        : baseQ === 'm7' ? [0,3,7,10]
+                        : baseQ === 'maj7'?[0,4,7,11]
+                        : baseQ === '7'  ? [0,4,7,10]
+                        : baseQ === 'ø7' ? [0,3,6,10]
+                                         : [0,4,7];
+        return _chordToMidi(r.root, intervals);
+      });
+      _playChordSequence(chords, 0.6);
+    });
+  }
+
+  // ----- 3. Modes Visualizer --------------------------------------------
+  function renderModes(x) {
+    const root = document.getElementById('modes_root');
+    if (!root) return;
+    const notes = _majorScaleNotes(x.k);
+    if (!notes.length) { root.innerHTML = ''; return; }
+    let h = '<div class="modes_panel">';
+    h += '<div class="modes_intro">The 7 modes derived from ' + escHtml(x.k)
+      +  ' major. Each starts on a different scale degree and has its own characteristic note.</div>';
+    h += '<div class="modes_grid">';
+    _MODES.forEach(function (m, i) {
+      const modeRoot = notes[i];
+      const href = x._hilight_url + _degsToHlCsv(m.degs);
+      h += '<a class="mode_cell mode_' + m.bright + '" href="' + escHtml(href)
+        +  '" title="' + escAttr(modeRoot + ' ' + m.name + (m.char ? ' — characteristic: ' + m.char : '')) + '">'
+        +  '<span class="mode_root">' + escHtml(modeRoot) + '</span>'
+        +  '<span class="mode_name">' + escHtml(m.name) + '</span>'
+        +  '<span class="mode_char">' + (m.char ? escHtml(m.char) : '·') + '</span>'
+        +  '</a>';
+    });
+    h += '</div></div>';
+    root.innerHTML = h;
+  }
+
+  // ----- 4. "This key contains" cheat sheet -----------------------------
+  // ----- 5. Interval explorer (tier 2) ----------------------------------
+  // ----- 7. Cadence reference (tier 2) ----------------------------------
+  function renderKeyExtras(x) {
+    const root = document.getElementById('key_extras_root');
+    if (!root) return;
+    if (!_majorScaleNotes(x.k).length) { root.innerHTML = ''; return; }
+    const notes = _majorScaleNotes(x.k);
+    const i1 = KEYS.indexOf(x.k);
+    const relMinor = KEYS[(i1 + 9) % KEYS.length];   // 6th degree
+    const parMinor = x.k;                             // same root, minor
+    const dominant = notes[4];                        // 5th degree
+    const subdom   = notes[3];                        // 4th degree
+    function keyHref(k) { return escHtml(buildKeySetHref(k)); }
+
+    let h = '<div class="kx_panel">';
+
+    // 4a. This key contains
+    h +=   '<div class="kx_block kx_contains">';
+    h +=     '<h3 class="kx_block_title">In ' + escHtml(x.k) + ' major</h3>';
+    h +=     '<dl class="kx_dl">';
+    h +=       '<dt>Notes</dt><dd>' + notes.map(escHtml).join(' · ') + '</dd>';
+    h +=       '<dt>Relative minor</dt><dd><a href="' + keyHref(relMinor) + '">' + escHtml(relMinor) + ' minor</a></dd>';
+    h +=       '<dt>Parallel minor</dt><dd>' + escHtml(parMinor) + ' minor (same root, lowered 3 6 7)</dd>';
+    h +=       '<dt>Dominant key (V)</dt><dd><a href="' + keyHref(dominant) + '">' + escHtml(dominant) + ' major</a></dd>';
+    h +=       '<dt>Subdominant key (IV)</dt><dd><a href="' + keyHref(subdom) + '">' + escHtml(subdom) + ' major</a></dd>';
+    h +=     '</dl>';
+    h +=   '</div>';
+
+    // 7. Cadences
+    h +=   '<div class="kx_block kx_cadences">';
+    h +=     '<h3 class="kx_block_title">Cadences</h3>';
+    h +=     '<ul class="kx_cad_list">';
+    _CADENCES.forEach(function (c, idx) {
+      const chordChips = c.romans.map(function (rn) {
+        const r = _resolveRoman(rn, x.k);
+        return r ? '<span class="kx_cad_chip" title="' + escAttr(rn + ' = ' + r.name) + '">'
+                  +  '<span class="kx_cad_roman">' + escHtml(rn) + '</span>'
+                  +  '<span class="kx_cad_name">' + escHtml(r.name) + '</span>'
+                  +  '</span>'
+                : '';
+      }).join('<span class="kx_cad_arrow">→</span>');
+      h += '<li class="kx_cad_row">'
+        +  '<button type="button" class="kx_cad_play" data-cadence="' + idx + '" title="Play">▶</button>'
+        +  '<span class="kx_cad_name_l">' + escHtml(c.name) + '</span>'
+        +  '<span class="kx_cad_chips">' + chordChips + '</span>'
+        +  '<span class="kx_cad_desc">' + escHtml(c.desc) + '</span>'
+        +  '</li>';
+    });
+    h +=     '</ul>';
+    h +=   '</div>';
+
+    // 5. Interval explorer — table of all 12 intervals from current root
+    h +=   '<div class="kx_block kx_intervals">';
+    h +=     '<h3 class="kx_block_title">Intervals from ' + escHtml(x.k) + '</h3>';
+    h +=     '<table class="kx_intv_table">';
+    const INTERVALS = [
+      ['P1','Perfect unison'], ['m2','Minor 2nd'], ['M2','Major 2nd'],
+      ['m3','Minor 3rd'],      ['M3','Major 3rd'], ['P4','Perfect 4th'],
+      ['TT','Tritone'],        ['P5','Perfect 5th'],['m6','Minor 6th'],
+      ['M6','Major 6th'],      ['m7','Minor 7th'], ['M7','Major 7th'],
+    ];
+    INTERVALS.forEach(function (iv, semi) {
+      const note = KEYS[(i1 + semi) % KEYS.length];
+      h += '<tr><td class="kx_intv_short">' + escHtml(iv[0]) + '</td>'
+        +  '<td class="kx_intv_long">' + escHtml(iv[1]) + '</td>'
+        +  '<td class="kx_intv_semi">' + semi + ' st</td>'
+        +  '<td class="kx_intv_note">' + escHtml(note || '–') + '</td></tr>';
+    });
+    h +=     '</table>';
+    h +=   '</div>';
+
+    h += '</div>';
+    root.innerHTML = h;
+
+    // Bind cadence play.
+    if (root._kxBound) return;
+    root._kxBound = true;
+    root.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.kx_cad_play');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const idx = +btn.getAttribute('data-cadence');
+      const c = _CADENCES[idx];
+      if (!c) return;
+      const xCur = window.SF_X;
+      if (!xCur) return;
+      const chords = c.romans.map(function (rn) {
+        const r = _resolveRoman(rn, xCur.k);
+        if (!r) return [];
+        const baseQ = r.name.replace(r.root, '');
+        const intervals = baseQ === 'm' ? [0,3,7]
+                        : baseQ === '°' ? [0,3,6]
+                                        : [0,4,7];
+        return _chordToMidi(r.root, intervals);
+      });
+      _playChordSequence(chords, 0.7);
+    });
+  }
+
+  // ----- 6. Inversions Panel (tier 2) -----------------------------------
+  function renderInversions(x) {
+    const root = document.getElementById('inversions_root');
+    if (!root) return;
+    // Only show when a chord is currently highlighted (x.hl has a 3- or
+    // 4-note degree set) — otherwise the panel sits empty.
+    const hlArr = String(x.hl || '').split(' ').filter(function (v) { return v && v !== 'nothing'; });
+    if (hlArr.length < 3 || hlArr.length > 4) { root.innerHTML = ''; return; }
+    // Resolve note names from the current key for each highlighted degree.
+    const notedegrees = x._notedegrees || {};
+    const chordNotes = hlArr.map(function (d) { return notedegrees[d] || ''; }).filter(Boolean);
+    if (chordNotes.length < 3) { root.innerHTML = ''; return; }
+    const invLabels = chordNotes.length === 3
+      ? ['Root position', '1st inversion', '2nd inversion']
+      : ['Root position', '1st inversion', '2nd inversion', '3rd inversion'];
+    let h = '<div class="inv_panel">';
+    h += '<div class="inv_intro">Inversions of the current chord (' + chordNotes.join(' ') + '):</div>';
+    h += '<div class="inv_grid">';
+    for (let i = 0; i < chordNotes.length; i++) {
+      const rotated = chordNotes.slice(i).concat(chordNotes.slice(0, i));
+      h += '<div class="inv_cell"><div class="inv_label">' + escHtml(invLabels[i]) + '</div>'
+        +  '<div class="inv_notes">' + rotated.map(function (n, j) {
+             return '<span class="inv_note' + (j === 0 ? ' inv_note_bass' : '') + '">' + escHtml(n) + '</span>';
+           }).join('') + '</div>'
+        +  '<div class="inv_bass">bass: ' + escHtml(rotated[0]) + '</div>'
+        +  '</div>';
+    }
+    h += '</div></div>';
+    root.innerHTML = h;
+  }
+
   function renderTuningsTable(x) {
     const root = document.getElementById('tunings_root');
     const rev = (x.y === 'y') ? 'rev_' : '';
@@ -4024,8 +4443,13 @@
     renderOptions(xFB);
     renderChordGrid(xCG);
     renderScaleGrid(xSG);
+    renderDiatonicChart(xCG);  // Chord Builder: 7 diatonic chords (T/S/D)
+    renderInversions(xCG);     // Chord Builder: inversions of current chord
+    renderProgressions(xCG);   // Chord Progressions section
+    renderModes(xSG);          // Scale Builder: 7 modes from current key
     renderTuningsTable(x);
     renderKeySignatures(xKS);
+    renderKeyExtras(xKS);      // Key Sigs: this-key-contains + cadences + intervals
     applyKeyboardColors(xKB);
     renderKeyboardPicks(xKB);
     bindTuningPicker(x);

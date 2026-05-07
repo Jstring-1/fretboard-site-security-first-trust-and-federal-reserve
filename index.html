@@ -173,7 +173,7 @@
 <!-- SEO-friendly intro lede: visible to crawlers, hidden for sighted users
      so the layout stays minimal. -->
 <p id="seo_lede" class="sr_only">SlantFinder is a free, browser-based music tool: build chords across 28+ types, audition 16 scales (including modes, pentatonic, and blues), identify chords from notes you played, explore a fretboard for any 4- to 12-string instrument across 176 alternate tunings, see every key signature with the circle of fifths, and edit guitar tablature inline. Works for guitar, bass, ukulele, banjo, mandolin, lap steel, and pedal steel.</p>
-<div id="build_num">20260507.0859</div>
+<div id="build_num">20260507.0921</div>
 
 <details id="section_2" class="collapsible section" open><summary><span class="summary_title">Fretboard</span><span class="summary_tuning" id="fretboard_summary_tuning"></span><span class="summary_status"></span><button type="button" id="apply_all_toggle" class="section_apply_all" title="Linked: all sections share one key/chord/scale.&#10;Unlinked: each section has its own.">Linked</button><button type="button" id="audio_toggle" class="section_audio_toggle" aria-pressed="false" title="Audio off — click to play notes when you click a fret or key.">♪</button><span class="summary_extras" data-summary-for="section_2"></span><button type="button" class="section_print" data-print-section="section_2" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About">?</button></summary>
   <h2 class="sr_only">Interactive guitar fretboard explorer</h2>
@@ -203,6 +203,15 @@
   <h2 class="sr_only">Chord builder — 28+ chord types in any key</h2>
   <p class="sr_only">Browse every common chord type — major (maj), minor (min), 7, m7, maj7, m7♭5 (half-diminished), dim, dim7, aug, sus2, sus4, 6, m6, 9, m9, maj9, 11, 13, add9 — laid out as a grid by interval. Pick any cell to highlight that chord across the fretboard and piano keyboard. Hover any chord label to see its degrees and the actual notes in the current key.</p>
   <div id="chord_grid_root"></div>
+  <div id="inversions_root"></div>
+  <div id="diatonic_root"></div>
+  <br/>
+</details>
+
+<details id="section_11" class="collapsible section" open><summary><span class="summary_title">Progressions</span><button type="button" class="section_help" data-help="progressions" aria-label="About">?</button></summary><br/>
+  <h2 class="sr_only">Common chord progressions</h2>
+  <p class="sr_only">Common chord progressions from rock, pop, jazz, blues, and 50s doo-wop — transposed into the current key. Click any chord to highlight it; press play to audition the progression with the synth.</p>
+  <div id="progressions_root"></div>
   <br/>
 </details>
 
@@ -210,6 +219,7 @@
   <h2 class="sr_only">Scale builder — modes, pentatonic, blues, and more</h2>
   <p class="sr_only">All 16 essential scales in any key: major (Ionian), Dorian, Phrygian, Lydian, Mixolydian, natural minor (Aeolian), Locrian, harmonic minor, melodic minor, major pentatonic, minor pentatonic, blues, whole tone, diminished, chromatic, and more. Click any scale to highlight every note across the fretboard and keyboard.</p>
   <div id="scale_grid_root"></div>
+  <div id="modes_root"></div>
   <br/>
 </details>
 
@@ -297,6 +307,7 @@
   <h2 class="sr_only">Key signatures and circle of fifths reference</h2>
   <p class="sr_only">Every major key shown with its treble-clef staff, the count of sharps or flats, the actual accidental notes in canonical order, and a hand-signal mnemonic (fingers up = sharps, fingers down = flats). Includes an interactive Circle of Fifths showing each major key paired with its relative minor — click any wedge to set that key.</p>
   <div id="key_signatures_root"></div>
+  <div id="key_extras_root"></div>
   <br/>
 </details>
 
