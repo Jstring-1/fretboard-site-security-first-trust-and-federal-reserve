@@ -900,6 +900,12 @@ select option                              { color: var(--text); background: var
    controls, sized to match. */
 #site_global_controls #auth_widget         { position: static !important; top: auto; right: auto;
                                              display: inline-flex; align-items: center;                                  }
+/* Auth widget's inner pill has its own wrapper structure
+   (#auth_widget > .auth_pill > .auth_btn). Strip the wrapper layout so
+   the pill itself styles like the other controls. */
+#site_global_controls .auth_pill           { display: inline-flex; align-items: center;
+                                             background: none; border: none; padding: 0; margin: 0;
+                                             position: relative;                                                       }
 /* Make the Linked / Audio / Clear / Account pills share the same pill
    shape so they sit on a clean right-side row. inline-flex centres the
    text vertically so the Clear anchor doesn't float to the top. */
@@ -907,19 +913,29 @@ select option                              { color: var(--text); background: var
 #site_global_controls .section_audio_toggle,
 #site_global_controls .section_clear,
 #site_global_controls .auth_btn,
-#site_global_controls #auth_widget > *     { display: inline-flex !important; align-items: center; justify-content: center;
+#site_global_controls .auth_loading        { display: inline-flex !important; align-items: center; justify-content: center;
                                              height: 26px; padding: 2px 14px; box-sizing: border-box;
                                              font: 600 0.82em var(--font); letter-spacing: 0.04em;
                                              border-radius: 13px; line-height: 1;
                                              border: 1px solid rgba(255,255,255,0.55);
                                              background: rgba(255,255,255,0.18); color: #fff !important;
-                                             text-decoration: none; cursor: pointer; white-space: nowrap;                }
+                                             text-decoration: none; cursor: pointer; white-space: nowrap;
+                                             max-width: 110px; overflow: hidden; text-overflow: ellipsis;               }
 #site_global_controls .section_apply_all:hover,
 #site_global_controls .section_audio_toggle:hover,
 #site_global_controls .section_clear:hover,
-#site_global_controls .auth_btn:hover,
-#site_global_controls #auth_widget > *:hover
-                                           { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+#site_global_controls .auth_btn:hover      { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+/* Auth dropdown menu: floats below the pill without affecting layout. */
+#site_global_controls .auth_menu           { position: absolute; top: calc(100% + 4px); right: 0;
+                                             background: var(--bg-elevated); border: 1px solid #2a2a2a;
+                                             border-radius: 6px; padding: 4px; min-width: 160px; z-index: 200;
+                                             box-shadow: 0 8px 24px rgba(0,0,0,0.4);                                    }
+#site_global_controls .auth_menu[hidden]   { display: none;                                                             }
+#site_global_controls .auth_menu_item      { display: block; width: 100%; text-align: left;
+                                             padding: 6px 10px; background: none; border: none;
+                                             color: var(--text); font: 500 0.85em var(--font); cursor: pointer;
+                                             border-radius: 4px;                                                        }
+#site_global_controls .auth_menu_item:hover{ background: rgba(255,255,255,0.10);                                        }
 /* Active/engaged states for the toggles — match the existing accent. */
 #site_global_controls .section_apply_all.on,
 #site_global_controls .section_audio_toggle.on
