@@ -1308,26 +1308,6 @@ a.identify_chip_on:active                  { background: #ffeb00; color: #1a1a00
                                              font-weight: 600;                                                         }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
-/* Chord-diagram hover popover (admin-only feature gate). Floats above
-   the page; positioned by JS near the hovered chord chip. */
-.cdx_pop                                   { position: absolute; z-index: 1000;
-                                             padding: 10px 12px; border-radius: 8px;
-                                             background: var(--bg-elevated); color: var(--text);
-                                             border: 1px solid #333;
-                                             box-shadow: 0 8px 24px rgba(0,0,0,0.55);
-                                             font: 400 0.85em var(--font);
-                                             pointer-events: auto;                                                       }
-.cdx_title                                 { font: 700 1em var(--font); color: var(--accent-hi);
-                                             margin-bottom: 8px; letter-spacing: 0.04em;                                 }
-.cdx_grid                                  { display: flex; gap: 12px; align-items: flex-end;                            }
-.cdx_box                                   { background: rgba(255,255,255,0.02);
-                                             padding: 4px 6px; border-radius: 4px;                                       }
-.cdx_meta                                  { margin-top: 6px; font: 400 0.75em var(--font);
-                                             color: var(--muted); letter-spacing: 0.04em;                                }
-.cdx_warn                                  { color: #ffc857;                                                             }
-.cdx_loading                               { font: 400 0.85em var(--font); color: var(--muted-dim);
-                                             padding: 6px 0; min-width: 200px; text-align: center;                       }
-.cdx_svg                                   { display: block;                                                             }
 /* In-key filter pill sits inline next to the picks readout so it
    doesn't collide with the absolute-positioned .identify_btns cluster
    (◀ ▶ Clear ID) anchored to the strip's top-right corner. */
