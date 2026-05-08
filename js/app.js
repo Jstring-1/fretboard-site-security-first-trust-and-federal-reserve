@@ -4378,26 +4378,25 @@
   // by playability (root-in-bass + low position + few mutes win).
 
   // Take the current site tuning + return strings sorted LOW → HIGH
-  // with their pitch classes. The order matters for the diagram —
-  // we always render lowest-pitch on the left regardless of the user's
-  // L↔H display preference.
+  // with their pitch classes. We pull from x.notes (or x.s in custom
+  // mode) — both are stored space-separated in low-to-high order, so
+  // we can take their split as-is. Avoid x['s'+i] iteration: those
+  // slots are backfilled with DEF_X defaults for unused strings, so
+  // a 6-string tuning would over-report 12 notes.
   function _currentTuningLowHigh() {
     const x = window.SF_X;
     if (!x) return [];
-    const notes = [];
-    for (let i = 1; i <= 12; i++) {
-      if (x['s' + i]) notes.push(x['s' + i]); else break;
-    }
-    if (notes.length < 2) return [];
-    // x.s1..sN are stored in the user's display order. Get MIDI numbers
-    // (which fretboardStringMidis assumes a low-to-high input for, but
-    // for our purposes we just want the relative ordering).
+    const src = (x.z === 'y') ? (x.s || '') : (x.notes || '');
+    const noteList = String(src).split(/\s+/).filter(Boolean);
+    if (!noteList.length) return [];
+    const N = Math.min(+x.strs || noteList.length, noteList.length);
+    const used = noteList.slice(0, N);
     let midis;
-    try { midis = fretboardStringMidis(notes); }
-    catch (_) { midis = notes.map(function (n, i) { return notePc(n) + i * 12; }); }
-    const pairs = midis.map(function (m, i) { return { pc: m % 12, midi: m, name: notes[i] }; });
-    pairs.sort(function (a, b) { return a.midi - b.midi; });
-    return pairs;
+    try { midis = fretboardStringMidis(used); }
+    catch (_) { midis = used.map(function (n, i) { return notePc(n) + 24 + i * 5; }); }
+    return midis.map(function (m, i) {
+      return { pc: m % 12, midi: m, name: used[i] };
+    });
   }
 
   // Find playable chord shapes on the current tuning. Returns up to
