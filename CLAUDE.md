@@ -18,17 +18,21 @@ User preferences (apply universally):
 - **Comment style:** explain rationale + tradeoffs. The code already
   shows what it does.
 
-User: kjnostudio (kylejester@gmail.com). Clerk user_id
-`user_3D6pP9Gad4nTmmp5tJGq858ar77` — they're the admin.
+User: kjnostudio (kylejester@gmail.com). Admin gating is IP-based —
+their home IP `66.234.206.36` is on the allowlist (see `ADMIN_IPS` env
+below). Clerk auth was removed; nothing in the live UI requires sign-in.
 
 
 ## What this is
 
 A web-based fretted-instrument tool: interactive fretboard, chord +
-scale builders, piano keyboard view, key-signature reference, in-page
-tab editor, chord identifier, 176-tuning database. Plus an
-admin-gated chord-progression / tablature catalogue extracted via
-Claude Vision from a private fake-book PDF library.
+scale builders (with diatonic chord chart, common progressions, modes
+panel, inversions), piano keyboard view, key-signature reference (with
+circle of fifths, intervals, cadences), endless music-theory quiz,
+chord identifier with optional in-key filter, in-page tab editor, and
+a 176-tuning database. Plus an admin-only chord-progression /
+tablature catalogue extracted via Claude Vision from a private
+fake-book PDF library.
 
 Live at https://fretboard.site / https://www.fretboard.site. The legacy
 `slantfinder.pro` domain redirects (301) to fretboard.site via a
@@ -56,45 +60,45 @@ Namecheap URL Redirect Record.
 | name | source | purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Postgres reference | connection string |
-| `CLERK_PUBLISHABLE_KEY` | manual | `pk_test_...`, used only to derive Clerk Frontend API domain server-side |
 | `ADMIN_API_KEY` | manual, random | static-key gate for laptop scripts (importer, demo edit) |
-| `ADMIN_USER_IDS` | manual | comma-separated Clerk user_ids granted admin powers |
+| `ADMIN_IPS` | manual | comma-separated client IPs that see admin-gated UI sections (Tab, Sheet Music). Defaults to operator IP if unset. |
 
-**Never commit these values.** `pk_test_...` is in the frontend HTML
-(safe — it's public by design); everything else stays in Railway env.
+**Never commit these values.** All read from env on the server; client
+just calls `/api/admin-ip` to ask whether its IP is on the allowlist.
 
 
 ## Repo layout
 
 ```
 /                    repo root
-  index.html         main page; Clerk script tag here
+  index.html         main page (no auth scripts)
   main.py            Railpack entry shim; imports server.main:app
-  requirements.txt   FastAPI, uvicorn, psycopg, pyjwt, httpx
+  requirements.txt   FastAPI, uvicorn, psycopg
   robots.txt         sitemap.xml
   CLAUDE.md          this file
 
   css/
-    styles.css       site theme + section tints + apply-all toggle + sm_*
+    styles.css       site theme + section tints + sticky header + sm_*
     tab.css          Tab editor + chord-box panel + capture mode
 
   js/
     data.js          tunings, chord/scale grid definitions, allnotes, degrees
     chord_lookup.js  pitch-class mask → chord-name lookup
     sortable.js      tunings table sorter
-    app.js           main controller. parseState / applyState / renderers
+    app.js           main controller. parseState / applyState / renderers,
+                     theory tools (diatonic / progressions / modes / key-extras /
+                     inversions), chord-ID strip, quiz, audio synth.
     chord_boxes.js   click-to-fill chord-diagram SVG widget (in Tab section)
     tab.js           Tab editor + chord-box state + capture mini-fretboard
-    settings_sync.js Postgres-backed cloud sync of tab/chord-box state
-    features.js      feature flags ('admin' / 'public' / 'hidden')
+    features.js      feature flags ('admin' / 'public' / 'hidden').
+                     'admin' resolves via /api/admin-ip on load.
     sheetmusic.js    Sheet Music section: search, viewer, key cycle, edit
-    auth.js          Clerk widget; admin allow-list; Apply: all toggle paint
 
   server/
     __init__.py
-    main.py          FastAPI app + all endpoints + lifespan hook
+    main.py          FastAPI app + all endpoints + lifespan hook +
+                     /api/admin-ip (XFF-aware IP allowlist check)
     db.py            psycopg async pool + migration runner
-    auth.py          Clerk JWT verifier (RS256 against JWKS); admin guards
     music.py         Nashville-degree math (mirrors js/sheetmusic.js)
 
   migrations/
@@ -130,63 +134,61 @@ Namecheap URL Redirect Record.
 ## Frontend state model
 
 URL is the source of truth for almost everything. Bookmark = save.
+**Linked-only** — the unlinked / per-section override mode was retired
+(too brittle; users rarely needed independent sections).
 
-Global params (linked-mode):
+Global params:
 
 | param | meaning |
 | --- | --- |
 | `k=A`        | key |
 | `x=AC#EG`    | chord/scale notes (URL form) |
-| `hl=1,3,5,7` | highlighted degrees |
-| `pk=...`     | picked notes for chord identifier |
+| `hl=1b35`    | highlighted degrees (separator-free; `b?[1-7]` tokens) |
+| `pk=ACsE`    | picked notes for chord identifier (`[A-G][sb]?` tokens) |
 | `s1=A&...`   | per-string tuning notes (or `s=A.C#.E.G` packed) |
 | `y=y` `z=y`  | low/high direction, custom-tuning toggle |
-| `pkc=...`    | chord-builder pinned key |
+| `c=2,3`      | collapsed section IDs |
+| `f=`/`fc=`   | tunings list filter text / string-count filter |
+| `cmp=1`      | compact-grid toggle |
+| `id=0`       | per-section chord-ID enable (default on) |
+| `ext=2`/`all`| chord-ID "could be (+N)" extras cap |
+| `ik=1`       | chord-ID "in key" filter (only chords whose notes fit current major scale) |
 
-**Linked / Unlinked toggle (fretboard summary "Apply: all" chip):**
-
-- Default: linked (no `u=` in URL). Every section reads global state.
-- Click → unlinked: URL gets `?u=1`. Each section can hold its own
-  state via section-namespaced params:
-    - `s2_k`, `s3_k`, `s4_k`, ...     section-specific keys
-    - `s2_hl`, `s3_hl`, ...            comma-joined per-section highlights
-    - `s2_x`, `s3_x`, ...              per-section chord notes
-    - `s2_pk`, `s3_pk`, ...            per-section picked notes
-- Click → linked again: snaps global state to the **fretboard's**
-  effective view (its overrides become the new globals). Other
-  sections' overrides drop. No reset.
+**URL conciseness:** `hl` and `pk` values are emitted without commas
+(`?hl=1b35` / `?pk=ACsE`). The tokenizers in `_tokenizeHl` /
+`_tokenizePk` accept all three historical forms — separator-free,
+comma-separated, and repeated-key (`?hl=1&hl=b3&hl=5`) — so old
+bookmarks keep working.
 
 How this works in code:
 
 - `parseState(searchOverride?)` reads URL → builds `x` with helpers
-  (`x._hl_set` mask, etc.) plus `x._unlinked` and `x._sectionOverrides`.
-- `virtualSearchForSection(sectionId, baseSearch)` strips all `s<n>_*`
-  + `u`, then folds that section's overrides on top — feed the result
-  back to `parseState` for a fully-derived per-section state.
-- `stateForSection(sectionId, x)` is the dispatch wrapper that
-  applyState calls per section.
-- `mergeSectionOverrideUrl(sectionId, linkSearch)` projects link
-  click params (`?k=A&hl=1&hl=3`) onto the current URL as
-  `s<num>_*` overrides. Used by the link interceptor + key-picker
-  change handler in unlinked mode.
+  (`x._hl_set` mask, etc.). `x._unlinked` is forced false now.
 - The link interceptor at `bindLinkInterceptor` is the central
-  same-origin click choke-point.
+  same-origin click choke-point — every internal `<a>` click flows
+  through `navigateTo(url.search)` which `pushState` + `applyState()`.
+- Whole-row click delegates (`bindGridRowClicks`, the tunings click
+  handler) translate clicks on any cell of a chord/scale/tuning row
+  into a click on that row's primary anchor.
 
 
 ## Backend (FastAPI)
 
 `server/main.py` mounts:
 
-- `GET /api/health`  — liveness + DB ping + auth-config diagnostic
-- `GET /api/me`      — Clerk user_id from JWT, 401 otherwise
-- `GET /api/settings` / `PUT /api/settings`  — per-user JSONB blob
+- `GET /api/health`     — liveness + DB ping
+- `GET /api/admin-ip`   — returns `{admin: bool, ip: str}` based on the
+                          caller's IP (X-Forwarded-For aware) vs.
+                          `ADMIN_IPS` env. Drives frontend feature
+                          flag visibility.
 - `GET /api/songs/search` `?q&book&only_chords&confidence&limit`
 - `GET /api/songs/{id}` — full chord data; **degrees re-derived
   on read** by `server.music.derive_degrees(chords, key)` so wrong-
   key Vision output gets corrected without re-running extraction.
 - `GET /api/songs/books` — distinct books + counts (filter dropdown)
 - `POST /api/songs/import` — admin-key gated bulk upsert
-- `PUT /api/songs/{id}` — admin edit (Clerk OR static key via `resolve_admin`)
+- `PUT /api/songs/{id}` — admin edit (X-Admin-Key only)
+- `DELETE /api/songs/{id}` — admin delete (X-Admin-Key only)
 - `GET /api/tabs/search` / `GET /api/tabs/{id}` / `GET /api/tabs/books`
 - `POST /api/tabs/import` — admin-key gated bulk upsert
 
@@ -196,25 +198,22 @@ in lexical order on startup. `_migrations` table tracks applied work.
 CORS allows localhost dev origins so locally-served `_demo.html`
 can reach the live API. Live origins are same-origin.
 
-Auth dependencies in `server/auth.py`:
-
-- `current_user` — verifies any signed-in user (Clerk JWT against JWKS)
-- `current_admin_user` — must be in `ADMIN_USER_IDS`
-- `resolve_admin` — accepts EITHER Clerk admin OR `X-Admin-Key`
-  header (used by the laptop-side scripts + demo edit)
+Admin path: `resolve_admin` accepts the static `X-Admin-Key` header
+only. Clerk JWT auth was retired along with `server/auth.py`,
+`/api/me`, and `/api/settings` — there's no per-user state on the
+server anymore, all user state lives in shareable URLs / localStorage.
 
 
 ## Tab editor (in-page)
 
-`js/tab.js` owns a localStorage-backed editor (`sfp_tab_v1`).
-`window.SF_Tab.serialise()` / `applyState()` are the public hooks
-for `js/settings_sync.js` to round-trip tab state to Postgres
-when a Clerk user is signed in. Anonymous users fall back to
-localStorage seamlessly.
+`js/tab.js` owns a localStorage-backed editor (`sfp_tab_v1`). No
+cloud sync any more (the Clerk-backed `settings_sync.js` was deleted
+when auth was retired).
 
 Tab section is admin-gated via `feature_tab` class + the
-`features.js` flag table (`tab: 'admin'`). Flip to `'public'`
-when ready to ship.
+`features.js` flag table (`tab: 'admin'`). The 'admin' resolution
+runs through `/api/admin-ip` — visible only to allowlisted IPs.
+Flip to `'public'` in `FLAGS` when ready to ship.
 
 
 ## Sheet Music section (admin-only)
@@ -227,11 +226,12 @@ with a per-song key cycle (◀ / ▶ / M-m / ↺) and a bar-mode select
 ('auto' / 'as_extracted' / '1 chord / bar'). Confidence + book
 filters live in the header.
 
-Admins see an inline **edit** button on every song. Clicking
-reveals a chord-text textarea + key/time/confidence inputs. Save
-PUTs to `/api/songs/{id}` with the user's Clerk JWT.
+Inline **edit** is currently disabled (the early-return in
+`sheetmusic.js` blocks the save path). When re-enabled, edits will
+PUT to `/api/songs/{id}` with the static `X-Admin-Key` header. The
+local admin laptop has the key in env; nothing in the browser does.
 
-Section is gated `feature_sheetmusic`. Same flag-flip pattern.
+Section is gated `feature_sheetmusic`. Same flag-flip pattern as Tab.
 
 
 ## Sheet Music data pipeline (local laptop work)
@@ -314,17 +314,34 @@ inline-edit chord rows directly to the live API.
 **File creation rule:** never write a new doc file unless asked.
 Edits over creates.
 
-**Section IDs (don't change these — many things grep them):**
+**Section IDs (don't change these — many things grep them).** Numeric
+IDs are stable; the visible page order is independent.
 
 - `section_2`  Fretboard
 - `section_3`  Chord Builder
 - `section_4`  Keyboard
 - `section_5`  Tunings List (nested in section_2)
 - `section_6`  Scale Builder
-- `section_7`  Learn (quiz)
-- `section_8`  Tab editor (admin)
+- `section_7`  Quiz (learn)
+- `section_8`  Tab editor (IP-gated admin)
 - `section_9`  Key Signatures
-- `section_10` Sheet Music (admin)
+- `section_10` Sheet Music (IP-gated admin)
+- `section_11` Progressions (nested in section_3)
+
+Current visible order on the page: Fretboard → Tunings List → Keyboard
+→ Chord Builder → Progressions → Scale Builder → Key Signatures →
+Quiz → Tab → Sheet Music. Tab + Sheet Music sit at the end so the
+main user-facing tools cluster at the top.
+
+**Theory tools (rendered into placeholder divs inside their parent sections):**
+
+- `#diatonic_root`     — 7 diatonic chords for current key (Chord Builder)
+- `#inversions_root`   — current chord's inversions (Chord Builder)
+- `#progressions_root` — common progressions in current key (Chord Builder)
+- `#modes_root`        — 7 modes derived from current key (Scale Builder)
+- `#key_extras_root`   — intervals + cadences cheat sheet (Key Signatures)
+  with a relative-major / circle-of-fifths / "in <key>" panel mounted
+  alongside the key signatures table (`renderKeySignatures`).
 
 
 ## Things to never do
@@ -341,6 +358,11 @@ Edits over creates.
 
 ## Open follow-ups (if you pick one of these, ask first)
 
+- Per-position chord-ID picks: clicking a single fret currently lights
+  up every octave of that pitch class. User wants only the clicked
+  position to mark, while still feeding the chord identifier the
+  pitch-class mask. Larger refactor — touches click handlers, pk URL
+  shape, fretboard / keyboard rendering, and the ←/→ shift logic.
 - Tab viewer frontend section (data + API exist; UI not built).
 - Local PDF server (`_books/_serve_pdfs.py`) wired into Sheet Music
   for in-browser PDF preview while admin-only. Skeleton was drafted;
@@ -350,3 +372,5 @@ Edits over creates.
   duplicates across editions for canonical-version display.
 - Promote feature flags from `admin` → `public` when their UX is
   dialed in (currently: tab, sheetmusic).
+- Re-enable Sheet Music inline edit if a non-admin-only edit path is
+  desired (the save handler is currently a no-op early return).
