@@ -15,6 +15,7 @@ runs `uvicorn main:app`). Local dev:
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import time
@@ -221,46 +222,187 @@ async def admin_ip(request: Request):
     return {"admin": ip in _ADMIN_IPS, "ip": ip}
 
 
-# ---- Chord-diagram proxy (Uberchord) ------------------------------------
+# ---- Chord-diagram proxy + persistent cache (Uberchord) ----------------
 # The Uberchord API doesn't return CORS headers, so a direct browser
-# fetch from fretboard.site is blocked. Proxy through here, cache the
-# response in-memory for ~1 hour so we don't hammer their servers from
-# every chord-chip hover. Standard 6-string E-Standard tuning only.
-_CHORD_CACHE: dict[str, tuple[float, list]] = {}
-_CHORD_CACHE_TTL = 3600.0  # seconds
+# fetch from fretboard.site is blocked. Proxy through here AND store
+# every fetched (chord-name → shapes) pair in Postgres so we never hit
+# upstream more than once per chord. Once the prefetch endpoint has
+# walked every (root × chord-type) combo, this server can serve every
+# popover request from local DB indefinitely.
+#
+# In-memory cache is a small hot-path layer in front of Postgres so a
+# burst of hovers on the same chord doesn't round-trip the DB.
+_CHORD_CACHE: dict[str, list] = {}
+
+# Chord types in our Chord Builder grid (data.js GRID), mapped to the
+# Uberchord URL form. Empty string = bare major triad (e.g. "C").
+# Sharps use 's' suffix in the API ("Csmaj7"), flats use 'b' ("Bb7").
+# Keep this in sync with js/data.js when grid types change.
+_CHORD_TYPES: list[str] = [
+    "",        # Maj
+    "m",       # Min
+    "aug",
+    "dim",
+    "sus2",
+    "sus4",
+    "6",       # Maj6
+    "m6",
+    "7",       # dom7
+    "m7",
+    "aug7",
+    "7b5",
+    "dim7",
+    "m7b5",
+    "maj7",
+    "mmaj7",   # min-Maj7
+    "add9",
+    "m9",
+    "6add9",
+    "9",       # 9th
+    "7b9",
+    "maj9",
+    "7s9",     # 7♯9
+    "11",
+    "m11",
+    "7s11",    # 7♯11
+    "13",
+    "m13",
+]
+_CHORD_ROOTS: list[str] = [
+    "C", "Cs", "D", "Ds", "E", "F",
+    "Fs", "G", "Gs", "A", "As", "B",
+]
+
+
+async def _chord_shapes_from_db(name: str) -> Optional[list]:
+    """Look up a chord's shapes in the persistent cache. Returns the
+    JSON list if present (which may be empty — that's a cached miss),
+    or None if we've never asked for this chord before."""
+    if not os.environ.get("DATABASE_URL"):
+        return None
+    try:
+        pool = db.get_pool()
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    "SELECT shapes FROM chord_shapes WHERE name = %s",
+                    (name,),
+                )
+                row = await cur.fetchone()
+                return row[0] if row else None
+    except Exception as e:
+        print(f"chord_shapes DB read failed for {name}: {e}", flush=True)
+        return None
+
+
+async def _chord_shapes_to_db(name: str, shapes: list) -> None:
+    """Persist (name, shapes) into the chord_shapes table. Idempotent
+    via ON CONFLICT — repeat calls just refresh fetched_at."""
+    if not os.environ.get("DATABASE_URL"):
+        return
+    try:
+        pool = db.get_pool()
+        async with pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    "INSERT INTO chord_shapes (name, shapes) "
+                    "VALUES (%s, %s::jsonb) "
+                    "ON CONFLICT (name) DO UPDATE SET "
+                    "  shapes     = EXCLUDED.shapes, "
+                    "  fetched_at = NOW()",
+                    (name, json.dumps(shapes)),
+                )
+            await conn.commit()
+    except Exception as e:
+        print(f"chord_shapes DB write failed for {name}: {e}", flush=True)
+
+
+async def _fetch_uberchord(name: str, client: httpx.AsyncClient) -> Optional[list]:
+    """Hit Uberchord upstream for one chord name. Returns the shapes
+    list (possibly empty) on a successful exchange, or None on a
+    transport-level failure (caller decides whether to cache or retry)."""
+    try:
+        r = await client.get(f"https://api.uberchord.com/v1/chords/{name}")
+    except Exception as e:
+        print(f"uberchord fetch failed for {name}: {e}", flush=True)
+        return None
+    if r.status_code == 404:
+        return []
+    if r.status_code != 200:
+        return None
+    try:
+        data = r.json()
+    except Exception:
+        return []
+    return data if isinstance(data, list) else []
 
 
 @app.get("/api/chord-shapes/{name}")
 async def chord_shapes(name: str):
-    """Fetch chord voicings from uberchord.com for guitar standard
-    tuning. Used by the admin-gated chord-diagram hover popover on
-    chord-ID chips. Returns the upstream JSON unchanged so the
-    frontend can decide what to render."""
+    """Resolve chord voicings: in-memory → Postgres → Uberchord upstream.
+    Whatever lands gets persisted to Postgres so we never re-fetch the
+    same chord twice. Used by the admin-gated chord-diagram hover
+    popover on chord-ID chips. Standard 6-string E-Standard tuning."""
     cleaned = (name or "").strip()
     if not cleaned or len(cleaned) > 32:
         raise HTTPException(status_code=400, detail="bad chord name")
-    now = time.time()
-    cached = _CHORD_CACHE.get(cleaned)
-    if cached and (now - cached[0]) < _CHORD_CACHE_TTL:
-        return {"name": cleaned, "shapes": cached[1], "cached": True}
-    upstream = f"https://api.uberchord.com/v1/chords/{cleaned}"
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            r = await client.get(upstream)
-        if r.status_code == 404:
-            _CHORD_CACHE[cleaned] = (now, [])
-            return {"name": cleaned, "shapes": [], "cached": False}
-        r.raise_for_status()
-        data = r.json()
-        if not isinstance(data, list):
-            data = []
-    except Exception as e:
-        # Don't blow up the page on transient API failures — return an
-        # empty shape list and let the frontend surface "No shapes
-        # available" gracefully.
-        return {"name": cleaned, "shapes": [], "error": str(e)[:200]}
-    _CHORD_CACHE[cleaned] = (now, data)
-    return {"name": cleaned, "shapes": data, "cached": False}
+    # 1. Hot in-memory cache.
+    if cleaned in _CHORD_CACHE:
+        return {"name": cleaned, "shapes": _CHORD_CACHE[cleaned], "src": "mem"}
+    # 2. Persistent Postgres cache.
+    db_shapes = await _chord_shapes_from_db(cleaned)
+    if db_shapes is not None:
+        _CHORD_CACHE[cleaned] = db_shapes
+        return {"name": cleaned, "shapes": db_shapes, "src": "db"}
+    # 3. Upstream (Uberchord) — populates both caches on the way out.
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        fetched = await _fetch_uberchord(cleaned, client)
+    if fetched is None:
+        # Transport failure — return empty without caching, so a retry
+        # can succeed once the upstream recovers.
+        return {"name": cleaned, "shapes": [], "src": "upstream-error"}
+    _CHORD_CACHE[cleaned] = fetched
+    await _chord_shapes_to_db(cleaned, fetched)
+    return {"name": cleaned, "shapes": fetched, "src": "upstream"}
+
+
+@app.post("/api/chord-shapes/prefetch")
+async def prefetch_chord_shapes(request: Request):
+    """Walk every (root × chord-type) combo and seed the persistent
+    cache. Idempotent: combos already in DB are skipped, so re-running
+    is cheap and only fetches new types added since last run.
+
+    Polite delay between upstream calls so we don't hammer Uberchord.
+    Admin-gated by the static `X-Admin-Key` header — invoke from a
+    laptop / one-off script. ~336 chords total at the current grid +
+    12 keys, ~3 minutes end-to-end with the 0.4s delay."""
+    require_admin_key(request)
+    fetched = 0
+    skipped = 0
+    failed = 0
+    total = len(_CHORD_ROOTS) * len(_CHORD_TYPES)
+    async with httpx.AsyncClient(timeout=8.0) as client:
+        for root in _CHORD_ROOTS:
+            for typ in _CHORD_TYPES:
+                name = root + typ
+                existing = await _chord_shapes_from_db(name)
+                if existing is not None:
+                    skipped += 1
+                    continue
+                await asyncio.sleep(0.4)
+                shapes = await _fetch_uberchord(name, client)
+                if shapes is None:
+                    failed += 1
+                    continue
+                await _chord_shapes_to_db(name, shapes)
+                _CHORD_CACHE[name] = shapes
+                fetched += 1
+    return {
+        "fetched": fetched,
+        "skipped": skipped,
+        "failed": failed,
+        "total": total,
+    }
 
 
 @app.get("/api/health")
