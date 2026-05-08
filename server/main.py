@@ -317,22 +317,39 @@ async def _chord_shapes_to_db(name: str, shapes: list) -> None:
         print(f"chord_shapes DB write failed for {name}: {e}", flush=True)
 
 
+_LAST_FETCH_ERROR: dict = {"name": "", "kind": "", "detail": ""}
+
+
 async def _fetch_uberchord(name: str, client: httpx.AsyncClient) -> Optional[list]:
     """Hit Uberchord upstream for one chord name. Returns the shapes
     list (possibly empty) on a successful exchange, or None on a
-    transport-level failure (caller decides whether to cache or retry)."""
+    transport-level failure (caller decides whether to cache or retry).
+    Stashes the most recent failure into _LAST_FETCH_ERROR so the
+    status endpoint can surface it without reading Railway logs."""
     try:
         r = await client.get(f"https://api.uberchord.com/v1/chords/{name}")
     except Exception as e:
+        _LAST_FETCH_ERROR.update(
+            name=name, kind="exception",
+            detail=f"{type(e).__name__}: {e}"[:300],
+        )
         print(f"uberchord fetch failed for {name}: {e}", flush=True)
         return None
     if r.status_code == 404:
         return []
     if r.status_code != 200:
+        body = (r.text or "")[:200]
+        _LAST_FETCH_ERROR.update(
+            name=name, kind=f"http {r.status_code}", detail=body,
+        )
         return None
     try:
         data = r.json()
-    except Exception:
+    except Exception as e:
+        _LAST_FETCH_ERROR.update(
+            name=name, kind="parse",
+            detail=f"{type(e).__name__}: {e}"[:300],
+        )
         return []
     return data if isinstance(data, list) else []
 
@@ -394,6 +411,7 @@ async def chord_shapes_status():
     in the persistent chord_shapes table. Useful while waiting for the
     background prefetch to finish."""
     out = dict(_prefetch_state)
+    out["last_fetch_error"] = dict(_LAST_FETCH_ERROR)
     if os.environ.get("DATABASE_URL"):
         try:
             pool = db.get_pool()
