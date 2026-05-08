@@ -25,7 +25,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -162,6 +162,28 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "X-Admin-Key"],
 )
+
+
+# Legacy-domain redirect. The old slantfinder.pro brand still has DNS
+# pointing here (configured as a Railway custom domain alongside
+# fretboard.site); we 301 every request to the canonical fretboard.site
+# host, preserving path + query. Done in the app rather than at the DNS
+# layer because Namecheap's URL Redirect Records don't serve a valid
+# TLS cert, breaking https://slantfinder.pro entirely. Railway provisions
+# a Let's Encrypt cert per custom domain, so handling the redirect here
+# fixes HTTPS too.
+_REDIRECT_HOSTS = {"slantfinder.pro", "www.slantfinder.pro"}
+
+
+@app.middleware("http")
+async def redirect_legacy_domain(request: Request, call_next):
+    host = (request.headers.get("host") or "").split(":", 1)[0].lower()
+    if host in _REDIRECT_HOSTS:
+        target = "https://fretboard.site" + request.url.path
+        if request.url.query:
+            target += "?" + request.url.query
+        return RedirectResponse(url=target, status_code=301)
+    return await call_next(request)
 
 
 # Admin IP allowlist for visibility-gating WIP frontend sections (Tab,
