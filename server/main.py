@@ -17,12 +17,14 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from typing import Optional
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
@@ -217,6 +219,48 @@ async def admin_ip(request: Request):
     endpoints; this just hides incomplete UI from random visitors."""
     ip = _client_ip(request)
     return {"admin": ip in _ADMIN_IPS, "ip": ip}
+
+
+# ---- Chord-diagram proxy (Uberchord) ------------------------------------
+# The Uberchord API doesn't return CORS headers, so a direct browser
+# fetch from fretboard.site is blocked. Proxy through here, cache the
+# response in-memory for ~1 hour so we don't hammer their servers from
+# every chord-chip hover. Standard 6-string E-Standard tuning only.
+_CHORD_CACHE: dict[str, tuple[float, list]] = {}
+_CHORD_CACHE_TTL = 3600.0  # seconds
+
+
+@app.get("/api/chord-shapes/{name}")
+async def chord_shapes(name: str):
+    """Fetch chord voicings from uberchord.com for guitar standard
+    tuning. Used by the admin-gated chord-diagram hover popover on
+    chord-ID chips. Returns the upstream JSON unchanged so the
+    frontend can decide what to render."""
+    cleaned = (name or "").strip()
+    if not cleaned or len(cleaned) > 32:
+        raise HTTPException(status_code=400, detail="bad chord name")
+    now = time.time()
+    cached = _CHORD_CACHE.get(cleaned)
+    if cached and (now - cached[0]) < _CHORD_CACHE_TTL:
+        return {"name": cleaned, "shapes": cached[1], "cached": True}
+    upstream = f"https://api.uberchord.com/v1/chords/{cleaned}"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(upstream)
+        if r.status_code == 404:
+            _CHORD_CACHE[cleaned] = (now, [])
+            return {"name": cleaned, "shapes": [], "cached": False}
+        r.raise_for_status()
+        data = r.json()
+        if not isinstance(data, list):
+            data = []
+    except Exception as e:
+        # Don't blow up the page on transient API failures — return an
+        # empty shape list and let the frontend surface "No shapes
+        # available" gracefully.
+        return {"name": cleaned, "shapes": [], "error": str(e)[:200]}
+    _CHORD_CACHE[cleaned] = (now, data)
+    return {"name": cleaned, "shapes": data, "cached": False}
 
 
 @app.get("/api/health")

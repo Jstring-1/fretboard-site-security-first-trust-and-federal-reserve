@@ -4399,19 +4399,21 @@
     return name.replace(/♯/g, 's').replace(/♭/g, 'b').replace(/#/g, 's');
   }
 
-  // Fetch shapes from Uberchord. Returns a Promise that resolves to
-  // an array of shape objects in the same format findChordShapes used
-  // before: { frets:[…], window:N, voicing:str }. -1 means muted.
+  // Fetch shapes via our /api/chord-shapes proxy (Uberchord upstream
+  // doesn't return CORS, so we can't fetch it directly from the browser).
+  // Returns a Promise that resolves to an array of shape objects:
+  //   { frets:[…], window:N, voicing:str }   (-1 means muted)
   function fetchChordShapes(chordName) {
     if (_cdxCache[chordName] !== undefined) {
       return Promise.resolve(_cdxCache[chordName]);
     }
     const apiName = _cdxApiName(chordName);
-    const url = 'https://api.uberchord.com/v1/chords/' + encodeURIComponent(apiName);
+    const url = '/api/chord-shapes/' + encodeURIComponent(apiName);
     return fetch(url)
-      .then(function (r) { return r.ok ? r.json() : []; })
-      .then(function (data) {
-        if (!Array.isArray(data) || !data.length) {
+      .then(function (r) { return r.ok ? r.json() : { shapes: [] }; })
+      .then(function (envelope) {
+        const data = (envelope && Array.isArray(envelope.shapes)) ? envelope.shapes : [];
+        if (!data.length) {
           _cdxCache[chordName] = [];
           return [];
         }
