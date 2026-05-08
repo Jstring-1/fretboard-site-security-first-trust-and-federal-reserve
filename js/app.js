@@ -4346,29 +4346,33 @@
   // hl= to its degrees relative to that root. Strip pk= so the user moves
   // from "what is this?" to "show me this chord on the board" cleanly.
   function applyChordHref(chordName, chordMask) {
-    // Find root: longest matching note letter at the start of the name.
-    // Walk sharps last so "C♯..." beats "C..." when present.
-    let root = null;
-    for (const n of PC_TO_NOTE) {
-      if (chordName.indexOf(n) === 0 && (root === null || n.length > root.length)) {
-        root = n;
-      }
-    }
-    if (!root) return null;
-    const rootPc = NOTE_TO_PC[root];
-    // Rotate mask to root: degree d is set when bit (rootPc+d)%12 is set.
+    // Translate the chord's pitch classes into degrees relative to the
+    // CURRENT site key — don't reset k. Users were finding it jarring
+    // that clicking a chord chip would warp the page to a new key.
+    // Now: page key stays put, the chord's notes light up at whatever
+    // degrees they happen to be in that key (a I-chord always shows
+    // 1/3/5; a IV chord in C shows 4/6/1; an Em chip while in C shows
+    // 3/5/7, etc.).
+    const x = window.SF_X;
+    const tonic = (x && x.k) ? x.k : 'C';
+    const tonicPc = NOTE_TO_PC[tonic];
+    if (tonicPc == null) return null;
     const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
     const degs = [];
-    for (let i = 0; i < 12; i++) {
-      if ((chordMask >> ((rootPc + i) % 12)) & 1) degs.push(DEG_LBL[i]);
+    for (let pc = 0; pc < 12; pc++) {
+      if ((chordMask >> pc) & 1) {
+        const off = (pc - tonicPc + 12) % 12;
+        degs.push(DEG_LBL[off]);
+      }
     }
+    if (!degs.length) return null;
     const p = new URLSearchParams(window.location.search);
-    p.delete('hl'); p.set('k', urlNote(root));
-    // Keep pk= so picking a chord chip doesn't reset the user's pick set —
-    // they often want to keep exploring from the same selection.
-    if (degs.length) {
-      p.append('hl', degs.map(function (d) { return d.replace('♭', 'b'); }).join(','));
-    }
+    p.delete('hl');
+    // Sort by canonical degree order so the URL is stable regardless
+    // of the bit-iteration order above.
+    degs.sort(function (a, b) { return DEG_LBL.indexOf(a) - DEG_LBL.indexOf(b); });
+    // Separator-free hl form (same shape as the rest of the site).
+    p.append('hl', degs.map(function (d) { return d.replace('♭', 'b'); }).join(''));
     return '?' + canonicalQS(p);
   }
 
