@@ -337,6 +337,108 @@ async def _fetch_uberchord(name: str, client: httpx.AsyncClient) -> Optional[lis
     return data if isinstance(data, list) else []
 
 
+# Snapshot of background prefetch progress so the user can poll status.
+_prefetch_state: dict = {
+    "running":  False,
+    "fetched":  0,
+    "skipped":  0,
+    "failed":   0,
+    "total":    0,
+    "current":  "",
+    "error":    "",
+    "started":  0.0,
+    "finished": 0.0,
+}
+
+
+async def _prefetch_worker() -> None:
+    """Background task body for /api/chord-shapes/prefetch. Updates
+    _prefetch_state as it goes so a status poll can show progress."""
+    _prefetch_state.update(
+        running=True, fetched=0, skipped=0, failed=0,
+        current="", error="", started=time.time(), finished=0.0,
+    )
+    _prefetch_state["total"] = len(_CHORD_ROOTS) * len(_CHORD_TYPES)
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            for root in _CHORD_ROOTS:
+                for typ in _CHORD_TYPES:
+                    name = root + typ
+                    _prefetch_state["current"] = name
+                    existing = await _chord_shapes_from_db(name)
+                    if existing is not None:
+                        _prefetch_state["skipped"] += 1
+                        continue
+                    await asyncio.sleep(0.4)
+                    shapes = await _fetch_uberchord(name, client)
+                    if shapes is None:
+                        _prefetch_state["failed"] += 1
+                        print(f"prefetch fetch failed: {name}", flush=True)
+                        continue
+                    await _chord_shapes_to_db(name, shapes)
+                    _CHORD_CACHE[name] = shapes
+                    _prefetch_state["fetched"] += 1
+    except Exception as e:
+        _prefetch_state["error"] = str(e)[:400]
+        print(f"prefetch worker exception: {e}", flush=True)
+        traceback.print_exc()
+    finally:
+        _prefetch_state["running"] = False
+        _prefetch_state["current"] = ""
+        _prefetch_state["finished"] = time.time()
+
+
+@app.get("/api/chord-shapes-status")
+async def chord_shapes_status():
+    """Public diagnostic: in-flight prefetch progress + the row count
+    in the persistent chord_shapes table. Useful while waiting for the
+    background prefetch to finish."""
+    out = dict(_prefetch_state)
+    if os.environ.get("DATABASE_URL"):
+        try:
+            pool = db.get_pool()
+            async with pool.connection() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute("SELECT COUNT(*) FROM chord_shapes")
+                    row = await cur.fetchone()
+                    out["db_count"] = int(row[0]) if row else 0
+                    await cur.execute(
+                        "SELECT name, jsonb_array_length(shapes) AS n "
+                        "FROM chord_shapes "
+                        "ORDER BY fetched_at DESC LIMIT 5"
+                    )
+                    out["db_recent"] = [
+                        {"name": r[0], "n_shapes": int(r[1])}
+                        for r in await cur.fetchall()
+                    ]
+        except Exception as e:
+            out["db_error"] = str(e)[:400]
+    return out
+
+
+@app.post("/api/chord-shapes/prefetch")
+async def prefetch_chord_shapes(request: Request):
+    """Kick off a background prefetch that walks every (root ×
+    chord-type) combo, fetching from Uberchord with a polite delay
+    and persisting to Postgres. Returns immediately so the HTTP
+    request doesn't time out at the proxy (~3 minutes total work).
+
+    Idempotent: already-cached combos are skipped, so re-running
+    only picks up types added since last run. Poll /api/chord-shapes-
+    status to track progress.
+
+    Admin-gated by the static `X-Admin-Key` header."""
+    require_admin_key(request)
+    if _prefetch_state["running"]:
+        return {"status": "already running", "state": dict(_prefetch_state)}
+    asyncio.create_task(_prefetch_worker())
+    return {
+        "status": "started",
+        "total":  len(_CHORD_ROOTS) * len(_CHORD_TYPES),
+        "poll":   "/api/chord-shapes-status",
+    }
+
+
 @app.get("/api/chord-shapes/{name}")
 async def chord_shapes(name: str):
     """Resolve chord voicings: in-memory → Postgres → Uberchord upstream.
@@ -364,45 +466,6 @@ async def chord_shapes(name: str):
     _CHORD_CACHE[cleaned] = fetched
     await _chord_shapes_to_db(cleaned, fetched)
     return {"name": cleaned, "shapes": fetched, "src": "upstream"}
-
-
-@app.post("/api/chord-shapes/prefetch")
-async def prefetch_chord_shapes(request: Request):
-    """Walk every (root × chord-type) combo and seed the persistent
-    cache. Idempotent: combos already in DB are skipped, so re-running
-    is cheap and only fetches new types added since last run.
-
-    Polite delay between upstream calls so we don't hammer Uberchord.
-    Admin-gated by the static `X-Admin-Key` header — invoke from a
-    laptop / one-off script. ~336 chords total at the current grid +
-    12 keys, ~3 minutes end-to-end with the 0.4s delay."""
-    require_admin_key(request)
-    fetched = 0
-    skipped = 0
-    failed = 0
-    total = len(_CHORD_ROOTS) * len(_CHORD_TYPES)
-    async with httpx.AsyncClient(timeout=8.0) as client:
-        for root in _CHORD_ROOTS:
-            for typ in _CHORD_TYPES:
-                name = root + typ
-                existing = await _chord_shapes_from_db(name)
-                if existing is not None:
-                    skipped += 1
-                    continue
-                await asyncio.sleep(0.4)
-                shapes = await _fetch_uberchord(name, client)
-                if shapes is None:
-                    failed += 1
-                    continue
-                await _chord_shapes_to_db(name, shapes)
-                _CHORD_CACHE[name] = shapes
-                fetched += 1
-    return {
-        "fetched": fetched,
-        "skipped": skipped,
-        "failed": failed,
-        "total": total,
-    }
 
 
 @app.get("/api/health")
