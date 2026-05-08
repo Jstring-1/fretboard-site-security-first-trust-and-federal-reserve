@@ -1324,6 +1324,9 @@ a.identify_chip_on:active                  { background: #ffeb00; color: #1a1a00
                                              padding: 4px 6px; border-radius: 4px;                                       }
 .cdx_meta                                  { margin-top: 6px; font: 400 0.75em var(--font);
                                              color: var(--muted); letter-spacing: 0.04em;                                }
+.cdx_warn                                  { color: #ffc857;                                                             }
+.cdx_loading                               { font: 400 0.85em var(--font); color: var(--muted-dim);
+                                             padding: 6px 0; min-width: 200px; text-align: center;                       }
 .cdx_svg                                   { display: block;                                                             }
 /* In-key filter pill sits inline next to the picks readout so it
    doesn't collide with the absolute-positioned .identify_btns cluster

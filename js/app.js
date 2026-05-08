@@ -4377,102 +4377,78 @@
   // playable shapes computed from the current tuning. Shapes scored
   // by playability (root-in-bass + low position + few mutes win).
 
-  // Take the current site tuning + return strings sorted LOW → HIGH
-  // with their pitch classes. We pull from x.notes (or x.s in custom
-  // mode) — both are stored space-separated in low-to-high order, so
-  // we can take their split as-is. Avoid x['s'+i] iteration: those
-  // slots are backfilled with DEF_X defaults for unused strings, so
-  // a 6-string tuning would over-report 12 notes.
-  function _currentTuningLowHigh() {
+  // True when the current tuning is standard 6-string E-Standard. The
+  // Uberchord API only knows that one tuning, so we surface a caveat
+  // when it's anything else.
+  function _isStandardGuitar() {
     const x = window.SF_X;
-    if (!x) return [];
-    const src = (x.z === 'y') ? (x.s || '') : (x.notes || '');
-    const noteList = String(src).split(/\s+/).filter(Boolean);
-    if (!noteList.length) return [];
-    const N = Math.min(+x.strs || noteList.length, noteList.length);
-    const used = noteList.slice(0, N);
-    let midis;
-    try { midis = fretboardStringMidis(used); }
-    catch (_) { midis = used.map(function (n, i) { return notePc(n) + 24 + i * 5; }); }
-    return midis.map(function (m, i) {
-      return { pc: m % 12, midi: m, name: used[i] };
-    });
+    if (!x) return false;
+    if (x.z === 'y') return false;
+    return (+x.strs === 6) && (x.x === 'EADGBE');
   }
 
-  // Find playable chord shapes on the current tuning. Returns up to
-  // `maxShapes` candidates, each with:
-  //   { frets: [0,3,2,0,1,0],   // -1 means muted
-  //     window: 0,              // lowest fretted position (for label)
-  //     bassIsRoot: true,
-  //     score: 87 }
-  function findChordShapes(chordMask, rootPc, tuning, maxShapes) {
-    const N = tuning.length;
-    if (N < 3) return [];
-    const MAX_FRET = 15;
-    const WINDOW = 4;
-    // For each string (low→high), the list of frets where a chord tone lives.
-    const noteAt = tuning.map(function (t) {
-      const list = [];
-      for (let f = 0; f <= MAX_FRET; f++) {
-        const pc = (t.pc + f) % 12;
-        if ((chordMask >> pc) & 1) list.push({ fret: f, pc: pc });
-      }
-      return list;
-    });
-    const shapes = [];
-    // Try every 4-fret window. start=0 means open + frets 1-3.
-    for (let start = 0; start <= MAX_FRET - WINDOW + 1; start++) {
-      const end = start + WINDOW - 1;
-      const frets = [];
-      let played = 0;
-      let hasRoot = false;
-      let bassPc = -1;
-      for (let s = 0; s < N; s++) {
-        // For each string, prefer an open string if it's a chord tone.
-        // Otherwise pick the lowest fret in [start..end] that's a chord tone.
-        let pick = null;
-        for (const n of noteAt[s]) {
-          if (n.fret === 0) { pick = n; break; }
-          if (n.fret > end) break;
-          if (n.fret >= start) {
-            if (!pick || n.fret < pick.fret) pick = n;
+  // Per-chord-name cache so we only hit the API once per session per
+  // chord. Keyed by the display name (e.g. "Cmaj7"). Value is the
+  // resolved shape array (possibly empty).
+  const _cdxCache = {};
+
+  // Convert a chord display name into the Uberchord URL form. Their
+  // API uses 's' for sharps and 'b' for flats (no Unicode), so
+  // "C♯m7" → "Csm7", "B♭7" → "Bb7".
+  function _cdxApiName(name) {
+    return name.replace(/♯/g, 's').replace(/♭/g, 'b').replace(/#/g, 's');
+  }
+
+  // Fetch shapes from Uberchord. Returns a Promise that resolves to
+  // an array of shape objects in the same format findChordShapes used
+  // before: { frets:[…], window:N, voicing:str }. -1 means muted.
+  function fetchChordShapes(chordName) {
+    if (_cdxCache[chordName] !== undefined) {
+      return Promise.resolve(_cdxCache[chordName]);
+    }
+    const apiName = _cdxApiName(chordName);
+    const url = 'https://api.uberchord.com/v1/chords/' + encodeURIComponent(apiName);
+    return fetch(url)
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (data) {
+        if (!Array.isArray(data) || !data.length) {
+          _cdxCache[chordName] = [];
+          return [];
+        }
+        const shapes = data.slice(0, 4).map(function (v) {
+          const raw = String(v.strings || '').trim().split(/\s+/);
+          const frets = raw.map(function (s) {
+            if (s.toUpperCase() === 'X') return -1;
+            const n = parseInt(s, 10);
+            return isNaN(n) ? -1 : n;
+          });
+          // Pick a 4-fret window covering all fretted notes. If the
+          // shape has any 0 (open), keep the window starting at 1 so
+          // the nut shows.
+          const fretted = frets.filter(function (f) { return f > 0; });
+          let win = 1;
+          if (fretted.length) {
+            const minFret = Math.min.apply(null, fretted);
+            const maxFret = Math.max.apply(null, fretted);
+            const hasOpen = frets.some(function (f) { return f === 0; });
+            if (maxFret <= 4) win = 1;
+            else if (hasOpen) win = 1;  // open notes pin the window to nut
+            else win = Math.max(1, minFret);
           }
-        }
-        if (pick) {
-          frets.push(pick.fret);
-          played++;
-          if (pick.pc === rootPc) hasRoot = true;
-          if (bassPc < 0) bassPc = pick.pc;
-        } else {
-          frets.push(-1);
-        }
-      }
-      if (played < 3) continue;
-      if (!hasRoot) continue;
-      // Score: more notes, lower position, root in bass.
-      const score = played * 10
-                  - start
-                  - (bassPc === rootPc ? 0 : 6);
-      shapes.push({
-        frets: frets,
-        window: start,
-        score: score,
-        bassIsRoot: (bassPc === rootPc),
+          return {
+            frets: frets,
+            window: win,
+            voicing: v.voicing || v.chordName || '',
+          };
+        });
+        _cdxCache[chordName] = shapes;
+        return shapes;
+      })
+      .catch(function (e) {
+        console.warn('chord-diagram lookup failed for', chordName, e);
+        _cdxCache[chordName] = [];
+        return [];
       });
-    }
-    if (!shapes.length) return [];
-    shapes.sort(function (a, b) { return b.score - a.score; });
-    // Dedupe by fret pattern.
-    const seen = {};
-    const out = [];
-    for (const sh of shapes) {
-      const k = sh.frets.join(',');
-      if (seen[k]) continue;
-      seen[k] = true;
-      out.push(sh);
-      if (out.length >= (maxShapes || 3)) break;
-    }
-    return out;
   }
 
   // Render one chord shape as a small SVG. Vertical layout: strings
@@ -4560,41 +4536,13 @@
     }, 200);
   }
 
-  function showChordDiagram(chip, chordName) {
-    if (!window.SF_Features || !window.SF_Features.isVisible('chord_diagrams')) return;
-    // Recover the chord's mask from window.SLANT_CHORDS.
-    const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
-    let mask = 0;
-    for (let j = 0; j < data.length; j++) {
-      if (data[j][1] === chordName) { mask = data[j][0]; break; }
-    }
-    if (!mask) return;
-    // Find root pc.
-    let root = null;
-    for (const n of PC_TO_NOTE) {
-      if (chordName.indexOf(n) === 0 && (root === null || n.length > root.length)) {
-        root = n;
-      }
-    }
-    if (root == null) return;
-    const rootPc = NOTE_TO_PC[root];
-    const tuning = _currentTuningLowHigh();
-    if (!tuning.length) return;
-    const shapes = findChordShapes(mask, rootPc, tuning, 3);
-    if (!shapes.length) return;
-    const pop = _ensureCdxPop();
-    let h = '<div class="cdx_title">' + escHtml(chordName) + '</div>';
-    h += '<div class="cdx_grid">';
-    shapes.forEach(function (sh) {
-      h += '<div class="cdx_box">' + renderChordDiagramSvg(sh) + '</div>';
-    });
-    h += '</div>';
-    h += '<div class="cdx_meta">tuning: '
-       + tuning.map(function (t) { return escHtml(t.name); }).join(' ')
-       + '</div>';
-    pop.innerHTML = h;
-    pop.style.display = 'block';
-    // Position above the chip if there's room, otherwise below.
+  // Track the most recent hover so out-of-order fetch resolves don't
+  // overwrite the popover after the user has moved on.
+  let _cdxCurrentName = null;
+
+  function _positionCdxPop(chip) {
+    const pop = _cdxPop;
+    if (!pop) return;
     const r = chip.getBoundingClientRect();
     const popH = pop.offsetHeight;
     const popW = pop.offsetWidth;
@@ -4606,6 +4554,44 @@
     if (left < 8) left = 8;
     pop.style.left = left + 'px';
     pop.style.top  = top  + 'px';
+  }
+
+  function showChordDiagram(chip, chordName) {
+    if (!window.SF_Features || !window.SF_Features.isVisible('chord_diagrams')) return;
+    _cdxCurrentName = chordName;
+    const pop = _ensureCdxPop();
+    const isStd = _isStandardGuitar();
+    // Render a "loading" frame immediately so the popover is visible
+    // while the API call resolves.
+    pop.innerHTML = '<div class="cdx_title">' + escHtml(chordName) + '</div>'
+                  + '<div class="cdx_loading">Loading shapes…</div>';
+    pop.style.display = 'block';
+    _positionCdxPop(chip);
+
+    fetchChordShapes(chordName).then(function (shapes) {
+      // Bail if the user already moved to a different chip.
+      if (_cdxCurrentName !== chordName) return;
+      if (!shapes.length) {
+        pop.innerHTML = '<div class="cdx_title">' + escHtml(chordName) + '</div>'
+                      + '<div class="cdx_loading">No shapes available.</div>';
+        _positionCdxPop(chip);
+        return;
+      }
+      let h = '<div class="cdx_title">' + escHtml(chordName) + '</div>';
+      h += '<div class="cdx_grid">';
+      shapes.forEach(function (sh) {
+        h += '<div class="cdx_box">' + renderChordDiagramSvg(sh) + '</div>';
+      });
+      h += '</div>';
+      h += '<div class="cdx_meta">guitar standard tuning · uberchord.com';
+      if (!isStd) {
+        h += '<br><span class="cdx_warn">your current tuning is different — '
+           + 'these shapes are for E A D G B E</span>';
+      }
+      h += '</div>';
+      pop.innerHTML = h;
+      _positionCdxPop(chip);
+    });
   }
 
   function bindChordDiagramHovers() {
