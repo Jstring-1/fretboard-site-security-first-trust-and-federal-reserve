@@ -27,8 +27,9 @@
 
   // The single source of truth. Edit values to flip rollouts.
   var FLAGS = {
-    'tab':         'admin',  // Tab editor
-    'sheetmusic':  'admin',  // Sheet music / chord-progression viewer (WIP)
+    'tab':            'admin',  // Tab editor
+    'sheetmusic':     'admin',  // Sheet music / chord-progression viewer (WIP)
+    'chord_diagrams': 'admin',  // Hover popover with computed chord-shape diagrams (testing)
   };
 
   // Admin status comes from the server's /api/admin-ip endpoint, which

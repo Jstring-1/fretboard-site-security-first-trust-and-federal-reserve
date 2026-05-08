@@ -4372,6 +4372,263 @@
     return '?' + canonicalQS(p);
   }
 
+  // ---------- chord-diagram popover (admin-gated v1) ----------
+  // Hover any chord chip in the identify strip to see one or more
+  // playable shapes computed from the current tuning. Shapes scored
+  // by playability (root-in-bass + low position + few mutes win).
+
+  // Take the current site tuning + return strings sorted LOW → HIGH
+  // with their pitch classes. The order matters for the diagram —
+  // we always render lowest-pitch on the left regardless of the user's
+  // L↔H display preference.
+  function _currentTuningLowHigh() {
+    const x = window.SF_X;
+    if (!x) return [];
+    const notes = [];
+    for (let i = 1; i <= 12; i++) {
+      if (x['s' + i]) notes.push(x['s' + i]); else break;
+    }
+    if (notes.length < 2) return [];
+    // x.s1..sN are stored in the user's display order. Get MIDI numbers
+    // (which fretboardStringMidis assumes a low-to-high input for, but
+    // for our purposes we just want the relative ordering).
+    let midis;
+    try { midis = fretboardStringMidis(notes); }
+    catch (_) { midis = notes.map(function (n, i) { return notePc(n) + i * 12; }); }
+    const pairs = midis.map(function (m, i) { return { pc: m % 12, midi: m, name: notes[i] }; });
+    pairs.sort(function (a, b) { return a.midi - b.midi; });
+    return pairs;
+  }
+
+  // Find playable chord shapes on the current tuning. Returns up to
+  // `maxShapes` candidates, each with:
+  //   { frets: [0,3,2,0,1,0],   // -1 means muted
+  //     window: 0,              // lowest fretted position (for label)
+  //     bassIsRoot: true,
+  //     score: 87 }
+  function findChordShapes(chordMask, rootPc, tuning, maxShapes) {
+    const N = tuning.length;
+    if (N < 3) return [];
+    const MAX_FRET = 15;
+    const WINDOW = 4;
+    // For each string (low→high), the list of frets where a chord tone lives.
+    const noteAt = tuning.map(function (t) {
+      const list = [];
+      for (let f = 0; f <= MAX_FRET; f++) {
+        const pc = (t.pc + f) % 12;
+        if ((chordMask >> pc) & 1) list.push({ fret: f, pc: pc });
+      }
+      return list;
+    });
+    const shapes = [];
+    // Try every 4-fret window. start=0 means open + frets 1-3.
+    for (let start = 0; start <= MAX_FRET - WINDOW + 1; start++) {
+      const end = start + WINDOW - 1;
+      const frets = [];
+      let played = 0;
+      let hasRoot = false;
+      let bassPc = -1;
+      for (let s = 0; s < N; s++) {
+        // For each string, prefer an open string if it's a chord tone.
+        // Otherwise pick the lowest fret in [start..end] that's a chord tone.
+        let pick = null;
+        for (const n of noteAt[s]) {
+          if (n.fret === 0) { pick = n; break; }
+          if (n.fret > end) break;
+          if (n.fret >= start) {
+            if (!pick || n.fret < pick.fret) pick = n;
+          }
+        }
+        if (pick) {
+          frets.push(pick.fret);
+          played++;
+          if (pick.pc === rootPc) hasRoot = true;
+          if (bassPc < 0) bassPc = pick.pc;
+        } else {
+          frets.push(-1);
+        }
+      }
+      if (played < 3) continue;
+      if (!hasRoot) continue;
+      // Score: more notes, lower position, root in bass.
+      const score = played * 10
+                  - start
+                  - (bassPc === rootPc ? 0 : 6);
+      shapes.push({
+        frets: frets,
+        window: start,
+        score: score,
+        bassIsRoot: (bassPc === rootPc),
+      });
+    }
+    if (!shapes.length) return [];
+    shapes.sort(function (a, b) { return b.score - a.score; });
+    // Dedupe by fret pattern.
+    const seen = {};
+    const out = [];
+    for (const sh of shapes) {
+      const k = sh.frets.join(',');
+      if (seen[k]) continue;
+      seen[k] = true;
+      out.push(sh);
+      if (out.length >= (maxShapes || 3)) break;
+    }
+    return out;
+  }
+
+  // Render one chord shape as a small SVG. Vertical layout: strings
+  // run left-to-right (low→high), frets run top-to-bottom. Uses the
+  // site's accent colour for fretted dots.
+  function renderChordDiagramSvg(shape) {
+    const N = shape.frets.length;
+    const STR_GAP = 16;
+    const FRET_GAP = 20;
+    const PAD_T = 18;
+    const PAD_L = 12;
+    const PAD_R = 22;
+    const FRETS_VIS = 4;
+    const w = (N - 1) * STR_GAP + PAD_L + PAD_R;
+    const h = FRETS_VIS * FRET_GAP + PAD_T + 6;
+    const startFret = shape.window;
+    let s = '<svg viewBox="0 0 ' + w + ' ' + h + '" class="cdx_svg" '
+          + 'width="' + w + '" height="' + h + '">';
+    // Strings (vertical lines)
+    for (let i = 0; i < N; i++) {
+      const x = PAD_L + i * STR_GAP;
+      s += '<line x1="' + x + '" y1="' + PAD_T + '" x2="' + x
+        +  '" y2="' + (PAD_T + FRETS_VIS * FRET_GAP) + '" stroke="#888" stroke-width="1"/>';
+    }
+    // Frets (horizontal lines). Row 0 is the nut if startFret <= 1.
+    for (let f = 0; f <= FRETS_VIS; f++) {
+      const y = PAD_T + f * FRET_GAP;
+      const sw = (f === 0 && startFret <= 1) ? 3 : 1;
+      const stroke = (f === 0 && startFret <= 1) ? '#e8e2d4' : '#888';
+      s += '<line x1="' + PAD_L + '" y1="' + y + '" x2="' + (PAD_L + (N - 1) * STR_GAP)
+        +  '" y2="' + y + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>';
+    }
+    // Position label (e.g. "5fr") for higher-up shapes.
+    if (startFret > 1) {
+      s += '<text x="' + (PAD_L + (N - 1) * STR_GAP + 4) + '" y="' + (PAD_T + FRET_GAP * 0.7)
+        +  '" font-size="10" fill="#999">' + startFret + 'fr</text>';
+    }
+    // Open / muted indicators above the diagram.
+    for (let i = 0; i < N; i++) {
+      const x = PAD_L + i * STR_GAP;
+      if (shape.frets[i] === -1) {
+        s += '<text x="' + x + '" y="' + (PAD_T - 5) + '" font-size="11" fill="#999" text-anchor="middle">×</text>';
+      } else if (shape.frets[i] === 0) {
+        s += '<circle cx="' + x + '" cy="' + (PAD_T - 7) + '" r="3.5" fill="none" stroke="#5fe8e0" stroke-width="1.2"/>';
+      }
+    }
+    // Fretted-note dots.
+    for (let i = 0; i < N; i++) {
+      const f = shape.frets[i];
+      if (f > 0) {
+        const visualFret = startFret <= 1 ? f : (f - startFret + 1);
+        if (visualFret < 1 || visualFret > FRETS_VIS) continue;
+        const x = PAD_L + i * STR_GAP;
+        const y = PAD_T + (visualFret - 0.5) * FRET_GAP;
+        s += '<circle cx="' + x + '" cy="' + y + '" r="5.5" fill="#5fe8e0"/>';
+      }
+    }
+    s += '</svg>';
+    return s;
+  }
+
+  // Single shared popover element + show/hide helpers.
+  let _cdxPop = null;
+  let _cdxShowTimer = null;
+  let _cdxHideTimer = null;
+
+  function _ensureCdxPop() {
+    if (_cdxPop) return _cdxPop;
+    _cdxPop = document.createElement('div');
+    _cdxPop.className = 'cdx_pop';
+    _cdxPop.style.display = 'none';
+    _cdxPop.addEventListener('mouseenter', function () {
+      if (_cdxHideTimer) { clearTimeout(_cdxHideTimer); _cdxHideTimer = null; }
+    });
+    _cdxPop.addEventListener('mouseleave', _scheduleCdxHide);
+    document.body.appendChild(_cdxPop);
+    return _cdxPop;
+  }
+
+  function _scheduleCdxHide() {
+    if (_cdxHideTimer) clearTimeout(_cdxHideTimer);
+    _cdxHideTimer = setTimeout(function () {
+      if (_cdxPop) _cdxPop.style.display = 'none';
+      _cdxHideTimer = null;
+    }, 200);
+  }
+
+  function showChordDiagram(chip, chordName) {
+    if (!window.SF_Features || !window.SF_Features.isVisible('chord_diagrams')) return;
+    // Recover the chord's mask from window.SLANT_CHORDS.
+    const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
+    let mask = 0;
+    for (let j = 0; j < data.length; j++) {
+      if (data[j][1] === chordName) { mask = data[j][0]; break; }
+    }
+    if (!mask) return;
+    // Find root pc.
+    let root = null;
+    for (const n of PC_TO_NOTE) {
+      if (chordName.indexOf(n) === 0 && (root === null || n.length > root.length)) {
+        root = n;
+      }
+    }
+    if (root == null) return;
+    const rootPc = NOTE_TO_PC[root];
+    const tuning = _currentTuningLowHigh();
+    if (!tuning.length) return;
+    const shapes = findChordShapes(mask, rootPc, tuning, 3);
+    if (!shapes.length) return;
+    const pop = _ensureCdxPop();
+    let h = '<div class="cdx_title">' + escHtml(chordName) + '</div>';
+    h += '<div class="cdx_grid">';
+    shapes.forEach(function (sh) {
+      h += '<div class="cdx_box">' + renderChordDiagramSvg(sh) + '</div>';
+    });
+    h += '</div>';
+    h += '<div class="cdx_meta">tuning: '
+       + tuning.map(function (t) { return escHtml(t.name); }).join(' ')
+       + '</div>';
+    pop.innerHTML = h;
+    pop.style.display = 'block';
+    // Position above the chip if there's room, otherwise below.
+    const r = chip.getBoundingClientRect();
+    const popH = pop.offsetHeight;
+    const popW = pop.offsetWidth;
+    let top = r.top - popH - 8 + window.scrollY;
+    if (top < window.scrollY + 8) top = r.bottom + 8 + window.scrollY;
+    let left = r.left + window.scrollX + (r.width / 2) - popW / 2;
+    const vw = window.innerWidth;
+    if (left + popW > vw - 8) left = vw - popW - 8;
+    if (left < 8) left = 8;
+    pop.style.left = left + 'px';
+    pop.style.top  = top  + 'px';
+  }
+
+  function bindChordDiagramHovers() {
+    if (document.body._cdxBound) return;
+    document.body._cdxBound = true;
+    document.body.addEventListener('mouseenter', function (e) {
+      const chip = e.target && e.target.closest && e.target.closest('.identify_chip');
+      if (!chip) return;
+      if (_cdxHideTimer) { clearTimeout(_cdxHideTimer); _cdxHideTimer = null; }
+      if (_cdxShowTimer) clearTimeout(_cdxShowTimer);
+      _cdxShowTimer = setTimeout(function () {
+        showChordDiagram(chip, chip.textContent.trim());
+      }, 250);
+    }, true);
+    document.body.addEventListener('mouseleave', function (e) {
+      const chip = e.target && e.target.closest && e.target.closest('.identify_chip');
+      if (!chip) return;
+      if (_cdxShowTimer) { clearTimeout(_cdxShowTimer); _cdxShowTimer = null; }
+      _scheduleCdxHide();
+    }, true);
+  }
+
   function renderIdentifyStrips(xFB, xKB) {
     const fbHost = document.getElementById('fb_identify_root');
     const kbHost = document.getElementById('kb_identify_root');
@@ -5002,6 +5259,7 @@
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindGridRowClicks();     // whole-row click → triggers row's chord/scale link
+    bindChordDiagramHovers();// hover chord-ID chips → popover diagrams (admin-gated)
     bindNotePick();          // click fret cells / keyboard keys to pick notes
     bindApplyAllToggle();    // one-time wire of the Apply: all chip in fretboard summary
     bindAudioToggle();       // one-time wire of the ♪ audio toggle in fretboard summary
