@@ -135,16 +135,16 @@
 <!-- Styles + scripts. defer=async-download, in-order execution after DOM
      parse — same effect as the old "load at end of body" trick without
      the layout reflow. -->
-<link rel="stylesheet" href="css/styles.css?v=20260509.0010">
-<link rel="stylesheet" href="css/tab.css?v=20260509.0010">
-<script defer src="js/data.js?v=20260509.0010"></script>
-<script defer src="js/chord_lookup.js?v=20260509.0010"></script>
-<script defer src="js/sortable.js?v=20260509.0010"></script>
-<script defer src="js/app.js?v=20260509.0010"></script>
-<script defer src="js/chord_boxes.js?v=20260509.0010"></script>
-<script defer src="js/tab.js?v=20260509.0010"></script>
-<script defer src="js/features.js?v=20260509.0010"></script>
-<script defer src="js/sheetmusic.js?v=20260509.0010"></script>
+<link rel="stylesheet" href="css/styles.css?v=20260509.0011">
+<link rel="stylesheet" href="css/tab.css?v=20260509.0011">
+<script defer src="js/data.js?v=20260509.0011"></script>
+<script defer src="js/chord_lookup.js?v=20260509.0011"></script>
+<script defer src="js/sortable.js?v=20260509.0011"></script>
+<script defer src="js/app.js?v=20260509.0011"></script>
+<script defer src="js/chord_boxes.js?v=20260509.0011"></script>
+<script defer src="js/tab.js?v=20260509.0011"></script>
+<script defer src="js/features.js?v=20260509.0011"></script>
+<script defer src="js/sheetmusic.js?v=20260509.0011"></script>
 </head>
 <body>
 
@@ -159,13 +159,12 @@
      Stays pinned at the top so the controls follow the user as they scroll. -->
 <header id="site_header" class="site_header_sticky">
   <span id="site_tuning" class="summary_tuning"></span>
-  <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
   <span id="site_global_controls">
     <button type="button" id="audio_toggle" class="section_audio_toggle" aria-pressed="false" title="Audio off — click to play notes when you click a fret or key.">♪</button>
     <a id="site_clear" class="section_clear" href="?">Clear</a>
   </span>
-  <!-- Global key picker — replaces the per-section key rows. Sits below
-       the logo, spans all three grid columns, sticky with the header. -->
+  <!-- Global key picker — replaces the per-section key rows. Sits in
+       the sticky header alongside tuning + audio/clear. -->
   <div id="global_key_row" class="section_key_row"></div>
 </header>
 <!-- SEO-friendly intro lede: visible to crawlers, hidden for sighted users
@@ -327,8 +326,9 @@
 </details>
 
 <footer id="site_footer">
+  <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260509.1131</div>
+  <div id="build_num">20260509.1326</div>
 </footer>
 
 </body>
