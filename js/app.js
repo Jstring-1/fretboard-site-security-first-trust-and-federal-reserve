@@ -1614,63 +1614,23 @@
     // tuning, etc.).
     const siteClear = document.getElementById('site_clear');
     if (siteClear) siteClear.setAttribute('href', clearHlHref());
+    // Populate the single global key row in the sticky header (replaces
+    // the per-section rows). Uses the page-level x.k as the effective
+    // key — sections that opted into per-section keys via s<n>_k= still
+    // work in URL state, but the user-facing picker is now global.
+    const globalRow = document.getElementById('global_key_row');
+    if (globalRow) globalRow.innerHTML = keyButtonsHtml(x.k);
+    // Sweep any leftover per-section key rows from prior renders. The
+    // CSS hides them too, but removing keeps the DOM tidy.
+    document.querySelectorAll('.section_key_row_outer').forEach(function (el) { el.remove(); });
     const slots = document.querySelectorAll('.summary_extras');
     if (!slots.length) return;
-    function summaryHtml() {
-      // Per-section Clear was removed — the sticky-header Clear handles
-      // it for the whole page. Returning empty so each .summary_extras
-      // slot only carries the section's compact toggle (when any).
-      return '';
-    }
-    // Key-button row lives at the TOP of the section's content area
-    // (just after the <summary>), centred, in a dedicated wrapper div.
-    // Keeps the summary slim and uniform across all sections.
-    function ensureKeyRow(section, currentKey) {
-      const summary = section.querySelector(':scope > summary');
-      if (!summary) return;
-      // Clean up the legacy in-summary row if any older render left it.
-      const inSummary = summary.querySelector(':scope > .summary_keys');
-      if (inSummary) inSummary.remove();
-      let row = section.querySelector(':scope > .section_key_row_outer');
-      if (!row) {
-        row = document.createElement('div');
-        row.className = 'section_key_row_outer';
-        // Insert as first child after the summary.
-        summary.insertAdjacentElement('afterend', row);
-      }
-      row.innerHTML = keyButtonsHtml(currentKey);
-    }
-    function removeKeyRow(section) {
-      const stale = section.querySelector(':scope > .section_key_row_outer');
-      if (stale) stale.remove();
-      const summary = section.querySelector(':scope > summary');
-      const row = summary && summary.querySelector(':scope > .summary_keys');
-      if (row) row.remove();
-    }
     slots.forEach(function (s) {
       const target = s.getAttribute('data-summary-for');
-      const sectionEl = target ? document.getElementById(target) : null;
-      if (target === 'section_5' || target === 'section_9') {
-        s.innerHTML = '';
-        if (sectionEl) removeKeyRow(sectionEl);
-        return;
-      }
-      if (target === 'section_8') {
-        s.innerHTML = '';
-        if (sectionEl) removeKeyRow(sectionEl);
-        return;
-      }
-      // Compute this section's effective key. Linked → global x.k;
-      // unlinked → routed through stateForSection so any s<n>_k=
-      // override wins.
-      let sectionKey = x.k;
-      if (target && /^section_\d+$/.test(target)) {
-        const sx = stateForSection(target, x);
-        if (sx && sx.k) sectionKey = sx.k;
-      }
+      // Only emit the compact toggle for sections that opt in. Per-section
+      // Clear and key rows are gone — the sticky header owns those now.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
-      s.innerHTML = prefix + summaryHtml();
-      if (sectionEl) ensureKeyRow(sectionEl, sectionKey);
+      s.innerHTML = prefix;
     });
   }
 
