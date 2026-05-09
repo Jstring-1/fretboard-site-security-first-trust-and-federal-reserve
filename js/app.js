@@ -140,6 +140,9 @@
     const params = new URLSearchParams(window.location.search);
     params.delete('hl');
     params.set('hl', '');
+    // Active chord-ID chip marker — clear with hl so the engaged chip
+    // disengages alongside its highlights.
+    params.delete('idn');
     const qs = params.toString();
     return qs ? '?' + qs : '?';
   }
@@ -183,7 +186,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'cmp', 'ext', 'ik', 'prog', 'tempo', 'u'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'prog', 'tempo', 'u'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -622,6 +625,12 @@
         })
         .slice(0, 24);   // hard cap so URLs don't grow unbounded
     }
+    // Active chord-ID chip name — set by applyChordHref, cleared by
+    // clearHlOnlyHref. Pins the engaged-state visual to the specific
+    // chip the user clicked instead of every chip whose pitch classes
+    // match xs.hl.
+    x._id_active = String(params.get('idn') || '');
+
     // Playback tempo for the progression builder (BPM). 40-240 valid;
     // anything else falls back to default 100.
     const tempoRaw = parseInt(params.get('tempo') || '', 10);
@@ -5060,6 +5069,12 @@
     degs.sort(function (a, b) { return DEG_LBL.indexOf(a) - DEG_LBL.indexOf(b); });
     // Separator-free hl form (same shape as the rest of the site).
     p.append('hl', degs.map(function (d) { return d.replace('♭', 'b'); }).join(''));
+    // Record which chord-ID chip is the "active" one. Many chord names
+    // share the same pitch-class set (Em7 = G6), so without this every
+    // chip whose notes match xs.hl would light up. idn pins the
+    // engagement to the exact chip the user clicked.
+    if (chordName) p.set('idn', chordName);
+    else           p.delete('idn');
     return '?' + canonicalQS(p);
   }
 
@@ -5169,7 +5184,6 @@
           }
           let tip = name;
           let degsStr = '';      // chord degrees relative to its OWN root (for tooltip)
-          let degsInKey = '';    // chord degrees relative to the SITE key  (for engagement match)
           if (mask && rootPc >= 0) {
             const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
             const degs = [], notes = [];
@@ -5181,26 +5195,11 @@
             }
             degsStr = degs.join(' ');
             tip = name + '\nDegrees: ' + degsStr + '\nNotes: ' + notes.join(' ');
-            // applyChordHref translates the chord's pitch classes into
-            // degrees relative to the SITE key (not the chord's own root)
-            // and writes that to ?hl=. So engagement must compare against
-            // that same reference frame, otherwise clicking a non-key
-            // chord (e.g. "C7" while key is E) leaves the chip unengaged
-            // and any other chip whose own-root degrees happen to match
-            // hl ends up looking engaged instead.
-            const tonicPc = NOTE_TO_PC[xs.k];
-            if (tonicPc != null) {
-              const inKeyDegs = [];
-              for (let pc = 0; pc < 12; pc++) {
-                if ((mask >> pc) & 1) {
-                  inKeyDegs.push(DEG_LBL[(pc - tonicPc + 12) % 12]);
-                }
-              }
-              inKeyDegs.sort(function (a, b) { return DEG_LBL.indexOf(a) - DEG_LBL.indexOf(b); });
-              degsInKey = inKeyDegs.join(' ');
-            }
           }
-          const isEngaged = !!degsInKey && degSetsEqual(degsInKey, xs.hl);
+          // Engagement is pinned to the exact chip the user clicked via
+          // ?idn=<name>. Multiple names can describe the same notes
+          // (Em7 = G6), so a degrees-match would light all of them up.
+          const isEngaged = !!(xs._id_active && xs._id_active === name);
           let href;
           if (isEngaged) {
             // Disengage: drop hl= but keep pk= (yellow chord-ID picks)
