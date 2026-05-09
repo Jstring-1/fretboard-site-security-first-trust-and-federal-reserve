@@ -831,8 +831,8 @@ details.collapsible > summary > .summary_title::before
 .section_key_row .key_hidden_select        { display: none;                                                           }
 .section_key_row .key_btn                  { background: #0e0e0e; border: 1px solid #5a5a5a;
                                              border-radius: 5px; color: #f0f0f0;
-                                             font: 600 0.85em inherit; padding: 3px 9px;
-                                             min-width: 32px; cursor: pointer;                                        }
+                                             font: 600 0.82em inherit; padding: 1px 8px;
+                                             min-width: 30px; cursor: pointer; line-height: 1.2;                       }
 .section_key_row .key_btn:hover            { border-color: #888;                                                       }
 .section_key_row .key_btn.active           { background: rgba(95,232,224,0.20);
                                              border-color: var(--accent); color: var(--accent);                       }
@@ -905,18 +905,18 @@ select option                              { color: var(--text); background: var
                                              margin: 0; padding: 0; line-height: 1;
                                              background: transparent; border: none; box-shadow: none;                }
 /* Sticky top bar — tuning (left), KEY pills (center), controls (right).
-   Logo is now in the footer, just above the witherfork line. Single-row
-   grid, items center-aligned. */
+   Logo is now in the footer, just above the witherfork line. Compact:
+   single row, tight padding so the header doesn't eat vertical space. */
 .site_header_sticky                        { position: sticky; top: 0; z-index: 100;
                                              display: grid; grid-template-columns: 1fr auto 1fr;
-                                             align-items: center; gap: 6px 14px;
-                                             padding: 6px 16px;
+                                             align-items: center; gap: 0 14px;
+                                             padding: 2px 16px;
                                              background: var(--bg);
                                              border-bottom: 1px solid #1f1f1f;
                                              box-shadow: 0 6px 18px rgba(0,0,0,0.55),
                                                          0 2px 4px rgba(0,0,0,0.45);                                    }
 #site_tuning                               { grid-column: 1;                                                            }
-#global_key_row                            { grid-column: 2; justify-content: center; padding: 2px 0;                  }
+#global_key_row                            { grid-column: 2; justify-content: center; padding: 0;                      }
 #site_global_controls                      { grid-column: 3; justify-self: end;                                        }
 /* The inner span keyButtonsHtml emits has both .section_key_picker
    (which would push to flex-end) and .section_key_row (which sets gap).
@@ -1064,10 +1064,11 @@ details.collapsible.section                { position: relative;                
 }
 
 /* Footer hosts the logo + Jimmy Witherfork line + build number. The
-   logo lives just above witherfork as a centered <h1>. */
-#site_footer                               { text-align: center; padding: 16px 16px 12px; margin-top: 24px;
-                                             display: flex; flex-direction: column; align-items: center; gap: 6px;     }
-#site_footer #site_title                   { margin: 0 0 2px; padding: 0;                                              }
+   logo sits flush against the last section above; tight gap so the
+   block reads as one. */
+#site_footer                               { text-align: center; padding: 4px 16px 8px; margin-top: 0;
+                                             display: flex; flex-direction: column; align-items: center; gap: 4px;     }
+#site_footer #site_title                   { margin: 0; padding: 0;                                                    }
 #site_footer #footer_witherfork            { color: var(--muted) !important; font-size: 0.78em; letter-spacing: 0.04em;
                                              text-decoration: none; cursor: pointer; transition: color .12s;          }
 #site_footer #footer_witherfork:hover      { color: var(--accent-hi) !important;                                      }
