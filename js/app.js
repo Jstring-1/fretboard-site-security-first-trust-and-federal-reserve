@@ -5158,7 +5158,8 @@
             }
           }
           let tip = name;
-          let degsStr = '';
+          let degsStr = '';      // chord degrees relative to its OWN root (for tooltip)
+          let degsInKey = '';    // chord degrees relative to the SITE key  (for engagement match)
           if (mask && rootPc >= 0) {
             const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
             const degs = [], notes = [];
@@ -5170,8 +5171,26 @@
             }
             degsStr = degs.join(' ');
             tip = name + '\nDegrees: ' + degsStr + '\nNotes: ' + notes.join(' ');
+            // applyChordHref translates the chord's pitch classes into
+            // degrees relative to the SITE key (not the chord's own root)
+            // and writes that to ?hl=. So engagement must compare against
+            // that same reference frame, otherwise clicking a non-key
+            // chord (e.g. "C7" while key is E) leaves the chip unengaged
+            // and any other chip whose own-root degrees happen to match
+            // hl ends up looking engaged instead.
+            const tonicPc = NOTE_TO_PC[xs.k];
+            if (tonicPc != null) {
+              const inKeyDegs = [];
+              for (let pc = 0; pc < 12; pc++) {
+                if ((mask >> pc) & 1) {
+                  inKeyDegs.push(DEG_LBL[(pc - tonicPc + 12) % 12]);
+                }
+              }
+              inKeyDegs.sort(function (a, b) { return DEG_LBL.indexOf(a) - DEG_LBL.indexOf(b); });
+              degsInKey = inKeyDegs.join(' ');
+            }
           }
-          const isEngaged = root === xs.k && degSetsEqual(degsStr, xs.hl);
+          const isEngaged = !!degsInKey && degSetsEqual(degsInKey, xs.hl);
           let href;
           if (isEngaged) {
             // Disengage: drop hl= but keep pk= (yellow chord-ID picks)
