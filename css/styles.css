@@ -313,6 +313,12 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
 }
 
 @page { margin: 0.6cm; size: landscape; }
+/* Progressions chart prints better as a portrait grid — bars get more
+   vertical room on the page, and a 4-column grid fits comfortably. */
+@page progressions_portrait { margin: 0.6cm; size: portrait; }
+@media print {
+  body[data-print="section_11"] { page: progressions_portrait; }
+}
 @media print {
     /* Common: strip page chrome, force black text where it matters */
     body, h1, .slant, .finder, .pro,
@@ -1948,12 +1954,13 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_bar_inline_select                    { -webkit-appearance: none; -moz-appearance: none; appearance: none;
                                              background: transparent; border: none; outline: none;
                                              color: inherit; font: inherit; cursor: pointer;
-                                             padding: 0 4px; margin: 0;                                                  }
-.prog_bar_note_select                      { font: 700 1em var(--font); color: var(--text);
-                                             min-width: 2em; text-align: center;
-                                             text-align-last: center;                                                    }
-.prog_bar_voicing_select                   { font: 400 0.78em var(--font); color: var(--muted);
-                                             min-width: 3em;                                                            }
+                                             padding: 0; margin: 0;                                                      }
+.prog_bar_note_select                      { font: 700 1.5em var(--font); color: var(--text);
+                                             min-width: 1.4em; text-align: right;
+                                             text-align-last: right;                                                     }
+.prog_bar_voicing_select                   { font: 600 1.05em var(--font); color: var(--muted);
+                                             min-width: 1.5em; text-align: left;
+                                             text-align-last: left;                                                      }
 .prog_bar_inline_select:hover              { color: var(--accent-hi);                                                  }
 .prog_bar_inline_select:focus              { outline: 1px dashed var(--accent-hi); outline-offset: 2px;                }
 

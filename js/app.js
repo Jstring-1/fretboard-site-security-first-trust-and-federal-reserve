@@ -2423,6 +2423,16 @@
     }
     if (mode && mode !== 'major') p.set('pmode', mode);
     else p.delete('pmode');
+    // Any progression navigation (palette chip, ghost +, dropdown change,
+    // input apply) should keep section_11 open. Strip 11 from c= and
+    // set localStorage so applyCollapseFromUrl doesn't close it.
+    const cParam = p.get('c');
+    if (cParam) {
+      const remaining = cParam.split(',').filter(function (s) { return s && s !== '11'; });
+      if (remaining.length) p.set('c', remaining.join(','));
+      else p.delete('c');
+    }
+    try { window.localStorage.setItem('sf_collapse_section_11', 'open'); } catch (_) {}
     const qs = canonicalQS(p);
     return qs ? '?' + qs : '?';
   }
