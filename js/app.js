@@ -2703,16 +2703,25 @@
     // Determine the chord suffix:
     //   - Tail starting with an explicit quality (m / min / dim / °) wins
     //     so 'IIm' is unambiguously minor, 'IIdim' diminished, etc.
+    //   - 'ø' (half-dim) implies m7♭5 — that's the jazz convention; bare
+    //     'iiø' and 'iiø7' both resolve to m7b5.
+    //   - 'vii°7' / 'vii°' diminished — the trailing 7 makes it the
+    //     fully-diminished 7 (1, b3, b5, bb7=6).
     //   - Otherwise the case + ° symbol picks the base quality, and the
     //     tail is appended as an extension (e.g. 'I' + '7' → '7' suffix
-    //     = dom7; 'i' + '7' → 'm7' suffix; 'vii°' + '7' → 'dim7').
+    //     = dom7; 'i' + '7' → 'm7' suffix).
     let suffix;
     if (/^(m(?!aj)|min|dim)/i.test(tail)) {
       suffix = tail.replace(/^min/i, 'm').replace(/^dim/i, 'dim');
+    } else if (dimSym === 'ø') {
+      suffix = 'm7b5';
+    } else if (isDim && tail === '7') {
+      suffix = 'dim7';
+    } else if (isDim && !tail) {
+      suffix = 'dim';
     } else {
       let qual = '';
-      if (isDim) qual = 'dim';
-      else if (isMinor) qual = 'm';
+      if (isMinor) qual = 'm';
       suffix = qual + tail;
     }
     // For a clean diatonic match (no flat/sharp, no tail, no explicit dim),
