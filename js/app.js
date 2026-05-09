@@ -2853,9 +2853,13 @@
     // ----- Heading: input + ♯/♭ + mode + Play + Tempo, all on one
     // centered row. Apply removed; spacebar / Enter auto-apply.
     let h = '<div class="prog_panel">';
-    // Inline style on the row — belt-and-suspenders centering in case
-    // a stale CSS rule is still in cache. Same for the palette + strip.
-    h += '<div class="prog_input_row" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;width:100%;">';
+    // Two-level wrapper: outer is a full-width flex column with
+    // align-items:center (centers the inner block horizontally), inner
+    // is inline-flex sized to content. This matches how the palette
+    // centers and avoids any cascade/stretch surprises that prevented
+    // a single-row .prog_input_row from centering.
+    h += '<div class="prog_input_row_outer" style="display:flex;flex-direction:column;align-items:center;width:100%;">';
+    h += '<div class="prog_input_row" style="display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;">';
     h +=   '<span class="prog_input_label">Chord progression:</span>';
     const placeholder = 'I IV V  or  C Am F G  or  Cmaj7 Dm7 G7';
     h +=   '<input type="text" id="prog_input" class="prog_input"'
@@ -2883,7 +2887,8 @@
     h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
     h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
     h +=   '</label>';
-    h += '</div>';
+    h += '</div>';   // .prog_input_row
+    h += '</div>';   // .prog_input_row_outer
 
     // ----- Palette body — sits ABOVE the strip per user request. The
     // mode dropdown in the input row selects which 7 diatonic Romans are
