@@ -2358,6 +2358,14 @@
   // (with ♯). Maps cleanly via NOTE_TO_PC → pitch class.
   const _PROG_ROOTS = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 
+  // 12-position chromatic Romans (semitone offset from key tonic).
+  // Used by Custom-mode bars' degree dropdown so the user can swap a
+  // bar's root by picking a scale position relative to the page key,
+  // rather than scrubbing through 12 note names.
+  const _PROG_CHROMATIC_ROMANS = [
+    'I','♭II','II','♭III','III','IV','♯IV','V','♭VI','VI','♭VII','VII'
+  ];
+
   // Substitution suggestions per Roman numeral. Each entry is
   // [substituteRoman, why-it-works-blurb]. Click a suggestion in the
   // bar's ⋯ menu to swap the bar in place.
@@ -2821,6 +2829,11 @@
        +     ' placeholder="' + escHtml(placeholder) + '"'
        +     ' value="' + escHtml(prog.join(' ')) + '"'
        +     ' autocomplete="off" spellcheck="false" maxlength="120">';
+    // Quick-insert buttons for the proper accidental glyphs. Click
+    // either to drop ♯ or ♭ at the cursor in the input — keys for
+    // these aren't on a standard keyboard.
+    h +=   '<button type="button" class="prog_input_sym" data-sym="♯" title="Insert sharp">♯</button>';
+    h +=   '<button type="button" class="prog_input_sym" data-sym="♭" title="Insert flat">♭</button>';
     h +=   '<button type="button" class="prog_apply" title="Apply (auto-applies on spacebar)">Apply</button>';
     h += '</div>';
 
@@ -2859,15 +2872,34 @@
       h += '<div class="prog_bar prog_bar_custom_layout"'
          +   ' data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
       if (cr) {
-        // Degree row (non-custom only): a small Roman-numeral dropdown
-        // listing the current mode's 7 diatonic degrees. Pick a
-        // different one to swap that bar's chord without leaving
-        // mode-based form.
+        // Degree dropdown — appears on EVERY bar so custom and
+        // mode-based bars look identical.
+        //   Mode-based: lists the mode's 7 diatonic Romans (with their
+        //               quality, e.g. ii, vii°). Picking one swaps to
+        //               that diatonic Roman; stays in mode-based form.
+        //   Custom:     lists the 12 chromatic Romans relative to the
+        //               page key. Picking one swaps the bar's root to
+        //               that scale position; voicing suffix preserved.
         if (!isCustom) {
           h += '<select class="prog_bar_degree_select" data-idx="' + idx + '"'
              +   ' title="Change degree (within ' + escAttr(modeData.label) + ')">';
           modeData.romans.forEach(function (deg) {
             const sel = (deg === tok) ? ' selected' : '';
+            h += '<option value="' + escAttr(deg) + '"' + sel + '>' + escHtml(deg) + '</option>';
+          });
+          h += '</select>';
+        } else {
+          // Custom mode: figure out which chromatic Roman the current
+          // bar's root resolves to, relative to the page key, and
+          // preselect it.
+          const keyPc = NOTE_TO_PC[x.k];
+          const rootPc = NOTE_TO_PC[cr.root];
+          const curOffset = (keyPc != null && rootPc != null)
+            ? ((rootPc - keyPc + 12) % 12) : -1;
+          h += '<select class="prog_bar_degree_select" data-idx="' + idx + '"'
+             +   ' title="Change degree (chromatic, relative to ' + escAttr(x.k) + ')">';
+          _PROG_CHROMATIC_ROMANS.forEach(function (deg, i) {
+            const sel = (i === curOffset) ? ' selected' : '';
             h += '<option value="' + escAttr(deg) + '"' + sel + '>' + escHtml(deg) + '</option>';
           });
           h += '</select>';
@@ -2986,6 +3018,22 @@
 
     // Click delegate for buttons + the apply / custom-add flow.
     root.addEventListener('click', function (e) {
+      // ♯ / ♭ insertion buttons: drop the symbol at the input's caret.
+      const symBtn = e.target.closest && e.target.closest('.prog_input_sym');
+      if (symBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const inp = root.querySelector('#prog_input');
+        if (!inp) return;
+        const sym = symBtn.getAttribute('data-sym') || '';
+        const start = (typeof inp.selectionStart === 'number') ? inp.selectionStart : inp.value.length;
+        const end   = (typeof inp.selectionEnd   === 'number') ? inp.selectionEnd   : inp.value.length;
+        inp.value = inp.value.slice(0, start) + sym + inp.value.slice(end);
+        inp.focus();
+        const newPos = start + sym.length;
+        try { inp.setSelectionRange(newPos, newPos); } catch (_) {}
+        return;
+      }
       // Apply: parse the text input. Tokens accepted depend on mode.
       const apply = e.target.closest && e.target.closest('.prog_apply');
       if (apply) {
@@ -3120,18 +3168,33 @@
         navigateTo(buildProgHref(absolute, 'custom'));
         return;
       }
-      // Degree dropdown — non-custom only. Swap that bar's Roman to a
-      // different one within the same mode; keep the progression in
-      // mode-based form (no flip to custom).
+      // Degree dropdown — works in both modes:
+      //   Non-custom: swap that bar's Roman to a different mode-degree;
+      //               progression stays in mode-based form.
+      //   Custom:     swap the bar's ROOT to the selected scale position
+      //               relative to the page key; voicing suffix preserved.
       const degSel = e.target && e.target.closest && e.target.closest('.prog_bar_degree_select');
       if (degSel) {
         const xCur = window.SF_X;
-        if (!xCur || xCur._pmode === 'custom') return;
+        if (!xCur) return;
         const idx = parseInt(degSel.getAttribute('data-idx') || '-1', 10);
         const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
         if (idx < 0 || idx >= curProg.length) return;
-        curProg[idx] = degSel.value;
-        navigateTo(buildProgHref(curProg, xCur._pmode));
+        if (xCur._pmode === 'custom') {
+          const offset = _PROG_CHROMATIC_ROMANS.indexOf(degSel.value);
+          if (offset < 0) return;
+          const keyPc = NOTE_TO_PC[xCur.k];
+          if (keyPc == null) return;
+          const newRoot = PC_TO_NOTE[(keyPc + offset) % 12];
+          // Preserve the bar's existing voicing suffix.
+          const m = String(curProg[idx]).match(/^([A-G][♯♭]?)(.*)$/);
+          const suffix = m ? (m[2] || '') : '';
+          curProg[idx] = newRoot + suffix;
+          navigateTo(buildProgHref(curProg, 'custom'));
+        } else {
+          curProg[idx] = degSel.value;
+          navigateTo(buildProgHref(curProg, xCur._pmode));
+        }
         return;
       }
     });

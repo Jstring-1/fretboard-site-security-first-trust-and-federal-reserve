@@ -1779,6 +1779,14 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              font: 600 0.78em var(--font); cursor: pointer;
                                              letter-spacing: 0.04em;                                                    }
 .prog_apply:hover                          { background: rgba(255,255,255,0.4); border-color: #fff;                    }
+/* Quick-insert buttons for ♯ / ♭ — sit between the input and Apply.
+   Round to match the other input-row pills, narrower than Apply. */
+.prog_input_sym                            { width: 28px; height: 28px; padding: 0;
+                                             border-radius: 50%;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.10); color: #fff;
+                                             font: 600 1em var(--font); line-height: 1; cursor: pointer;                }
+.prog_input_sym:hover                      { background: var(--accent-hi); color: #001014; border-color: var(--accent-hi); }
 /* When the Clear pill is inside the input row (legacy fallback) it
    stays on the right; when injected into the section header it adopts
    the .section_print pill shape so it visually pairs with Print. */
