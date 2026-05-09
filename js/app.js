@@ -2340,7 +2340,7 @@
     // Country / secondary dominants — II major (V/V) and VI major (V/ii)
     // give the classic "Wagon Wheel" / bluegrass sound.
     'country':    { label: 'Country (sec. dom.)',
-                                              romans: ['I',   'II',  'iii',  'IV',     'V',  'VI',   '♭VII'] },
+                                              romans: ['I',   'II',  'III',  'IV',     'V',  'VI',   '♭VII'] },
     // Modal mixture / borrowed chords — major key with the parallel
     // minor's ♭III, iv, ♭VI, ♭VII available for color.
     'mixture':    { label: 'Modal Mixture',  romans: ['I',   'ii',  '♭III', 'iv',     'V',  '♭VI',  '♭VII'] },
@@ -2717,10 +2717,12 @@
     }
     // For a clean diatonic match (no flat/sharp, no tail, no explicit dim),
     // pull the degree set from the diatonic template — that's the
-    // canonical voicing the rest of the app expects.
+    // canonical voicing the rest of the app expects. Match
+    // case-SENSITIVELY so 'III' (which the user wrote major) does NOT
+    // pick up the 'iii' template (which is minor); same for 'i' vs 'I'.
     const isPlainDiatonic = !flat && !sharp && !tail && !isDim;
     const dia = _DIATONIC.find(function (d) {
-      return d.romanLc === baseRoman.toLowerCase();
+      return d.romanLc === baseRoman;
     });
     let degSet = [1, 3, 5];
     let name3 = root + suffix;
