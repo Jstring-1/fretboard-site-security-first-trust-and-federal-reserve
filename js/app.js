@@ -2371,6 +2371,11 @@
     'jazz_251':   { label: 'Jazz ii–V–I',     romans: ['ii7', 'V9',  'IMaj7','iiim7',  'VI7',  'iim7','V9'] },
     // Jazz minor ii–V–i — half-dim → dom7♭9 → minor tonic.
     'jazz_min251':{ label: 'Jazz ii°–V–i',    romans: ['iiø', 'V7♭9','im',   '♭VIMaj7','iiø',  'V7♭9','im'] },
+    // Rhythm Changes — Gershwin "I Got Rhythm" turnarounds. The
+    // A-section cycle is I VI7 iim7 V7 (×3) then III7 VI7 iim7 V7
+    // for the variation. These five chips cover both halves of that
+    // turnaround so the user can build either phrase by clicking.
+    'rhythm':     { label: 'Rhythm Changes',  romans: ['I',   'VI7', 'iim7', 'V7',     'III7'] },
   };
   // Order modes in the dropdown deliberately — most-used at the top.
   // 'custom' is intentionally NOT in this list: it's no longer a
@@ -2381,7 +2386,7 @@
     'major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic',
     'country','mixture','mixo_pop','aeolian','pent_maj','pent_min',
     'blues_1','blues_2','blues_3',
-    'jazz_251','jazz_min251',
+    'jazz_251','jazz_min251','rhythm',
   ];
 
   // Curated voicings for Custom mode. Order = display priority. Each
