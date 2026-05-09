@@ -818,14 +818,11 @@
     // ABOVE the note-letter row so the user reads the abstract degree
     // first and the concrete pitch directly under it. Note row reorders
     // when the key changes (root note sits under degree 1).
-    h += highlightPillsLinkHtml(x, 'fb_hl_row');
+    // Combined degree+note pill row: 12 stacked buttons, each showing
+    // degree on top and the resolved note (in the current key) below.
+    h += comboPillsHtml(x, 'fb_hl_row');
 
-    // Row 4: note-letter pickers, ordered by degree-from-root (so the
-    // root note column-aligns with degree 1, ♭2 with the next note
-    // chromatically up, etc.).
-    h += notePillsLinkHtml(x, 'fb_hn_row');
-
-    // Row 5: shared All / None for both pill rows.
+    // All / None pair for the combined pill row.
     h += allNoneRowHtml('fb_allnone_row');
 
     h += '</div>';
@@ -1313,6 +1310,42 @@
     return h;
   }
 
+  // Combined degree + note pill row — one button per chromatic degree
+  // showing the degree label on top and the note name (in the current
+  // key) below. Replaces the two separate rows; toggling either part
+  // toggles the same hl= entry.
+  function comboPillsHtml(x, rowCls) {
+    let h = '<div class="opt_row opt_row_combo ' + (rowCls || '') + '">';
+    const i1 = KEYS.indexOf(x.k);
+    const cur = String(x.hl || '').split(' ')
+                                  .filter(function (v) { return v && v !== 'nothing'; })
+                                  .map(function (v) { return flatToB(v); });
+    DEGREES.forEach(function (deg, off) {
+      const ab = flatToB(deg);
+      const on = (x['hl_' + ab] === 'y');
+      const noteIdx = i1 >= 0 ? (i1 + off) % ALLNOTES.length : off;
+      const note = i1 >= 0 ? ALLNOTES[noteIdx] : '';
+      let next;
+      if (on) next = cur.filter(function (d) { return d !== ab; });
+      else    next = cur.filter(function (d) { return d !== ab; }).concat([ab]);
+      const href = buildHlHref(next);
+      const cls = 'combo_pill' + (on ? ' combo_pill_on' : '');
+      let style = '';
+      if (on) {
+        const bg = HL_PILL_COLORS[ab] || '#888';
+        const fg = HL_PILL_LIGHT_TEXT[ab] ? '#fff' : '#000';
+        style = ' style="background:' + bg + ' !important;color:' + fg
+              + ' !important;border-color:' + bg + ' !important;"';
+      }
+      h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>'
+        +    '<span class="combo_pill_deg">' + escHtml(deg) + '</span>'
+        +    '<span class="combo_pill_note">' + escHtml(note) + '</span>'
+        +  '</a>';
+    });
+    h += '</div>';
+    return h;
+  }
+
   // Single All / None button pair — sits below the degree pill row so we
   // don't repeat the same controls at the end of both pill rows.
   function allNoneRowHtml(rowCls) {
@@ -1378,10 +1411,8 @@
   function renderKeyboardPicks(x) {
     const root = document.getElementById('kb_picks_root');
     if (!root) return;
-    // Degree row first, note row second — keeps the abstract / concrete
-    // ordering consistent with the fretboard section.
-    root.innerHTML = highlightPillsLinkHtml(x, 'kb_hl_row')
-                   + notePillsLinkHtml(x, 'kb_hn_row')
+    // Combined degree+note pill row + All/None + quick picks.
+    root.innerHTML = comboPillsHtml(x, 'kb_hl_row')
                    + allNoneRowHtml('kb_allnone_row')
                    + quickPicksHtml(x, 'kb_quick_picks');
   }
@@ -2833,7 +2864,6 @@
     // these aren't on a standard keyboard.
     h +=   '<button type="button" class="prog_input_sym" data-sym="♯" title="Insert sharp">♯</button>';
     h +=   '<button type="button" class="prog_input_sym" data-sym="♭" title="Insert flat">♭</button>';
-    h +=   '<button type="button" class="prog_apply" title="Apply (auto-applies on spacebar)">Apply</button>';
     h += '</div>';
 
     // ----- Strip of bars (the user's current progression) -------------
@@ -3035,48 +3065,6 @@
         try { inp.setSelectionRange(newPos, newPos); } catch (_) {}
         return;
       }
-      // Apply: parse the text input. Each token can be either an
-      // absolute chord ('Cmaj7', 'F♯m', 'Bb7') or a Roman ('I', 'bIII',
-      // 'viio'). Detected per-token by leading char.
-      const apply = e.target.closest && e.target.closest('.prog_apply');
-      if (apply) {
-        e.preventDefault();
-        e.stopPropagation();
-        const inp = root.querySelector('#prog_input');
-        if (!inp) return;
-        const xCur = window.SF_X;
-        const curMode = (xCur && xCur._pmode) || 'major';
-        const raw = String(inp.value || '').split(/[\s,.\-_;|/]+/)
-          .map(function (t) { return t.trim(); }).filter(Boolean);
-        const ROMAN_RE = /^[♭♯]?(I{1,3}|i{1,3}|IV|iv|V|v|VI{0,2}|vi{0,2}|VII|vii)°?7?$/;
-        const tokens = raw.map(function (t) {
-          if (/^[A-G]/.test(t)) {
-            const m = t.match(/^([A-G])([sb#♯♭])?(.*)$/);
-            if (!m) return null;
-            const letter = m[1];
-            const acc = m[2];
-            const suffix = m[3] || '';
-            let root = letter;
-            if (acc === 's' || acc === '#' || acc === '♯') root = letter + '♯';
-            else if (acc === 'b' || acc === '♭')           root = letter + '♭';
-            return root + suffix;
-          }
-          // Roman: normalize URL form to display form, then validate.
-          const norm = _urlToRoman(t);
-          return ROMAN_RE.test(norm) ? norm : null;
-        }).filter(Boolean).slice(0, 24);
-        navigateTo(buildProgHref(tokens, curMode));
-        // Refocus the input so the user can keep typing (relevant for
-        // the spacebar auto-apply path — without this, focus is lost
-        // every keystroke).
-        const newInp = document.querySelector('#prog_input');
-        if (newInp) {
-          newInp.focus();
-          const len = newInp.value.length;
-          try { newInp.setSelectionRange(len, len); } catch (_) {}
-        }
-        return;
-      }
       // ⋯ button → toggle the per-bar action menu (currently a single
       // "Highlight" item). Closes any other open menus first.
       const menuBtn = e.target.closest && e.target.closest('.prog_bar_menu');
@@ -3191,24 +3179,58 @@
       }
     });
 
-    // Enter on the input commits Apply. Spacebar also commits — so the
-    // user can type tokens and have each completed one auto-applied
-    // without reaching for the button. Use keyup so the just-typed
-    // space is in the input value before we parse.
+    // Apply the current input value: parse tokens and navigate. Each
+    // token may be an absolute chord ('Cmaj7') or a Roman ('I', 'bIII').
+    // Triggered automatically by Enter or spacebar — the explicit
+    // Apply button is gone.
+    function applyProgInput() {
+      const inp = root.querySelector('#prog_input');
+      if (!inp) return;
+      const xCur = window.SF_X;
+      const curMode = (xCur && xCur._pmode) || 'major';
+      const raw = String(inp.value || '').split(/[\s,.\-_;|/]+/)
+        .map(function (t) { return t.trim(); }).filter(Boolean);
+      const ROMAN_RE = /^[♭♯]?(I{1,3}|i{1,3}|IV|iv|V|v|VI{0,2}|vi{0,2}|VII|vii)°?7?$/;
+      const tokens = raw.map(function (t) {
+        if (/^[A-G]/.test(t)) {
+          const m = t.match(/^([A-G])([sb#♯♭])?(.*)$/);
+          if (!m) return null;
+          const letter = m[1];
+          const acc = m[2];
+          const suffix = m[3] || '';
+          let root = letter;
+          if (acc === 's' || acc === '#' || acc === '♯') root = letter + '♯';
+          else if (acc === 'b' || acc === '♭')           root = letter + '♭';
+          return root + suffix;
+        }
+        const norm = _urlToRoman(t);
+        return ROMAN_RE.test(norm) ? norm : null;
+      }).filter(Boolean).slice(0, 24);
+      navigateTo(buildProgHref(tokens, curMode));
+      // Refocus the new input so spacebar auto-apply doesn't lose
+      // focus on every keystroke.
+      const newInp = document.querySelector('#prog_input');
+      if (newInp) {
+        newInp.focus();
+        const len = newInp.value.length;
+        try { newInp.setSelectionRange(len, len); } catch (_) {}
+      }
+    }
+    // Enter on the input commits. Spacebar also commits — completed
+    // tokens auto-apply as the user types. Use keyup for space so the
+    // just-typed character is in the value before we parse.
     root.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       const inp = e.target && e.target.closest && e.target.closest('#prog_input');
       if (!inp) return;
       e.preventDefault();
-      const apply = root.querySelector('.prog_apply');
-      if (apply) apply.click();
+      applyProgInput();
     });
     root.addEventListener('keyup', function (e) {
       if (e.key !== ' ' && e.code !== 'Space') return;
       const inp = e.target && e.target.closest && e.target.closest('#prog_input');
       if (!inp) return;
-      const apply = root.querySelector('.prog_apply');
-      if (apply) apply.click();
+      applyProgInput();
     });
 
     // Tempo slider — replaceState only (no navigate / re-render needed).

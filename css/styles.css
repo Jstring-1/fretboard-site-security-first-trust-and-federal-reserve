@@ -43,6 +43,10 @@ table                                      {  min-width:960px;  width:98%;      
    they read as lifted slightly off the parent card without competing. */
 .nested_section                            {  box-shadow: 0 2px 6px rgba(0,0,0,0.35),
                                                           0 1px 0 rgba(255,255,255,0.03) inset !important;             }
+/* Progressions sits between Fretboard and Chord Builder — slightly
+   warmer surface so the section reads as a distinct workspace. */
+#section_11                                {  background: linear-gradient(180deg,
+                                                #1f1a25 0%, #1a1620 100%) !important;                                   }
 #view_src, #print_btn                      {  width:100px;                                                           }                
 .cg_chord_label                            {  width:88px !important;                                                 }
 .cg_deg_header                             {  height:24px !important;                                                 }
@@ -1222,36 +1226,26 @@ details.collapsible.section                { position: relative;                
    chip rows have matching side margins and a consistent gap below. */
 #kb_picks_root                             { display: flex; flex-direction: column;
                                              gap: 5px; padding: 10px 18px 14px;                                      }
-.opt_row_highlights .hl_title              { color: var(--muted); font: 600 0.78em var(--font);
-                                             letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
-.opt_row_highlights a.hl_pill              { display: block; padding: 3px 4px; font-size: 0.85em; text-align: center;
-                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
-                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
-                                             text-decoration: none; transition: background .12s, border-color .12s; }
-.opt_row_highlights a.hl_pill:hover        { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
-.opt_row_highlights a.hl_pill_on           { font-weight: 600;                                                       }
-.opt_row_highlights a.hl_all_pill,
-.opt_row_highlights a.hl_none_pill         { margin-left: 0;                                                         }
-
-/* Note-letter highlight row — drives the same hl= state as the degree pill
-   row below it. The on-state colour matches the degree's pill colour
-   (applied inline by notePillsLinkHtml) so the two rows agree visually
-   when the same item is engaged. The row sits flush against the degree
-   row beneath with no extra padding between. */
-.opt_row_notes .hl_title                   { color: var(--muted); font: 600 0.78em var(--font);
-                                             letter-spacing: 0.06em; text-transform: uppercase; padding-right: 4px; }
-.opt_row_notes a.note_pill                 { display: block; padding: 3px 4px; font-size: 0.85em; text-align: center;
-                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
-                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
-                                             text-decoration: none; transition: background .12s, border-color .12s; }
-.opt_row_notes a.note_pill:hover           { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
-.opt_row_notes a.note_pill_on              { font-weight: 600;                                                       }
-.opt_row_notes a.note_all_pill,
-.opt_row_notes a.note_none_pill            { margin-left: 0;                                                         }
-/* Pull the degree-pill row right up under the note-pill row in both the
-   fretboard and keyboard panes (no gap between the two views of the same
-   selection). */
-.opt_row_notes + .opt_row_highlights       { padding-top: 4px;                                                        }
+/* Combined degree + note pill row — one taller button per chromatic
+   degree, with the degree label on top and the resolved note name in
+   the current key on the bottom. Replaces the previous two-row layout
+   (separate degree pills + note pills). */
+.opt_row_combo                             { display: flex; flex-wrap: wrap; gap: 4px;
+                                             justify-content: center;
+                                             padding: 6px 14px;                                                          }
+.combo_pill                                { display: flex; flex-direction: column; align-items: center;
+                                             min-width: 44px; padding: 4px 6px;
+                                             color: var(--text) !important;
+                                             background: rgba(255,255,255,0.05);
+                                             border: 1px solid rgba(255,255,255,0.12);
+                                             border-radius: 5px; text-decoration: none;
+                                             transition: background .12s, border-color .12s;                            }
+.combo_pill:hover                          { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3); }
+.combo_pill_on                             { font-weight: 600;                                                          }
+.combo_pill_deg                            { font: 700 0.92em var(--font); line-height: 1.1;                            }
+.combo_pill_note                           { font: 600 0.82em var(--font); color: var(--muted);
+                                             line-height: 1.1; margin-top: 2px;                                          }
+.combo_pill_on .combo_pill_note            { color: inherit;                                                            }
 
 /* Click-to-pick highlight for the chord identifier — fluorescent yellow.
    Inset shadow doesn't change cell dimensions (no layout shift). */
@@ -1760,11 +1754,10 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /* ----- Custom Progression Builder ----- */
 .prog_panel                                { padding: 8px 18px; display: flex; flex-direction: column; gap: 10px;       }
 
-/* Roman-numeral input row — tight inline group: label, input, Apply
-   sit flush against each other on the left. No flex-grow on the input
-   so it doesn't push the Apply button to the far right of the page. */
+/* Roman-numeral input row — centered group: label, input, ♯/♭ pills.
+   Apply button removed; spacebar / Enter auto-apply. */
 .prog_input_row                            { display: flex; align-items: center; gap: 8px;
-                                             flex-wrap: nowrap;                                                          }
+                                             flex-wrap: nowrap; justify-content: center;                                }
 .prog_input_label                          { font: 600 0.78em var(--font); color: var(--muted-dim);
                                              text-transform: uppercase; letter-spacing: 0.06em;
                                              white-space: nowrap;                                                        }
@@ -1809,7 +1802,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_strip                                { display: flex; flex-wrap: wrap; gap: 6px; min-height: 64px;
                                              padding: 8px; border-radius: 6px;
                                              background: rgba(255,255,255,0.03);
-                                             border: 1px dashed rgba(255,255,255,0.08);                                 }
+                                             border: 1px dashed rgba(255,255,255,0.08);
+                                             justify-content: center;                                                    }
 .prog_empty                                { font: 400 0.85em var(--font); color: var(--muted-dim);
                                              padding: 8px 12px; align-self: center;                                     }
 .prog_bar                                  { position: relative; display: inline-flex;
@@ -1859,7 +1853,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_bar_menu_item:hover                  { background: rgba(255,255,255,0.06); color: var(--accent-hi);              }
 
 /* Play + tempo controls */
-.prog_controls                             { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;            }
+.prog_controls                             { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+                                             justify-content: center;                                                    }
 .prog_play_btn                             { padding: 5px 16px; border-radius: 14px;
                                              border: 1px solid rgba(255,255,255,0.55);
                                              background: rgba(255,255,255,0.18); color: #fff;
