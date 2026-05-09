@@ -3478,40 +3478,81 @@
       '  Reading the board:',
       '    • Column 0 (left of the thick light-coloured nut) is the open',
       '      string — the pitch when no fret is held down.',
-      '    • The thick vertical bar between fret 0 and fret 1 is the NUT,',
-      '      the same way it appears on a real instrument.',
+      '    • The thick vertical bar between fret 0 and fret 1 is the NUT.',
       '    • Cells are coloured by the chord/scale you have highlighted —',
       '      every "1" is one shade, every "♭3" is another, etc.',
       '',
-      '  Above the fretboard you have:',
-      '    • TUNING picker — click to open a sortable / filterable table of',
-      '      176 preset tunings. The number of strings + the preset tuning',
+      '  Controls in this section:',
+      '    • TUNING picker (top-left) — click to open a sortable / filterable',
+      '      table of 176 preset tunings. The number of strings + the preset',
       '      drive what each row shows.',
-      '    • KEY picker (A through G♯) — sets the tonic. All scale degrees,',
-      '      colours, and note names are computed relative to this.',
-      '    • CUSTOM button — turns on per-string dropdowns so you can build',
+      '    • CUSTOM toggle — turns on per-string dropdowns so you can build',
       '      your own tuning. Sticks until you turn it off.',
-      '    • L→H / H→L — flips the string order (highest pitch on top vs.',
+      '    • L→H / H→L — flips the string order (high pitch on top vs.',
       '      bottom). Personal preference.',
-      '    • DEGREE PILLS (1, ♭2, 2, ♭3, ..., 7) — click any pill to add or',
-      '      remove that degree from the highlight set. "All" turns every',
-      '      pill on; the sticky-header CLEAR drops them all.',
+      '    • DEGREE / NOTE PILLS — twelve stacked buttons across the top, one',
+      '      per chromatic step. Click any pill to add or remove that degree',
+      '      from the highlight set. "All" turns every pill on; "None" drops',
+      '      just the colored highlights (chord-ID picks stay).',
       '    • CHORD / SCALE / KEY-SET CHIPS — quick-pick rows of common chord',
       '      shapes, common scales, and one-click "set to this key" buttons.',
       '',
-      '  Click-to-pick (chord identifier):',
-      '    Click any cell on the fretboard to add that note to the picks.',
-      '    Once 3 or more notes are picked, the strip below the fretboard',
-      '    names every chord those notes form (exact, contained, and "could',
-      '    be" with one or two extra notes). Clear with the Clear pill.',
+      '  Sticky header (top of page):',
+      '    • LOGO — center, click to reset the URL.',
+      '    • TUNING — left, current tuning + notes + degrees.',
+      '    • KEY — center row, twelve A–G♯ buttons. Picks apply page-wide.',
+      '    • Audio (♪) — right, turn on a small synth so cell / chip / chord',
+      '      clicks play.',
+      '    • Clear — right, wipes every highlight AND every chord-ID pick.',
       '',
-      '  Sticky header pills (top of page):',
-      '    • Audio (♪) — turn on the small synth so chord/scale clicks play.',
-      '    • Clear — wipe every highlight + pick across the whole site.',
+      '  Click-to-pick lives in the Chord ID sub-section (below the board).',
       '',
       '  Bookmark / share: every selection (tuning, key, custom strings,',
-      '  highlights, picks, collapsed sections, sort, filter) lives in the',
-      '  URL. Copy the address bar and you have a shareable view.',
+      '  highlights, picks, collapsed sections, sort, filter, progression)',
+      '  lives in the URL. Copy the address bar and you have a shareable view.',
+      ''
+    ].join('\n'),
+
+    chord_id: [
+      '',
+      '  Chord ID',
+      '  ========',
+      '',
+      '  Click-to-pick chord identifier. Tells you what chord(s) the notes',
+      '  you click form — both on the fretboard AND on the keyboard.',
+      '',
+      '  How to use:',
+      '    1. Make sure the Chord ID toggle (in this sub-section\'s summary)',
+      '       reads "on". Off = picks ignored.',
+      '    2. Click cells on the fretboard, or keys on the keyboard. Each',
+      '       click adds that note to the picks (yellow). Click again to',
+      '       remove. The "picked: …" line shows the running set.',
+      '    3. Once 3+ notes are picked, suggestion chips appear in three',
+      '       buckets:',
+      '         EXACT — chords whose notes exactly match your picks.',
+      '         CONTAINS — chords that fit inside your picks (you played',
+      '                    extras, but those notes are a chord by themselves).',
+      '         COULD BE (+ extras) — chords your picks are PART of; the +1',
+      '                    / +2 / +All toggle controls how many extra notes',
+      '                    are allowed.',
+      '    4. Click any suggestion chip to highlight that chord across the',
+      '       fretboard / keyboard in the current key\'s degree colours.',
+      '       The chip turns blue while it\'s the active suggestion. Click',
+      '       it again to drop the highlights — your picks stay.',
+      '',
+      '  Filters:',
+      '    • IN KEY pill — narrows suggestions to chords whose ROOT matches',
+      '      the current key (e.g. key=E shows only E*, F♯=F♯*, …).',
+      '    • +1 / +2 / +All — caps the "could be" bucket\'s extra-notes count.',
+      '',
+      '  Navigation buttons (top of the strip):',
+      '    • ◀ / ▶ — shift every pick by one semitone. Useful for sliding a',
+      '      chord shape up or down the neck.',
+      '    • Clear — drop all picks (the yellow notes).',
+      '',
+      '  The site-header Clear pill clears EVERYTHING (highlights + picks).',
+      '  The "None" pill in the fretboard clears only the colored highlights;',
+      '  yellow picks stay.',
       ''
     ].join('\n'),
 
@@ -3612,8 +3653,15 @@
       '    so your selection pops. Highlight every degree to see the full',
       '    rainbow.',
       '',
-      '  Click any key to add that note to the chord-identifier picks. The',
-      '  strip below the keyboard names every chord your picks form.',
+      '  Above the keyboard:',
+      '    • DEGREE / NOTE PILLS — twelve stacked buttons, one per chromatic',
+      '      step. Click to add or remove that degree from the highlight set.',
+      '      "All" turns every pill on; "None" drops just the colored',
+      '      highlights (chord-ID picks stay).',
+      '',
+      '  Click-to-pick lives in the Chord ID sub-section below the keyboard.',
+      '  Click keys with Chord ID toggled on, and the strip names every',
+      '  chord your picks form. See the Chord ID help (?) for details.',
       ''
     ].join('\n'),
 
@@ -3647,27 +3695,52 @@
       '  Progressions',
       '  ============',
       '',
-      '  Common chord progressions transposed into the current key. The',
-      '  Roman numerals (I, IV, V, vi, ♭VII, …) describe the progression',
-      '  abstractly so you can play it in any key — the actual chord names',
-      '  shown next to each numeral resolve to the current Key automatically.',
+      '  A chord progression builder. Type chords, pick from the palette,',
+      '  or hit the + add-box; mix Roman numerals (transpose with the key)',
+      '  with absolute chord names (stay put) freely.',
       '',
-      '  Progressions covered:',
-      '    • I – IV – V                (rock / blues backbone)',
-      '    • I – V – vi – IV           (modern pop)',
-      '    • ii – V – I                (jazz cadence)',
-      '    • I – vi – IV – V           (50s doo-wop)',
-      '    • vi – IV – I – V           (pop minor opener)',
-      '    • I – vi – ii – V           (jazz turnaround)',
-      '    • I – ♭VII – IV             (Mixolydian rock)',
-      '    • 12-bar blues',
+      '  Top row (centered):',
+      '    • CHORD PROGRESSION input — type the progression, e.g.',
+      '         "I IV V"          (Romans, transpose with the key)',
+      '         "C Am F G"        (absolute chords, stay put)',
+      '         "Cmaj7 Dm7 G7"    (with voicings)',
+      '       Press SPACE or ENTER to apply. Tokens auto-apply as you type.',
+      '       The Roman regex accepts ♭ / ♯ prefixes, lowercase = minor,',
+      '       and a trailing ° for diminished or 7 for sevenths.',
+      '    • ♯ / ♭ buttons — click to insert the proper accidental glyph at',
+      '       the cursor (typing # or b in the input also works).',
+      '    • PALETTE MODE dropdown — pick the diatonic flavour the chip row',
+      '       below uses: Major, Minor, Dorian, Phrygian, Lydian, Mixolydian,',
+      '       Harmonic, Melodic. Roman tokens already in the progression do',
+      '       NOT change when you switch modes — only the palette does.',
+      '    • ▶ Play — auditions the progression with a soft triangle-wave',
+      '       synth. The sticky-header Audio (♪) toggle must be on.',
+      '    • Tempo — 40–200 bpm slider. Live; updates without re-rendering.',
       '',
-      '  Each row has a play button (▶) — turn the Audio pill on in the',
-      '  sticky header and click ▶ to hear the progression with a soft',
-      '  triangle-wave synth.',
+      '  Palette chips:',
+      '    Seven Roman-numeral chips for the current mode (I, ii, iii, IV,',
+      '    V, vi, vii° for major; flavours change for other modes). Click',
+      '    any chip to APPEND that Roman to your progression.',
       '',
-      '  Click any individual chord chip to highlight just that chord on',
-      '  the fretboard / keyboard.',
+      '  The bar strip:',
+      '    Each chord you add becomes a bar with three dropdowns:',
+      '      DEGREE — change to a different Roman / chromatic degree.',
+      '      NOTE   — pick a different root letter (turns the bar absolute).',
+      '      VOICING — Maj, m, 7, m7, Maj7, m-Maj7, dim, dim7, m7♭5, aug,',
+      '                sus2, sus4, 6, m6, 9, m9, Maj9, add9, 11, 13.',
+      '    The ⋯ corner button opens a per-bar action menu (right now just',
+      '    "Highlight on fretboard / keyboard"). The × in the corner removes',
+      '    the bar. Bars can be reordered or removed without losing siblings.',
+      '    The dashed + box at the end of the strip appends a new bar',
+      '    pre-filled with the current key + Maj.',
+      '',
+      '  Section header buttons:',
+      '    • Clear — clears just the progression (prog + pmode + tempo).',
+      '       Does not affect the rest of the page.',
+      '    • Print — prints the progression as a portrait chord chart, big',
+      '       text, four bars wide.',
+      '',
+      '  Bookmark-friendly: prog, pmode, and tempo all live in the URL.',
       ''
     ].join('\n'),
 
@@ -3981,16 +4054,18 @@
   }
 
   function bindHelpButtons() {
-    document.querySelectorAll('.section_help').forEach(function (btn) {
-      if (btn._helpBound) return;
-      btn._helpBound = true;
-      btn.addEventListener('click', function (e) {
-        // Stop the click from bubbling up to <summary> (which would toggle the section)
-        e.stopPropagation();
-        e.preventDefault();
-        const key = btn.getAttribute('data-help');
-        showInfoModal(SECTION_HELP[key] || '');
-      });
+    // Delegate at document.body so dynamically-rendered help buttons
+    // (e.g. the one inside the Chord ID box, which is rebuilt every
+    // applyState) work without re-binding.
+    if (document.body._helpDelegated) return;
+    document.body._helpDelegated = true;
+    document.body.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.section_help');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const key = btn.getAttribute('data-help');
+      showInfoModal(SECTION_HELP[key] || '');
     });
   }
 
@@ -5125,7 +5200,10 @@
            + '<summary class="identify_summary">'
            +   '<span class="identify_label">Chord ID</span>'
            +   '<span class="identify_summary_state">' + (idOn ? 'on' : 'off') + '</span>'
-           +   '<span class="identify_btns">' + idToggleHtml() + '</span>'
+           +   '<span class="identify_btns">' + idToggleHtml()
+           +     '<button type="button" class="section_help" data-help="chord_id"'
+           +       ' aria-label="About Chord ID">?</button>'
+           +   '</span>'
            + '</summary>'
            + bodyHtml
            + '</details>';
