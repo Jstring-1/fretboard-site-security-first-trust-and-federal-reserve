@@ -905,21 +905,27 @@ select option                              { color: var(--text); background: var
                                              margin: 0; padding: 0; line-height: 1;
                                              background: transparent; border: none; box-shadow: none;                }
 /* Sticky top bar — tuning (left), KEY pills (center), controls (right).
-   Logo is now in the footer, just above the witherfork line. Compact:
-   single row, tight padding so the header doesn't eat vertical space. */
+   Logo is now in the footer, just above the witherfork line. Flex row
+   so align-items:center vertically centers every cell regardless of
+   internal content height (which grid was failing to do). */
 .site_header_sticky                        { position: sticky; top: 0; z-index: 100;
-                                             display: grid; grid-template-columns: 1fr auto 1fr;
-                                             align-items: center !important; gap: 0 14px;
-                                             padding: 0 14px;
+                                             display: flex !important; flex-direction: row;
+                                             align-items: center !important; gap: 14px;
+                                             padding: 4px 14px;
                                              background: var(--bg);
                                              border-bottom: 1px solid #1f1f1f;
                                              box-shadow: 0 6px 18px rgba(0,0,0,0.55),
                                                          0 2px 4px rgba(0,0,0,0.45);                                    }
 .site_header_sticky > *                    { align-self: center !important;                                            }
-#site_tuning                               { grid-column: 1; display: inline-flex; align-items: center;                }
-#global_key_row                            { grid-column: 2; justify-content: center; padding: 0;
-                                             display: inline-flex; align-items: center;                                }
-#site_global_controls                      { grid-column: 3; justify-self: end; align-items: center;                   }
+#site_tuning                               { flex: 1 1 0; min-width: 0;
+                                             display: inline-flex; align-items: center;
+                                             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;           }
+#global_key_row                            { flex: 0 0 auto;
+                                             display: inline-flex; align-items: center; justify-content: center;
+                                             padding: 0; margin: 0;                                                    }
+#site_global_controls                      { flex: 1 1 0;
+                                             display: inline-flex; align-items: center; justify-content: flex-end;
+                                             gap: 6px;                                                                  }
 /* The inner span keyButtonsHtml emits has both .section_key_picker
    (which would push to flex-end) and .section_key_row (which sets gap).
    Inside the global row, force-center it and zero its own padding. */
@@ -930,11 +936,9 @@ select option                              { color: var(--text); background: var
    inject — the global one above is the single source of truth now. */
 .section_key_row_outer                     { display: none !important;                                                  }
 .summary_extras .section_key_picker        { display: none !important;                                                  }
-#site_tuning                               { min-width: 0; margin: 0;
-                                             overflow: hidden; text-overflow: ellipsis;
-                                             white-space: nowrap; justify-self: start;                                  }
-#site_global_controls                      { display: inline-flex; align-items: center; gap: 6px;
-                                             justify-self: end; min-width: 0;                                           }
+/* (#site_tuning + #site_global_controls layout is set in the
+   .site_header_sticky block above; this block intentionally left
+   minimal so it doesn't override the flex centering.) */
 /* The Clerk auth widget originally floats fixed at top:right; once it
    lives inside the sticky header we want it inline with the other
    controls, sized to match. */
