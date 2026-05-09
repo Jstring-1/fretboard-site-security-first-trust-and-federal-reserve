@@ -171,7 +171,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'cmp', 'ext', 'u'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'cmp', 'ext', 'ik', 'prog', 'tempo', 'u'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -567,6 +567,31 @@
     }
     x._filterStrs    = _validStrs(params.get('fc'));
     x._pickerStrs    = _validStrs(params.get('fcp'));
+
+    // Custom progression: a list of Roman numerals the user has built.
+    // URL form uses '.' as the separator, 'b' for ♭, 'o' for ° (e.g.
+    // ?prog=I.bVII.IV  ?prog=ii.V.I  ?prog=I.IV.viio). Empty when
+    // absent. Parsed once into x._prog (display form) so renderers
+    // don't have to re-tokenize.
+    const progRaw = params.get('prog');
+    x._prog = [];
+    if (typeof progRaw === 'string' && progRaw.length) {
+      x._prog = progRaw.split('.')
+        .map(function (t) { return t.trim(); })
+        .filter(Boolean)
+        .map(function (t) {
+          // URL form → display form: 'b' prefix → '♭', 'o' suffix → '°'.
+          let s = t;
+          if (s[0] === 'b') s = '♭' + s.slice(1);
+          if (s.slice(-1) === 'o') s = s.slice(0, -1) + '°';
+          return s;
+        })
+        .slice(0, 24);   // hard cap so URLs don't grow unbounded
+    }
+    // Playback tempo for the progression builder (BPM). 40-240 valid;
+    // anything else falls back to default 100.
+    const tempoRaw = parseInt(params.get('tempo') || '', 10);
+    x._tempo = (tempoRaw >= 40 && tempoRaw <= 240) ? tempoRaw : 100;
 
     // hl_arr → flags
     if (x.hl === undefined || x.hl === null) x.hl = '';
@@ -2261,6 +2286,63 @@
     { roman: 'vii°',  romanLc: 'vii',  quality: '°',    q7: 'ø7',   degs:  [7,2,4],   degs7: [7,2,4,6], fn: 'D' },
   ];
 
+  // ----- Custom progression builder ---------------------------------------
+  // Palette of Roman numerals the user can drop into a progression. Diatonic
+  // = the seven natural chords of the major scale; Borrowed = the most-used
+  // modal-mixture chords (parallel-minor / Mixolydian flavours).
+  const _PROG_DIATONIC = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
+  const _PROG_BORROWED = ['♭III', '♭VI', '♭VII', 'iv', 'v'];
+
+  // Substitution suggestions per Roman numeral. Each entry is
+  // [substituteRoman, why-it-works-blurb]. Click a suggestion in the
+  // bar's ⋯ menu to swap the bar in place.
+  const _PROG_SUBS = {
+    'I':    [['IV',   'subdominant — moves harmony forward'],
+             ['vi',   'relative minor — same key sig']],
+    'ii':   [['IV',   'shares 2 tones with ii'],
+             ['vi',   'shares 2 tones, darker colour']],
+    'iii':  [['I',    'I in 1st inversion (3 in bass)'],
+             ['vi',   'iii\'s relative — closely related']],
+    'IV':   [['ii',   'ii shares 2 tones — substitute pre-dominant'],
+             ['iv',   'borrowed minor IV (modal mixture)']],
+    'V':    [['vii°', 'shares the leading-tone tritone'],
+             ['♭VII', 'softer dominant alternative (Mixolydian)']],
+    'vi':   [['I',    'I shares 2 tones with vi'],
+             ['IV',   'subdominant of the relative key']],
+    'vii°': [['V',    'V shares the same tritone'],
+             ['♭II',  'tritone substitution']],
+    '♭III': [['vi',   'parallel-major equivalent']],
+    '♭VI':  [['IV',   'parallel-major equivalent']],
+    '♭VII': [['V',    'parallel-major equivalent']],
+    'iv':   [['IV',   'parallel-major version']],
+    'v':    [['V',    'parallel-major version (stronger pull)']],
+  };
+
+  // Convert a display-form Roman ("♭VII", "vii°") to a URL-safe form
+  // ("bVII", "viio") and back. Lets us round-trip the user's progression
+  // through the address bar without percent-encoding hell.
+  function _romanToUrl(r) {
+    return String(r || '')
+      .replace(/♭/g, 'b')
+      .replace(/°/g, 'o');
+  }
+  function _urlToRoman(s) {
+    let r = String(s || '');
+    if (r[0] === 'b') r = '♭' + r.slice(1);
+    if (r.slice(-1) === 'o') r = r.slice(0, -1) + '°';
+    return r;
+  }
+
+  // Build a URL that replaces ?prog=… with the given list. Empty list
+  // strips the param entirely. All other URL state is preserved.
+  function buildProgHref(romans) {
+    const p = new URLSearchParams(window.location.search);
+    if (!romans || !romans.length) p.delete('prog');
+    else p.set('prog', romans.map(_romanToUrl).join('.'));
+    const qs = canonicalQS(p);
+    return qs ? '?' + qs : '?';
+  }
+
   // 7 modes derived from the major scale — degree-relative set + the
   // *characteristic note* that distinguishes each mode from its modal
   // siblings. Highlighted separately when the user picks a mode.
@@ -2531,64 +2613,202 @@
     });
   }
 
+  // Resolve a Roman to the triad MIDI list for synth playback.
+  function _romanToMidi(roman, key) {
+    const r = _resolveRoman(roman, key);
+    if (!r) return [];
+    const baseQ = r.name.replace(r.root, '');
+    const intervals = baseQ === 'm'   ? [0,3,7]
+                    : baseQ === '°'   ? [0,3,6]
+                    : baseQ === 'm7'  ? [0,3,7,10]
+                    : baseQ === 'maj7'? [0,4,7,11]
+                    : baseQ === '7'   ? [0,4,7,10]
+                    : baseQ === 'ø7'  ? [0,3,6,10]
+                                      : [0,4,7];
+    return _chordToMidi(r.root, intervals);
+  }
+
   function renderProgressions(x) {
     const root = document.getElementById('progressions_root');
     if (!root) return;
-    const notes = _majorScaleNotes(x.k);
-    if (!notes.length) { root.innerHTML = ''; return; }
+    if (!_majorScaleNotes(x.k).length) { root.innerHTML = ''; return; }
+    const prog = Array.isArray(x._prog) ? x._prog : [];
+    const tempo = +x._tempo || 100;
+
+    // ----- Roman-numeral text input + Apply / Clear --------------------
     let h = '<div class="prog_panel">';
-    h += '<div class="prog_intro">Common chord progressions in ' + escHtml(x.k)
-      +  ' major. Click a chord to highlight; press ▶ to hear the progression (audio toggle must be on).</div>';
-    _PROGRESSIONS.forEach(function (p, idx) {
-      h += '<div class="prog_row">';
-      h += '<div class="prog_meta">'
-        +  '<button type="button" class="prog_play" data-prog="' + idx + '" title="Play progression">▶</button>'
-        +  '<span class="prog_name">' + escHtml(p.name) + '</span>'
-        +  '<span class="prog_style">' + escHtml(p.style) + '</span>'
-        +  '</div>';
-      h += '<div class="prog_chords">';
-      p.romans.forEach(function (roman) {
+    h += '<div class="prog_input_row">';
+    h +=   '<span class="prog_input_label">Type romans:</span>';
+    h +=   '<input type="text" id="prog_input" class="prog_input"'
+       +     ' placeholder="e.g. I IV V vi  or  ii V I  or  I bVII IV"'
+       +     ' value="' + escHtml(prog.join(' ')) + '"'
+       +     ' autocomplete="off" spellcheck="false" maxlength="120">';
+    h +=   '<button type="button" class="prog_apply">Apply</button>';
+    h +=   '<a class="prog_clear_link" href="' + escHtml(buildProgHref([])) + '" title="Clear progression">Clear</a>';
+    h += '</div>';
+
+    // ----- Strip of bars (the user\'s current progression) -------------
+    h += '<div class="prog_strip">';
+    if (!prog.length) {
+      h += '<div class="prog_empty">'
+         + 'Build a progression — click chord chips below or type Roman numerals above. '
+         + 'Each bar plays in the current key (' + escHtml(x.k) + ').'
+         + '</div>';
+    } else {
+      prog.forEach(function (roman, idx) {
         const r = _resolveRoman(roman, x.k);
-        if (!r) return;
-        const href = x._hilight_url + _degsToHlCsv(r.degs);
-        h += '<a class="prog_chip" href="' + escHtml(href)
-          +  '" title="' + escAttr(roman + ' = ' + r.name) + '">'
-          +  '<span class="prog_chip_roman">' + escHtml(roman) + '</span>'
-          +  '<span class="prog_chip_name">' + escHtml(r.name) + '</span>'
+        const chordName = r ? r.name : '?';
+        const removeHref = buildProgHref(prog.filter(function (_, i) { return i !== idx; }));
+        // Highlight URL: clicking the bar lights up the chord on the
+        // fretboard / keyboard via the chord's degree set.
+        const highlightHref = r ? (x._hilight_url + _degsToHlCsv(r.degs)) : '#';
+        const subs = _PROG_SUBS[roman] || [];
+        h += '<div class="prog_bar" data-idx="' + idx + '" data-roman="' + escAttr(roman) + '">';
+        h +=   '<a class="prog_bar_face" href="' + escHtml(highlightHref) + '"'
+           +     ' title="' + escAttr(roman + ' = ' + chordName + ' — click to highlight') + '">';
+        h +=     '<span class="prog_bar_roman">' + escHtml(roman) + '</span>';
+        h +=     '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
+        h +=   '</a>';
+        if (subs.length) {
+          h += '<button type="button" class="prog_bar_subs" title="Substitutions" aria-label="Substitutions">⋯</button>';
+          h += '<div class="prog_bar_sub_menu" hidden>';
+          h +=   '<div class="prog_bar_sub_title">Try instead:</div>';
+          subs.forEach(function (s) {
+            const subRoman = s[0];
+            const why = s[1];
+            const swappedProg = prog.slice();
+            swappedProg[idx] = subRoman;
+            const subHref = buildProgHref(swappedProg);
+            const sr = _resolveRoman(subRoman, x.k);
+            const subName = sr ? sr.name : '?';
+            h += '<a class="prog_bar_sub" href="' + escHtml(subHref) + '">'
+              +    '<span class="prog_bar_sub_roman">' + escHtml(subRoman) + '</span>'
+              +    '<span class="prog_bar_sub_name">' + escHtml(subName) + '</span>'
+              +    '<span class="prog_bar_sub_why">' + escHtml(why) + '</span>'
+              +  '</a>';
+          });
+          h += '</div>';
+        }
+        h +=   '<a class="prog_bar_remove" href="' + escHtml(removeHref) + '"'
+           +     ' title="Remove this bar" aria-label="Remove">×</a>';
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+
+    // ----- Play + tempo -----------------------------------------------
+    h += '<div class="prog_controls">';
+    h +=   '<button type="button" class="prog_play_btn"' + (prog.length ? '' : ' disabled')
+       +     ' title="Play progression (audio toggle must be on)">▶ Play</button>';
+    h +=   '<label class="prog_tempo_label">Tempo';
+    h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
+    h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
+    h +=   '</label>';
+    h += '</div>';
+
+    // ----- Palette: diatonic + borrowed -------------------------------
+    function paletteRow(label, romans) {
+      let s = '<div class="prog_palette_row">';
+      s +=   '<span class="prog_palette_label">' + escHtml(label) + '</span>';
+      romans.forEach(function (roman) {
+        const r = _resolveRoman(roman, x.k);
+        const chordName = r ? r.name : '?';
+        const appendHref = buildProgHref(prog.concat([roman]));
+        s += '<a class="prog_palette_chip" href="' + escHtml(appendHref) + '"'
+          +    ' title="' + escAttr('Add ' + roman + ' (' + chordName + ')') + '">'
+          +    '<span class="prog_palette_roman">' + escHtml(roman) + '</span>'
+          +    '<span class="prog_palette_name">' + escHtml(chordName) + '</span>'
           +  '</a>';
       });
-      h += '</div></div>';
-    });
+      s += '</div>';
+      return s;
+    }
+    h += '<div class="prog_palette">';
+    h += paletteRow('Diatonic', _PROG_DIATONIC);
+    h += paletteRow('Borrowed', _PROG_BORROWED);
     h += '</div>';
+
+    h += '</div>';   // .prog_panel
     root.innerHTML = h;
-    // Bind play buttons.
+
+    // Wire delegated handlers once.
     if (root._progBound) return;
     root._progBound = true;
+
+    // Apply button + Enter key on the input parse the text into Romans.
     root.addEventListener('click', function (e) {
-      const btn = e.target.closest && e.target.closest('.prog_play');
-      if (!btn) return;
+      const apply = e.target.closest && e.target.closest('.prog_apply');
+      if (apply) {
+        e.preventDefault();
+        e.stopPropagation();
+        const inp = root.querySelector('#prog_input');
+        if (!inp) return;
+        const tokens = String(inp.value || '')
+          .split(/[\s,.\-_;|/]+/)
+          .map(function (t) { return t.trim(); })
+          .filter(Boolean)
+          .map(_urlToRoman)
+          .filter(function (t) { return /^[♭]?(I{1,3}|i{1,3}|IV|iv|V|v|VI{0,2}|vi{0,2}|VII|vii)°?7?$/.test(t); })
+          .slice(0, 24);
+        navigateTo(buildProgHref(tokens));
+        return;
+      }
+      // ⋯ button → toggle sub menu open.
+      const subBtn = e.target.closest && e.target.closest('.prog_bar_subs');
+      if (subBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const bar = subBtn.closest('.prog_bar');
+        const menu = bar && bar.querySelector('.prog_bar_sub_menu');
+        if (!menu) return;
+        // Close any other open menus first.
+        root.querySelectorAll('.prog_bar_sub_menu').forEach(function (m) {
+          if (m !== menu) m.hidden = true;
+        });
+        menu.hidden = !menu.hidden;
+        return;
+      }
+      // ▶ play current progression.
+      const playBtn = e.target.closest && e.target.closest('.prog_play_btn');
+      if (playBtn && !playBtn.disabled) {
+        e.preventDefault();
+        e.stopPropagation();
+        const xCur = window.SF_X;
+        if (!xCur) return;
+        const curProg = Array.isArray(xCur._prog) ? xCur._prog : [];
+        if (!curProg.length) return;
+        const beat = 60 / (+xCur._tempo || 100);   // seconds per beat
+        const chords = curProg.map(function (roman) {
+          return _romanToMidi(roman, xCur.k);
+        });
+        _playChordSequence(chords, beat);
+        return;
+      }
+    });
+
+    root.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      const inp = e.target && e.target.closest && e.target.closest('#prog_input');
+      if (!inp) return;
       e.preventDefault();
-      e.stopPropagation();
-      const idx = +btn.getAttribute('data-prog');
-      const prog = _PROGRESSIONS[idx];
-      if (!prog) return;
-      const xCur = window.SF_X;
-      if (!xCur) return;
-      const chords = prog.romans.map(function (roman) {
-        const r = _resolveRoman(roman, xCur.k);
-        if (!r) return [];
-        // Triad intervals for the chord quality.
-        const baseQ = r.name.replace(r.root, '');
-        const intervals = baseQ === 'm'  ? [0,3,7]
-                        : baseQ === '°'  ? [0,3,6]
-                        : baseQ === 'm7' ? [0,3,7,10]
-                        : baseQ === 'maj7'?[0,4,7,11]
-                        : baseQ === '7'  ? [0,4,7,10]
-                        : baseQ === 'ø7' ? [0,3,6,10]
-                                         : [0,4,7];
-        return _chordToMidi(r.root, intervals);
-      });
-      _playChordSequence(chords, 0.6);
+      const apply = root.querySelector('.prog_apply');
+      if (apply) apply.click();
+    });
+
+    // Tempo slider — replaceState only (no navigate / re-render needed).
+    root.addEventListener('input', function (e) {
+      const inp = e.target && e.target.id === 'prog_tempo' ? e.target : null;
+      if (!inp) return;
+      const v = parseInt(inp.value || '100', 10);
+      if (!(v >= 40 && v <= 240)) return;
+      const lbl = root.querySelector('.prog_tempo_val');
+      if (lbl) lbl.textContent = v + ' bpm';
+      const params = new URLSearchParams(window.location.search);
+      if (v === 100) params.delete('tempo');
+      else           params.set('tempo', String(v));
+      const qs = canonicalQS(params);
+      history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+      if (window.SF_X) window.SF_X._tempo = v;
     });
   }
 
