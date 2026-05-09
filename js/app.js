@@ -923,6 +923,8 @@
     h += '<div class="tun_pop_head">';
     h += '  <input type="search" class="tun_pop_filter" placeholder="filter — e.g. ‘8 A6’ or ‘E9 emmons’" value="' + escHtml(_tunPickerFilter) + '" autocomplete="off" spellcheck="false">';
     h += '  <span class="tun_pop_count">' + rows.length + ' / ' + Object.keys(TUNINGS).length + '</span>';
+    h += '  <button type="button" class="tun_pop_csv section_export" data-export="tunings"'
+       +    ' title="Download the currently filtered tunings as CSV">CSV</button>';
     h += '</div>';
     // Quick string-count radios — one click filter for the most common
     // selectors. The filter text input still works on top of this.
@@ -3410,6 +3412,9 @@
 
   function renderTuningsTable(x) {
     const root = document.getElementById('tunings_root');
+    // Tunings List section was removed — the dropdown picker handles
+    // browsing now. Bail if no host element is present.
+    if (!root) return;
     const rev = (x.y === 'y') ? 'rev_' : '';
     const tunUrl = x._self + x.url_k + x.url_y + x.url_z + x.url_s + x.url_hl;
 
@@ -4006,18 +4011,19 @@
   function buildTuningsCsv() {
     const cols = ['Strings', 'Name', 'Notes', 'Notes (Reverse)', 'Degrees', 'Degrees (Reverse)', 'Info'];
     const lines = [cols.map(csvQuote).join(',')];
-    const table = document.getElementById('tunings');
-    if (table) {
-      // Use the table rows that are currently rendered + visible (filter
-      // hides rows via display:none).
-      table.querySelectorAll('tbody tr').forEach(function (tr) {
-        if (tr.offsetParent === null && tr.style.display === 'none') return;
-        const cells = tr.querySelectorAll('td');
-        if (!cells.length) return;
-        const row = Array.prototype.map.call(cells, function (td) {
-          return csvQuote(td.textContent.trim());
-        });
-        lines.push(row.join(','));
+    // Honor the tunings dropdown's current filter + sort if it's
+    // populated; fall back to the full TUNINGS dictionary otherwise.
+    const x = window.SF_X;
+    let rows = null;
+    if (x && typeof _tunPickerRows === 'function') {
+      try { rows = _tunPickerFiltered(_tunPickerSorted(_tunPickerRows(x))); }
+      catch (_) { rows = null; }
+    }
+    if (rows && rows.length) {
+      rows.forEach(function (r) {
+        const t = TUNINGS[r.key] || {};
+        lines.push([r.strs, r.name, r.notes, t.rev_notes || '', r.dgs, t.rev_dgs || '', r.info || '']
+          .map(csvQuote).join(','));
       });
     } else {
       Object.keys(TUNINGS).forEach(function (key) {
@@ -4039,17 +4045,20 @@
   }
 
   function bindExportButtons() {
-    document.querySelectorAll('.section_export').forEach(function (btn) {
-      if (btn._exportBound) return;
-      btn._exportBound = true;
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        if (btn.getAttribute('data-export') === 'tunings') {
-          const stamp = new Date().toISOString().slice(0, 10);
-          downloadCsv('fretboard-tunings-' + stamp + '.csv', buildTuningsCsv());
-        }
-      });
+    // Delegate at document.body so the CSV button rendered inside the
+    // tunings dropdown popup (which gets rebuilt on each open) wires
+    // automatically without a re-bind pass.
+    if (document.body._exportDelegated) return;
+    document.body._exportDelegated = true;
+    document.body.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.section_export');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (btn.getAttribute('data-export') === 'tunings') {
+        const stamp = new Date().toISOString().slice(0, 10);
+        downloadCsv('fretboard-tunings-' + stamp + '.csv', buildTuningsCsv());
+      }
     });
   }
 

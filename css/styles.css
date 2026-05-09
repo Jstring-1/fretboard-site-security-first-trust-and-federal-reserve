@@ -1403,7 +1403,7 @@ a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00
                                              left: 50%; right: auto;
                                              transform: translateX(-50%);
                                              z-index: 1500;
-                                             width: min(900px, 96vw); max-height: 60vh;
+                                             width: min(1200px, 98vw); max-height: 60vh;
                                              background: var(--surface); color: var(--accent);
                                              border: 1px solid #2a2a2a; border-radius: 6px;
                                              box-shadow: 0 12px 36px rgba(0,0,0,0.6);
@@ -1419,6 +1419,15 @@ a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00
 .tun_pop_filter:focus                      { border-color: var(--accent-hi);                                         }
 .tun_pop_count                             { color: var(--muted-dim); font: 400 0.78em var(--font); flex: 0 0 auto;
                                              letter-spacing: 0.04em;                                                  }
+/* CSV download pill in the dropdown header — sits to the right of the
+   row count. Mirrors .section_print sizing so it reads as a section
+   action rather than a form button. */
+.tun_pop_csv                               { flex: 0 0 auto; padding: 3px 12px; border-radius: 12px;
+                                             border: 1px solid rgba(255,255,255,0.55);
+                                             background: rgba(255,255,255,0.18); color: #fff;
+                                             font: 600 0.78em var(--font); cursor: pointer;
+                                             letter-spacing: 0.04em;                                                  }
+.tun_pop_csv:hover                         { background: rgba(255,255,255,0.4); border-color: #fff;                  }
 
 /* Quick string-count radio row sits just under the search input. One-tap
    filter for the most common case ("show me only 8-string tunings"). */
