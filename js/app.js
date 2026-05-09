@@ -115,8 +115,9 @@
   }
 
   // ---------- helpers ----------
-  // URL with every current param except hl — used by every Clear button so
-  // clearing only drops the highlight, not the key/tuning/collapsed sections.
+  // URL with every current param except hl + pk — used by the site-header
+  // Clear pill so a single click drops both the colored degree highlights
+  // AND the yellow chord-ID picks.
   function clearHlHref() {
     const params = new URLSearchParams(window.location.search);
     params.delete('hl');
@@ -129,6 +130,17 @@
     params.set('pk', '');
     const qs = params.toString();
     // Always include the leading "?" so the link interceptor catches it.
+    return qs ? '?' + qs : '?';
+  }
+  // URL that clears ONLY the colored hl= highlights, preserving the
+  // yellow chord-ID picks (pk=). Used by the per-section "None" pill so
+  // the user can drop the colored highlights without losing chord-ID
+  // selections that may still be in progress.
+  function clearHlOnlyHref() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('hl');
+    params.set('hl', '');
+    const qs = params.toString();
     return qs ? '?' + qs : '?';
   }
 
@@ -1350,7 +1362,7 @@
   // don't repeat the same controls at the end of both pill rows.
   function allNoneRowHtml(rowCls) {
     const allHref = buildHlHref(DEGREES.map(flatToB));
-    const noneHref = clearHlHref();
+    const noneHref = clearHlOnlyHref();
     return '<div class="opt_row opt_row_allnone ' + (rowCls || '') + '">'
          + '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref) + '">All</a>'
          + '<a class="hl_pill hl_none_pill" href="' + escHtml(noneHref) + '">None</a>'
