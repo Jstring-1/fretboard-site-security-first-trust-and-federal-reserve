@@ -568,31 +568,30 @@
     x._filterStrs    = _validStrs(params.get('fc'));
     x._pickerStrs    = _validStrs(params.get('fcp'));
 
-    // Progression-builder palette mode. Drives whether prog tokens are
-    // interpreted as Roman numerals (any mode-named pmode) or absolute
-    // chord names (pmode=custom). Default 'major'.
+    // Progression-builder palette mode. Always one of the 8 named
+    // modes. 'custom' is no longer a mode — bars can be absolute
+    // chord names regardless of palette mode (detected per-token).
     const pmodeRaw = (params.get('pmode') || '').toLowerCase();
-    x._pmode = (Object.prototype.hasOwnProperty.call(_PROG_MODES, pmodeRaw)) ? pmodeRaw : 'major';
+    const _validPmodes = ['major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic'];
+    x._pmode = (_validPmodes.indexOf(pmodeRaw) !== -1) ? pmodeRaw : 'major';
 
-    // Custom progression: a list of tokens the user has built.
-    // For mode-based pmodes, tokens are Roman numerals (URL form uses
-    // '.' as separator, 'b' for ♭, 's' for ♯, 'o' for °). For
-    // pmode=custom, tokens are absolute chord names ('Cs' for C♯,
-    // 'Bb' for B♭, then a voicing suffix like 'maj7'). Parsed into
-    // x._prog (display form) so renderers don't re-tokenize.
+    // Progression tokens. Each is independently either:
+    //   • Roman ('I', 'bIII', '♯iv°') — mode-relative, transposes with
+    //     the page key. Added when the user clicks a palette chip.
+    //   • Absolute ('Cmaj7', 'F♯m', 'Bb7') — a specific chord. Added
+    //     when the user clicks the add-box ghost or edits a bar's
+    //     note / voicing dropdown.
+    // Per-token format detection: leading [A-G] → absolute, else Roman.
     const progRaw = params.get('prog');
     x._prog = [];
     if (typeof progRaw === 'string' && progRaw.length) {
-      const isCustom = (x._pmode === 'custom');
       x._prog = progRaw.split('.')
         .map(function (t) { return t.trim(); })
         .filter(Boolean)
         .map(function (t) {
-          if (isCustom) {
-            // Absolute chord name: convert URL accidentals to display.
-            // URL: 'Cs' → 'C♯', 'Bb' → 'B♭'. The voicing suffix tail
-            // is whatever comes after the root letter (+ optional s/b).
-            let m = t.match(/^([A-G])([sb#♭♯])?(.*)$/);
+          if (/^[A-G]/.test(t)) {
+            // Absolute chord name — URL accidentals to display.
+            const m = t.match(/^([A-G])([sb#♭♯])?(.*)$/);
             if (!m) return t;
             const letter = m[1];
             const acc = m[2];
@@ -604,7 +603,7 @@
           }
           // Roman: 'b' prefix → '♭', 's' prefix → '♯', 'o' suffix → '°'.
           let s = t;
-          if (s[0] === 'b') s = '♭' + s.slice(1);
+          if (s[0] === 'b')      s = '♭' + s.slice(1);
           else if (s[0] === 's') s = '♯' + s.slice(1);
           if (s.slice(-1) === 'o') s = s.slice(0, -1) + '°';
           return s;
@@ -2323,10 +2322,13 @@
     'mixolydian': { label: 'Mixolydian',     romans: ['I',   'ii',  'iii°', 'IV',     'v',  'vi',   '♭VII'] },
     'harmonic':   { label: 'Harmonic Minor', romans: ['i',   'ii°', '♭III', 'iv',     'V',  '♭VI',  'vii°'] },
     'melodic':    { label: 'Melodic Minor',  romans: ['i',   'ii',  '♭III', 'IV',     'V',  'vi°',  'vii°'] },
-    'custom':     { label: 'Custom',         romans: null },
   };
   // Order modes in the dropdown deliberately — most-used at the top.
-  const _PROG_MODE_ORDER = ['major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic','custom'];
+  // 'custom' is intentionally NOT in this list: it's no longer a
+  // selectable mode. The add-box ghost handles the "add an arbitrary
+  // chord" path; editing any bar's note/voicing dropdown flips the
+  // progression into custom format automatically (URL: pmode=custom).
+  const _PROG_MODE_ORDER = ['major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic'];
 
   // Curated voicings for Custom mode. Order = display priority. Each
   // entry maps a UI label to the suffix appended to the root (e.g.
@@ -2414,17 +2416,19 @@
       .replace(/^([A-G])♭/, '$1b');
   }
 
-  // Build a URL that replaces ?prog=… and (optionally) ?pmode=… with the
-  // given list + mode. Empty list strips ?prog=. Mode 'major' is the
-  // default and gets stripped too. Everything else preserved.
+  // Build a URL that replaces ?prog=… and (optionally) ?pmode=… with
+  // the given list + mode. Empty list strips ?prog=. Mode 'major' is
+  // the default and gets stripped too. Tokens are encoded per-format:
+  // absolute chords URL-encode their accidentals, Romans use the
+  // 'b'/'s'/'o' shorthand. Tokens of different formats coexist freely.
   function buildProgHref(tokens, pmode) {
     const p = new URLSearchParams(window.location.search);
     const mode = pmode || (window.SF_X && window.SF_X._pmode) || 'major';
     if (!tokens || !tokens.length) p.delete('prog');
-    else if (mode === 'custom') {
-      p.set('prog', tokens.map(_chordNameToUrl).join('.'));
-    } else {
-      p.set('prog', tokens.map(_romanToUrl).join('.'));
+    else {
+      p.set('prog', tokens.map(function (t) {
+        return /^[A-G]/.test(t) ? _chordNameToUrl(t) : _romanToUrl(t);
+      }).join('.'));
     }
     if (mode && mode !== 'major') p.set('pmode', mode);
     else p.delete('pmode');
@@ -2432,16 +2436,11 @@
     return qs ? '?' + qs : '?';
   }
   // Build a URL that switches the palette mode without touching prog.
-  // Used when mode change should preserve compatible tokens. When the
-  // user switches between Roman-mode and Custom (or vice versa), we
-  // clear prog because the tokens aren't interchangeable.
+  // Tokens stay put — they're per-format and can mix freely with any
+  // mode. The palette content (chips) and mode-default qualities are
+  // the only things that change.
   function buildPmodeHref(newMode) {
-    const cur = (window.SF_X && window.SF_X._pmode) || 'major';
-    const wasCustom = (cur === 'custom');
-    const goCustom = (newMode === 'custom');
-    const tokens = (wasCustom !== goCustom)
-                 ? []                                            // format flip — clear
-                 : (window.SF_X && window.SF_X._prog) || [];
+    const tokens = (window.SF_X && window.SF_X._prog) || [];
     return buildProgHref(tokens, newMode);
   }
 
@@ -2808,23 +2807,23 @@
     const prog = Array.isArray(x._prog) ? x._prog : [];
     const tempo = +x._tempo || 100;
     const pmode = x._pmode || 'major';
-    const isCustom = (pmode === 'custom');
     const modeData = _PROG_MODES[pmode] || _PROG_MODES['major'];
 
-    // Resolve a single token to display chord name + degree set, picking
-    // the right resolver based on the active palette mode.
+    // Per-token format detection. Tokens can mix freely:
+    //   • leading [A-G] → absolute chord (Cmaj7, F♯m, …)
+    //   • everything else → Roman (mode-relative)
+    function tokenIsAbsolute(t) { return /^[A-G]/.test(String(t)); }
     function resolveToken(tok) {
-      if (isCustom) return _resolveCustomChord(tok, x.k);
-      return _resolveRoman(tok, x.k);
+      return tokenIsAbsolute(tok)
+        ? _resolveCustomChord(tok, x.k)
+        : _resolveRoman(tok, x.k);
     }
 
-    // ----- Heading: text input + Apply / Clear ------------------------
+    // ----- Heading: text input + Apply ------------------------------
     let h = '<div class="prog_panel">';
     h += '<div class="prog_input_row">';
     h +=   '<span class="prog_input_label">Chord progression:</span>';
-    const placeholder = isCustom
-      ? 'C Am F G  or  Cmaj7 Dm7 G7'
-      : 'I IV V vi  or  ii V I';
+    const placeholder = 'I IV V  or  C Am F G  or  Cmaj7 Dm7 G7';
     h +=   '<input type="text" id="prog_input" class="prog_input"'
        +     ' placeholder="' + escHtml(placeholder) + '"'
        +     ' value="' + escHtml(prog.join(' ')) + '"'
@@ -2839,32 +2838,33 @@
 
     // ----- Strip of bars (the user's current progression) -------------
     h += '<div class="prog_strip">';
-    if (!prog.length && !isCustom) {
+    if (!prog.length) {
       h += '<div class="prog_empty">'
-         + 'Build a progression — click chord chips below or type Roman numerals above. '
-         + 'Each bar plays in ' + escHtml(x.k) + ' ' + escHtml(modeData.label) + '.'
+         + 'Build a progression — click chord chips from the palette, the × add-box, '
+         + 'or type into the field above. Romans (I, IV, V) transpose with the page key; '
+         + 'specific chords (Cmaj7) stay put.'
          + '</div>';
     }
     prog.forEach(function (tok, idx) {
+      const isAbs = tokenIsAbsolute(tok);
       const r = resolveToken(tok);
       const chordName = r ? r.name : '?';
       const removeHref = buildProgHref(prog.filter(function (_, i) { return i !== idx; }), pmode);
       // Highlight URL: clicking the bar lights up the chord across
-      // the fretboard / keyboard. Custom chords need re-projection
+      // the fretboard / keyboard. Absolute chords need re-projection
       // onto the page key's degree alphabet (so an Eb7 in the key
       // of C lights up b3, 5, b7, b2 — its chord tones in C-degree).
       const highlightHref = r
-        ? (isCustom
+        ? (isAbs
             ? (x._hilight_url + _customDegsToHl(r, x.k))
             : (x._hilight_url + _degsToHlCsv(r.degs)))
         : '#';
       // Resolve the bar to a Custom-style chord so we can drive the
-      // inline dropdowns the same way in either mode. For Roman tokens,
-      // _resolveRoman gives us a chord name; convert that into the
-      // voicing alphabet our dropdowns understand (° → dim, ø7 → m7b5).
+      // note + voicing dropdowns. Romans get normalized via
+      // _resolveCustomChord on their resolved chord name.
       let cr;
-      if (isCustom) {
-        cr = r;   // already in custom form
+      if (isAbs) {
+        cr = r;
       } else if (r) {
         const normalized = (r.name || '').replace(/°/g, 'dim').replace(/ø7/g, 'm7b5');
         cr = _resolveCustomChord(normalized, x.k);
@@ -2872,26 +2872,30 @@
       h += '<div class="prog_bar prog_bar_custom_layout"'
          +   ' data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
       if (cr) {
-        // Degree dropdown — appears on EVERY bar so custom and
-        // mode-based bars look identical.
-        //   Mode-based: lists the mode's 7 diatonic Romans (with their
-        //               quality, e.g. ii, vii°). Picking one swaps to
-        //               that diatonic Roman; stays in mode-based form.
-        //   Custom:     lists the 12 chromatic Romans relative to the
-        //               page key. Picking one swaps the bar's root to
-        //               that scale position; voicing suffix preserved.
-        if (!isCustom) {
+        // Degree dropdown:
+        //   Roman bar:    list the current mode's 7 diatonic Romans;
+        //                 selected = current Roman. Pick another to
+        //                 swap to that mode-degree.
+        //   Absolute bar: list the 12 chromatic Romans relative to the
+        //                 page key. Pick one to swap the bar's root
+        //                 to that scale position; voicing preserved.
+        if (!isAbs) {
+          const inMode = modeData.romans.indexOf(tok) !== -1;
           h += '<select class="prog_bar_degree_select" data-idx="' + idx + '"'
              +   ' title="Change degree (within ' + escAttr(modeData.label) + ')">';
+          if (!inMode) {
+            // Roman doesn't fit current mode (e.g. user switched modes
+            // after building). Surface it as the selected option so the
+            // user can see what's there.
+            h += '<option value="' + escAttr(tok) + '" selected>' + escHtml(tok) + '</option>';
+          }
           modeData.romans.forEach(function (deg) {
-            const sel = (deg === tok) ? ' selected' : '';
+            const sel = (inMode && deg === tok) ? ' selected' : '';
             h += '<option value="' + escAttr(deg) + '"' + sel + '>' + escHtml(deg) + '</option>';
           });
           h += '</select>';
         } else {
-          // Custom mode: figure out which chromatic Roman the current
-          // bar's root resolves to, relative to the page key, and
-          // preselect it.
+          // Absolute bar: chromatic Romans relative to the page key.
           const keyPc = NOTE_TO_PC[x.k];
           const rootPc = NOTE_TO_PC[cr.root];
           const curOffset = (keyPc != null && rootPc != null)
@@ -2937,19 +2941,18 @@
          +     ' title="Remove this bar" aria-label="Remove">×</a>';
       h += '</div>';
     });
-    // Custom mode: ghost "add" bar at end of strip. Clicking appends a
-    // new bar with the current site key as the root and Maj as the
-    // voicing. Glyph is × when the strip is empty (start indicator),
-    // + once at least one bar exists.
-    if (isCustom) {
-      const addToken = (x.k || 'C');   // empty suffix = bare major triad
-      const addHref = buildProgHref(prog.concat([addToken]), 'custom');
-      const glyph = prog.length ? '+' : '×';
-      h += '<a class="prog_bar_add" href="' + escHtml(addHref) + '"'
-         +   ' title="Add a chord (' + escAttr(addToken) + ')">'
-         +   '<span class="prog_bar_add_glyph">' + glyph + '</span>'
-         + '</a>';
-    }
+    // Ghost "add" bar — always present at the end of the strip. × glyph
+    // when empty (start indicator), + once at least one bar exists.
+    // Click adds an ABSOLUTE chord (current key + bare Maj triad) — so
+    // the new bar is fully editable via its dropdowns. Romans for the
+    // diatonic palette are still added by clicking the chips below.
+    const addToken = (x.k || 'C');
+    const addHref = buildProgHref(prog.concat([addToken]), pmode);
+    const glyph = prog.length ? '+' : '×';
+    h += '<a class="prog_bar_add" href="' + escHtml(addHref) + '"'
+       +   ' title="Add a chord (' + escAttr(addToken) + ')">'
+       +   '<span class="prog_bar_add_glyph">' + glyph + '</span>'
+       + '</a>';
     h += '</div>';
 
     // ----- Mode dropdown + Play + tempo ------------------------------
@@ -2969,25 +2972,23 @@
     h +=   '</label>';
     h += '</div>';
 
-    // ----- Palette body (only for non-custom modes) ------------------
-    // Custom mode has no palette — bars are added via the ghost +/×
-    // box at the end of the strip and edited inline.
-    if (!isCustom) {
-      h += '<div class="prog_palette">';
-      h += '<div class="prog_palette_row">';
-      modeData.romans.forEach(function (roman) {
-        const r = _resolveRoman(roman, x.k);
-        const chordName = r ? r.name : '?';
-        const appendHref = buildProgHref(prog.concat([roman]), pmode);
-        h += '<a class="prog_palette_chip" href="' + escHtml(appendHref) + '"'
-          +    ' title="' + escAttr('Add ' + roman + ' (' + chordName + ')') + '">'
-          +    '<span class="prog_palette_roman">' + escHtml(roman) + '</span>'
-          +    '<span class="prog_palette_name">' + escHtml(chordName) + '</span>'
-          +  '</a>';
-      });
-      h += '</div>';
-      h += '</div>';
-    }
+    // ----- Palette body — always shown. The mode dropdown above
+    // selects which 7 diatonic Romans are listed. Click a chip to
+    // append that Roman to the progression (transposes with key).
+    h += '<div class="prog_palette">';
+    h += '<div class="prog_palette_row">';
+    modeData.romans.forEach(function (roman) {
+      const r = _resolveRoman(roman, x.k);
+      const chordName = r ? r.name : '?';
+      const appendHref = buildProgHref(prog.concat([roman]), pmode);
+      h += '<a class="prog_palette_chip" href="' + escHtml(appendHref) + '"'
+        +    ' title="' + escAttr('Add ' + roman + ' (' + chordName + ')') + '">'
+        +    '<span class="prog_palette_roman">' + escHtml(roman) + '</span>'
+        +    '<span class="prog_palette_name">' + escHtml(chordName) + '</span>'
+        +  '</a>';
+    });
+    h += '</div>';
+    h += '</div>';
 
     h += '</div>';   // .prog_panel
     root.innerHTML = h;
@@ -3034,7 +3035,9 @@
         try { inp.setSelectionRange(newPos, newPos); } catch (_) {}
         return;
       }
-      // Apply: parse the text input. Tokens accepted depend on mode.
+      // Apply: parse the text input. Each token can be either an
+      // absolute chord ('Cmaj7', 'F♯m', 'Bb7') or a Roman ('I', 'bIII',
+      // 'viio'). Detected per-token by leading char.
       const apply = e.target.closest && e.target.closest('.prog_apply');
       if (apply) {
         e.preventDefault();
@@ -3045,10 +3048,9 @@
         const curMode = (xCur && xCur._pmode) || 'major';
         const raw = String(inp.value || '').split(/[\s,.\-_;|/]+/)
           .map(function (t) { return t.trim(); }).filter(Boolean);
-        let tokens;
-        if (curMode === 'custom') {
-          // Accept absolute chord names: [A-G][♯♭#bs]?<voicing>.
-          tokens = raw.map(function (t) {
+        const ROMAN_RE = /^[♭♯]?(I{1,3}|i{1,3}|IV|iv|V|v|VI{0,2}|vi{0,2}|VII|vii)°?7?$/;
+        const tokens = raw.map(function (t) {
+          if (/^[A-G]/.test(t)) {
             const m = t.match(/^([A-G])([sb#♯♭])?(.*)$/);
             if (!m) return null;
             const letter = m[1];
@@ -3058,12 +3060,11 @@
             if (acc === 's' || acc === '#' || acc === '♯') root = letter + '♯';
             else if (acc === 'b' || acc === '♭')           root = letter + '♭';
             return root + suffix;
-          }).filter(Boolean).slice(0, 24);
-        } else {
-          tokens = raw.map(_urlToRoman)
-            .filter(function (t) { return /^[♭♯]?(I{1,3}|i{1,3}|IV|iv|V|v|VI{0,2}|vi{0,2}|VII|vii)°?7?$/.test(t); })
-            .slice(0, 24);
-        }
+          }
+          // Roman: normalize URL form to display form, then validate.
+          const norm = _urlToRoman(t);
+          return ROMAN_RE.test(norm) ? norm : null;
+        }).filter(Boolean).slice(0, 24);
         navigateTo(buildProgHref(tokens, curMode));
         // Refocus the input so the user can keep typing (relevant for
         // the spacebar auto-apply path — without this, focus is lost
@@ -3101,11 +3102,10 @@
         const curProg = Array.isArray(xCur._prog) ? xCur._prog : [];
         if (!curProg.length) return;
         const beat = 60 / (+xCur._tempo || 100);   // seconds per beat
-        const isCustomNow = (xCur._pmode === 'custom');
+        // Each token plays via its own resolver (Roman or absolute).
         const chords = curProg.map(function (tok) {
-          if (isCustomNow) {
-            const r = _resolveCustomChord(tok, xCur.k);
-            return _customToMidi(r);
+          if (/^[A-G]/.test(tok)) {
+            return _customToMidi(_resolveCustomChord(tok, xCur.k));
           }
           return _romanToMidi(tok, xCur.k);
         });
@@ -3114,27 +3114,22 @@
       }
     });
 
-    // Mode dropdown + per-bar voicing dropdown both navigate. Use 'change'
-    // so the navigation only fires when the user commits a selection.
+    // Mode dropdown + per-bar dropdowns navigate on change. Use 'change'
+    // so navigation fires only when a selection is committed.
     root.addEventListener('change', function (e) {
       const modeSel = e.target && e.target.closest && e.target.closest('.prog_mode_select');
       if (modeSel) {
-        const newMode = modeSel.value;
-        navigateTo(buildPmodeHref(newMode));
+        navigateTo(buildPmodeHref(modeSel.value));
         return;
       }
-      // Bar-level note + voicing dropdowns. Editing one of these from a
-      // non-custom (mode-based) progression flips the whole progression
-      // into Custom mode — Roman tokens get resolved to absolute chord
-      // names so the user's edit lands on top of a stable reference.
-      function _absoluteFromProg(curProg, key) {
-        return curProg.map(function (t) {
-          // If it already looks like an absolute chord name, keep it.
-          if (/^[A-G][♯♭]?/.test(t)) return t;
-          const rr = _resolveRoman(t, key);
-          if (!rr) return t;
-          return (rr.name || t).replace(/°/g, 'dim').replace(/ø7/g, 'm7b5');
-        });
+      // Convert a Roman token to its absolute chord name (for swapping
+      // root / suffix on a bar that started life as a Roman). Absolute
+      // tokens pass through unchanged.
+      function _toAbsolute(t, key) {
+        if (/^[A-G]/.test(t)) return t;
+        const rr = _resolveRoman(t, key);
+        if (!rr) return t;
+        return (rr.name || t).replace(/°/g, 'dim').replace(/ø7/g, 'm7b5');
       }
       const voiceSel = e.target && e.target.closest && e.target.closest('.prog_bar_voicing_select');
       if (voiceSel) {
@@ -3143,13 +3138,12 @@
         const idx = parseInt(voiceSel.getAttribute('data-idx') || '-1', 10);
         const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
         if (idx < 0 || idx >= curProg.length) return;
-        const absolute = (xCur._pmode === 'custom')
-          ? curProg
-          : _absoluteFromProg(curProg, xCur.k);
-        const m = String(absolute[idx]).match(/^([A-G][♯♭]?)(.*)$/);
+        // This bar becomes absolute; siblings stay as-is.
+        const absToken = _toAbsolute(curProg[idx], xCur.k);
+        const m = String(absToken).match(/^([A-G][♯♭]?)(.*)$/);
         if (!m) return;
-        absolute[idx] = m[1] + voiceSel.value;
-        navigateTo(buildProgHref(absolute, 'custom'));
+        curProg[idx] = m[1] + voiceSel.value;
+        navigateTo(buildProgHref(curProg, xCur._pmode));
         return;
       }
       const noteSel = e.target && e.target.closest && e.target.closest('.prog_bar_note_select');
@@ -3159,20 +3153,18 @@
         const idx = parseInt(noteSel.getAttribute('data-idx') || '-1', 10);
         const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
         if (idx < 0 || idx >= curProg.length) return;
-        const absolute = (xCur._pmode === 'custom')
-          ? curProg
-          : _absoluteFromProg(curProg, xCur.k);
-        const m = String(absolute[idx]).match(/^([A-G][♯♭]?)(.*)$/);
+        const absToken = _toAbsolute(curProg[idx], xCur.k);
+        const m = String(absToken).match(/^([A-G][♯♭]?)(.*)$/);
         if (!m) return;
-        absolute[idx] = noteSel.value + (m[2] || '');
-        navigateTo(buildProgHref(absolute, 'custom'));
+        curProg[idx] = noteSel.value + (m[2] || '');
+        navigateTo(buildProgHref(curProg, xCur._pmode));
         return;
       }
-      // Degree dropdown — works in both modes:
-      //   Non-custom: swap that bar's Roman to a different mode-degree;
-      //               progression stays in mode-based form.
-      //   Custom:     swap the bar's ROOT to the selected scale position
-      //               relative to the page key; voicing suffix preserved.
+      // Degree dropdown — behaves per token:
+      //   Roman bar: swap to the selected mode-degree (stays Roman).
+      //   Absolute bar: swap root to the selected chromatic scale
+      //                 position (relative to the page key); voicing
+      //                 suffix preserved.
       const degSel = e.target && e.target.closest && e.target.closest('.prog_bar_degree_select');
       if (degSel) {
         const xCur = window.SF_X;
@@ -3180,21 +3172,21 @@
         const idx = parseInt(degSel.getAttribute('data-idx') || '-1', 10);
         const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
         if (idx < 0 || idx >= curProg.length) return;
-        if (xCur._pmode === 'custom') {
+        const isAbs = /^[A-G]/.test(String(curProg[idx]));
+        if (isAbs) {
           const offset = _PROG_CHROMATIC_ROMANS.indexOf(degSel.value);
           if (offset < 0) return;
           const keyPc = NOTE_TO_PC[xCur.k];
           if (keyPc == null) return;
           const newRoot = PC_TO_NOTE[(keyPc + offset) % 12];
-          // Preserve the bar's existing voicing suffix.
           const m = String(curProg[idx]).match(/^([A-G][♯♭]?)(.*)$/);
           const suffix = m ? (m[2] || '') : '';
           curProg[idx] = newRoot + suffix;
-          navigateTo(buildProgHref(curProg, 'custom'));
         } else {
+          // Roman bar — value from dropdown is a Roman token.
           curProg[idx] = degSel.value;
-          navigateTo(buildProgHref(curProg, xCur._pmode));
         }
+        navigateTo(buildProgHref(curProg, xCur._pmode));
         return;
       }
     });
