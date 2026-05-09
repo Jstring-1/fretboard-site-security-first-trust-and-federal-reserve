@@ -1802,6 +1802,15 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              padding: 8px 12px; align-self: center;                                     }
 .prog_bar                                  { position: relative; display: inline-flex;
                                              min-width: 70px;                                                            }
+/* Custom-mode bar: stack the highlight link + note select + voicing
+   select in a column so it visually mirrors a non-custom bar's
+   roman-on-top, chord-below structure. Padded + bordered like a
+   regular bar face. */
+.prog_bar_custom_layout                    { flex-direction: column; align-items: center;
+                                             padding: 4px 8px; border-radius: 6px;
+                                             background: rgba(255,255,255,0.06);
+                                             border: 1px solid rgba(255,255,255,0.15);                                  }
+.prog_bar_custom_layout:hover              { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.30); }
 .prog_bar_face                             { display: flex; flex-direction: column; align-items: center;
                                              padding: 6px 12px; border-radius: 6px;
                                              background: rgba(255,255,255,0.06);
@@ -1874,36 +1883,52 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_palette_name                         { font: 600 0.88em var(--font);
                                              display: inline-block; min-width: 2.4em; text-align: center;               }
 
-/* Mode dropdown that replaces the static "Diatonic" label */
+/* Mode dropdown — sits in the controls row to the right of the tempo
+   slider. Drives whether the palette below shows Roman-numeral chips
+   (mode-based) or nothing (Custom; bars are added via the ghost +). */
 .prog_mode_select                          { padding: 4px 8px; font: 600 0.78em var(--font);
                                              color: var(--text); background: var(--bg-elevated);
                                              border: 1px solid #2a2a2a; border-radius: 4px;
                                              letter-spacing: 0.04em; cursor: pointer;
-                                             min-width: 130px;                                                          }
+                                             min-width: 130px; margin-left: auto;                                       }
 .prog_mode_select:focus                    { border-color: var(--accent-hi); outline: none;                            }
 
-/* Custom-mode controls: root note picker + voicing picker + Add button */
-.prog_custom_root, .prog_custom_voicing    { padding: 4px 8px; font: 400 0.85em var(--font);
-                                             color: var(--text); background: var(--bg-elevated);
-                                             border: 1px solid #2a2a2a; border-radius: 4px;
-                                             cursor: pointer;                                                            }
-.prog_custom_root:focus,
-.prog_custom_voicing:focus                 { border-color: var(--accent-hi); outline: none;                            }
-.prog_custom_add                           { padding: 4px 12px; border-radius: 4px;
-                                             border: 1px solid var(--accent-hi);
-                                             background: var(--accent-hi); color: #001014;
-                                             font: 600 0.82em var(--font); cursor: pointer;                              }
-.prog_custom_add:hover                     { background: #fff; border-color: #fff;                                     }
+/* Custom-mode bar: a tiny highlight link (⌖) + note dropdown +
+   voicing dropdown, styled like clickable text. The native <select>
+   chrome is stripped so the dropdowns read as part of the bar's
+   chord label rather than form widgets. */
+.prog_bar_face_custom                      { font-size: 0.95em; padding: 0; line-height: 1;
+                                             color: var(--muted-dim); text-decoration: none;                            }
+.prog_bar_face_custom:hover                { color: var(--accent-hi);                                                  }
+.prog_bar_inline_select                    { -webkit-appearance: none; -moz-appearance: none; appearance: none;
+                                             background: transparent; border: none; outline: none;
+                                             color: inherit; font: inherit; cursor: pointer;
+                                             padding: 0 4px; margin: 0;                                                  }
+.prog_bar_note_select                      { font: 700 1em var(--font); color: var(--text);
+                                             min-width: 2em; text-align: center;
+                                             text-align-last: center;                                                    }
+.prog_bar_voicing_select                   { font: 400 0.78em var(--font); color: var(--muted);
+                                             min-width: 3em;                                                            }
+.prog_bar_inline_select:hover              { color: var(--accent-hi);                                                  }
+.prog_bar_inline_select:focus              { outline: 1px dashed var(--accent-hi); outline-offset: 2px;                }
 
-/* Per-bar voicing dropdown (Custom mode). Sits below the chord name
-   so the user can quickly cycle through voicings for that bar. */
-.prog_bar_voicing                          { font: 400 0.7em var(--font); color: var(--muted);
-                                             margin-top: 2px;                                                            }
-.prog_bar_voicing_select                   { width: 100%; margin-top: 4px;
-                                             padding: 1px 4px; font: 400 0.72em var(--font);
-                                             color: var(--text); background: var(--bg-elevated);
-                                             border: 1px solid rgba(255,255,255,0.15); border-radius: 3px;
-                                             cursor: pointer;                                                            }
+/* Custom-mode bar layout — selects + remove × stacked vertically */
+.prog_bar_face_custom + .prog_bar_note_select
+                                           { margin-top: 0;                                                            }
+
+/* Ghost "add" bar at the end of the strip (Custom mode only). Click
+   to append a new chord to the progression. */
+.prog_bar_add                              { display: flex; align-items: center; justify-content: center;
+                                             min-width: 70px; min-height: 56px;
+                                             padding: 6px 12px; border-radius: 6px;
+                                             border: 1px dashed rgba(255,255,255,0.3);
+                                             background: transparent;
+                                             color: var(--muted); text-decoration: none;
+                                             font: 700 1.5em var(--font); line-height: 1;                              }
+.prog_bar_add:hover                        { background: rgba(255,255,255,0.06);
+                                             border-color: var(--accent-hi);
+                                             color: var(--accent-hi);                                                   }
+.prog_bar_add_glyph                        { display: inline-block;                                                    }
 
 /* Chart-style print: hide everything that's not the bars + a key/mode
    header; format bars as a bigger grid for readability on paper. */

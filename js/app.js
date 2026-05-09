@@ -2828,78 +2828,97 @@
 
     // ----- Strip of bars (the user's current progression) -------------
     h += '<div class="prog_strip">';
-    if (!prog.length) {
+    if (!prog.length && !isCustom) {
       h += '<div class="prog_empty">'
-         + (isCustom
-            ? 'Build a progression — pick a root + voicing below and Add. Each bar can change voicing inline.'
-            : 'Build a progression — click chord chips below or type Roman numerals above. '
-              + 'Each bar plays in ' + escHtml(x.k) + ' ' + escHtml(modeData.label) + '.')
+         + 'Build a progression — click chord chips below or type Roman numerals above. '
+         + 'Each bar plays in ' + escHtml(x.k) + ' ' + escHtml(modeData.label) + '.'
          + '</div>';
-    } else {
-      prog.forEach(function (tok, idx) {
-        const r = resolveToken(tok);
-        const chordName = r ? r.name : '?';
-        const removeHref = buildProgHref(prog.filter(function (_, i) { return i !== idx; }), pmode);
-        // Highlight URL: clicking the bar lights up the chord across
-        // the fretboard / keyboard. Custom chords need re-projection
-        // onto the page key's degree alphabet (so an Eb7 in the key
-        // of C lights up b3, 5, b7, b2 — its chord tones in C-degree).
-        const highlightHref = r
-          ? (isCustom
-              ? (x._hilight_url + _customDegsToHl(r, x.k))
-              : (x._hilight_url + _degsToHlCsv(r.degs)))
-          : '#';
-        const subs = (!isCustom) ? (_PROG_SUBS[tok] || []) : [];
-        h += '<div class="prog_bar" data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
+    }
+    prog.forEach(function (tok, idx) {
+      const r = resolveToken(tok);
+      const chordName = r ? r.name : '?';
+      const removeHref = buildProgHref(prog.filter(function (_, i) { return i !== idx; }), pmode);
+      // Highlight URL: clicking the bar lights up the chord across
+      // the fretboard / keyboard. Custom chords need re-projection
+      // onto the page key's degree alphabet (so an Eb7 in the key
+      // of C lights up b3, 5, b7, b2 — its chord tones in C-degree).
+      const highlightHref = r
+        ? (isCustom
+            ? (x._hilight_url + _customDegsToHl(r, x.k))
+            : (x._hilight_url + _degsToHlCsv(r.degs)))
+        : '#';
+      const subs = (!isCustom) ? (_PROG_SUBS[tok] || []) : [];
+      h += '<div class="prog_bar' + (isCustom ? ' prog_bar_custom_layout' : '')
+         +   '" data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
+      if (isCustom && r) {
+        // Custom-mode bar: a tiny highlight link (⌖) plus two inline
+        // dropdowns (note + voicing) styled as clickable text. The
+        // selects live as siblings of the link — nesting them inside
+        // would route their clicks through the link interceptor.
+        h += '<a class="prog_bar_face prog_bar_face_custom" href="' + escHtml(highlightHref)
+           +   '" title="' + escAttr('Highlight ' + chordName + ' on the fretboard') + '"'
+           +   ' aria-label="Highlight">⌖</a>';
+        h += '<select class="prog_bar_note_select prog_bar_inline_select" data-idx="' + idx + '"'
+           +   ' title="Change note">';
+        _PROG_ROOTS.forEach(function (n) {
+          const sel = (n === r.root) ? ' selected' : '';
+          h += '<option value="' + escAttr(n) + '"' + sel + '>' + escHtml(n) + '</option>';
+        });
+        h += '</select>';
+        h += '<select class="prog_bar_voicing_select prog_bar_inline_select" data-idx="' + idx + '"'
+           +   ' title="Change voicing">';
+        _PROG_VOICINGS.forEach(function (v) {
+          const sel = (v[1] === r.suffix) ? ' selected' : '';
+          h += '<option value="' + escAttr(v[1]) + '"' + sel + '>' + escHtml(v[0]) + '</option>';
+        });
+        h += '</select>';
+      } else {
         h +=   '<a class="prog_bar_face" href="' + escHtml(highlightHref) + '"'
            +     ' title="' + escAttr(tok + ' = ' + chordName + ' — click to highlight') + '">';
-        if (isCustom) {
-          h +=   '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
-          h +=   '<span class="prog_bar_voicing">' + escHtml((r && r.voicingLabel) || '') + '</span>';
-        } else {
-          h +=   '<span class="prog_bar_roman">' + escHtml(tok) + '</span>';
-          h +=   '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
-        }
+        h +=     '<span class="prog_bar_roman">' + escHtml(tok) + '</span>';
+        h +=     '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
         h +=   '</a>';
-        // Inline voicing dropdown — Custom mode only. Changing it
-        // navigates to a URL where this bar's suffix is swapped.
-        if (isCustom && r) {
-          h += '<select class="prog_bar_voicing_select" data-idx="' + idx + '"'
-             +   ' title="Change voicing">';
-          _PROG_VOICINGS.forEach(function (v) {
-            const sel = (v[1] === r.suffix) ? ' selected' : '';
-            h += '<option value="' + escAttr(v[1]) + '"' + sel + '>' + escHtml(v[0]) + '</option>';
-          });
-          h += '</select>';
-        }
-        if (subs.length) {
-          h += '<button type="button" class="prog_bar_subs" title="Substitutions" aria-label="Substitutions">⋯</button>';
-          h += '<div class="prog_bar_sub_menu" hidden>';
-          h +=   '<div class="prog_bar_sub_title">Try instead:</div>';
-          subs.forEach(function (s) {
-            const subRoman = s[0];
-            const why = s[1];
-            const swappedProg = prog.slice();
-            swappedProg[idx] = subRoman;
-            const subHref = buildProgHref(swappedProg, pmode);
-            const sr = _resolveRoman(subRoman, x.k);
-            const subName = sr ? sr.name : '?';
-            h += '<a class="prog_bar_sub" href="' + escHtml(subHref) + '">'
-              +    '<span class="prog_bar_sub_roman">' + escHtml(subRoman) + '</span>'
-              +    '<span class="prog_bar_sub_name">' + escHtml(subName) + '</span>'
-              +    '<span class="prog_bar_sub_why">' + escHtml(why) + '</span>'
-              +  '</a>';
-          });
-          h += '</div>';
-        }
-        h +=   '<a class="prog_bar_remove" href="' + escHtml(removeHref) + '"'
-           +     ' title="Remove this bar" aria-label="Remove">×</a>';
+      }
+      if (subs.length) {
+        h += '<button type="button" class="prog_bar_subs" title="Substitutions" aria-label="Substitutions">⋯</button>';
+        h += '<div class="prog_bar_sub_menu" hidden>';
+        h +=   '<div class="prog_bar_sub_title">Try instead:</div>';
+        subs.forEach(function (s) {
+          const subRoman = s[0];
+          const why = s[1];
+          const swappedProg = prog.slice();
+          swappedProg[idx] = subRoman;
+          const subHref = buildProgHref(swappedProg, pmode);
+          const sr = _resolveRoman(subRoman, x.k);
+          const subName = sr ? sr.name : '?';
+          h += '<a class="prog_bar_sub" href="' + escHtml(subHref) + '">'
+            +    '<span class="prog_bar_sub_roman">' + escHtml(subRoman) + '</span>'
+            +    '<span class="prog_bar_sub_name">' + escHtml(subName) + '</span>'
+            +    '<span class="prog_bar_sub_why">' + escHtml(why) + '</span>'
+            +  '</a>';
+        });
         h += '</div>';
-      });
+      }
+      h +=   '<a class="prog_bar_remove" href="' + escHtml(removeHref) + '"'
+         +     ' title="Remove this bar" aria-label="Remove">×</a>';
+      h += '</div>';
+    });
+    // Custom mode: ghost "add" bar at end of strip. Clicking appends a
+    // new bar with the current site key as the root and Maj as the
+    // voicing. Glyph is × when the strip is empty (start indicator),
+    // + once at least one bar exists.
+    if (isCustom) {
+      const addToken = (x.k || 'C');   // empty suffix = bare major triad
+      const addHref = buildProgHref(prog.concat([addToken]), 'custom');
+      const glyph = prog.length ? '+' : '×';
+      h += '<a class="prog_bar_add" href="' + escHtml(addHref) + '"'
+         +   ' title="Add a chord (' + escAttr(addToken) + ')">'
+         +   '<span class="prog_bar_add_glyph">' + glyph + '</span>'
+         + '</a>';
     }
     h += '</div>';
 
-    // ----- Play + tempo -----------------------------------------------
+    // ----- Play + tempo + mode dropdown ------------------------------
     h += '<div class="prog_controls">';
     h +=   '<button type="button" class="prog_play_btn"' + (prog.length ? '' : ' disabled')
        +     ' title="Play progression (audio toggle must be on)">▶ Play</button>';
@@ -2907,11 +2926,6 @@
     h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
     h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
     h +=   '</label>';
-    h += '</div>';
-
-    // ----- Palette header (mode dropdown) + palette body --------------
-    h += '<div class="prog_palette">';
-    h += '<div class="prog_palette_row">';
     h +=   '<select class="prog_mode_select" title="Palette source">';
     _PROG_MODE_ORDER.forEach(function (key) {
       const cfg = _PROG_MODES[key];
@@ -2919,8 +2933,14 @@
       h += '<option value="' + escAttr(key) + '"' + sel + '>' + escHtml(cfg.label) + '</option>';
     });
     h +=   '</select>';
+    h += '</div>';
+
+    // ----- Palette body (only for non-custom modes) ------------------
+    // Custom mode has no palette — bars are added via the ghost +/×
+    // box at the end of the strip and edited inline.
     if (!isCustom) {
-      // Mode-based: render the 7 diatonic chips.
+      h += '<div class="prog_palette">';
+      h += '<div class="prog_palette_row">';
       modeData.romans.forEach(function (roman) {
         const r = _resolveRoman(roman, x.k);
         const chordName = r ? r.name : '?';
@@ -2931,22 +2951,9 @@
           +    '<span class="prog_palette_name">' + escHtml(chordName) + '</span>'
           +  '</a>';
       });
-    } else {
-      // Custom: root picker + voicing picker + Add button.
-      h += '<select class="prog_custom_root" title="Root note">';
-      _PROG_ROOTS.forEach(function (n) {
-        h += '<option value="' + escAttr(n) + '">' + escHtml(n) + '</option>';
-      });
-      h += '</select>';
-      h += '<select class="prog_custom_voicing" title="Voicing">';
-      _PROG_VOICINGS.forEach(function (v) {
-        h += '<option value="' + escAttr(v[1]) + '">' + escHtml(v[0]) + '</option>';
-      });
-      h += '</select>';
-      h += '<button type="button" class="prog_custom_add" title="Add chord">+ Add</button>';
+      h += '</div>';
+      h += '</div>';
     }
-    h += '</div>';
-    h += '</div>';
 
     h += '</div>';   // .prog_panel
     root.innerHTML = h;
@@ -3010,20 +3017,6 @@
         navigateTo(buildProgHref(tokens, curMode));
         return;
       }
-      // Custom-mode + Add: read root + voicing dropdowns, append chord.
-      const addBtn = e.target.closest && e.target.closest('.prog_custom_add');
-      if (addBtn) {
-        e.preventDefault();
-        e.stopPropagation();
-        const xCur = window.SF_X;
-        const curProg = (xCur && Array.isArray(xCur._prog)) ? xCur._prog : [];
-        const rootSel = root.querySelector('.prog_custom_root');
-        const voiceSel = root.querySelector('.prog_custom_voicing');
-        if (!rootSel || !voiceSel) return;
-        const chord = (rootSel.value || 'C') + (voiceSel.value || '');
-        navigateTo(buildProgHref(curProg.concat([chord]), 'custom'));
-        return;
-      }
       // ⋯ button → toggle sub menu open.
       const subBtn = e.target.closest && e.target.closest('.prog_bar_subs');
       if (subBtn) {
@@ -3083,6 +3076,21 @@
         if (!m) return;
         curProg[idx] = m[1] + voiceSel.value;
         navigateTo(buildProgHref(curProg, 'custom'));
+        return;
+      }
+      const noteSel = e.target && e.target.closest && e.target.closest('.prog_bar_note_select');
+      if (noteSel) {
+        const xCur = window.SF_X;
+        if (!xCur || xCur._pmode !== 'custom') return;
+        const idx = parseInt(noteSel.getAttribute('data-idx') || '-1', 10);
+        const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
+        if (idx < 0 || idx >= curProg.length) return;
+        // Swap the root only; suffix stays.
+        const m = String(curProg[idx]).match(/^([A-G][♯♭]?)(.*)$/);
+        if (!m) return;
+        curProg[idx] = noteSel.value + (m[2] || '');
+        navigateTo(buildProgHref(curProg, 'custom'));
+        return;
       }
     });
 
