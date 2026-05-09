@@ -3008,21 +3008,31 @@
     // Mirror a Clear pill into the section header's .section_actions
     // (right next to Print) — easier to reach than down in the form,
     // and visually consistent with how other sections expose top-level
-    // actions. Removed + recreated each render so the href stays fresh.
+    // actions. Always present (even when prog is empty) so it's a
+    // predictable place to reset progression state. Clears prog,
+    // pmode, and tempo — site-header Clear stays focused on hl + pk.
     const sectionActions = document.querySelector('#section_11 .section_actions');
     if (sectionActions) {
       const old = sectionActions.querySelector('.prog_clear_link');
       if (old) old.remove();
-      if (prog.length) {
-        const clearA = document.createElement('a');
-        clearA.className = 'prog_clear_link section_clear_pill';
-        clearA.href = buildProgHref([], pmode);
-        clearA.title = 'Clear progression';
-        clearA.textContent = 'Clear';
-        const printBtn = sectionActions.querySelector('.section_print');
-        if (printBtn) sectionActions.insertBefore(clearA, printBtn);
-        else sectionActions.prepend(clearA);
+      const clearA = document.createElement('a');
+      clearA.className = 'prog_clear_link section_clear_pill';
+      // Build a URL that drops only the progression-related params.
+      const _pClear = new URLSearchParams(window.location.search);
+      _pClear.delete('prog');
+      _pClear.delete('pmode');
+      _pClear.delete('tempo');
+      const _qsClear = canonicalQS(_pClear);
+      clearA.href = _qsClear ? '?' + _qsClear : '?';
+      clearA.title = 'Clear progression (does not affect the rest of the page)';
+      clearA.textContent = 'Clear';
+      if (!prog.length) {
+        clearA.classList.add('prog_clear_link_idle');
+        clearA.title = 'Nothing to clear';
       }
+      const printBtn = sectionActions.querySelector('.section_print');
+      if (printBtn) sectionActions.insertBefore(clearA, printBtn);
+      else sectionActions.prepend(clearA);
     }
 
     // Wire delegated handlers once.
