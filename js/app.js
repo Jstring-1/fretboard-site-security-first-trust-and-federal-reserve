@@ -5396,6 +5396,19 @@
           } else {
             setChordIdOn(sec, turningOn);
           }
+          // Turning OFF should leave a clean slate: drop the yellow picks
+          // (pk), the colored highlights from any active chord chip (hl),
+          // and the active-chip marker (idn). Re-render via navigateTo so
+          // the cleared state lands in the URL.
+          if (!turningOn) {
+            const p = new URLSearchParams(window.location.search);
+            p.delete('hl'); p.set('hl', '');
+            p.delete('pk'); p.set('pk', '');
+            p.delete('idn');
+            const qs = canonicalQS(p);
+            navigateTo(qs ? '?' + qs : '?');
+            return;
+          }
           applyState();
           return;
         }
