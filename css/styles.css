@@ -1772,10 +1772,13 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 
 /* Single combined controls row — label, input, ♯/♭, mode select, Play,
    tempo. Always centered as a group; wraps onto multiple lines on
-   narrow viewports. Apply removed; spacebar / Enter auto-apply. */
+   narrow viewports. Apply removed; spacebar / Enter auto-apply.
+   `margin: 0 auto` + `width: fit-content` is bulletproof centering
+   inside the .prog_panel flex column — beats any cascade override. */
 .prog_input_row                            { display: flex !important; align-items: center; gap: 10px;
                                              flex-wrap: wrap; justify-content: center !important;
-                                             width: 100%;                                                                }
+                                             width: fit-content !important; max-width: 100% !important;
+                                             margin: 0 auto !important;                                                 }
 .prog_input_label                          { font: 600 0.78em var(--font); color: var(--muted-dim);
                                              text-transform: uppercase; letter-spacing: 0.06em;
                                              white-space: nowrap;                                                        }
