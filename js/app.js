@@ -3991,6 +3991,18 @@
     const pkList = readPkParam(new URLSearchParams(window.location.search));
     if (pkList.length) parts.push('pk=' + pkList.join(','));
 
+    // Progression state (prog, pmode, tempo) — carry whatever the URL
+    // currently has so changing the key (or any other form control)
+    // doesn't blow away the user's chord progression. Roman tokens in
+    // prog still transpose with key changes at render time; absolute
+    // tokens (Cmaj7) stay as written.
+    const _curProg = _curParams.getAll('prog');
+    _curProg.forEach(function (v) { parts.push('prog=' + encodeURIComponent(v)); });
+    const _curPmode = _curParams.get('pmode');
+    if (_curPmode) parts.push('pmode=' + encodeURIComponent(_curPmode));
+    const _curTempo = _curParams.get('tempo');
+    if (_curTempo) parts.push('tempo=' + encodeURIComponent(_curTempo));
+
     // Custom-tuning strings combined into one no-separator `s=` param.
     // Three cases:
     //   z=y               → read selects, rebuild s=
