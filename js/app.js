@@ -3866,8 +3866,20 @@
       section.open = true;
     }
     document.body.setAttribute('data-print', sectionId);
+    // Per-section page orientation override. Chrome ignores
+    // `body[data-print="..."] { page: <name>; }`, so we inject a fresh
+    // top-level @page rule into the head right before printing and
+    // remove it after. Default landscape stays for everything else.
+    let pageStyle = null;
+    if (sectionId === 'section_11') {
+      pageStyle = document.createElement('style');
+      pageStyle.id = 'sf_print_page_override';
+      pageStyle.textContent = '@page { size: portrait; margin: 0.6cm; }';
+      document.head.appendChild(pageStyle);
+    }
     function cleanup() {
       document.body.removeAttribute('data-print');
+      if (pageStyle && pageStyle.parentNode) pageStyle.parentNode.removeChild(pageStyle);
       if (restoreClosed) section.open = false;
       window.removeEventListener('afterprint', cleanup);
     }
