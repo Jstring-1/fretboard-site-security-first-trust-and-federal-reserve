@@ -2815,13 +2815,13 @@
     h += '<div class="prog_input_row">';
     h +=   '<span class="prog_input_label">Chord progression:</span>';
     const placeholder = isCustom
-      ? 'e.g. C Am F G  or  Cmaj7 Dm7 G7  (use ♯/♭, no spaces inside)'
-      : 'e.g. I IV V vi  or  ii V I  or  I bVII IV';
+      ? 'C Am F G  or  Cmaj7 Dm7 G7'
+      : 'I IV V vi  or  ii V I';
     h +=   '<input type="text" id="prog_input" class="prog_input"'
        +     ' placeholder="' + escHtml(placeholder) + '"'
        +     ' value="' + escHtml(prog.join(' ')) + '"'
        +     ' autocomplete="off" spellcheck="false" maxlength="120">';
-    h +=   '<button type="button" class="prog_apply">Apply</button>';
+    h +=   '<button type="button" class="prog_apply" title="Apply (auto-applies on spacebar)">Apply</button>';
     h += '</div>';
 
     // ----- Strip of bars (the user's current progression) -------------
@@ -2920,14 +2920,8 @@
     }
     h += '</div>';
 
-    // ----- Play + tempo + mode dropdown ------------------------------
+    // ----- Mode dropdown + Play + tempo ------------------------------
     h += '<div class="prog_controls">';
-    h +=   '<button type="button" class="prog_play_btn"' + (prog.length ? '' : ' disabled')
-       +     ' title="Play progression (audio toggle must be on)">▶ Play</button>';
-    h +=   '<label class="prog_tempo_label">Tempo';
-    h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
-    h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
-    h +=   '</label>';
     h +=   '<select class="prog_mode_select" title="Palette source">';
     _PROG_MODE_ORDER.forEach(function (key) {
       const cfg = _PROG_MODES[key];
@@ -2935,6 +2929,12 @@
       h += '<option value="' + escAttr(key) + '"' + sel + '>' + escHtml(cfg.label) + '</option>';
     });
     h +=   '</select>';
+    h +=   '<button type="button" class="prog_play_btn"' + (prog.length ? '' : ' disabled')
+       +     ' title="Play progression (audio toggle must be on)">▶ Play</button>';
+    h +=   '<label class="prog_tempo_label">Tempo';
+    h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
+    h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
+    h +=   '</label>';
     h += '</div>';
 
     // ----- Palette body (only for non-custom modes) ------------------
@@ -3017,6 +3017,15 @@
             .slice(0, 24);
         }
         navigateTo(buildProgHref(tokens, curMode));
+        // Refocus the input so the user can keep typing (relevant for
+        // the spacebar auto-apply path — without this, focus is lost
+        // every keystroke).
+        const newInp = document.querySelector('#prog_input');
+        if (newInp) {
+          newInp.focus();
+          const len = newInp.value.length;
+          try { newInp.setSelectionRange(len, len); } catch (_) {}
+        }
         return;
       }
       // ⋯ button → toggle the per-bar action menu (currently a single
@@ -3127,11 +3136,22 @@
       }
     });
 
+    // Enter on the input commits Apply. Spacebar also commits — so the
+    // user can type tokens and have each completed one auto-applied
+    // without reaching for the button. Use keyup so the just-typed
+    // space is in the input value before we parse.
     root.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       const inp = e.target && e.target.closest && e.target.closest('#prog_input');
       if (!inp) return;
       e.preventDefault();
+      const apply = root.querySelector('.prog_apply');
+      if (apply) apply.click();
+    });
+    root.addEventListener('keyup', function (e) {
+      if (e.key !== ' ' && e.code !== 'Space') return;
+      const inp = e.target && e.target.closest && e.target.closest('#prog_input');
+      if (!inp) return;
       const apply = root.querySelector('.prog_apply');
       if (apply) apply.click();
     });
