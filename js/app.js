@@ -3168,9 +3168,14 @@
       }).filter(Boolean).slice(0, 24);
       navigateTo(buildProgHref(tokens, curMode));
       // Refocus the new input so spacebar auto-apply doesn't lose
-      // focus on every keystroke.
+      // focus on every keystroke. Also ensure the value ends in a
+      // space — without it, the next chord the user types runs into
+      // the previous token (e.g. typing "F" after "C" produces "CF",
+      // which parses as one absolute chord and clobbers the
+      // progression).
       const newInp = document.querySelector('#prog_input');
       if (newInp) {
+        if (!/\s$/.test(newInp.value)) newInp.value += ' ';
         newInp.focus();
         const len = newInp.value.length;
         try { newInp.setSelectionRange(len, len); } catch (_) {}
