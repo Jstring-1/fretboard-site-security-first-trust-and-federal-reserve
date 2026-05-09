@@ -1894,7 +1894,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              color: var(--text); background: var(--bg-elevated);
                                              border: 1px solid #2a2a2a; border-radius: 4px;
                                              letter-spacing: 0.04em; cursor: pointer;
-                                             min-width: 130px; margin-left: auto;                                       }
+                                             min-width: 130px;                                                          }
 .prog_mode_select:focus                    { border-color: var(--accent-hi); outline: none;                            }
 
 /* Custom-mode bar: a tiny highlight link (⌖) + note dropdown +
