@@ -1764,7 +1764,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_input_row                            { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;            }
 .prog_input_label                          { font: 600 0.78em var(--font); color: var(--muted-dim);
                                              text-transform: uppercase; letter-spacing: 0.06em;                         }
-.prog_input                                { flex: 1 1 280px; max-width: 480px;
+.prog_input                                { flex: 0 1 380px; min-width: 220px;
                                              padding: 5px 10px; font: 400 0.92em var(--font);
                                              background: var(--bg-elevated); color: var(--text);
                                              border: 1px solid #2a2a2a; border-radius: 4px; outline: none;              }
@@ -1779,7 +1779,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              border: 1px solid rgba(255,255,255,0.25);
                                              background: transparent; color: var(--muted);
                                              font: 600 0.78em var(--font); text-decoration: none;
-                                             letter-spacing: 0.04em;                                                    }
+                                             letter-spacing: 0.04em;
+                                             margin-left: auto;                                                          }
 .prog_clear_link:hover                     { color: var(--accent-hi); border-color: var(--accent-hi);                  }
 
 /* Bar strip — the user's current progression */
