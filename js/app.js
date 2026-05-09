@@ -4635,13 +4635,29 @@
         +    '" data-section="' + sectionId
         +    '" title="Clear picks">Clear</a>';
     }
+    // Wrap output in a <details> that mirrors the ID-toggle state — open
+    // when ID is engaged, collapsed when disengaged. The summary always
+    // carries the toggle button so the user can flip it from either state.
+    function wrap(bodyHtml) {
+      return '<details class="identify_box"' + (idOn ? ' open' : '') + '>'
+           + '<summary class="identify_summary">'
+           +   '<span class="identify_label">Chord ID</span>'
+           +   '<span class="identify_summary_state">' + (idOn ? 'on' : 'off') + '</span>'
+           +   '<span class="identify_btns">' + idToggleHtml() + '</span>'
+           + '</summary>'
+           + bodyHtml
+           + '</details>';
+    }
+
     if (!idOn) {
-      // Chord ID disabled for this section. Show a minimal strip with
-      // just the toggle on the right so the user can flip it back on.
-      return '<div class="identify_strip identify_hint">'
-           + '<span class="identify_label">Chord ID:</span> off'
-           + '<span class="identify_btns">' + idToggleHtml() + '</span>'
-           + '</div>';
+      // Chord ID disabled for this section — collapsed details. Body is
+      // a brief hint shown if the user manually expands the summary.
+      return wrap(
+        '<div class="identify_strip identify_hint">'
+      + '<span class="identify_label">Chord ID is off.</span> '
+      + 'Click the ID toggle above to enable click-to-identify.'
+      + '</div>'
+      );
     }
 
     const pkArr = String(xs.pk || '').split(' ').filter(function (v) { return v.length; });
@@ -4654,7 +4670,7 @@
            + ' fret cell' + (rem === 1 ? '' : 's') + ' or piano key'
            + (rem === 1 ? '' : 's') + ' to identify a chord '
            + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
-           + '<span class="identify_btns">' + idArrowsHtml() + idToggleHtml() + '</span>'
+           + '<span class="identify_btns identify_btns_inline">' + idArrowsHtml() + '</span>'
            + '</div>';
     } else {
       const selMask = pkSetToMask(xs._pk_set);
@@ -4728,7 +4744,7 @@
         +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
       html = ''
         + '<div class="identify_strip">'
-        + '<span class="identify_btns">' + idArrowsHtml() + idClearHtml() + idToggleHtml() + '</span>'
+        + '<span class="identify_btns">' + idArrowsHtml() + idClearHtml() + '</span>'
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
         + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
@@ -4753,7 +4769,7 @@
         + '  </div>'
         + '</div>';
     }
-      return html;
+      return wrap(html);
     }
 
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');

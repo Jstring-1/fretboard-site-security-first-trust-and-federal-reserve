@@ -1258,6 +1258,24 @@ details.collapsible.section                { position: relative;                
 
 /* ---------- Chord identify strip (below fretboard / keyboard) ---------- */
 #fb_identify_root, #kb_identify_root       { padding: 8px 18px 4px;                                                  }
+/* Collapsible wrapper. Open mirrors the ID-toggle state — when ID is
+   engaged the box is open, when disengaged the body collapses behind a
+   header that still carries the toggle so the user can flip it back. */
+.identify_box                              { background: rgba(255,255,255,0.03); border-radius: 8px;
+                                             border: 1px solid rgba(255,255,255,0.08);                                 }
+.identify_box[open]                        { background: rgba(255,255,255,0.04);                                       }
+.identify_summary                          { display: flex; align-items: center; gap: 10px;
+                                             padding: 6px 14px; cursor: pointer;
+                                             list-style: none; user-select: none;                                       }
+.identify_summary::-webkit-details-marker  { display: none;                                                            }
+.identify_summary::before                  { content: "▶"; display: inline-block; width: 0.8em;
+                                             font-size: 0.7em; color: var(--muted-dim);
+                                             transition: transform 120ms;                                              }
+.identify_box[open] > .identify_summary::before  { transform: rotate(90deg);                                          }
+.identify_summary .identify_label          { font: 600 0.78em var(--font); letter-spacing: 0.06em;
+                                             text-transform: uppercase; color: var(--accent-hi);                       }
+.identify_summary_state                    { font: 400 0.78em var(--font); color: var(--muted);                        }
+.identify_summary .identify_btns           { position: static; margin-left: auto;                                      }
 /* Per-strip control cluster (◀ / ▶ shift, ID toggle) — pinned to the
    right edge of the identify strip so it sits in the same plane as
    the section's print button. */
@@ -1288,7 +1306,7 @@ details.collapsible.section                { position: relative;                
                                              text-transform: uppercase; color: var(--muted); margin-right: 8px;       }
 .identify_head                             { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
                                              margin-bottom: 8px; padding-bottom: 6px;
-                                             padding-right: 150px;  /* reserve space for absolute .identify_btns */
+                                             padding-right: 110px;  /* reserve space for in-strip arrows + clear */
                                              border-bottom: 1px solid rgba(255,255,255,0.08);                         }
 .identify_picks                            { color: var(--text); font-weight: 600;                                    }
 .identify_clear                            { color: var(--muted); font-size: 0.85em;
