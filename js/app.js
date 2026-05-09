@@ -2853,7 +2853,9 @@
     // ----- Heading: input + ♯/♭ + mode + Play + Tempo, all on one
     // centered row. Apply removed; spacebar / Enter auto-apply.
     let h = '<div class="prog_panel">';
-    h += '<div class="prog_input_row">';
+    // Inline style on the row — belt-and-suspenders centering in case
+    // a stale CSS rule is still in cache. Same for the palette + strip.
+    h += '<div class="prog_input_row" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;width:100%;">';
     h +=   '<span class="prog_input_label">Chord progression:</span>';
     const placeholder = 'I IV V  or  C Am F G  or  Cmaj7 Dm7 G7';
     h +=   '<input type="text" id="prog_input" class="prog_input"'
@@ -2883,8 +2885,26 @@
     h +=   '</label>';
     h += '</div>';
 
+    // ----- Palette body — sits ABOVE the strip per user request. The
+    // mode dropdown in the input row selects which 7 diatonic Romans are
+    // listed. Click a chip to append that Roman to the progression.
+    h += '<div class="prog_palette" style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
+    h += '<div class="prog_palette_row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;">';
+    modeData.romans.forEach(function (roman) {
+      const r = _resolveRoman(roman, x.k);
+      const chordName = r ? r.name : '?';
+      const appendHref = buildProgHref(prog.concat([roman]), pmode);
+      h += '<a class="prog_palette_chip" href="' + escHtml(appendHref) + '"'
+        +    ' title="' + escAttr('Add ' + roman + ' (' + chordName + ')') + '">'
+        +    '<span class="prog_palette_roman">' + escHtml(roman) + '</span>'
+        +    '<span class="prog_palette_name">' + escHtml(chordName) + '</span>'
+        +  '</a>';
+    });
+    h += '</div>';
+    h += '</div>';
+
     // ----- Strip of bars (the user's current progression) -------------
-    h += '<div class="prog_strip">';
+    h += '<div class="prog_strip" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;">';
     prog.forEach(function (tok, idx) {
       const isAbs = tokenIsAbsolute(tok);
       const r = resolveToken(tok);
@@ -2995,25 +3015,8 @@
        + '</a>';
     h += '</div>';
 
-    // (Mode dropdown + Play + Tempo are now part of .prog_input_row above.)
-
-    // ----- Palette body — always shown. The mode dropdown above
-    // selects which 7 diatonic Romans are listed. Click a chip to
-    // append that Roman to the progression (transposes with key).
-    h += '<div class="prog_palette">';
-    h += '<div class="prog_palette_row">';
-    modeData.romans.forEach(function (roman) {
-      const r = _resolveRoman(roman, x.k);
-      const chordName = r ? r.name : '?';
-      const appendHref = buildProgHref(prog.concat([roman]), pmode);
-      h += '<a class="prog_palette_chip" href="' + escHtml(appendHref) + '"'
-        +    ' title="' + escAttr('Add ' + roman + ' (' + chordName + ')') + '">'
-        +    '<span class="prog_palette_roman">' + escHtml(roman) + '</span>'
-        +    '<span class="prog_palette_name">' + escHtml(chordName) + '</span>'
-        +  '</a>';
-    });
-    h += '</div>';
-    h += '</div>';
+    // (Mode dropdown + Play + Tempo are now part of .prog_input_row above;
+    //  palette moved above the strip per user request.)
 
     h += '</div>';   // .prog_panel
     root.innerHTML = h;
