@@ -2813,9 +2813,7 @@
     // ----- Heading: text input + Apply / Clear ------------------------
     let h = '<div class="prog_panel">';
     h += '<div class="prog_input_row">';
-    h +=   '<span class="prog_input_label">'
-       +     (isCustom ? 'Type chords:' : 'Type romans:')
-       +   '</span>';
+    h +=   '<span class="prog_input_label">Chord progression:</span>';
     const placeholder = isCustom
       ? 'e.g. C Am F G  or  Cmaj7 Dm7 G7  (use ♯/♭, no spaces inside)'
       : 'e.g. I IV V vi  or  ii V I  or  I bVII IV';

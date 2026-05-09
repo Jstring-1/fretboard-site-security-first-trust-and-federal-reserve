@@ -1760,11 +1760,15 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /* ----- Custom Progression Builder ----- */
 .prog_panel                                { padding: 8px 18px; display: flex; flex-direction: column; gap: 10px;       }
 
-/* Roman-numeral input row */
-.prog_input_row                            { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;            }
+/* Roman-numeral input row — tight inline group: label, input, Apply
+   sit flush against each other on the left. No flex-grow on the input
+   so it doesn't push the Apply button to the far right of the page. */
+.prog_input_row                            { display: flex; align-items: center; gap: 8px;
+                                             flex-wrap: nowrap;                                                          }
 .prog_input_label                          { font: 600 0.78em var(--font); color: var(--muted-dim);
-                                             text-transform: uppercase; letter-spacing: 0.06em;                         }
-.prog_input                                { flex: 0 1 380px; min-width: 220px;
+                                             text-transform: uppercase; letter-spacing: 0.06em;
+                                             white-space: nowrap;                                                        }
+.prog_input                                { flex: 0 0 auto; width: 480px; max-width: 60%;
                                              padding: 5px 10px; font: 400 0.92em var(--font);
                                              background: var(--bg-elevated); color: var(--text);
                                              border: 1px solid #2a2a2a; border-radius: 4px; outline: none;              }
