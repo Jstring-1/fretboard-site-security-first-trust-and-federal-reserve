@@ -2376,6 +2376,10 @@
     // for the variation. These five chips cover both halves of that
     // turnaround so the user can build either phrase by clicking.
     'rhythm':     { label: 'Rhythm Changes',  romans: ['I',   'VI7', 'iim7', 'V7',     'III7'] },
+    // Bubblegum / 60s pop — I vi IV V is the doo-wop / bubblegum
+    // backbone. Pair it with a IV I ii V turnaround for the cycle.
+    // Five chips cover both phrases.
+    'bubblegum':  { label: 'Bubblegum',       romans: ['I',   'vi',  'IV',   'V',      'ii'] },
   };
   // Order modes in the dropdown deliberately — most-used at the top.
   // 'custom' is intentionally NOT in this list: it's no longer a
@@ -2386,7 +2390,7 @@
     'major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic',
     'country','mixture','mixo_pop','aeolian','pent_maj','pent_min',
     'blues_1','blues_2','blues_3',
-    'jazz_251','jazz_min251','rhythm',
+    'jazz_251','jazz_min251','rhythm','bubblegum',
   ];
 
   // Curated voicings for Custom mode. Order = display priority. Each
