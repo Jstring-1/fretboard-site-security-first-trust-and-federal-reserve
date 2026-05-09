@@ -1866,8 +1866,16 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_bar_custom_layout                    { flex-direction: column; align-items: center;
                                              padding: 4px 8px; border-radius: 6px;
                                              background: rgba(255,255,255,0.06);
-                                             border: 1px solid rgba(255,255,255,0.15);                                  }
+                                             border: 1px solid rgba(255,255,255,0.15);
+                                             cursor: grab;                                                              }
+.prog_bar_custom_layout:active             { cursor: grabbing;                                                         }
 .prog_bar_custom_layout:hover              { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.30); }
+/* Drag visual feedback. The bar being dragged dims; the bar
+   currently under the cursor shows a thick cyan line on the side
+   the dragged bar will land on. */
+.prog_bar_dragging                         { opacity: 0.4;                                                              }
+.prog_bar_drop_before                      { box-shadow: -3px 0 0 0 var(--accent-hi);                                   }
+.prog_bar_drop_after                       { box-shadow:  3px 0 0 0 var(--accent-hi);                                   }
 .prog_bar_face                             { display: flex; flex-direction: column; align-items: center;
                                              padding: 6px 12px; border-radius: 6px;
                                              background: rgba(255,255,255,0.06);

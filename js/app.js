@@ -2925,6 +2925,7 @@
         cr = _resolveCustomChord(normalized, x.k);
       }
       h += '<div class="prog_bar prog_bar_custom_layout"'
+         +   ' draggable="true"'
          +   ' data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
       if (cr) {
         // Degree dropdown:
@@ -3049,6 +3050,73 @@
     // Wire delegated handlers once.
     if (root._progBound) return;
     root._progBound = true;
+
+    // Drag-and-drop reordering of bars in the strip. HTML5 drag API:
+    // dragstart records the source index, dragover marks the drop
+    // target with a class hint (left/right edge), drop reorders the
+    // prog array and navigates. The dropdowns inside each bar still
+    // function — drag only initiates after a real mouse-drag gesture.
+    let _progDragSrc = -1;
+    root.addEventListener('dragstart', function (e) {
+      const bar = e.target.closest && e.target.closest('.prog_bar');
+      if (!bar) return;
+      _progDragSrc = parseInt(bar.getAttribute('data-idx') || '-1', 10);
+      bar.classList.add('prog_bar_dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        // Required for Firefox to actually start the drag.
+        e.dataTransfer.setData('text/plain', String(_progDragSrc));
+      } catch (_) {}
+    });
+    root.addEventListener('dragend', function (e) {
+      const bar = e.target.closest && e.target.closest('.prog_bar');
+      if (bar) bar.classList.remove('prog_bar_dragging');
+      root.querySelectorAll('.prog_bar_drop_before, .prog_bar_drop_after')
+        .forEach(function (el) {
+          el.classList.remove('prog_bar_drop_before');
+          el.classList.remove('prog_bar_drop_after');
+        });
+      _progDragSrc = -1;
+    });
+    root.addEventListener('dragover', function (e) {
+      const bar = e.target.closest && e.target.closest('.prog_bar');
+      if (!bar) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+      const rect = bar.getBoundingClientRect();
+      const before = (e.clientX - rect.left) < rect.width / 2;
+      root.querySelectorAll('.prog_bar_drop_before, .prog_bar_drop_after')
+        .forEach(function (el) {
+          el.classList.remove('prog_bar_drop_before');
+          el.classList.remove('prog_bar_drop_after');
+        });
+      bar.classList.add(before ? 'prog_bar_drop_before' : 'prog_bar_drop_after');
+    });
+    root.addEventListener('drop', function (e) {
+      const bar = e.target.closest && e.target.closest('.prog_bar');
+      if (!bar || _progDragSrc < 0) return;
+      e.preventDefault();
+      const dstIdx = parseInt(bar.getAttribute('data-idx') || '-1', 10);
+      const rect = bar.getBoundingClientRect();
+      const before = (e.clientX - rect.left) < rect.width / 2;
+      const xCur = window.SF_X;
+      const cur = (xCur && Array.isArray(xCur._prog)) ? xCur._prog.slice() : [];
+      const src = _progDragSrc;
+      _progDragSrc = -1;
+      if (src < 0 || src >= cur.length) return;
+      let dst = dstIdx + (before ? 0 : 1);
+      // Removing src first shifts indices left for any dst > src.
+      const moved = cur.splice(src, 1)[0];
+      if (src < dst) dst -= 1;
+      if (dst < 0) dst = 0;
+      if (dst > cur.length) dst = cur.length;
+      if (dst === src) {
+        // No-op move; refresh just the visual class without navigating.
+        return;
+      }
+      cur.splice(dst, 0, moved);
+      navigateTo(buildProgHref(cur, (xCur && xCur._pmode) || 'major'));
+    });
 
     // Click delegate for buttons + the apply / custom-add flow.
     root.addEventListener('click', function (e) {
