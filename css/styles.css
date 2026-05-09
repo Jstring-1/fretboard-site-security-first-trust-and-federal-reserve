@@ -1350,11 +1350,18 @@ details.collapsible.section                { position: relative;                
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
                                              text-decoration: none; transition: background .12s, border-color .12s; }
 .identify_chip:hover                       { background: rgba(255,235,0,0.15); border-color: #ffeb00;                 }
+/* Engaged state = this chord's notes are currently color-highlighted
+   on the fretboard / keyboard. Blue so it's visually distinct from
+   the yellow chord-ID picks above (which use pk=). Click again to
+   un-highlight (handled in renderIdentifyStrips by swapping the
+   chip's href to one that drops hl=). */
 a.identify_chip_on,
 a.identify_chip_on:link,
 a.identify_chip_on:visited,
-a.identify_chip_on:active                  { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;
-                                             font-weight: 600;                                                         }
+a.identify_chip_on:active                  { background: var(--accent-hi); color: #001014 !important;
+                                             border-color: var(--accent-hi);
+                                             font-weight: 700;                                                          }
+a.identify_chip_on:hover                   { background: #6fffff; border-color: #6fffff;                                }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
 /* In-key filter pill sits inline next to the picks readout so it

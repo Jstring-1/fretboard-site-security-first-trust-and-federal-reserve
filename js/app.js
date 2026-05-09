@@ -5152,11 +5152,10 @@
           const isEngaged = root === xs.k && degSetsEqual(degsStr, xs.hl);
           let href;
           if (isEngaged) {
-            // Disengage: clear hl, keep everything else (including pk).
-            const p = new URLSearchParams(window.location.search);
-            p.delete('hl');
-            const _qs = canonicalQS(p);
-            href = _qs ? '?' + _qs : '?';
+            // Disengage: drop hl= but keep pk= (yellow chord-ID picks)
+            // and every other URL param. Same helper the None pill uses,
+            // so unlinked-mode merging behaves consistently.
+            href = clearHlOnlyHref();
           } else {
             href = applyChordHref(name, mask) || '#';
           }
