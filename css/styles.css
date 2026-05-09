@@ -1754,17 +1754,21 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 /* ----- Custom Progression Builder ----- */
 .prog_panel                                { padding: 8px 18px; display: flex; flex-direction: column; gap: 10px;       }
 
-/* Roman-numeral input row — centered group: label, input, ♯/♭ pills.
-   Apply button removed; spacebar / Enter auto-apply. */
-.prog_input_row                            { display: flex; align-items: center; gap: 8px;
-                                             flex-wrap: nowrap; justify-content: center;                                }
+/* Single combined controls row — label, input, ♯/♭, mode select, Play,
+   tempo. Always centered as a group; wraps onto multiple lines on
+   narrow viewports. Apply removed; spacebar / Enter auto-apply. */
+.prog_input_row                            { display: flex !important; align-items: center; gap: 10px;
+                                             flex-wrap: wrap; justify-content: center !important;
+                                             width: 100%;                                                                }
 .prog_input_label                          { font: 600 0.78em var(--font); color: var(--muted-dim);
                                              text-transform: uppercase; letter-spacing: 0.06em;
                                              white-space: nowrap;                                                        }
-.prog_input                                { flex: 0 0 auto; width: 320px; max-width: 50%;
+.prog_input                                { flex: 0 0 auto; width: 280px; max-width: 50%;
                                              padding: 5px 10px; font: 400 0.92em var(--font);
                                              background: var(--bg-elevated); color: var(--text);
                                              border: 1px solid #2a2a2a; border-radius: 4px; outline: none;              }
+.prog_input_sep                            { color: var(--muted-dim); font: 400 1em var(--font);
+                                             opacity: 0.5; padding: 0 4px;                                              }
 .prog_input:focus                          { border-color: var(--accent-hi);                                            }
 .prog_apply                                { padding: 4px 14px; border-radius: 12px;
                                              border: 1px solid rgba(255,255,255,0.55);
@@ -1799,11 +1803,11 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .section_clear_pill:hover                  { background: rgba(255,255,255,0.4); border-color: #fff;                    }
 
 /* Bar strip — the user's current progression */
-.prog_strip                                { display: flex; flex-wrap: wrap; gap: 6px; min-height: 64px;
+.prog_strip                                { display: flex !important; flex-wrap: wrap; gap: 6px; min-height: 64px;
                                              padding: 8px; border-radius: 6px;
                                              background: rgba(255,255,255,0.03);
                                              border: 1px dashed rgba(255,255,255,0.08);
-                                             justify-content: center;                                                    }
+                                             justify-content: center !important;                                        }
 .prog_empty                                { font: 400 0.85em var(--font); color: var(--muted-dim);
                                              padding: 8px 12px; align-self: center;                                     }
 .prog_bar                                  { position: relative; display: inline-flex;
@@ -1868,8 +1872,10 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 .prog_tempo_val                            { font: 600 0.82em monospace; color: var(--text); min-width: 60px;          }
 
 /* Palette: clickable Roman numeral chips that append to the strip */
-.prog_palette                              { display: flex; flex-direction: column; gap: 4px;                          }
-.prog_palette_row                          { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;            }
+.prog_palette                              { display: flex; flex-direction: column; gap: 4px;
+                                             align-items: center;                                                       }
+.prog_palette_row                          { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+                                             justify-content: center;                                                   }
 .prog_palette_label                        { font: 600 0.7em var(--font); color: var(--muted-dim);
                                              text-transform: uppercase; letter-spacing: 0.08em;
                                              min-width: 76px;                                                            }

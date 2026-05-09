@@ -2850,7 +2850,8 @@
         : _resolveRoman(tok, x.k);
     }
 
-    // ----- Heading: text input + Apply ------------------------------
+    // ----- Heading: input + ♯/♭ + mode + Play + Tempo, all on one
+    // centered row. Apply removed; spacebar / Enter auto-apply.
     let h = '<div class="prog_panel">';
     h += '<div class="prog_input_row">';
     h +=   '<span class="prog_input_label">Chord progression:</span>';
@@ -2864,6 +2865,22 @@
     // these aren't on a standard keyboard.
     h +=   '<button type="button" class="prog_input_sym" data-sym="♯" title="Insert sharp">♯</button>';
     h +=   '<button type="button" class="prog_input_sym" data-sym="♭" title="Insert flat">♭</button>';
+    h +=   '<span class="prog_input_sep" aria-hidden="true">/</span>';
+    // Mode (palette) dropdown — moved into the input row per user
+    // request, sits to the left of Play.
+    h +=   '<select class="prog_mode_select" title="Palette source">';
+    _PROG_MODE_ORDER.forEach(function (key) {
+      const cfg = _PROG_MODES[key];
+      const sel = (key === pmode) ? ' selected' : '';
+      h += '<option value="' + escAttr(key) + '"' + sel + '>' + escHtml(cfg.label) + '</option>';
+    });
+    h +=   '</select>';
+    h +=   '<button type="button" class="prog_play_btn"' + (prog.length ? '' : ' disabled')
+       +     ' title="Play progression (audio toggle must be on)">▶ Play</button>';
+    h +=   '<label class="prog_tempo_label">Tempo';
+    h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
+    h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
+    h +=   '</label>';
     h += '</div>';
 
     // ----- Strip of bars (the user's current progression) -------------
@@ -2985,22 +3002,7 @@
        + '</a>';
     h += '</div>';
 
-    // ----- Mode dropdown + Play + tempo ------------------------------
-    h += '<div class="prog_controls">';
-    h +=   '<select class="prog_mode_select" title="Palette source">';
-    _PROG_MODE_ORDER.forEach(function (key) {
-      const cfg = _PROG_MODES[key];
-      const sel = (key === pmode) ? ' selected' : '';
-      h += '<option value="' + escAttr(key) + '"' + sel + '>' + escHtml(cfg.label) + '</option>';
-    });
-    h +=   '</select>';
-    h +=   '<button type="button" class="prog_play_btn"' + (prog.length ? '' : ' disabled')
-       +     ' title="Play progression (audio toggle must be on)">▶ Play</button>';
-    h +=   '<label class="prog_tempo_label">Tempo';
-    h +=     '<input type="range" id="prog_tempo" min="40" max="200" step="2" value="' + tempo + '">';
-    h +=     '<span class="prog_tempo_val">' + tempo + ' bpm</span>';
-    h +=   '</label>';
-    h += '</div>';
+    // (Mode dropdown + Play + Tempo are now part of .prog_input_row above.)
 
     // ----- Palette body — always shown. The mode dropdown above
     // selects which 7 diatonic Romans are listed. Click a chip to
