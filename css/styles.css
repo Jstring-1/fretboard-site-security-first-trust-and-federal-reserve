@@ -1985,18 +1985,25 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              min-height: 90px;
                                              display: flex !important; flex-direction: column !important;
                                              align-items: center; justify-content: center;                              }
-  body[data-print="section_11"] .prog_bar_roman
-                                          { font-size: 1.1em !important; font-weight: 700 !important;
+  body[data-print="section_11"] .prog_bar_roman,
+  body[data-print="section_11"] .prog_bar_degree_select
+                                          { font-size: 3.3em !important; font-weight: 700 !important;
                                              color: #555 !important;                                                    }
-  body[data-print="section_11"] .prog_bar_chord
-                                          { font-size: 1.7em !important; font-weight: 700 !important;
+  body[data-print="section_11"] .prog_bar_chord,
+  body[data-print="section_11"] .prog_bar_note_select
+                                          { font-size: 5.1em !important; font-weight: 700 !important;
                                              color: #000 !important;                                                    }
-  body[data-print="section_11"] .prog_bar_voicing
-                                          { font-size: 0.9em !important; color: #555 !important;                       }
+  body[data-print="section_11"] .prog_bar_voicing,
+  body[data-print="section_11"] .prog_bar_voicing_select
+                                          { font-size: 2.7em !important; color: #555 !important;                       }
+  /* Bar face needs more breathing room with 3x text. */
+  body[data-print="section_11"] .prog_bar_face,
+  body[data-print="section_11"] .prog_bar_custom_layout
+                                          { padding: 30px 18px !important; min-height: 220px !important;                }
   /* Print header: replace the section's existing summary so the chart
      title shows the key + mode in big type. */
   body[data-print="section_11"] #section_11 > summary
-                                          { font-size: 1.3em !important; padding: 6px 0 !important;
+                                          { font-size: 3.9em !important; padding: 6px 0 !important;
                                              border-bottom: 1px solid #000 !important;
                                              margin-bottom: 16px !important;                                            }
 }
