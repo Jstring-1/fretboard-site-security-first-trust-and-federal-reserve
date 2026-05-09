@@ -2824,8 +2824,6 @@
        +     ' value="' + escHtml(prog.join(' ')) + '"'
        +     ' autocomplete="off" spellcheck="false" maxlength="120">';
     h +=   '<button type="button" class="prog_apply">Apply</button>';
-    h +=   '<a class="prog_clear_link" href="' + escHtml(buildProgHref([], pmode))
-       +     '" title="Clear progression">Clear</a>';
     h += '</div>';
 
     // ----- Strip of bars (the user's current progression) -------------
@@ -2952,6 +2950,26 @@
 
     h += '</div>';   // .prog_panel
     root.innerHTML = h;
+
+    // Mirror a Clear pill into the section header's .section_actions
+    // (right next to Print) — easier to reach than down in the form,
+    // and visually consistent with how other sections expose top-level
+    // actions. Removed + recreated each render so the href stays fresh.
+    const sectionActions = document.querySelector('#section_11 .section_actions');
+    if (sectionActions) {
+      const old = sectionActions.querySelector('.prog_clear_link');
+      if (old) old.remove();
+      if (prog.length) {
+        const clearA = document.createElement('a');
+        clearA.className = 'prog_clear_link section_clear_pill';
+        clearA.href = buildProgHref([], pmode);
+        clearA.title = 'Clear progression';
+        clearA.textContent = 'Clear';
+        const printBtn = sectionActions.querySelector('.section_print');
+        if (printBtn) sectionActions.insertBefore(clearA, printBtn);
+        else sectionActions.prepend(clearA);
+      }
+    }
 
     // Wire delegated handlers once.
     if (root._progBound) return;
