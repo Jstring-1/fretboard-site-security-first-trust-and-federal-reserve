@@ -830,9 +830,9 @@ details.collapsible > summary > .summary_title::before
                                              margin-right: 6px;                                                       }
 .section_key_row .key_hidden_select        { display: none;                                                           }
 .section_key_row .key_btn                  { background: #0e0e0e; border: 1px solid #5a5a5a;
-                                             border-radius: 5px; color: #f0f0f0;
-                                             font: 600 0.82em inherit; padding: 1px 8px;
-                                             min-width: 30px; cursor: pointer; line-height: 1.2;                       }
+                                             border-radius: 4px; color: #f0f0f0;
+                                             font: 600 0.78em inherit; padding: 0 7px;
+                                             min-width: 26px; cursor: pointer; line-height: 1.4;                       }
 .section_key_row .key_btn:hover            { border-color: #888;                                                       }
 .section_key_row .key_btn.active           { background: rgba(95,232,224,0.20);
                                              border-color: var(--accent); color: var(--accent);                       }
@@ -909,15 +909,17 @@ select option                              { color: var(--text); background: var
    single row, tight padding so the header doesn't eat vertical space. */
 .site_header_sticky                        { position: sticky; top: 0; z-index: 100;
                                              display: grid; grid-template-columns: 1fr auto 1fr;
-                                             align-items: center; gap: 0 14px;
-                                             padding: 2px 16px;
+                                             align-items: center !important; gap: 0 14px;
+                                             padding: 0 14px;
                                              background: var(--bg);
                                              border-bottom: 1px solid #1f1f1f;
                                              box-shadow: 0 6px 18px rgba(0,0,0,0.55),
                                                          0 2px 4px rgba(0,0,0,0.45);                                    }
-#site_tuning                               { grid-column: 1;                                                            }
-#global_key_row                            { grid-column: 2; justify-content: center; padding: 0;                      }
-#site_global_controls                      { grid-column: 3; justify-self: end;                                        }
+.site_header_sticky > *                    { align-self: center !important;                                            }
+#site_tuning                               { grid-column: 1; display: inline-flex; align-items: center;                }
+#global_key_row                            { grid-column: 2; justify-content: center; padding: 0;
+                                             display: inline-flex; align-items: center;                                }
+#site_global_controls                      { grid-column: 3; justify-self: end; align-items: center;                   }
 /* The inner span keyButtonsHtml emits has both .section_key_picker
    (which would push to flex-end) and .section_key_row (which sets gap).
    Inside the global row, force-center it and zero its own padding. */
