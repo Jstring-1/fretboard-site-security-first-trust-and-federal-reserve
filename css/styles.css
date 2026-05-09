@@ -917,13 +917,13 @@ select option                              { color: var(--text); background: var
                                              box-shadow: 0 6px 18px rgba(0,0,0,0.55),
                                                          0 2px 4px rgba(0,0,0,0.45);                                    }
 .site_header_sticky > *                    { align-self: center !important;                                            }
-#site_tuning                               { flex: 1 1 0; min-width: 0;
+#site_tuning                               { order: 1; flex: 1 1 0; min-width: 0;
                                              display: inline-flex; align-items: center;
                                              overflow: hidden; text-overflow: ellipsis; white-space: nowrap;           }
-#global_key_row                            { flex: 0 0 auto;
+#global_key_row                            { order: 2; flex: 0 0 auto;
                                              display: inline-flex; align-items: center; justify-content: center;
                                              padding: 0; margin: 0;                                                    }
-#site_global_controls                      { flex: 1 1 0;
+#site_global_controls                      { order: 3; flex: 1 1 0;
                                              display: inline-flex; align-items: center; justify-content: flex-end;
                                              gap: 6px;                                                                  }
 /* The inner span keyButtonsHtml emits has both .section_key_picker
