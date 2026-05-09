@@ -333,7 +333,14 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_5"] #section_5,
     body[data-print="section_6"] #section_6,
     body[data-print="section_8"] #section_8,
-    body[data-print="section_9"] #section_9 {  display:block !important;                                              }
+    body[data-print="section_9"] #section_9,
+    body[data-print="section_11"] #section_3,
+    body[data-print="section_11"] #section_11 {  display:block !important;                                            }
+    /* When printing section_11 (Progressions, nested inside section_3),
+       walk up to section_3 and hide everything except the nested
+       Progressions so only the chart prints. */
+    body[data-print="section_11"] #section_3 > *:not(#section_11):not(summary)
+                                            {  display:none !important;                                                }
     body[data-print] details > *           {  display:block !important;                                              }
     body[data-print] details > summary     {  display:none !important;                                                }
 
@@ -1855,6 +1862,79 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              letter-spacing: 0.04em;                                                    }
 .prog_palette_name                         { font: 600 0.88em var(--font);
                                              display: inline-block; min-width: 2.4em; text-align: center;               }
+
+/* Mode dropdown that replaces the static "Diatonic" label */
+.prog_mode_select                          { padding: 4px 8px; font: 600 0.78em var(--font);
+                                             color: var(--text); background: var(--bg-elevated);
+                                             border: 1px solid #2a2a2a; border-radius: 4px;
+                                             letter-spacing: 0.04em; cursor: pointer;
+                                             min-width: 130px;                                                          }
+.prog_mode_select:focus                    { border-color: var(--accent-hi); outline: none;                            }
+
+/* Custom-mode controls: root note picker + voicing picker + Add button */
+.prog_custom_root, .prog_custom_voicing    { padding: 4px 8px; font: 400 0.85em var(--font);
+                                             color: var(--text); background: var(--bg-elevated);
+                                             border: 1px solid #2a2a2a; border-radius: 4px;
+                                             cursor: pointer;                                                            }
+.prog_custom_root:focus,
+.prog_custom_voicing:focus                 { border-color: var(--accent-hi); outline: none;                            }
+.prog_custom_add                           { padding: 4px 12px; border-radius: 4px;
+                                             border: 1px solid var(--accent-hi);
+                                             background: var(--accent-hi); color: #001014;
+                                             font: 600 0.82em var(--font); cursor: pointer;                              }
+.prog_custom_add:hover                     { background: #fff; border-color: #fff;                                     }
+
+/* Per-bar voicing dropdown (Custom mode). Sits below the chord name
+   so the user can quickly cycle through voicings for that bar. */
+.prog_bar_voicing                          { font: 400 0.7em var(--font); color: var(--muted);
+                                             margin-top: 2px;                                                            }
+.prog_bar_voicing_select                   { width: 100%; margin-top: 4px;
+                                             padding: 1px 4px; font: 400 0.72em var(--font);
+                                             color: var(--text); background: var(--bg-elevated);
+                                             border: 1px solid rgba(255,255,255,0.15); border-radius: 3px;
+                                             cursor: pointer;                                                            }
+
+/* Chart-style print: hide everything that's not the bars + a key/mode
+   header; format bars as a bigger grid for readability on paper. */
+@media print {
+  body[data-print="section_11"] .prog_input_row,
+  body[data-print="section_11"] .prog_palette,
+  body[data-print="section_11"] .prog_controls,
+  body[data-print="section_11"] .prog_bar_subs,
+  body[data-print="section_11"] .prog_bar_remove,
+  body[data-print="section_11"] .prog_bar_sub_menu,
+  body[data-print="section_11"] .prog_bar_voicing_select
+                                          { display: none !important;                                                  }
+  body[data-print="section_11"] .prog_strip
+                                          { background: none !important; border: none !important;
+                                             padding: 0 !important;
+                                             display: grid !important;
+                                             grid-template-columns: repeat(4, minmax(0, 1fr));
+                                             gap: 12px !important;                                                       }
+  body[data-print="section_11"] .prog_bar
+                                          { min-width: 0 !important;                                                   }
+  body[data-print="section_11"] .prog_bar_face
+                                          { background: #fff !important; color: #000 !important;
+                                             border: 2px solid #000 !important;
+                                             padding: 18px 12px !important; border-radius: 4px !important;
+                                             min-height: 90px;
+                                             display: flex !important; flex-direction: column !important;
+                                             align-items: center; justify-content: center;                              }
+  body[data-print="section_11"] .prog_bar_roman
+                                          { font-size: 1.1em !important; font-weight: 700 !important;
+                                             color: #555 !important;                                                    }
+  body[data-print="section_11"] .prog_bar_chord
+                                          { font-size: 1.7em !important; font-weight: 700 !important;
+                                             color: #000 !important;                                                    }
+  body[data-print="section_11"] .prog_bar_voicing
+                                          { font-size: 0.9em !important; color: #555 !important;                       }
+  /* Print header: replace the section's existing summary so the chart
+     title shows the key + mode in big type. */
+  body[data-print="section_11"] #section_11 > summary
+                                          { font-size: 1.3em !important; padding: 6px 0 !important;
+                                             border-bottom: 1px solid #000 !important;
+                                             margin-bottom: 16px !important;                                            }
+}
 
 /* ----- Modes Visualizer (inside Scale Builder) ----- */
 .modes_panel                               { padding: 8px 18px; background: rgba(255,255,255,0.02);
