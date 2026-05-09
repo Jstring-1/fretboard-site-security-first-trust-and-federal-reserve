@@ -1899,6 +1899,11 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
    chord label rather than form widgets. */
 .prog_bar_face_custom                      { font-size: 0.95em; padding: 0; line-height: 1;
                                              color: var(--muted-dim); text-decoration: none;                            }
+/* Roman label that sits above the chord-name dropdown on mode-based
+   bars. Reminds the user where the chord came from in the diatonic
+   palette (changing the dropdown will flip the bar to Custom). */
+.prog_bar_roman_lbl                        { font: 600 0.7em var(--font); color: var(--accent-hi);
+                                             letter-spacing: 0.04em; line-height: 1;                                    }
 .prog_bar_face_custom:hover                { color: var(--accent-hi);                                                  }
 .prog_bar_inline_select                    { -webkit-appearance: none; -moz-appearance: none; appearance: none;
                                              background: transparent; border: none; outline: none;
@@ -1939,8 +1944,16 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
   body[data-print="section_11"] .prog_bar_subs,
   body[data-print="section_11"] .prog_bar_remove,
   body[data-print="section_11"] .prog_bar_sub_menu,
-  body[data-print="section_11"] .prog_bar_voicing_select
+  body[data-print="section_11"] .prog_bar_face_custom,
+  body[data-print="section_11"] .prog_bar_add
                                           { display: none !important;                                                  }
+  /* Print the inline selects flat as text (no border, no chrome). Most
+     browsers render the selected option's label, which is what we want. */
+  body[data-print="section_11"] .prog_bar_inline_select
+                                          { -webkit-appearance: none !important; appearance: none !important;
+                                             background: transparent !important;
+                                             border: none !important; padding: 0 !important;
+                                             color: #000 !important; font: inherit !important;                          }
   body[data-print="section_11"] .prog_strip
                                           { background: none !important; border: none !important;
                                              padding: 0 !important;

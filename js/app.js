@@ -2848,36 +2848,47 @@
             : (x._hilight_url + _degsToHlCsv(r.degs)))
         : '#';
       const subs = (!isCustom) ? (_PROG_SUBS[tok] || []) : [];
-      h += '<div class="prog_bar' + (isCustom ? ' prog_bar_custom_layout' : '')
-         +   '" data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
-      if (isCustom && r) {
-        // Custom-mode bar: a tiny highlight link (⌖) plus two inline
-        // dropdowns (note + voicing) styled as clickable text. The
-        // selects live as siblings of the link — nesting them inside
-        // would route their clicks through the link interceptor.
+      // Resolve the bar to a Custom-style chord so we can drive the
+      // inline dropdowns the same way in either mode. For Roman tokens,
+      // _resolveRoman gives us a chord name; convert that into the
+      // voicing alphabet our dropdowns understand (° → dim, ø7 → m7b5).
+      let cr;
+      if (isCustom) {
+        cr = r;   // already in custom form
+      } else if (r) {
+        const normalized = (r.name || '').replace(/°/g, 'dim').replace(/ø7/g, 'm7b5');
+        cr = _resolveCustomChord(normalized, x.k);
+      }
+      h += '<div class="prog_bar prog_bar_custom_layout"'
+         +   ' data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
+      if (cr) {
+        // Roman label on top for non-custom bars (small, dimmed). Custom
+        // bars omit it because the chord name IS the dropdown.
+        if (!isCustom) {
+          h += '<span class="prog_bar_roman_lbl">' + escHtml(tok) + '</span>';
+        }
+        // Tiny highlight link (⌖) — separate target from the dropdowns
+        // so opening a select doesn't trigger highlight navigation.
         h += '<a class="prog_bar_face prog_bar_face_custom" href="' + escHtml(highlightHref)
            +   '" title="' + escAttr('Highlight ' + chordName + ' on the fretboard') + '"'
            +   ' aria-label="Highlight">⌖</a>';
         h += '<select class="prog_bar_note_select prog_bar_inline_select" data-idx="' + idx + '"'
            +   ' title="Change note">';
         _PROG_ROOTS.forEach(function (n) {
-          const sel = (n === r.root) ? ' selected' : '';
+          const sel = (n === cr.root) ? ' selected' : '';
           h += '<option value="' + escAttr(n) + '"' + sel + '>' + escHtml(n) + '</option>';
         });
         h += '</select>';
         h += '<select class="prog_bar_voicing_select prog_bar_inline_select" data-idx="' + idx + '"'
            +   ' title="Change voicing">';
         _PROG_VOICINGS.forEach(function (v) {
-          const sel = (v[1] === r.suffix) ? ' selected' : '';
+          const sel = (v[1] === cr.suffix) ? ' selected' : '';
           h += '<option value="' + escAttr(v[1]) + '"' + sel + '>' + escHtml(v[0]) + '</option>';
         });
         h += '</select>';
       } else {
-        h +=   '<a class="prog_bar_face" href="' + escHtml(highlightHref) + '"'
-           +     ' title="' + escAttr(tok + ' = ' + chordName + ' — click to highlight') + '">';
-        h +=     '<span class="prog_bar_roman">' + escHtml(tok) + '</span>';
-        h +=     '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
-        h +=   '</a>';
+        h +=   '<span class="prog_bar_roman">' + escHtml(tok) + '</span>';
+        h +=   '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
       }
       if (subs.length) {
         h += '<button type="button" class="prog_bar_subs" title="Substitutions" aria-label="Substitutions">⋯</button>';
@@ -3064,32 +3075,49 @@
         navigateTo(buildPmodeHref(newMode));
         return;
       }
+      // Bar-level note + voicing dropdowns. Editing one of these from a
+      // non-custom (mode-based) progression flips the whole progression
+      // into Custom mode — Roman tokens get resolved to absolute chord
+      // names so the user's edit lands on top of a stable reference.
+      function _absoluteFromProg(curProg, key) {
+        return curProg.map(function (t) {
+          // If it already looks like an absolute chord name, keep it.
+          if (/^[A-G][♯♭]?/.test(t)) return t;
+          const rr = _resolveRoman(t, key);
+          if (!rr) return t;
+          return (rr.name || t).replace(/°/g, 'dim').replace(/ø7/g, 'm7b5');
+        });
+      }
       const voiceSel = e.target && e.target.closest && e.target.closest('.prog_bar_voicing_select');
       if (voiceSel) {
         const xCur = window.SF_X;
-        if (!xCur || xCur._pmode !== 'custom') return;
+        if (!xCur) return;
         const idx = parseInt(voiceSel.getAttribute('data-idx') || '-1', 10);
         const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
         if (idx < 0 || idx >= curProg.length) return;
-        // Swap the suffix only; root stays.
-        const m = String(curProg[idx]).match(/^([A-G][♯♭]?)(.*)$/);
+        const absolute = (xCur._pmode === 'custom')
+          ? curProg
+          : _absoluteFromProg(curProg, xCur.k);
+        const m = String(absolute[idx]).match(/^([A-G][♯♭]?)(.*)$/);
         if (!m) return;
-        curProg[idx] = m[1] + voiceSel.value;
-        navigateTo(buildProgHref(curProg, 'custom'));
+        absolute[idx] = m[1] + voiceSel.value;
+        navigateTo(buildProgHref(absolute, 'custom'));
         return;
       }
       const noteSel = e.target && e.target.closest && e.target.closest('.prog_bar_note_select');
       if (noteSel) {
         const xCur = window.SF_X;
-        if (!xCur || xCur._pmode !== 'custom') return;
+        if (!xCur) return;
         const idx = parseInt(noteSel.getAttribute('data-idx') || '-1', 10);
         const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
         if (idx < 0 || idx >= curProg.length) return;
-        // Swap the root only; suffix stays.
-        const m = String(curProg[idx]).match(/^([A-G][♯♭]?)(.*)$/);
+        const absolute = (xCur._pmode === 'custom')
+          ? curProg
+          : _absoluteFromProg(curProg, xCur.k);
+        const m = String(absolute[idx]).match(/^([A-G][♯♭]?)(.*)$/);
         if (!m) return;
-        curProg[idx] = noteSel.value + (m[2] || '');
-        navigateTo(buildProgHref(curProg, 'custom'));
+        absolute[idx] = noteSel.value + (m[2] || '');
+        navigateTo(buildProgHref(absolute, 'custom'));
         return;
       }
     });
