@@ -452,9 +452,9 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print] .prog_input_row,
     body[data-print] .prog_palette,
     body[data-print] .prog_play_btn,
-    body[data-print] .prog_bar_subs,
+    body[data-print] .prog_bar_menu,
     body[data-print] .prog_bar_remove,
-    body[data-print] .prog_bar_sub_menu,
+    body[data-print] .prog_bar_menu_pop,
     body[data-print] .kx_cad_play,
     body[data-print] .audio_toggle,
     body[data-print] .section_apply_all
@@ -1825,36 +1825,30 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
                                              letter-spacing: 0.04em;                                                    }
 .prog_bar_chord                            { font: 700 1em var(--font); margin-top: 2px;
                                              display: inline-block; min-width: 2.4em; text-align: center;               }
-.prog_bar_subs                             { position: absolute; top: -8px; right: 12px;
+/* Per-bar action menu trigger (⋯). Floats at top-left of the bar.
+   Click opens .prog_bar_menu_pop with the bar's actions. */
+.prog_bar_menu                             { position: absolute; top: -8px; left: -6px;
                                              width: 18px; height: 18px; padding: 0;
                                              border-radius: 50%; border: 1px solid rgba(255,255,255,0.4);
                                              background: var(--bg-elevated); color: #fff;
                                              font-size: 0.7em; line-height: 1; cursor: pointer;                         }
-.prog_bar_subs:hover                       { background: var(--accent-hi); color: #001014; border-color: var(--accent-hi); }
+.prog_bar_menu:hover                       { background: var(--accent-hi); color: #001014; border-color: var(--accent-hi); }
 .prog_bar_remove                           { position: absolute; top: -8px; right: -6px;
                                              width: 18px; height: 18px; line-height: 16px;
                                              border-radius: 50%; border: 1px solid rgba(255,255,255,0.25);
-                                             background: var(--bg-elevated); color: var(--muted);
+                                             background: #1a1a1a; color: var(--muted);
                                              text-align: center; text-decoration: none;
                                              font: 600 0.85em var(--font);                                              }
 .prog_bar_remove:hover                     { background: #802020; color: #fff; border-color: #c04040;                   }
-.prog_bar_sub_menu                         { position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
-                                             min-width: 220px; max-width: 320px;
-                                             padding: 6px; border-radius: 6px;
+.prog_bar_menu_pop                         { position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+                                             min-width: 220px;
+                                             padding: 4px; border-radius: 6px;
                                              background: var(--bg-elevated); border: 1px solid #333;
                                              box-shadow: 0 8px 24px rgba(0,0,0,0.55);                                   }
-.prog_bar_sub_title                        { font: 600 0.7em var(--font); color: var(--muted-dim);
-                                             text-transform: uppercase; letter-spacing: 0.08em;
-                                             padding: 4px 6px;                                                          }
-.prog_bar_sub                              { display: grid;
-                                             grid-template-columns: 36px 60px 1fr;
-                                             gap: 6px; align-items: center;
-                                             padding: 4px 6px; border-radius: 4px;
-                                             color: var(--text); text-decoration: none;                                  }
-.prog_bar_sub:hover                        { background: rgba(255,255,255,0.06);                                        }
-.prog_bar_sub_roman                        { font: 600 0.78em var(--font); color: var(--accent-hi);                     }
-.prog_bar_sub_name                         { font: 600 0.85em var(--font);                                              }
-.prog_bar_sub_why                          { font: 400 0.72em var(--font); color: var(--muted);                         }
+.prog_bar_menu_item                        { display: block; padding: 6px 10px; border-radius: 4px;
+                                             color: var(--text); text-decoration: none;
+                                             font: 500 0.85em var(--font);                                              }
+.prog_bar_menu_item:hover                  { background: rgba(255,255,255,0.06); color: var(--accent-hi);              }
 
 /* Play + tempo controls */
 .prog_controls                             { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;            }
@@ -1901,13 +1895,23 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
    voicing dropdown, styled like clickable text. The native <select>
    chrome is stripped so the dropdowns read as part of the bar's
    chord label rather than form widgets. */
-.prog_bar_face_custom                      { font-size: 0.95em; padding: 0; line-height: 1;
-                                             color: var(--muted-dim); text-decoration: none;                            }
-/* Roman label that sits above the chord-name dropdown on mode-based
-   bars. Reminds the user where the chord came from in the diatonic
-   palette (changing the dropdown will flip the bar to Custom). */
-.prog_bar_roman_lbl                        { font: 600 0.7em var(--font); color: var(--accent-hi);
-                                             letter-spacing: 0.04em; line-height: 1;                                    }
+/* Inline degree dropdown on mode-based bars (small, dimmed). Sits
+   above the note + voicing row. Swap to another diatonic degree
+   without flipping to Custom. */
+.prog_bar_degree_select                    { -webkit-appearance: none; -moz-appearance: none; appearance: none;
+                                             background: transparent; border: none; outline: none;
+                                             color: var(--accent-hi); cursor: pointer;
+                                             font: 600 0.78em var(--font); letter-spacing: 0.04em;
+                                             padding: 0 4px; margin: 0; line-height: 1;
+                                             text-align: center; text-align-last: center;
+                                             min-width: 3em;                                                            }
+.prog_bar_degree_select:hover              { color: #fff;                                                              }
+.prog_bar_degree_select:focus              { outline: 1px dashed var(--accent-hi); outline-offset: 2px;                }
+
+/* Inline note + voicing row — sit horizontally next to each other
+   beneath the degree (non-custom) or as the bar's primary content
+   (custom). */
+.prog_bar_chord_row                        { display: inline-flex; align-items: baseline; gap: 0;                      }
 .prog_bar_face_custom:hover                { color: var(--accent-hi);                                                  }
 .prog_bar_inline_select                    { -webkit-appearance: none; -moz-appearance: none; appearance: none;
                                              background: transparent; border: none; outline: none;
@@ -1945,10 +1949,9 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
   body[data-print="section_11"] .prog_input_row,
   body[data-print="section_11"] .prog_palette,
   body[data-print="section_11"] .prog_controls,
-  body[data-print="section_11"] .prog_bar_subs,
+  body[data-print="section_11"] .prog_bar_menu,
   body[data-print="section_11"] .prog_bar_remove,
-  body[data-print="section_11"] .prog_bar_sub_menu,
-  body[data-print="section_11"] .prog_bar_face_custom,
+  body[data-print="section_11"] .prog_bar_menu_pop,
   body[data-print="section_11"] .prog_bar_add
                                           { display: none !important;                                                  }
   /* Print the inline selects flat as text (no border, no chrome). Most
@@ -2091,7 +2094,7 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 
 @media print {
   .dia_toggle, .prog_play_btn, .prog_apply, .prog_clear_link,
-  .prog_bar_subs, .prog_bar_remove, .prog_bar_sub_menu,
+  .prog_bar_menu, .prog_bar_remove, .prog_bar_menu_pop,
   .prog_palette, .prog_input_row, .prog_controls, .kx_cad_play
                                           { display: none !important; }
 }

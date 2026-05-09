@@ -2845,7 +2845,6 @@
             ? (x._hilight_url + _customDegsToHl(r, x.k))
             : (x._hilight_url + _degsToHlCsv(r.degs)))
         : '#';
-      const subs = (!isCustom) ? (_PROG_SUBS[tok] || []) : [];
       // Resolve the bar to a Custom-style chord so we can drive the
       // inline dropdowns the same way in either mode. For Roman tokens,
       // _resolveRoman gives us a chord name; convert that into the
@@ -2860,54 +2859,48 @@
       h += '<div class="prog_bar prog_bar_custom_layout"'
          +   ' data-idx="' + idx + '" data-token="' + escAttr(tok) + '">';
       if (cr) {
-        // Roman label on top for non-custom bars (small, dimmed). Custom
-        // bars omit it because the chord name IS the dropdown.
+        // Degree row (non-custom only): a small Roman-numeral dropdown
+        // listing the current mode's 7 diatonic degrees. Pick a
+        // different one to swap that bar's chord without leaving
+        // mode-based form.
         if (!isCustom) {
-          h += '<span class="prog_bar_roman_lbl">' + escHtml(tok) + '</span>';
+          h += '<select class="prog_bar_degree_select" data-idx="' + idx + '"'
+             +   ' title="Change degree (within ' + escAttr(modeData.label) + ')">';
+          modeData.romans.forEach(function (deg) {
+            const sel = (deg === tok) ? ' selected' : '';
+            h += '<option value="' + escAttr(deg) + '"' + sel + '>' + escHtml(deg) + '</option>';
+          });
+          h += '</select>';
         }
-        // Tiny highlight link (⌖) — separate target from the dropdowns
-        // so opening a select doesn't trigger highlight navigation.
-        h += '<a class="prog_bar_face prog_bar_face_custom" href="' + escHtml(highlightHref)
-           +   '" title="' + escAttr('Highlight ' + chordName + ' on the fretboard') + '"'
-           +   ' aria-label="Highlight">⌖</a>';
-        h += '<select class="prog_bar_note_select prog_bar_inline_select" data-idx="' + idx + '"'
-           +   ' title="Change note">';
+        // Note + voicing on a single inline row beneath the degree.
+        h += '<div class="prog_bar_chord_row">';
+        h +=   '<select class="prog_bar_note_select prog_bar_inline_select" data-idx="' + idx + '"'
+           +     ' title="Change note">';
         _PROG_ROOTS.forEach(function (n) {
           const sel = (n === cr.root) ? ' selected' : '';
           h += '<option value="' + escAttr(n) + '"' + sel + '>' + escHtml(n) + '</option>';
         });
-        h += '</select>';
-        h += '<select class="prog_bar_voicing_select prog_bar_inline_select" data-idx="' + idx + '"'
-           +   ' title="Change voicing">';
+        h +=   '</select>';
+        h +=   '<select class="prog_bar_voicing_select prog_bar_inline_select" data-idx="' + idx + '"'
+           +     ' title="Change voicing">';
         _PROG_VOICINGS.forEach(function (v) {
           const sel = (v[1] === cr.suffix) ? ' selected' : '';
           h += '<option value="' + escAttr(v[1]) + '"' + sel + '>' + escHtml(v[0]) + '</option>';
         });
-        h += '</select>';
+        h +=   '</select>';
+        h += '</div>';
       } else {
         h +=   '<span class="prog_bar_roman">' + escHtml(tok) + '</span>';
         h +=   '<span class="prog_bar_chord">' + escHtml(chordName) + '</span>';
       }
-      if (subs.length) {
-        h += '<button type="button" class="prog_bar_subs" title="Substitutions" aria-label="Substitutions">⋯</button>';
-        h += '<div class="prog_bar_sub_menu" hidden>';
-        h +=   '<div class="prog_bar_sub_title">Try instead:</div>';
-        subs.forEach(function (s) {
-          const subRoman = s[0];
-          const why = s[1];
-          const swappedProg = prog.slice();
-          swappedProg[idx] = subRoman;
-          const subHref = buildProgHref(swappedProg, pmode);
-          const sr = _resolveRoman(subRoman, x.k);
-          const subName = sr ? sr.name : '?';
-          h += '<a class="prog_bar_sub" href="' + escHtml(subHref) + '">'
-            +    '<span class="prog_bar_sub_roman">' + escHtml(subRoman) + '</span>'
-            +    '<span class="prog_bar_sub_name">' + escHtml(subName) + '</span>'
-            +    '<span class="prog_bar_sub_why">' + escHtml(why) + '</span>'
-            +  '</a>';
-        });
-        h += '</div>';
-      }
+      // Bar menu — replaces the old "Try instead" subs popup. Single
+      // option for now: highlight the chord on the fretboard / keyboard.
+      h += '<button type="button" class="prog_bar_menu" title="Bar actions" aria-label="Actions">⋯</button>';
+      h += '<div class="prog_bar_menu_pop" hidden>';
+      h +=   '<a class="prog_bar_menu_item" href="' + escHtml(highlightHref) + '">'
+         +     'Highlight on fretboard / keyboard'
+         +   '</a>';
+      h += '</div>';
       h +=   '<a class="prog_bar_remove" href="' + escHtml(removeHref) + '"'
          +     ' title="Remove this bar" aria-label="Remove">×</a>';
       h += '</div>';
@@ -3026,16 +3019,16 @@
         navigateTo(buildProgHref(tokens, curMode));
         return;
       }
-      // ⋯ button → toggle sub menu open.
-      const subBtn = e.target.closest && e.target.closest('.prog_bar_subs');
-      if (subBtn) {
+      // ⋯ button → toggle the per-bar action menu (currently a single
+      // "Highlight" item). Closes any other open menus first.
+      const menuBtn = e.target.closest && e.target.closest('.prog_bar_menu');
+      if (menuBtn) {
         e.preventDefault();
         e.stopPropagation();
-        const bar = subBtn.closest('.prog_bar');
-        const menu = bar && bar.querySelector('.prog_bar_sub_menu');
+        const bar = menuBtn.closest('.prog_bar');
+        const menu = bar && bar.querySelector('.prog_bar_menu_pop');
         if (!menu) return;
-        // Close any other open menus first.
-        root.querySelectorAll('.prog_bar_sub_menu').forEach(function (m) {
+        root.querySelectorAll('.prog_bar_menu_pop').forEach(function (m) {
           if (m !== menu) m.hidden = true;
         });
         menu.hidden = !menu.hidden;
@@ -3116,6 +3109,20 @@
         if (!m) return;
         absolute[idx] = noteSel.value + (m[2] || '');
         navigateTo(buildProgHref(absolute, 'custom'));
+        return;
+      }
+      // Degree dropdown — non-custom only. Swap that bar's Roman to a
+      // different one within the same mode; keep the progression in
+      // mode-based form (no flip to custom).
+      const degSel = e.target && e.target.closest && e.target.closest('.prog_bar_degree_select');
+      if (degSel) {
+        const xCur = window.SF_X;
+        if (!xCur || xCur._pmode === 'custom') return;
+        const idx = parseInt(degSel.getAttribute('data-idx') || '-1', 10);
+        const curProg = Array.isArray(xCur._prog) ? xCur._prog.slice() : [];
+        if (idx < 0 || idx >= curProg.length) return;
+        curProg[idx] = degSel.value;
+        navigateTo(buildProgHref(curProg, xCur._pmode));
         return;
       }
     });
