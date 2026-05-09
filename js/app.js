@@ -4970,19 +4970,27 @@
     STEPS.forEach(function (s) { mask |= 1 << ((root + s) % 12); });
     return mask;
   }
-  function classifyChords(selMask, keyMask) {
+  function classifyChords(selMask, keyMask, rootKey) {
     const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
     const selSize = popcount(selMask);
     const exact = [];
     const subset = [];
     const superset = [];
     const extrasCap = getIdentifyExtras();
-    // When keyMask is provided, drop any chord whose pitch-class mask
-    // contains a note outside the major scale of the current key.
+    // "in key" filter is now a ROOT-only filter: keep chords whose root
+    // letter matches the current key (e.g. key=E → only E*, key=F♯ →
+    // only F♯*). The keyMask scale-check is kept for backwards-compat
+    // callers that still pass a non-default mask.
     const filterKey = (typeof keyMask === 'number' && keyMask !== 0xFFF);
+    const rootFilter = (typeof rootKey === 'string' && rootKey.length) ? rootKey : null;
+    function chordRoot(name) {
+      const m = String(name).match(/^([A-G][♯♭]?)/);
+      return m ? m[1] : '';
+    }
     for (let i = 0; i < data.length; i++) {
       const m = data[i][0];
       const name = data[i][1];
+      if (rootFilter && chordRoot(name) !== rootFilter) continue;
       if (filterKey && (m & ~keyMask & 0xFFF) !== 0) continue;
       if (m === selMask) {
         exact.push(name);
@@ -5124,8 +5132,10 @@
     } else {
       const selMask = pkSetToMask(xs._pk_set);
       const inKeyOnly = getIdentifyInKey();
-      const keyMask = inKeyOnly ? _majorKeyPcMask(xs.k) : 0xFFF;
-      const buckets = classifyChords(selMask, keyMask);
+      // "in key" now means "root letter == current key" — pass the key
+      // string to classifyChords; keyMask kept open (0xFFF = no scale
+      // restriction) so chord notes outside the diatonic scale still show.
+      const buckets = classifyChords(selMask, 0xFFF, inKeyOnly ? xs.k : null);
       const clearHref = buildPkHref([], sectionId);
 
       function chipsHtml(items, extractName) {
@@ -5187,8 +5197,8 @@
         +    (inKeyOnly ? ' identify_pill_on' : '')
         +    '" href="#" data-inkey="toggle" title="'
         +    (inKeyOnly
-              ? 'Showing only chords whose notes all fit ' + xs.k + ' major. Click to show all.'
-              : 'Show only chords whose notes all fit the current key (' + xs.k + ' major).')
+              ? 'Showing only chords rooted on ' + xs.k + '. Click to show all.'
+              : 'Show only chords rooted on ' + xs.k + '.')
         +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
       html = ''
         + '<div class="identify_strip">'
