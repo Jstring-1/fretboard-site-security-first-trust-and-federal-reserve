@@ -583,12 +583,12 @@
     x._filterStrs    = _validStrs(params.get('fc'));
     x._pickerStrs    = _validStrs(params.get('fcp'));
 
-    // Progression-builder palette mode. Always one of the 8 named
-    // modes. 'custom' is no longer a mode — bars can be absolute
-    // chord names regardless of palette mode (detected per-token).
+    // Progression-builder palette mode. Source of truth is the
+    // _PROG_MODES dictionary defined later — accept any key from
+    // there. Unknown / missing values fall back to 'major'.
     const pmodeRaw = (params.get('pmode') || '').toLowerCase();
-    const _validPmodes = ['major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic'];
-    x._pmode = (_validPmodes.indexOf(pmodeRaw) !== -1) ? pmodeRaw : 'major';
+    x._pmode = (typeof _PROG_MODES === 'object' && _PROG_MODES && _PROG_MODES[pmodeRaw])
+      ? pmodeRaw : 'major';
 
     // Progression tokens. Each is independently either:
     //   • Roman ('I', 'bIII', '♯iv°') — mode-relative, transposes with
