@@ -2336,13 +2336,53 @@
     'mixolydian': { label: 'Mixolydian',     romans: ['I',   'ii',  'iii°', 'IV',     'v',  'vi',   '♭VII'] },
     'harmonic':   { label: 'Harmonic Minor', romans: ['i',   'ii°', '♭III', 'iv',     'V',  '♭VI',  'vii°'] },
     'melodic':    { label: 'Melodic Minor',  romans: ['i',   'ii',  '♭III', 'IV',     'V',  'vi°',  'vii°'] },
+    // ----- Style / vocabulary palettes (not single modes) -----
+    // Country / secondary dominants — II major (V/V) and VI major (V/ii)
+    // give the classic "Wagon Wheel" / bluegrass sound.
+    'country':    { label: 'Country (sec. dom.)',
+                                              romans: ['I',   'II',  'iii',  'IV',     'V',  'VI',   '♭VII'] },
+    // Modal mixture / borrowed chords — major key with the parallel
+    // minor's ♭III, iv, ♭VI, ♭VII available for color.
+    'mixture':    { label: 'Modal Mixture',  romans: ['I',   'ii',  '♭III', 'iv',     'V',  '♭VI',  '♭VII'] },
+    // Mixolydian rock — I, ♭VII, IV is the Stones / Allman / Skynyrd
+    // vocabulary. Listed against IVm and v for breadth.
+    'mixo_pop':   { label: 'Mixolydian Rock',romans: ['I',   '♭VII','IV',   'V',      'vi',  'V',    'I']    },
+    // Aeolian / minor pop — i, ♭VI, ♭VII opener (Linkin Park, modern
+    // alt). Strict minor (no V; vii is the modal one).
+    'aeolian':    { label: 'Aeolian Pop',    romans: ['i',   'iv',  '♭VI',  '♭VII',   'v',  '♭III', 'i']    },
+    // Major pentatonic palette — only chords whose roots fall on
+    // pent notes (1, 2, 3, 5, 6).
+    'pent_maj':   { label: 'Pentatonic Major',
+                                              romans: ['I',   'ii',  'iii',  'V',      'vi'] },
+    // Minor pentatonic palette — roots on b3, 4, 5, b7 (plus i).
+    'pent_min':   { label: 'Pentatonic Minor',
+                                              romans: ['i',   '♭III','iv',   'v',      '♭VII'] },
+    // ----- Style-specific ready-made progressions ------
+    // The user requested three blues palettes side-by-side. Each is a
+    // complete progression: clicking any chip simply appends to your
+    // strip, so use them as starting templates.
+    'blues_1':    { label: 'Blues (basic 7ths)',
+                                              romans: ['I7',  '♭III7','IV7', 'V7',     '♭VII7'] },
+    'blues_2':    { label: 'Blues (jump / swing)',
+                                              romans: ['I9',  'ii',  'IV9',  'V9',     '♭VI9', 'VI7'] },
+    'blues_3':    { label: 'Blues (jazz-blues)',
+                                              romans: ['I6',  'ii',  'IV9',  'V7',     'VI7'] },
+    // Jazz ii–V–I — the bedrock cadence in major. m7 / 9 / Maj7 voicings.
+    'jazz_251':   { label: 'Jazz ii–V–I',     romans: ['ii7', 'V9',  'IMaj7','iiim7',  'VI7',  'iim7','V9'] },
+    // Jazz minor ii–V–i — half-dim → dom7♭9 → minor tonic.
+    'jazz_min251':{ label: 'Jazz ii°–V–i',    romans: ['iiø', 'V7♭9','im',   '♭VIMaj7','iiø',  'V7♭9','im'] },
   };
   // Order modes in the dropdown deliberately — most-used at the top.
   // 'custom' is intentionally NOT in this list: it's no longer a
   // selectable mode. The add-box ghost handles the "add an arbitrary
   // chord" path; editing any bar's note/voicing dropdown flips the
   // progression into custom format automatically (URL: pmode=custom).
-  const _PROG_MODE_ORDER = ['major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic'];
+  const _PROG_MODE_ORDER = [
+    'major','minor','dorian','phrygian','lydian','mixolydian','harmonic','melodic',
+    'country','mixture','mixo_pop','aeolian','pent_maj','pent_min',
+    'blues_1','blues_2','blues_3',
+    'jazz_251','jazz_min251',
+  ];
 
   // Curated voicings for Custom mode. Order = display priority. Each
   // entry maps a UI label to the suffix appended to the root (e.g.
@@ -2627,40 +2667,75 @@
     if (!notes.length) return null;
     // Major-scale degree intervals (semitones from root).
     const STEPS = _MAJOR_STEPS;
-    const upper = roman.toUpperCase().replace(/°|Ø|7/g, '');
-    let semis, qual = '', q7 = 'maj7', romanIdx = -1, isMinor = false, isDim = false;
     // Accidental modifier on the leading edge of the roman: ♭ (or 'b'),
-    // ♯ (or '#'/'s'). Sharp support is for modes like Lydian where the
+    // ♯ (or '#'). Sharp support is for modes like Lydian where the
     // raised-4 is a half-step above the natural 4 (♯iv°).
     let flat = false, sharp = false;
-    let r = roman;
-    if (r.indexOf('♭') === 0 || r.indexOf('b') === 0) { flat = true; r = r.slice(1); }
-    else if (r.indexOf('♯') === 0 || r.indexOf('#') === 0) { sharp = true; r = r.slice(1); }
-    isMinor = (r === r.toLowerCase());
-    isDim   = /°|ø/.test(roman);
-    const ru = r.toUpperCase().replace(/°|Ø|7/g, '');
+    let body = String(roman || '');
+    if (body.indexOf('♭') === 0 || body.indexOf('b') === 0) { flat = true; body = body.slice(1); }
+    else if (body.indexOf('♯') === 0 || body.indexOf('#') === 0) { sharp = true; body = body.slice(1); }
+    // Greedy Roman match (VII before VI before V, etc.) plus an optional
+    // ° / ø dim marker, plus an optional extension tail (7, 9, m, m7, …).
+    const m = body.match(/^(VII|vii|VI|vi|V|v|IV|iv|III|iii|II|ii|I|i)([°ø])?(.*)$/);
+    if (!m) return null;
+    const baseRoman = m[1];
+    const dimSym = m[2] || '';
+    const tail = m[3] || '';
+    const isMinor = baseRoman === baseRoman.toLowerCase();
+    const isDim = !!dimSym;
     const ROMAN_NUM = { 'I':1,'II':2,'III':3,'IV':4,'V':5,'VI':6,'VII':7 };
-    const num = ROMAN_NUM[ru];
+    const num = ROMAN_NUM[baseRoman.toUpperCase()];
     if (!num) return null;
     let semi = STEPS[num - 1];
     if (flat)  semi = (semi - 1 + 12) % 12;
     if (sharp) semi = (semi + 1) % 12;
     const i1 = KEYS.indexOf(key);
     const root = KEYS[(i1 + semi) % KEYS.length] || notes[num - 1];
-    // Match the diatonic template if it's an unflattened diatonic roman.
+    // Determine the chord suffix:
+    //   - Tail starting with an explicit quality (m / min / dim / °) wins
+    //     so 'IIm' is unambiguously minor, 'IIdim' diminished, etc.
+    //   - Otherwise the case + ° symbol picks the base quality, and the
+    //     tail is appended as an extension (e.g. 'I' + '7' → '7' suffix
+    //     = dom7; 'i' + '7' → 'm7' suffix; 'vii°' + '7' → 'dim7').
+    let suffix;
+    if (/^(m(?!aj)|min|dim)/i.test(tail)) {
+      suffix = tail.replace(/^min/i, 'm').replace(/^dim/i, 'dim');
+    } else {
+      let qual = '';
+      if (isDim) qual = 'dim';
+      else if (isMinor) qual = 'm';
+      suffix = qual + tail;
+    }
+    // For a clean diatonic match (no flat/sharp, no tail, no explicit dim),
+    // pull the degree set from the diatonic template — that's the
+    // canonical voicing the rest of the app expects.
+    const isPlainDiatonic = !flat && !sharp && !tail && !isDim;
     const dia = _DIATONIC.find(function (d) {
-      return d.romanLc === ru.toLowerCase() || d.roman === roman || d.roman.replace(/°/g,'') === roman;
+      return d.romanLc === baseRoman.toLowerCase();
     });
-    let degSet, name7, name3;
-    if (dia && !flat && !sharp) {
+    let degSet = [1, 3, 5];
+    let name3 = root + suffix;
+    let name7 = name3;
+    if (dia && isPlainDiatonic) {
       degSet = dia.degs;
       name3  = root + dia.quality;
       name7  = root + dia.q7;
     } else {
-      // Borrowed / non-diatonic: assume major triad (most common usage).
-      degSet = [1, 3, 5];
-      name3  = root + (isMinor ? 'm' : (isDim ? '°' : ''));
-      name7  = name3;
+      // Non-diatonic OR extended chord — pull degrees from the suffix
+      // alias map / data.js grid so I7/I9/m7b5/etc. resolve correctly.
+      const grid = (window.SF_DATA && window.SF_DATA.grid) || {};
+      const aliased = _normalizeSuffix(suffix);
+      const frag = grid[suffix] || grid[aliased];
+      if (frag) {
+        const arr = String(frag).split('&hl=').slice(1)
+          .map(function (s) { return s.replace(/&.*$/, ''); })
+          .filter(Boolean);
+        // Convert "1", "b3", "5", "b7", etc. → numeric scale degrees
+        // for the existing degSet pipeline (uses the same 1-7 numbering).
+        const degMap = { '1':1,'b2':'b2','2':2,'b3':'b3','3':3,'4':4,'b5':'b5','5':5,'b6':'b6','6':6,'b7':'b7','7':7 };
+        degSet = arr.map(function (d) { return degMap[d] != null ? degMap[d] : d; });
+      }
+      name7 = name3;
     }
     return { roman: roman, root: root, name: name3, name7: name7, degs: degSet, semitone: semi };
   }
@@ -2746,14 +2821,21 @@
   function _romanToMidi(roman, key) {
     const r = _resolveRoman(roman, key);
     if (!r) return [];
-    const baseQ = r.name.replace(r.root, '');
-    const intervals = baseQ === 'm'   ? [0,3,7]
-                    : baseQ === '°'   ? [0,3,6]
-                    : baseQ === 'm7'  ? [0,3,7,10]
-                    : baseQ === 'maj7'? [0,4,7,11]
-                    : baseQ === '7'   ? [0,4,7,10]
-                    : baseQ === 'ø7'  ? [0,3,6,10]
-                                      : [0,4,7];
+    // Translate the degree set _resolveRoman attached (numeric labels
+    // like 1, 'b3', 5, 'b7' OR the diatonic-template numbers 1-7 from
+    // a plain diatonic match) into chord-tone semitone offsets so the
+    // synth plays the actual chord, not a triad fallback.
+    const SCALE_DEG_SEMI = { 1:0, 2:2, 3:4, 4:5, 5:7, 6:9, 7:11 };
+    const STR_DEG_SEMI = {
+      '1':0,'b2':1,'♭2':1,'2':2,'b3':3,'♭3':3,'3':4,'4':5,
+      'b5':6,'♭5':6,'5':7,'b6':8,'♭6':8,'6':9,'b7':10,'♭7':10,'7':11,
+    };
+    const intervals = [];
+    (r.degs || []).forEach(function (d) {
+      if (typeof d === 'number' && SCALE_DEG_SEMI[d] != null) intervals.push(SCALE_DEG_SEMI[d]);
+      else if (STR_DEG_SEMI[d] != null) intervals.push(STR_DEG_SEMI[d]);
+    });
+    if (!intervals.length) intervals.push(0, 4, 7);   // safe fallback
     return _chordToMidi(r.root, intervals);
   }
 
@@ -2761,11 +2843,48 @@
   // "C♯m", "Bb7sus4") into the same shape _resolveRoman returns:
   //   { root, suffix, name, degs (1-N like [1,3,5,b7]), pc }
   // Falls back to a major triad if the suffix isn't in our voicing list.
+  // Many chord suffixes have multiple common spellings (m vs min, 7 vs
+  // dom7, 9 vs 9th, …). The data.js grid keys are the long forms, but
+  // user-facing labels + Roman extensions use the short ones. This map
+  // bridges short → long so _resolveCustomChord can find the degree
+  // set regardless of which spelling came in.
+  const _SUFFIX_ALIASES = {
+    '': 'Maj', 'maj': 'Maj', 'M': 'Maj',
+    'm': 'min', 'mi': 'min', '-': 'min',
+    '7': 'dom7', 'dom': 'dom7',
+    'm7': 'min7', 'mi7': 'min7', 'min7': 'min7', '-7': 'min7',
+    'maj7': 'Maj7', 'M7': 'Maj7', 'Δ7': 'Maj7', 'Δ': 'Maj7',
+    'mMaj7': 'min-Maj7', 'm-maj7': 'min-Maj7', 'mΔ7': 'min-Maj7', 'min-maj7': 'min-Maj7',
+    '6': 'Maj6', 'maj6': 'Maj6',
+    'm6': 'min6', 'min6': 'min6',
+    '9': '9th', 'dom9': '9th',
+    'm9': 'min9', 'min9': 'min9',
+    'maj9': 'Maj9', 'M9': 'Maj9',
+    '11': '11th',
+    'm11': 'min11', 'min11': 'min11',
+    '13': '13th',
+    'm13': 'min13', 'min13': 'min13',
+    '°': 'dim', 'o': 'dim',
+    '°7': 'dim7', 'o7': 'dim7',
+    'ø': 'm7b5', 'ø7': 'm7b5', 'm7♭5': 'm7b5', 'm7b5': 'm7b5',
+    '+': 'aug', 'aug7': 'aug7',
+    '7♭5': '7b5', '7b5': '7b5',
+    '7♯9': '7#9', '7#9': '7#9',
+    '7♯11': '7#11', '7#11': '7#11',
+    '7♭9': '7b9', '7b9': '7b9',
+    '6/9': '6add9', '6add9': '6add9',
+  };
+  function _normalizeSuffix(suffix) {
+    const s = String(suffix || '');
+    if (_SUFFIX_ALIASES[s] !== undefined) return _SUFFIX_ALIASES[s];
+    return s;
+  }
   function _resolveCustomChord(token, currentKey) {
     const m = String(token || '').match(/^([A-G][♯♭]?)(.*)$/);
     if (!m) return null;
     const root = m[1];
-    const suffix = m[2] || '';
+    const rawSuffix = m[2] || '';
+    const suffix = rawSuffix;     // keep the user's spelling for display
     const rootPc = NOTE_TO_PC[root];
     if (rootPc == null) return null;
     // Find the matching voicing (URL form). If unknown, treat as bare major.
@@ -2773,7 +2892,10 @@
     const grid = (window.SF_DATA && window.SF_DATA.grid) || {};
     // Pull degree set from the grid (data.js values look like
     // "&hl=1&hl=3&hl=5&hl=b7" — fragToDegrees splits the right way).
-    const frag = grid[suffix] || grid['Maj'] || '&hl=1&hl=3&hl=5';
+    // Try both the user's spelling and a normalized alias before
+    // falling back to a bare major triad.
+    const aliased = _normalizeSuffix(suffix);
+    const frag = grid[suffix] || grid[aliased] || grid['Maj'] || '&hl=1&hl=3&hl=5';
     const degsArr = String(frag).split('&hl=').slice(1)
       .map(function (s) { return s.replace(/&.*$/, '').replace(/b/g, '♭'); })
       .filter(Boolean);
@@ -3261,7 +3383,12 @@
       const curMode = (xCur && xCur._pmode) || 'major';
       const raw = String(inp.value || '').split(/[\s,.\-_;|/]+/)
         .map(function (t) { return t.trim(); }).filter(Boolean);
-      const ROMAN_RE = /^[♭♯]?(I{1,3}|i{1,3}|IV|iv|V|v|VI{0,2}|vi{0,2}|VII|vii)°?7?$/;
+      // A token is valid if either:
+      //   - it starts with a note letter (absolute chord, parses through
+      //     _resolveCustomChord), OR
+      //   - _resolveRoman accepts it as a Roman with optional ° / ø dim
+      //     and an extension tail (7, 9, 11, 13, m, m7, Maj7, etc.).
+      const _curKey = (xCur && xCur.k) || 'C';
       const tokens = raw.map(function (t) {
         if (/^[A-G]/.test(t)) {
           const m = t.match(/^([A-G])([sb#♯♭])?(.*)$/);
@@ -3275,7 +3402,7 @@
           return root + suffix;
         }
         const norm = _urlToRoman(t);
-        return ROMAN_RE.test(norm) ? norm : null;
+        return _resolveRoman(norm, _curKey) ? norm : null;
       }).filter(Boolean).slice(0, 24);
       navigateTo(buildProgHref(tokens, curMode));
       // Refocus the new input so spacebar auto-apply doesn't lose
