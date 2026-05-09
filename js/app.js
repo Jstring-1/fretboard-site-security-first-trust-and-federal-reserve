@@ -2885,13 +2885,6 @@
 
     // ----- Strip of bars (the user's current progression) -------------
     h += '<div class="prog_strip">';
-    if (!prog.length) {
-      h += '<div class="prog_empty">'
-         + 'Build a progression — click chord chips from the palette, the × add-box, '
-         + 'or type into the field above. Romans (I, IV, V) transpose with the page key; '
-         + 'specific chords (Cmaj7) stay put.'
-         + '</div>';
-    }
     prog.forEach(function (tok, idx) {
       const isAbs = tokenIsAbsolute(tok);
       const r = resolveToken(tok);
@@ -2995,7 +2988,7 @@
     // diatonic palette are still added by clicking the chips below.
     const addToken = (x.k || 'C');
     const addHref = buildProgHref(prog.concat([addToken]), pmode);
-    const glyph = prog.length ? '+' : '×';
+    const glyph = '+';
     h += '<a class="prog_bar_add" href="' + escHtml(addHref) + '"'
        +   ' title="Add a chord (' + escAttr(addToken) + ')">'
        +   '<span class="prog_bar_add_glyph">' + glyph + '</span>'
