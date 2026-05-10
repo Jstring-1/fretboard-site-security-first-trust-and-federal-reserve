@@ -180,10 +180,11 @@
     osc.stop(t0 + dur + 0.05);
   }
 
-  // Chord-ID toggle. Thin wrappers over the unified settings registry
-  // so legacy call sites keep their same shape.
-  function chordIdOn(sectionId)        { return getSetting('chord_id', sectionId); }
-  function setChordIdOn(sectionId, on) { setSetting('chord_id', !!on, sectionId); }
+  // Chord ID is always on. The section can be visually collapsed via
+  // the <details> summary in the strip — that state lives in
+  // id_closed (see SETTINGS). Click-to-pick keeps working regardless.
+  function chordIdOn(/* sectionId */) { return true; }
+  function setChordIdOn(/* sectionId, on */) { /* no-op kept for legacy call sites */ }
 
   // Pitch-class lookup keyed by display note name (sharp form as KEYS uses).
   const NOTE_PC = {
@@ -306,7 +307,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'u'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'u'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -396,6 +397,15 @@
     // qp_closed is read/written directly via the helpers below.
     qp_closed: {
       url:    'qpc', ls: 'sf_qp_closed',
+      parse:  function (v) { return String(v || '').split(',').filter(Boolean); },
+      lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
+      urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
+      def:    [],
+    },
+    // Chord-ID box open/closed state (per section). Same comma-list
+    // shape as qp_closed; entries are 'section_2' / 'section_4'.
+    id_closed: {
+      url:    'idc', ls: 'sf_id_closed',
       parse:  function (v) { return String(v || '').split(',').filter(Boolean); },
       lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
       urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
@@ -1304,11 +1314,19 @@
       document.body._qpToggleBound = true;
       document.body.addEventListener('toggle', function (e) {
         const det = e.target;
-        if (!det || !det.classList || !det.classList.contains('qp_box')) return;
-        const id = det.getAttribute('data-qp-id') || 'quick_picks';
-        const closed = (getSetting('qp_closed') || []).filter(function (s) { return s !== id; });
-        if (!det.open) closed.push(id);
-        setSetting('qp_closed', closed);
+        if (!det || !det.classList) return;
+        if (det.classList.contains('qp_box')) {
+          const id = det.getAttribute('data-qp-id') || 'quick_picks';
+          const closed = (getSetting('qp_closed') || []).filter(function (s) { return s !== id; });
+          if (!det.open) closed.push(id);
+          setSetting('qp_closed', closed);
+        } else if (det.classList.contains('identify_box')) {
+          const sec = det.getAttribute('data-id-section');
+          if (!sec) return;
+          const closed = (getSetting('id_closed') || []).filter(function (s) { return s !== sec; });
+          if (!det.open) closed.push(sec);
+          setSetting('id_closed', closed);
+        }
       }, true);  // capture: <details> toggle events don't bubble
     };
     if (document.readyState === 'loading') {
@@ -5706,15 +5724,11 @@
     // section state) so picks don't leak across in unlinked mode.
     function buildHtml(xs, sectionId) {
 
-    const idOn = chordIdOn(sectionId);
-    function idToggleHtml() {
-      return '<button type="button" class="identify_toggle' + (idOn ? ' on' : '')
-        + '" data-section="' + sectionId + '" aria-pressed="' + (idOn ? 'true' : 'false')
-        + '" title="' + (idOn
-            ? 'Chord ID on — click to disable.'
-            : 'Chord ID off — click to enable.')
-        + '">ID</button>';
-    }
+    // Chord ID is always on; only its visibility (collapsed vs.
+    // expanded <details>) is user-controllable now. id_closed lists
+    // section ids that should render collapsed.
+    const idClosed = getSetting('id_closed') || [];
+    const idOpen = idClosed.indexOf(sectionId) === -1;
     // ← / → buttons that transpose every pick by ±1 semitone, sliding
     // the yellow .note_pk highlights up or down the neck.
     function idArrowsHtml() {
@@ -5736,32 +5750,21 @@
         +    '" data-section="' + sectionId
         +    '" title="Clear picks">Clear</a>';
     }
-    // Wrap output in a <details> that mirrors the ID-toggle state — open
-    // when ID is engaged, collapsed when disengaged. The summary always
-    // carries the toggle button so the user can flip it from either state.
+    // Wrap output in a <details>. Default open; user clicks the
+    // summary to minimize. Persisted state lives in id_closed (URL
+    // 'idc' / LS 'sf_id_closed').
     function wrap(bodyHtml) {
-      return '<details class="identify_box"' + (idOn ? ' open' : '') + '>'
+      return '<details class="identify_box"' + (idOpen ? ' open' : '')
+           +   ' data-id-section="' + escAttr(sectionId) + '">'
            + '<summary class="identify_summary">'
            +   '<span class="identify_label">Chord ID</span>'
-           +   '<span class="identify_summary_state">' + (idOn ? 'on' : 'off') + '</span>'
-           +   '<span class="identify_btns">' + idToggleHtml()
+           +   '<span class="identify_btns">'
            +     '<button type="button" class="section_help" data-help="chord_id"'
            +       ' aria-label="About Chord ID">?</button>'
            +   '</span>'
            + '</summary>'
            + bodyHtml
            + '</details>';
-    }
-
-    if (!idOn) {
-      // Chord ID disabled for this section — collapsed details. Body is
-      // a brief hint shown if the user manually expands the summary.
-      return wrap(
-        '<div class="identify_strip identify_hint">'
-      + '<span class="identify_label">Chord ID is off.</span> '
-      + 'Click the ID toggle above to enable click-to-identify.'
-      + '</div>'
-      );
     }
 
     const pkArr = String(xs.pk || '').split(' ').filter(function (v) { return v.length; });
@@ -5916,36 +5919,10 @@
           applyState();
           return;
         }
-        // ID toggle (per section). When LINKED, flip both sides at once
-        // so they stay in lockstep; UNLINKED keeps each side independent.
-        const idBtn = e.target.closest && e.target.closest('.identify_toggle');
-        if (idBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-          const sec = idBtn.getAttribute('data-section');
-          const turningOn = !chordIdOn(sec);
-          const linked = document.body.getAttribute('data-apply-all') !== 'off';
-          if (linked) {
-            setChordIdOn('section_2', turningOn);
-            setChordIdOn('section_4', turningOn);
-          } else {
-            setChordIdOn(sec, turningOn);
-          }
-          // Turning OFF clears only the Chord-ID-specific state: the
-          // yellow picks (pk) and the active-chip marker (idn). Any
-          // colored highlights (hl) the user applied from a chord /
-          // scale chip stay put — those aren't part of Chord ID.
-          if (!turningOn) {
-            const p = new URLSearchParams(window.location.search);
-            p.delete('pk'); p.set('pk', '');
-            p.delete('idn');
-            const qs = canonicalQS(p);
-            navigateTo(qs ? '?' + qs : '?');
-            return;
-          }
-          applyState();
-          return;
-        }
+        // (Chord ID on/off toggle button removed — Chord ID is always on.
+        // The <details> wrapper still lets users minimize the strip; that
+        // open/closed state is persisted via the 'toggle' listener wired
+        // alongside the quick-picks one further down.)
         // +N extras pill — local toggle, no navigation.
         const pill = e.target.closest && e.target.closest('.identify_pill');
         if (pill) {
