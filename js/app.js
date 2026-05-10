@@ -1716,7 +1716,10 @@
         let fbId = (x['hl_' + flatToB(degAtFret)] === 'y') ? flatToB(degAtFret) : 'no_highlight';
         const cls = (b === 1) ? 'nut1' : 'fb_td';
         const cellPkCls = (x._pk_set && x._pk_set.has(noteAtFret)) ? ' note_pk' : '';
-        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">' + escHtml(noteAtFret) + '(' + escHtml(degAtFret || '') + ')</td>';
+        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">'
+           + '<span class="disp_note">' + escHtml(noteAtFret) + '</span>'
+           + '<span class="disp_deg">(' + escHtml(degAtFret || '') + ')</span>'
+           + '</td>';
       }
       h += '</tr>';
     }
@@ -2027,7 +2030,9 @@
         DEG_COLS.forEach(function (degId, i) {
           const note = noteLetters[degId];
           s += '<td class="cg_deg_header" id="' + degId + '">'
-             + escHtml(note) + '(' + escHtml(DEGREES[i]) + ')</td>';
+             + '<span class="disp_note">' + escHtml(note) + '</span>'
+             + '<span class="disp_deg">(' + escHtml(DEGREES[i]) + ')</span>'
+             + '</td>';
         });
       }
       s += '<td class="cg_corner_label">Chords</td></tr>';
@@ -2068,7 +2073,10 @@
       for (const degId of DEG_COLS) {
         if (cellsByDeg[degId] !== undefined) {
           const note = noteLetters[degId];
-          h += '<td id="' + degId + '">' + escHtml(note) + '(' + escHtml(cellsByDeg[degId]) + ')</td>';
+          h += '<td id="' + degId + '">'
+             + '<span class="disp_note">' + escHtml(note) + '</span>'
+             + '<span class="disp_deg">(' + escHtml(cellsByDeg[degId]) + ')</span>'
+             + '</td>';
         } else if (!compact) {
           h += '<td id="_x_"></td>';
         }
@@ -2113,7 +2121,9 @@
         for (const col of COLS) {
           const note = noteLetters[col.degId];
           s += '<td class="cg_deg_header" id="' + col.degId + '">'
-             + escHtml(note) + escHtml(col.intervalLabel) + '</td>';
+             + '<span class="disp_note">' + escHtml(note) + '</span>'
+             + '<span class="disp_deg">' + escHtml(col.intervalLabel) + '</span>'
+             + '</td>';
         }
       }
       s += '<td class="cg_corner_label">Scales</td></tr>';
@@ -2138,7 +2148,10 @@
         const degSym = col.intervalLabel.replace(/[()]/g, '');
         if (scaleDegrees[name].indexOf(degSym) !== -1) {
           const note = noteLetters[col.degId];
-          h += '<td id="' + col.degId + '">' + escHtml(note) + '(' + escHtml(degSym) + ')</td>';
+          h += '<td id="' + col.degId + '">'
+             + '<span class="disp_note">' + escHtml(note) + '</span>'
+             + '<span class="disp_deg">(' + escHtml(degSym) + ')</span>'
+             + '</td>';
         } else if (!compact) {
           h += '<td id="_x_"></td>';
         }
@@ -4817,6 +4830,72 @@
       }
     });
   }
+  // ---- Display mode (notes / degrees / both) -----------------------
+  // Drives whether note names, degree labels, or both are shown in the
+  // fretboard cells, chord/scale grid cells, and progression bars.
+  // Persisted in localStorage; default 'both'.
+  function getDisplayMode() {
+    try { return window.localStorage.getItem('sf_display_mode') || 'both'; }
+    catch (_) { return 'both'; }
+  }
+  function setDisplayMode(m) {
+    if (m !== 'both' && m !== 'notes' && m !== 'degrees') m = 'both';
+    try { window.localStorage.setItem('sf_display_mode', m); } catch (_) {}
+    document.body.setAttribute('data-display', m);
+    paintDisplayModeButtons();
+    if (window.SF_X) applyKeyboardLabels(window.SF_X);
+  }
+  function paintDisplayModeButtons() {
+    const cur = getDisplayMode();
+    document.querySelectorAll('.display_mode_btn').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-display') === cur);
+    });
+  }
+  let _displayModeBound = false;
+  function bindDisplayModeButtons() {
+    document.body.setAttribute('data-display', getDisplayMode());
+    paintDisplayModeButtons();
+    if (_displayModeBound) return;
+    _displayModeBound = true;
+    document.body.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.display_mode_btn');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDisplayMode(btn.getAttribute('data-display'));
+    });
+  }
+  // Tag every keyboard label cell with both note + degree spans so the
+  // CSS display-mode rules can show one or the other. Runs after
+  // applyKeyboardColors (which sets data-note on each cell).
+  function applyKeyboardLabels(x) {
+    const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+    const keyPc = NOTE_PC[x.k];
+    if (keyPc == null) return;
+    document.querySelectorAll('.ritz .waffle [data-note]').forEach(function (el) {
+      const note = el.getAttribute('data-note');
+      const notePc = NOTE_PC[note];
+      if (notePc == null) return;
+      const off = (notePc - keyPc + 12) % 12;
+      const deg = DEG_LBL[off] || '';
+      // Some cells use a softmerge wrapper for the C♯ at the right
+      // edge — write to that instead so the layout doesn't break.
+      const inner = el.querySelector('.softmerge-inner');
+      const tgt = inner || el;
+      // Only rewrite if the current content isn't already our two-span
+      // form (avoids stomping click handlers / repeated DOM churn).
+      if (!tgt.querySelector('.disp_note')) {
+        tgt.innerHTML = '<span class="disp_note">' + note + '</span>'
+                       + '<span class="disp_deg">' + deg + '</span>';
+      } else {
+        const ns = tgt.querySelector('.disp_note');
+        const ds = tgt.querySelector('.disp_deg');
+        if (ns && ns.textContent !== note) ns.textContent = note;
+        if (ds && ds.textContent !== deg)  ds.textContent = deg;
+      }
+    });
+  }
+
   let _instrumentSelectBound = false;
   function bindInstrumentSelect() {
     const $sel = document.getElementById('instrument_select');
@@ -6241,6 +6320,7 @@
     renderKeySignatures(xKS);
     renderKeyExtras(xKS);      // Key Sigs: this-key-contains + cadences + intervals
     applyKeyboardColors(xKB);
+    applyKeyboardLabels(xKB);
     renderKeyboardPicks(xKB);
     bindTuningPicker(x);
     applyCollapseFromUrl();
@@ -6254,6 +6334,7 @@
     bindNotePick();          // click fret cells / keyboard keys to pick notes
     bindApplyAllToggle();    // one-time wire of the Apply: all chip in fretboard summary
     bindAudioToggle();       // one-time wire of the ♪ audio toggle in fretboard summary
+    bindDisplayModeButtons();// notes / degrees / both pill group in sticky header
     if (window.SF_TabCapture && typeof window.SF_TabCapture.refresh === 'function') {
       // Site key may have changed — re-render the tab capture mini-fretboard
       // so its degree labels reflect the new key.

@@ -664,6 +664,43 @@ details.collapsible > summary { cursor: default; }
 .section_audio_toggle.on                   { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
 .section_audio_toggle.on:hover             { background: #fff; border-color: #fff; color: #001014;                     }
 @media print { .section_audio_toggle       { display: none !important; }                                                }
+/* Notes / Degrees / Both display-mode toggle group. Three pill buttons
+   right of the audio toggle in the sticky header. Active state = same
+   accent color the audio-on toggle uses. */
+.display_mode_group                        { display: inline-flex; gap: 2px; margin-right: 4px;                       }
+.display_mode_btn                          { padding: 1px 8px;
+                                             border: 1px solid rgba(255,255,255,0.45); border-radius: 12px;
+                                             background: rgba(255,255,255,0.06); color: var(--text);
+                                             font: 600 0.78em var(--font); cursor: pointer; line-height: 18px;        }
+.display_mode_btn:hover                    { background: rgba(255,255,255,0.18); border-color: #fff;                  }
+.display_mode_btn.active                   { background: var(--accent-hi); border-color: var(--accent-hi);
+                                             color: #001014;                                                          }
+@media print { .display_mode_group         { display: none !important;                                                } }
+/* The display-mode toggle hides one or the other span across every
+   place that renders "<note>(<degree>)" or "<degree>" + "<note>"
+   layouts: fretboard cells, chord/scale grid headers + cells, and
+   chord-progression bars. Default (data-display="both" or absent) =
+   show both. */
+body[data-display="notes"] .disp_deg                      { display: none !important;                                  }
+body[data-display="degrees"] .disp_note                   { display: none !important;                                  }
+/* Progression bars: degree dropdown is "the degree", the inline
+   chord row (note + voicing) is "the note". */
+body[data-display="notes"] .prog_bar_degree_select        { display: none !important;                                  }
+body[data-display="degrees"] .prog_bar_chord_row          { display: none !important;                                  }
+/* Print honors display mode — same rules apply when printing the
+   progressions chart. */
+@media print {
+  body[data-display="notes"] .prog_bar_degree_select,
+  body[data-display="notes"] .disp_deg                    { display: none !important;                                  }
+  body[data-display="degrees"] .prog_bar_chord_row,
+  body[data-display="degrees"] .disp_note                 { display: none !important;                                  }
+}
+/* Keyboard's white / black key cells naturally show only the note
+   label; in "both" or "notes" mode keep that look (hide the injected
+   .disp_deg span). In "degrees" mode swap to degrees. */
+#keyboard .disp_deg                                       { display: none;                                              }
+body[data-display="degrees"] #keyboard .disp_deg          { display: inline !important;                                 }
+body[data-display="degrees"] #keyboard .disp_note         { display: none !important;                                  }
 /* Instrument selector — small dropdown next to the Audio (♪) toggle in
    the sticky header. Mirrors the toggle's pill shape so they read as
    a paired control. */
