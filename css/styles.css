@@ -71,6 +71,9 @@ body, #hl_button                           {  background-color: var(--bg) !impor
    around every cell rather than empty gap. */
 #fretboard, #chord_grid, #scale_grid       {  background-color:#555555;                                              }
 #_no_highlight_, #_x_                      {  background-color:#a8a8a8;                                              }
+/* Slightly lighter grey for the empty interior cells in the chord +
+   scale builder grids so the populated cells pop a bit more. */
+#chord_grid #_x_, #scale_grid #_x_         {  background-color:#c4c4c4;                                              }
 #tunings                                   {  background-color:#0a0a0a;                                              }
 table.sortable                             {  background-color:#0a0a0a;                                              }
 table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;                                              }
