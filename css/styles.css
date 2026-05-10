@@ -141,6 +141,11 @@ a:hover                                    {  color:var(--accent-hi);           
 #_1_, #_b2_, #_2_, #_b3_, #_3_, #_4_, #_b5_, #_b6_, #_6_, #_b7_, #_7_
                                            {  color:#000000 !important;                                              }
 #_no_highlight_, #_x_                      {  color:#333333 !important;                                              }
+/* The fretboard's _5_ cells stay light-text-on-dark-blue, but in the
+   chord + scale builder grids the _5_ header / chord-label cells use
+   the shared light-grey background — so their text needs to be dark
+   too, matching every other column label. */
+#chord_grid #_5_, #scale_grid #_5_         {  color:#000000 !important;                                              }
 /* Chord/scale name links in the builder header rows now sit on a light grid
    bg — text needs to be dark to read. */
 #chord_grid a, #scale_grid a               {  color:#111 !important;                                                 }
