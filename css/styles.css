@@ -1194,12 +1194,10 @@ details.collapsible.section                { position: relative;                
    across rows even though the row's total length varies. */
 /* Compact mode shrinks the TABLE width by hiding empty cells, but the
    surviving cells keep the SAME dimensions as non-compact so the
-   visual rhythm doesn't change between modes. The data cells get a
-   fixed 100px width (matches the average column in a 1400px section
-   with ~14 columns); label cells stay generous so chord names don't
-   get cropped. Padding + font size inherit from the shared rules. */
+   visual rhythm doesn't change between modes. Stay on table-layout:
+   fixed so row heights + font metrics match non-compact exactly. */
 #chord_grid.cg_compact, #scale_grid.cg_compact
-                                           { table-layout: auto; min-width: 0; width: auto; margin-left: 14px;        }
+                                           { table-layout: fixed; min-width: 0; width: auto; margin-left: 14px;       }
 #chord_grid.cg_compact td, #scale_grid.cg_compact td
                                            { width: 100px; min-width: 100px; max-width: 100px;                       }
 #chord_grid.cg_compact .cg_chord_label,
