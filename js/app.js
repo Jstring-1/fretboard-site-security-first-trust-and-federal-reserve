@@ -1321,6 +1321,11 @@
           if (!det.open) closed.push(id);
           setSetting('qp_closed', closed);
         } else if (det.classList.contains('identify_box')) {
+          // Only persist toggles that look user-initiated. Transient
+          // toggles fired during applyState's innerHTML swap would
+          // otherwise sneak the section into id_closed even though the
+          // user never clicked the summary.
+          if (window._suppressIdToggle) return;
           const sec = det.getAttribute('data-id-section');
           if (!sec) return;
           const closed = (getSetting('id_closed') || []).filter(function (s) { return s !== sec; });
@@ -5753,12 +5758,20 @@
     // Wrap output in a <details>. Default open; user clicks the
     // summary to minimize. Persisted state lives in id_closed (URL
     // 'idc' / LS 'sf_id_closed').
+    // Clear button — only show in the summary when there are picks to
+    // clear (≥1 yellow pk). The host click handler intercepts the link
+    // (e.preventDefault) so the click navigates without toggling the
+    // <details>.
+    const _summaryClear = (String(xs.pk || '').split(' ').filter(Boolean).length > 0)
+      ? idClearHtml()
+      : '';
     function wrap(bodyHtml) {
       return '<details class="identify_box"' + (idOpen ? ' open' : '')
            +   ' data-id-section="' + escAttr(sectionId) + '">'
            + '<summary class="identify_summary">'
            +   '<span class="identify_label">Chord ID</span>'
            +   '<span class="identify_btns">'
+           +     _summaryClear
            +     '<button type="button" class="section_help" data-help="chord_id"'
            +       ' aria-label="About Chord ID">?</button>'
            +   '</span>'
@@ -5855,7 +5868,7 @@
         +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
       html = ''
         + '<div class="identify_strip">'
-        + '<span class="identify_btns">' + idArrowsHtml() + idClearHtml() + '</span>'
+        + '<span class="identify_btns">' + idArrowsHtml() + '</span>'
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
         + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
@@ -5883,8 +5896,15 @@
       return wrap(html);
     }
 
+    // Suppress transient .identify_box toggle events fired by the
+    // browser as innerHTML swaps the <details> elements. Chrome queues
+    // toggles asynchronously when the open attribute is added/removed
+    // by the parser, and those would otherwise be misread as "user
+    // collapsed the section" and written into id_closed.
+    window._suppressIdToggle = true;
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
     if (kbHost) kbHost.innerHTML = buildHtml(xKB, 'section_4');
+    setTimeout(function () { window._suppressIdToggle = false; }, 0);
 
     // Wire +N pills + anchor-scroll for any link click inside the strip
     // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
