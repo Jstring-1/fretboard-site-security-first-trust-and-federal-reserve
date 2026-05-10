@@ -982,22 +982,8 @@ select option                              { color: var(--text); background: var
 #site_global_controls                      { order: 3; flex: 1 1 0;
                                              display: inline-flex; align-items: center; justify-content: flex-end;
                                              gap: 6px;                                                                  }
-/* Tuning indicator now lives inside the Fretboard section's summary,
-   left-aligned. The summary is a flex row; let the tuning pill sit
-   first and the title centre as before. */
-#section_2 > summary > #site_tuning        { order: 0; flex: 1 1 auto; text-align: left;
-                                             color: var(--muted); font: 400 0.82em var(--font);
-                                             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                                             margin-right: 12px;                                                       }
-#section_2 > summary > #site_tuning .st_lab{ color: var(--muted-dim); margin-right: 4px;
-                                             text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;     }
-#section_2 > summary > #site_tuning .st_val{ color: var(--text); font-weight: 600;                                    }
-#section_2 > summary > #site_tuning .st_sep{ color: var(--muted-dim); margin: 0 6px;                                  }
-#section_2 > summary > #site_tuning .st_custom_pill
-                                           { display: inline-block; margin-left: 6px; padding: 0 6px;
-                                             border: 1px solid var(--accent-hi); border-radius: 8px;
-                                             color: var(--accent-hi); font-size: 0.85em;
-                                             text-transform: uppercase; letter-spacing: 0.06em;                       }
+/* (Tuning indicator removed — the tuning picker dropdown already
+   shows the current tuning name + notes in its trigger button.) */
 /* The inner span keyButtonsHtml emits has both .section_key_picker
    (which would push to flex-end) and .section_key_row (which sets gap).
    Inside the global row, force-center it and zero its own padding. */

@@ -5757,6 +5757,7 @@
       return '<details class="identify_box"' + (idOpen ? ' open' : '')
            +   ' data-id-section="' + escAttr(sectionId) + '">'
            + '<summary class="identify_summary">'
+           +   '<span class="identify_label">Chord ID</span>'
            +   '<span class="identify_btns">'
            +     '<button type="button" class="section_help" data-help="chord_id"'
            +       ' aria-label="About Chord ID">?</button>'
