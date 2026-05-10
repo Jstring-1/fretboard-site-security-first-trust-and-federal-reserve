@@ -1315,17 +1315,16 @@
       document.body.addEventListener('toggle', function (e) {
         const det = e.target;
         if (!det || !det.classList) return;
+        // Transient toggles fired by Chrome as the parser inserts
+        // <details> via innerHTML must not be persisted — they're not
+        // user clicks. applyState raises this flag around every render.
+        if (window._suppressDetailsToggle) return;
         if (det.classList.contains('qp_box')) {
           const id = det.getAttribute('data-qp-id') || 'quick_picks';
           const closed = (getSetting('qp_closed') || []).filter(function (s) { return s !== id; });
           if (!det.open) closed.push(id);
           setSetting('qp_closed', closed);
         } else if (det.classList.contains('identify_box')) {
-          // Only persist toggles that look user-initiated. Transient
-          // toggles fired during applyState's innerHTML swap would
-          // otherwise sneak the section into id_closed even though the
-          // user never clicked the summary.
-          if (window._suppressIdToggle) return;
           const sec = det.getAttribute('data-id-section');
           if (!sec) return;
           const closed = (getSetting('id_closed') || []).filter(function (s) { return s !== sec; });
@@ -5906,15 +5905,8 @@
       return wrap(html);
     }
 
-    // Suppress transient .identify_box toggle events fired by the
-    // browser as innerHTML swaps the <details> elements. Chrome queues
-    // toggles asynchronously when the open attribute is added/removed
-    // by the parser, and those would otherwise be misread as "user
-    // collapsed the section" and written into id_closed.
-    window._suppressIdToggle = true;
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
     if (kbHost) kbHost.innerHTML = buildHtml(xKB, 'section_4');
-    setTimeout(function () { window._suppressIdToggle = false; }, 0);
 
     // Wire +N pills + anchor-scroll for any link click inside the strip
     // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
@@ -6331,6 +6323,13 @@
 
   // ---------- per-state render ----------
   function applyState() {
+    // Suppress transient <details> toggle events fired by Chrome as
+    // the parser swaps qp_box / identify_box via innerHTML below.
+    // Without this, the toggle delegate would persist them into
+    // qp_closed / id_closed (writing ?qpc=… / ?idc=… into the URL via
+    // setSetting's history.replaceState) even though no user clicked
+    // a summary.
+    window._suppressDetailsToggle = true;
     const x = parseState();
     window.SF_X = x;
     renderTitle(x);
@@ -6391,6 +6390,10 @@
     applyTuningsSort(x);
     bindTuningsSortObserver();
     bindTuningsFilter();
+    // Release the suppression on the next tick — toggle events queued
+    // by the parser during this synchronous render fire as microtasks
+    // / timer tasks, all of which run before the 0-ms timeout below.
+    setTimeout(function () { window._suppressDetailsToggle = false; }, 0);
   }
 
   // ---------- init ----------
