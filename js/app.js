@@ -1655,16 +1655,29 @@
     return keyButtonsHtml(x.k);
   }
   function keyButtonsHtml(currentKey) {
+    // Display order starts at E (guitar's lowest open string in standard
+    // tuning) and walks chromatically upward; URL state still uses the
+    // canonical ALLNOTES order, so this is purely a UI tweak.
+    const startIdx = ALLNOTES.indexOf('E');
+    const displayKeys = [];
+    if (startIdx >= 0) {
+      for (let i = 0; i < ALLNOTES.length; i++) {
+        displayKeys.push(ALLNOTES[(startIdx + i) % ALLNOTES.length]);
+      }
+    } else {
+      displayKeys.push.apply(displayKeys, ALLNOTES);
+    }
     let h = '<span class="section_key_picker section_key_row">';
     h += '<span class="key_label">KEY:</span>';
-    // Hidden select for legacy gatherAndNavigate compatibility.
+    // Hidden select for legacy gatherAndNavigate compatibility. Keep
+    // the canonical alphabetical order so the form value matches.
     h += '<select class="inputs key_hidden_select" name="k">';
     for (const a of ALLNOTES) {
       const sel = (a === currentKey) ? ' selected' : '';
       h += '<option value="' + escHtml(a) + '"' + sel + '>' + escHtml(a) + '</option>';
     }
     h += '</select>';
-    for (const a of ALLNOTES) {
+    for (const a of displayKeys) {
       const cls = (a === currentKey) ? ' active' : '';
       h += '<button type="button" class="key_btn' + cls + '" '
          + 'data-key="' + escHtml(a) + '">' + escHtml(a) + '</button>';
