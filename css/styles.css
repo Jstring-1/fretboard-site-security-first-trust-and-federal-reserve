@@ -1184,13 +1184,18 @@ details.collapsible.section                { position: relative;                
 /* In compact mode each row has a different filled-cell count, but every
    cell keeps a fixed width so the populated cells still line up vertically
    across rows even though the row's total length varies. */
+/* Compact mode shrinks the TABLE width by hiding empty cells, but the
+   surviving cells keep the SAME dimensions as non-compact so the
+   visual rhythm doesn't change between modes. The data cells get a
+   fixed 100px width (matches the average column in a 1400px section
+   with ~14 columns); label cells stay generous so chord names don't
+   get cropped. Padding + font size inherit from the shared rules. */
 #chord_grid.cg_compact, #scale_grid.cg_compact
                                            { table-layout: auto; min-width: 0; width: auto; margin-left: 14px;        }
 #chord_grid.cg_compact td, #scale_grid.cg_compact td
-                                           { width: 64px; min-width: 64px; max-width: 64px;
-                                             padding: 0;                                                              }
+                                           { width: 100px; min-width: 100px; max-width: 100px;                       }
 #chord_grid.cg_compact .cg_chord_label,
-#scale_grid.cg_compact .cg_chord_label     { width: 88px !important; min-width: 88px; max-width: 88px;                }
+#scale_grid.cg_compact .cg_chord_label     { width: 120px !important; min-width: 120px; max-width: 120px;             }
 /* "All" pill in the highlight row — matches the .hl_pill chips but acts as
    a link (no checkbox inside). */
 .hl_all_pill                               { color: var(--text) !important; text-decoration: none; cursor: pointer;  }
