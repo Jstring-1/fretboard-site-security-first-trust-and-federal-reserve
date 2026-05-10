@@ -37,23 +37,140 @@
     return _audioCtx;
   }
   function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-  // Play a single note as a triangle-wave synth blip with a short
-  // attack/release envelope. Polyphonic by design — each call spins up
-  // its own oscillator + gain node so rapid clicks layer cleanly.
+
+  // ---- Tone.js sampler / synth voices ------------------------------
+  // Tone.js loads from a CDN and is optional. If it didn't load
+  // (offline / blocked) every call here returns null and playMidi
+  // falls back to the built-in triangle blip below.
+  const TONE_INSTRUMENTS = {
+    'piano': {
+      label: 'Piano',
+      type: 'sampler',
+      baseUrl: 'https://tonejs.github.io/audio/salamander/',
+      release: 1.2,
+      urls: {
+        A0:'A0.mp3',  C1:'C1.mp3',  'D#1':'Ds1.mp3','F#1':'Fs1.mp3',
+        A1:'A1.mp3',  C2:'C2.mp3',  'D#2':'Ds2.mp3','F#2':'Fs2.mp3',
+        A2:'A2.mp3',  C3:'C3.mp3',  'D#3':'Ds3.mp3','F#3':'Fs3.mp3',
+        A3:'A3.mp3',  C4:'C4.mp3',  'D#4':'Ds4.mp3','F#4':'Fs4.mp3',
+        A4:'A4.mp3',  C5:'C5.mp3',  'D#5':'Ds5.mp3','F#5':'Fs5.mp3',
+        A5:'A5.mp3',  C6:'C6.mp3',  'D#6':'Ds6.mp3','F#6':'Fs6.mp3',
+        A6:'A6.mp3',  C7:'C7.mp3',  'D#7':'Ds7.mp3','F#7':'Fs7.mp3',
+        A7:'A7.mp3',  C8:'C8.mp3'
+      }
+    },
+    'guitar-acoustic': {
+      label: 'Acoustic Guitar',
+      type: 'sampler',
+      baseUrl: 'https://tonejs.github.io/audio/casio/',
+      release: 0.8,
+      urls: { A1:'A1.mp3', A2:'A2.mp3', A3:'A3.mp3', A4:'A4.mp3', A5:'A5.mp3', A6:'A6.mp3' }
+    },
+    'electric-piano': {
+      label: 'Electric Piano',
+      type: 'fmsynth'
+    },
+    'organ': {
+      label: 'Organ',
+      type: 'amsynth'
+    },
+    'synth': {
+      label: 'Synth Lead',
+      type: 'polysynth',
+      options: { oscillator: { type: 'sawtooth' },
+                 envelope: { attack: 0.02, decay: 0.1, sustain: 0.4, release: 0.4 } }
+    },
+    'pad': {
+      label: 'Pad',
+      type: 'polysynth',
+      options: { oscillator: { type: 'triangle' },
+                 envelope: { attack: 0.4, decay: 0.5, sustain: 0.7, release: 1.5 } }
+    },
+    'triangle': {
+      label: 'Triangle (built-in)',
+      type: 'fallback'
+    }
+  };
+  const _DEFAULT_INSTRUMENT = 'piano';
+  function getInstrumentPref() {
+    try { return window.localStorage.getItem('sf_instrument') || _DEFAULT_INSTRUMENT; }
+    catch (_) { return _DEFAULT_INSTRUMENT; }
+  }
+  function setInstrumentPref(k) {
+    try { window.localStorage.setItem('sf_instrument', k); } catch (_) {}
+  }
+
+  let _toneInstrument = null;
+  let _toneInstrumentKey = null;
+  let _toneStarted = false;
+  // Lazy-build a Tone.js voice based on the user's preference. Returns
+  // a promise that resolves to the instrument node OR null when Tone
+  // isn't available / the user chose the built-in fallback. Subsequent
+  // calls with the same key reuse the cached node; switching keys
+  // disposes the previous one.
+  function ensureToneInstrument() {
+    if (typeof window.Tone === 'undefined') return Promise.resolve(null);
+    const key = getInstrumentPref();
+    if ((TONE_INSTRUMENTS[key] || {}).type === 'fallback') return Promise.resolve(null);
+    const startP = _toneStarted ? Promise.resolve()
+                                : window.Tone.start().then(function () { _toneStarted = true; });
+    return startP.then(function () {
+      if (_toneInstrumentKey === key && _toneInstrument) return _toneInstrument;
+      if (_toneInstrument && typeof _toneInstrument.dispose === 'function') {
+        try { _toneInstrument.dispose(); } catch (_) {}
+      }
+      const cfg = TONE_INSTRUMENTS[key] || TONE_INSTRUMENTS[_DEFAULT_INSTRUMENT];
+      let inst;
+      if (cfg.type === 'sampler') {
+        inst = new window.Tone.Sampler({ urls: cfg.urls, baseUrl: cfg.baseUrl,
+                                          release: cfg.release || 1 });
+      } else if (cfg.type === 'fmsynth') {
+        inst = new window.Tone.PolySynth(window.Tone.FMSynth);
+      } else if (cfg.type === 'amsynth') {
+        inst = new window.Tone.PolySynth(window.Tone.AMSynth);
+      } else {
+        inst = new window.Tone.PolySynth(window.Tone.Synth, cfg.options || {});
+      }
+      // Subtle reverb on the chain so chords don't sound dry.
+      const reverb = new window.Tone.Reverb({ decay: 1.2, wet: 0.18 });
+      inst.chain(reverb, window.Tone.Destination);
+      _toneInstrument = inst;
+      _toneInstrumentKey = key;
+      return inst;
+    }).catch(function () { return null; });
+  }
+  function preWarmTone() { ensureToneInstrument(); }
+
+  // Play a single MIDI note. Routes through Tone.js when available;
+  // falls back to the original triangle-wave WebAudio blip otherwise.
   function playMidi(m, durSec) {
     if (!audioOn()) return;
+    const dur = (typeof durSec === 'number' && durSec > 0) ? durSec : 0.9;
+    if (typeof window.Tone !== 'undefined'
+        && (TONE_INSTRUMENTS[getInstrumentPref()] || {}).type !== 'fallback') {
+      ensureToneInstrument().then(function (inst) {
+        if (!inst) { _playMidiFallback(m, dur); return; }
+        try {
+          const freq = midiToFreq(m);
+          inst.triggerAttackRelease(freq, dur);
+        } catch (_) { _playMidiFallback(m, dur); }
+      });
+      return;
+    }
+    _playMidiFallback(m, dur);
+  }
+  function _playMidiFallback(m, dur) {
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     if (ctx.state === 'suspended') { try { ctx.resume(); } catch (_) {} }
     const t0 = ctx.currentTime;
-    const dur = (typeof durSec === 'number' && durSec > 0) ? durSec : 0.9;
     const osc = ctx.createOscillator();
     osc.type = 'triangle';
     osc.frequency.value = midiToFreq(m);
     const g = ctx.createGain();
     g.gain.value = 0;
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(0.55, t0 + 0.01);   // 10ms attack
+    g.gain.linearRampToValueAtTime(0.55, t0 + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     osc.connect(g).connect(ctx.destination);
     osc.start(t0);
@@ -4681,6 +4798,7 @@
   }
   function bindAudioToggle() {
     paintAudioToggle();
+    bindInstrumentSelect();
     if (_audioToggleBound) return;
     const $btn = document.getElementById('audio_toggle');
     if (!$btn) return;
@@ -4691,9 +4809,41 @@
       const turningOn = !audioOn();
       setAudioOn(turningOn);
       paintAudioToggle();
-      // Pre-warm the AudioContext on the activating gesture so the
+      // Pre-warm both audio paths on the activating gesture so the
       // first played note doesn't have any user-gesture latency.
-      if (turningOn) ensureAudioCtx();
+      if (turningOn) {
+        ensureAudioCtx();
+        preWarmTone();
+      }
+    });
+  }
+  let _instrumentSelectBound = false;
+  function bindInstrumentSelect() {
+    const $sel = document.getElementById('instrument_select');
+    if (!$sel) return;
+    // Populate options on first paint (and re-populate if needed).
+    if (!$sel._populated) {
+      $sel.innerHTML = '';
+      const cur = getInstrumentPref();
+      Object.keys(TONE_INSTRUMENTS).forEach(function (k) {
+        const cfg = TONE_INSTRUMENTS[k];
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = cfg.label;
+        if (k === cur) opt.selected = true;
+        $sel.appendChild(opt);
+      });
+      $sel._populated = true;
+    } else {
+      $sel.value = getInstrumentPref();
+    }
+    if (_instrumentSelectBound) return;
+    _instrumentSelectBound = true;
+    $sel.addEventListener('change', function (e) {
+      e.stopPropagation();
+      setInstrumentPref($sel.value);
+      // Force the cached Tone instrument to rebuild on next play.
+      preWarmTone();
     });
   }
 

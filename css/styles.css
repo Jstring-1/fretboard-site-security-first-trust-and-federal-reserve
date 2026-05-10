@@ -664,6 +664,17 @@ details.collapsible > summary { cursor: default; }
 .section_audio_toggle.on                   { background: var(--accent-hi); border-color: var(--accent-hi); color: #001014; }
 .section_audio_toggle.on:hover             { background: #fff; border-color: #fff; color: #001014;                     }
 @media print { .section_audio_toggle       { display: none !important; }                                                }
+/* Instrument selector — small dropdown next to the Audio (♪) toggle in
+   the sticky header. Mirrors the toggle's pill shape so they read as
+   a paired control. */
+.instrument_select                         { padding: 1px 6px; margin-left: 4px;
+                                             border: 1px solid rgba(255,255,255,0.45); border-radius: 12px;
+                                             background: var(--bg-elevated); color: var(--text);
+                                             font: 600 0.78em var(--font); cursor: pointer;
+                                             max-width: 160px;                                                          }
+.instrument_select:hover                   { border-color: #fff;                                                        }
+.instrument_select:focus                   { border-color: var(--accent-hi); outline: none;                            }
+@media print { .instrument_select          { display: none !important;                                                 } }
 /* CSV export pill — same shape as the Print pill so the right-side row
    reads as a consistent set of action chips. */
 .section_export                            { display: inline-block; margin-left: 4px; padding: 2px 10px;
