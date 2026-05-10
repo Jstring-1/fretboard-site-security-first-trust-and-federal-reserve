@@ -1086,11 +1086,30 @@
 
   // Quick-pick chord/scale chips. Reused above the fretboard AND above the
   // keyboard so the user can drive selections from either section without
-  // scrolling to a builder grid.
+  // scrolling to a builder grid. Two side-by-side buckets (chord chips
+  // left, scale chips right), wrapped in a <details> so the whole strip
+  // can be collapsed when the user wants more vertical real estate.
+  // Open/closed state persists in localStorage per slot (id).
   function quickPicksHtml(x, idAttr) {
+    let qpOpen = true;
+    try {
+      const saved = window.localStorage.getItem('sf_qp_open_' + (idAttr || 'quick_picks'));
+      if (saved === 'closed') qpOpen = false;
+    } catch (_) {}
     let h = '';
-    h += '<div' + (idAttr ? ' id="' + idAttr + '"' : ' class="quick_picks"') + '>';
-    h += '  <div class="qp_row">';
+    h += '<details class="qp_box"' + (qpOpen ? ' open' : '')
+      + ' data-qp-id="' + escAttr(idAttr || 'quick_picks') + '"'
+      + (idAttr ? ' id="' + idAttr + '"' : '') + '>';
+    h += '<summary class="qp_summary">';
+    h +=   '<span class="qp_summary_title">Chord &amp; Scale Picks</span>';
+    h +=   '<span class="qp_summary_hint">click to '
+       +   (qpOpen ? 'collapse' : 'expand') + '</span>';
+    h += '</summary>';
+    h += '<div class="qp_buckets">';
+    // Chord bucket (left)
+    h += '<div class="qp_bucket qp_bucket_chords">';
+    h +=   '<div class="qp_bucket_label">Chords</div>';
+    h +=   '<div class="qp_row">';
     for (const a in GRID) {
       const label = a.replace(/b/g, '♭').replace(/#/g, '♯');
       const chipDegs = fragToDegrees(GRID[a]);
@@ -1103,8 +1122,12 @@
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
       h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
     }
-    h += '  </div>';
-    h += '  <div class="qp_row">';
+    h +=   '</div>';
+    h += '</div>';
+    // Scale bucket (right)
+    h += '<div class="qp_bucket qp_bucket_scales">';
+    h +=   '<div class="qp_bucket_label">Scales</div>';
+    h +=   '<div class="qp_row">';
     for (const name in SCALES) {
       const label = name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
@@ -1114,9 +1137,34 @@
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
       h += '<a class="' + cls + '" href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>';
     }
-    h += '  </div>';
+    h +=   '</div>';
     h += '</div>';
+    h += '</div>';   // .qp_buckets
+    h += '</details>';
     return h;
+  }
+  // Persist quick-picks open/closed state to localStorage so the user's
+  // preference survives page reloads. Delegated handler since the
+  // <details> elements are recreated on every applyState.
+  if (typeof document !== 'undefined' && !document.body._qpToggleBound) {
+    // Defer to DOMContentLoaded to make sure document.body exists.
+    const _wireQp = function () {
+      if (document.body._qpToggleBound) return;
+      document.body._qpToggleBound = true;
+      document.body.addEventListener('toggle', function (e) {
+        const det = e.target;
+        if (!det || !det.classList || !det.classList.contains('qp_box')) return;
+        const id = det.getAttribute('data-qp-id') || 'quick_picks';
+        try {
+          window.localStorage.setItem('sf_qp_open_' + id, det.open ? 'open' : 'closed');
+        } catch (_) {}
+      }, true);  // capture: <details> toggle events don't bubble
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', _wireQp);
+    } else {
+      _wireQp();
+    }
   }
 
   // Per-degree colors used for the highlight-pill on-state, mirroring the

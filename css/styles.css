@@ -1217,24 +1217,40 @@ details.collapsible.section                { position: relative;                
 /* Highlighted-degree markers on the fretboard: now signalled only by the
    cell's degree-coloured background — no yellow ring. */
 
-/* Quick-pick chord + scale link strip above the fretboard. Same href logic
-   as the chord/scale builder grid title rows; selected state shows the same
-   yellow ring + bold text. */
-#quick_picks,
-#kb_quick_picks                            { padding: 6px 14px 4px; display: flex; flex-direction: column; gap: 4px; }
-#quick_picks .qp_row,
-#kb_quick_picks .qp_row                    { display: flex; flex-wrap: wrap; align-items: center;
+/* Quick-pick chord + scale link strip above the fretboard / keyboard.
+   <details> wrapper for collapse, two side-by-side buckets inside.
+   Selected chip mirrors the chord/scale builder grid title-row state. */
+.qp_box                                    { padding: 4px 14px 6px; }
+.qp_summary                                { cursor: pointer; user-select: none; list-style: none;
+                                             display: flex; align-items: center; gap: 8px;
+                                             padding: 2px 4px;
+                                             font: 600 0.78em var(--font); color: var(--muted);
+                                             text-transform: uppercase; letter-spacing: 0.06em;                       }
+.qp_summary::-webkit-details-marker        { display: none;                                                           }
+.qp_summary::before                        { content: '▶'; font-size: 0.7em; color: var(--muted-dim);
+                                             transition: transform .15s; display: inline-block;                       }
+.qp_box[open] > .qp_summary::before        { transform: rotate(90deg);                                                }
+.qp_summary_title                          { color: var(--text);                                                      }
+.qp_summary_hint                           { color: var(--muted-dim); font-weight: 400;
+                                             text-transform: none; letter-spacing: 0;                                  }
+.qp_buckets                                { display: flex; flex-wrap: wrap; gap: 12px;
+                                             margin-top: 4px;                                                          }
+.qp_bucket                                 { flex: 1 1 0; min-width: 0;
+                                             padding: 6px 8px; border-radius: 6px;
+                                             background: rgba(255,255,255,0.03);
+                                             border: 1px solid rgba(255,255,255,0.08);                                  }
+.qp_bucket_label                           { font: 600 0.7em var(--font); color: var(--muted-dim);
+                                             text-transform: uppercase; letter-spacing: 0.08em;
+                                             margin-bottom: 4px; text-align: center;                                  }
+.qp_box .qp_row                            { display: flex; flex-wrap: wrap; align-items: center;
                                              justify-content: center;
-                                             gap: 4px; line-height: 1;                                                }
-#quick_picks .qp_link,
-#kb_quick_picks .qp_link                   { display: inline-block; padding: 3px 9px; font-size: 0.85em;
+                                             gap: 4px; line-height: 1;                                                 }
+.qp_box .qp_link                           { display: inline-block; padding: 3px 9px; font-size: 0.85em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
-                                             text-decoration: none; transition: background .12s, border-color .12s; }
-#quick_picks .qp_link:hover,
-#kb_quick_picks .qp_link:hover             { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3);}
-#quick_picks .qp_link.cg_selected,
-#kb_quick_picks .qp_link.cg_selected       { background: var(--accent-hi) !important; color: #000 !important;
+                                             text-decoration: none; transition: background .12s, border-color .12s;  }
+.qp_box .qp_link:hover                     { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.3); }
+.qp_box .qp_link.cg_selected               { background: var(--accent-hi) !important; color: #000 !important;
                                              border-color: var(--accent-hi) !important;                              }
 
 /* Highlight-degree row — used both inside the fretboard form (.fb_hl_row)

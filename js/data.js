@@ -127,13 +127,21 @@ window.SF_DATA = {
         "Locrian": "&hl=1&hl=b2&hl=b3&hl=4&hl=b5&hl=b6&hl=b7",
         "Melodic_Minor": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=6&hl=7",
         "Harmonic_Minor": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=b6&hl=7",
+        "Harmonic_Major": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=b6&hl=7",
         "Phrygian_Dominant": "&hl=1&hl=b2&hl=3&hl=4&hl=5&hl=b6&hl=b7",
+        "Lydian_Dominant": "&hl=1&hl=2&hl=3&hl=b5&hl=5&hl=6&hl=b7",
         "Hungarian_Minor": "&hl=1&hl=2&hl=b3&hl=b5&hl=5&hl=b6&hl=7",
+        "Altered": "&hl=1&hl=b2&hl=b3&hl=3&hl=b5&hl=b6&hl=b7",
+        "Bebop_Dominant": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=6&hl=b7&hl=7",
+        "Bebop_Major": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=b6&hl=6&hl=7",
         "Major_Pentatonic": "&hl=1&hl=2&hl=3&hl=5&hl=6",
         "Minor_Pentatonic": "&hl=1&hl=b3&hl=4&hl=5&hl=b7",
         "Blues": "&hl=1&hl=b3&hl=4&hl=b5&hl=5&hl=b7",
+        "Major_Blues": "&hl=1&hl=2&hl=b3&hl=3&hl=5&hl=6",
         "Whole_Tone": "&hl=1&hl=2&hl=3&hl=b5&hl=b6&hl=b7",
-        "Diminished": "&hl=1&hl=2&hl=b3&hl=4&hl=b5&hl=b6&hl=6&hl=7"
+        "Diminished": "&hl=1&hl=2&hl=b3&hl=4&hl=b5&hl=b6&hl=6&hl=7",
+        "Half_Whole_Dim": "&hl=1&hl=b2&hl=b3&hl=3&hl=b5&hl=5&hl=6&hl=b7",
+        "Hirajoshi": "&hl=1&hl=2&hl=b3&hl=5&hl=b6"
     },
     "chords": {
         "Maj": "&hl=1&hl=3&hl=5",
@@ -175,7 +183,13 @@ window.SF_DATA = {
         "min11": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=b7",
         "7#11": "&hl=1&hl=2&hl=3&hl=b5&hl=5&hl=b7",
         "13th": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=6&hl=b7",
-        "min13": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=6&hl=b7"
+        "min13": "&hl=1&hl=2&hl=b3&hl=4&hl=5&hl=6&hl=b7",
+        "Maj13": "&hl=1&hl=2&hl=3&hl=4&hl=5&hl=6&hl=7",
+        "min-Maj9": "&hl=1&hl=2&hl=b3&hl=5&hl=7",
+        "7b13": "&hl=1&hl=3&hl=5&hl=b6&hl=b7",
+        "13b9": "&hl=1&hl=b2&hl=3&hl=5&hl=6&hl=b7",
+        "sus2sus4": "&hl=1&hl=2&hl=4&hl=5",
+        "add4": "&hl=1&hl=3&hl=4&hl=5"
     },
     "tunings": {
         "AAC♯EF♯AC♯E": {
