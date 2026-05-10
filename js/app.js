@@ -2189,11 +2189,21 @@
       return s;
     }
 
+    // Display-label overrides for the long scale names so each row
+    // fits in the leftmost column without wrapping.
+    const SCALE_LABEL_OVERRIDES = {
+      'Phrygian_Dominant': 'Phrygian Dom',
+      'Lydian_Dominant':   'Lydian Dom',
+      'Hungarian_Minor':   'Hungarian Min',
+      'Bebop_Dominant':    'Bebop Dom',
+      'Major_Pentatonic':  'maj pentatonic',
+      'Minor_Pentatonic':  'min pentatonic'
+    };
     const compact = compactGridsOn();
     let h = '<table id="scale_grid"' + (compact ? ' class="cg_compact"' : '') + '>';
     h += buildDegHeader('above_scale_grid', { cornersOnly: compact });
     for (const name in SCALES) {
-      const label = name.replace(/_/g, ' ');
+      const label = SCALE_LABEL_OVERRIDES[name] || name.replace(/_/g, ' ');
       const chipDegs = fragToDegrees(SCALES[name]);
       const isSelected = degSetsEqual(chipDegs, x.hl);
       const href = isSelected ? (x._hilight_url + 'hl=') : (x._hilight_url + hlMultiToCsv(SCALES[name]));
