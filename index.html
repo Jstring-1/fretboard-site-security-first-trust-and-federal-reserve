@@ -135,19 +135,19 @@
 <!-- Styles + scripts. defer=async-download, in-order execution after DOM
      parse — same effect as the old "load at end of body" trick without
      the layout reflow. -->
-<link rel="stylesheet" href="css/styles.css?v=20260509.0037">
-<link rel="stylesheet" href="css/tab.css?v=20260509.0037">
+<link rel="stylesheet" href="css/styles.css?v=20260509.0038">
+<link rel="stylesheet" href="css/tab.css?v=20260509.0038">
 <!-- Tone.js — polyphonic sampler + synth + FX rack. Optional: if the
      CDN is unreachable, app.js falls back to its built-in triangle synth. -->
 <script defer src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
-<script defer src="js/data.js?v=20260509.0037"></script>
-<script defer src="js/chord_lookup.js?v=20260509.0037"></script>
-<script defer src="js/sortable.js?v=20260509.0037"></script>
-<script defer src="js/app.js?v=20260509.0037"></script>
-<script defer src="js/chord_boxes.js?v=20260509.0037"></script>
-<script defer src="js/tab.js?v=20260509.0037"></script>
-<script defer src="js/features.js?v=20260509.0037"></script>
-<script defer src="js/sheetmusic.js?v=20260509.0037"></script>
+<script defer src="js/data.js?v=20260509.0038"></script>
+<script defer src="js/chord_lookup.js?v=20260509.0038"></script>
+<script defer src="js/sortable.js?v=20260509.0038"></script>
+<script defer src="js/app.js?v=20260509.0038"></script>
+<script defer src="js/chord_boxes.js?v=20260509.0038"></script>
+<script defer src="js/tab.js?v=20260509.0038"></script>
+<script defer src="js/features.js?v=20260509.0038"></script>
+<script defer src="js/sheetmusic.js?v=20260509.0038"></script>
 </head>
 <body>
 
@@ -157,30 +157,30 @@
   Fretboard.site is a desktop tool — rotate to landscape (or open on a wider screen) for the best experience. Tables here scroll sideways on touch.
 </div>
 
-<!-- Sticky site header: tuning indicator on the left, logo centered,
-     global controls (Linked / Audio / Clear / Account) on the right.
-     Stays pinned at the top so the controls follow the user as they scroll. -->
+<!-- Sticky site header: notes/degrees toggle on the left, KEY pills
+     centered, audio + instrument + clear on the right. Stays pinned
+     at the top so the controls follow the user as they scroll. The
+     tuning indicator now lives in the Fretboard section header. -->
 <header id="site_header" class="site_header_sticky">
-  <span id="site_tuning" class="summary_tuning"></span>
+  <span id="display_mode_group" class="display_mode_group" role="group" aria-label="Show notes and/or degrees">
+    <button type="button" class="display_mode_btn" data-display="notes" title="Show note names only">A</button>
+    <button type="button" class="display_mode_btn" data-display="degrees" title="Show degrees only">1</button>
+    <button type="button" class="display_mode_btn" data-display="both" title="Show notes and degrees (default)">A1</button>
+  </span>
+  <!-- Global key picker — sits between the display-mode toggle (left)
+       and the audio / instrument / clear controls (right). -->
+  <div id="global_key_row" class="section_key_row"></div>
   <span id="site_global_controls">
-    <span id="display_mode_group" class="display_mode_group" role="group" aria-label="Show notes and/or degrees">
-      <button type="button" class="display_mode_btn" data-display="notes" title="Show note names only">A</button>
-      <button type="button" class="display_mode_btn" data-display="degrees" title="Show degrees only">1</button>
-      <button type="button" class="display_mode_btn" data-display="both" title="Show notes and degrees (default)">A1</button>
-    </span>
     <button type="button" id="audio_toggle" class="section_audio_toggle" aria-pressed="false" title="Audio off — click to play notes when you click a fret or key.">♪</button>
     <select id="instrument_select" class="instrument_select" title="Pick which instrument plays" aria-label="Instrument"></select>
     <a id="site_clear" class="section_clear" href="?">Clear</a>
   </span>
-  <!-- Global key picker — replaces the per-section key rows. Sits in
-       the sticky header alongside tuning + audio/clear. -->
-  <div id="global_key_row" class="section_key_row"></div>
 </header>
 <!-- SEO-friendly intro lede: visible to crawlers, hidden for sighted users
      so the layout stays minimal. -->
 <p id="seo_lede" class="sr_only">Fretboard.site is a free, browser-based music tool: build chords across 28+ types, audition 16 scales (including modes, pentatonic, and blues), identify chords from notes you played, explore a fretboard for any 4- to 12-string instrument across 176 alternate tunings, see every key signature with the circle of fifths, and edit guitar tablature inline. Works for guitar, bass, ukulele, banjo, mandolin, lap steel, and pedal steel.</p>
 
-<details id="section_2" class="collapsible section" open><summary><span class="summary_title">Fretboard</span><span class="summary_status"></span></summary>
+<details id="section_2" class="collapsible section" open><summary><span id="site_tuning" class="summary_tuning"></span><span class="summary_title">Fretboard</span><span class="summary_status"></span></summary>
   <div class="section_actions"><span class="summary_extras" data-summary-for="section_2"></span><button type="button" class="section_print" data-print-section="section_2" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About">?</button></div>
   <h2 class="sr_only">Interactive guitar fretboard explorer</h2>
   <p class="sr_only">Pick a tuning and a key, then highlight any chord or scale to see every position of those notes laid out across the entire fretboard. Supports 4- to 12-string instruments — guitar, bass, ukulele, banjo, mandolin, lap steel, pedal steel — plus a fully editable Custom tuning. Click any fret cell to identify the chord those notes form.</p>
@@ -330,7 +330,7 @@
 <footer id="site_footer">
   <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260509.2146</div>
+  <div id="build_num">20260509.2148</div>
 </footer>
 
 </body>
