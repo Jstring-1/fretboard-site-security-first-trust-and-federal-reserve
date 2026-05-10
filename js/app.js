@@ -92,12 +92,15 @@
     }
   };
   const _DEFAULT_INSTRUMENT = 'piano';
+  // Delegate to the unified SETTINGS registry so the choice round-trips
+  // through both URL and localStorage. Page-load reads URL > localStorage
+  // > default; setting the dropdown writes to both.
   function getInstrumentPref() {
-    try { return window.localStorage.getItem('sf_instrument') || _DEFAULT_INSTRUMENT; }
-    catch (_) { return _DEFAULT_INSTRUMENT; }
+    const v = getSetting('instrument');
+    return (TONE_INSTRUMENTS[v] ? v : _DEFAULT_INSTRUMENT);
   }
   function setInstrumentPref(k) {
-    try { window.localStorage.setItem('sf_instrument', k); } catch (_) {}
+    setSetting('instrument', TONE_INSTRUMENTS[k] ? k : _DEFAULT_INSTRUMENT);
   }
 
   let _toneInstrument = null;
@@ -303,7 +306,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'prog', 'tempo', 'u'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'u'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -364,6 +367,39 @@
       lsFmt:  function (v) { return v ? '1' : ''; },
       urlFmt: function (v) { return v ? '1' : ''; },
       def:    false,
+    },
+    // Note / degree / both display mode toggle in the sticky header.
+    // Drives label spans across fretboard, grids, progression bars,
+    // keyboard. Default 'both' = show everything (current behavior).
+    display_mode: {
+      url:    'disp', ls: 'sf_display_mode',
+      parse:  function (v) { v = String(v || '').toLowerCase();
+                              return (v === 'notes' || v === 'degrees') ? v : 'both'; },
+      lsFmt:  function (v) { return v === 'both' ? '' : v; },
+      urlFmt: function (v) { return v === 'both' ? '' : v; },
+      def:    'both',
+    },
+    // Tone.js voice selector (sticky-header dropdown). Default 'piano'
+    // = Salamander Grand sampler. URL key 'inst' so a shared link
+    // recreates the receiver's listening experience.
+    instrument: {
+      url:    'inst', ls: 'sf_instrument',
+      parse:  function (v) { return v ? String(v) : 'piano'; },
+      lsFmt:  function (v) { return v === 'piano' ? '' : v; },
+      urlFmt: function (v) { return v === 'piano' ? '' : v; },
+      def:    'piano',
+    },
+    // Quick-picks bucket open/closed state (per slot). Stored as a
+    // comma-list of CLOSED slot ids ('fb_quick_picks', 'kb_quick_picks').
+    // Default (absent) = both open. Per-slot key is the slot id; the
+    // SETTINGS framework here only handles single-value settings, so
+    // qp_closed is read/written directly via the helpers below.
+    qp_closed: {
+      url:    'qpc', ls: 'sf_qp_closed',
+      parse:  function (v) { return String(v || '').split(',').filter(Boolean); },
+      lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
+      urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
+      def:    [],
     },
   };
   function _settingURLKey(name, sectionId) {
@@ -1208,11 +1244,11 @@
   // can be collapsed when the user wants more vertical real estate.
   // Open/closed state persists in localStorage per slot (id).
   function quickPicksHtml(x, idAttr) {
-    let qpOpen = true;
-    try {
-      const saved = window.localStorage.getItem('sf_qp_open_' + (idAttr || 'quick_picks'));
-      if (saved === 'closed') qpOpen = false;
-    } catch (_) {}
+    const slotId = idAttr || 'quick_picks';
+    // Closed slot ids live in a single comma-list (URL: qpc, LS:
+    // sf_qp_closed). Default = empty list = all open.
+    const closed = getSetting('qp_closed') || [];
+    const qpOpen = closed.indexOf(slotId) === -1;
     let h = '';
     h += '<details class="qp_box"' + (qpOpen ? ' open' : '')
       + ' data-qp-id="' + escAttr(idAttr || 'quick_picks') + '"'
@@ -1270,9 +1306,9 @@
         const det = e.target;
         if (!det || !det.classList || !det.classList.contains('qp_box')) return;
         const id = det.getAttribute('data-qp-id') || 'quick_picks';
-        try {
-          window.localStorage.setItem('sf_qp_open_' + id, det.open ? 'open' : 'closed');
-        } catch (_) {}
+        const closed = (getSetting('qp_closed') || []).filter(function (s) { return s !== id; });
+        if (!det.open) closed.push(id);
+        setSetting('qp_closed', closed);
       }, true);  // capture: <details> toggle events don't bubble
     };
     if (document.readyState === 'loading') {
@@ -4833,15 +4869,11 @@
   // ---- Display mode (notes / degrees / both) -----------------------
   // Drives whether note names, degree labels, or both are shown in the
   // fretboard cells, chord/scale grid cells, and progression bars.
-  // Persisted in localStorage; default 'both'.
-  function getDisplayMode() {
-    try { return window.localStorage.getItem('sf_display_mode') || 'both'; }
-    catch (_) { return 'both'; }
-  }
+  // Round-trips through URL + localStorage via the SETTINGS registry.
+  function getDisplayMode() { return getSetting('display_mode'); }
   function setDisplayMode(m) {
-    if (m !== 'both' && m !== 'notes' && m !== 'degrees') m = 'both';
-    try { window.localStorage.setItem('sf_display_mode', m); } catch (_) {}
-    document.body.setAttribute('data-display', m);
+    setSetting('display_mode', m);   // normalizes + writes URL + LS
+    document.body.setAttribute('data-display', getDisplayMode());
     paintDisplayModeButtons();
     if (window.SF_X) applyKeyboardLabels(window.SF_X);
   }
@@ -6356,6 +6388,10 @@
 
   // ---------- init ----------
   function init() {
+    // Reflect URL-driven display preferences on the body BEFORE the
+    // first render so there's no flash of the default mode while CSS
+    // rules wait for bindDisplayModeButtons.
+    document.body.setAttribute('data-display', getDisplayMode());
     applyState();
     bindCollapsibles();
     bindLinkInterceptor();
