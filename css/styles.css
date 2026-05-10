@@ -32,7 +32,7 @@
                             WIDTHS / HEIGHTS
 *********************************************************************************************************************/
 table                                      {  min-width:960px;  width:98%;                                           }
-.section                                   {  width:98%; min-width:1000px; margin:14px auto; padding:0;
+.section                                   {  width:98%; min-width:1000px; max-width: 1200px; margin:14px auto; padding:0;
                                               border-radius:10px;
                                               background: var(--surface);
                                               border: 1px solid #1f1f1f;
@@ -911,7 +911,7 @@ select option                              { color: var(--text); background: var
 .site_header_sticky                        { position: sticky; top: 0; z-index: 100;
                                              display: flex !important; flex-direction: row;
                                              align-items: center !important; gap: 14px;
-                                             padding: 4px 14px;
+                                             padding: 4px max(14px, calc((100% - 1200px) / 2));
                                              background: var(--bg);
                                              border-bottom: 1px solid #1f1f1f;
                                              box-shadow: 0 6px 18px rgba(0,0,0,0.55),
@@ -1164,8 +1164,10 @@ details.collapsible.section                { position: relative;                
 /* Both grids now have the same column count and the same cell-content
    shape (e.g. "F♯(9)"), so they read with one font size and one row
    height across the board. */
-#chord_grid tr, #scale_grid tr             { height: 26px;                                                            }
-#chord_grid td, #scale_grid td             { font-size: 0.85em;                                                       }
+#chord_grid tr, #scale_grid tr             { height: 20px;                                                            }
+#chord_grid td, #scale_grid td             { font-size: 0.78em; padding: 0 4px;                                       }
+#chord_grid td.cg_chord_label > a,
+#scale_grid td.cg_chord_label > a          { padding: 2px 6px;                                                         }
 /* Compact-mode toggle button: lives in each grid section's header before
    the Key picker. Clicking it flips between full-grid and stacked-cell
    modes — icon swaps to mirror the action available on next click. */
