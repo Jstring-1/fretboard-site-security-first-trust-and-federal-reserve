@@ -1102,8 +1102,6 @@
       + (idAttr ? ' id="' + idAttr + '"' : '') + '>';
     h += '<summary class="qp_summary">';
     h +=   '<span class="qp_summary_title">Chord &amp; Scale Picks</span>';
-    h +=   '<span class="qp_summary_hint">click to '
-       +   (qpOpen ? 'collapse' : 'expand') + '</span>';
     h += '</summary>';
     h += '<div class="qp_buckets">';
     // Chord bucket (left)
