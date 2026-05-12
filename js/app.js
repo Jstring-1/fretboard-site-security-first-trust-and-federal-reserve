@@ -881,7 +881,43 @@
     x.url_z = 'z=' + x.z + '&';
 
     x._self = '?';
-    x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z + x.url_s + x.url_pk;
+    // Base href used by every chord/scale chip link (callers append
+    // hl=…). Build it from the CURRENT URL params so persistence-only
+    // settings — collapsed-section list (c), display mode (disp),
+    // instrument (inst), qp/id closed lists (qpc/idc), progressions
+    // (prog/pmode/tempo), tab capture extras (ext, ik, sort, etc.) —
+    // survive a chip click. Without this, clicking a chord chip in
+    // the fretboard wipes c= and re-opens whatever sections the user
+    // had collapsed.
+    (function () {
+      const cur = new URLSearchParams(window.location.search);
+      // Overwrite the keys that the chord/scale links DO control,
+      // and drop hl entirely so the caller can append fresh.
+      cur.set('k', x.k);
+      cur.set('x', x.url_notes);
+      cur.set('y', x.y);
+      cur.set('z', x.z);
+      cur.delete('hl');
+      // s and pk get serialized by their own helpers (url_s / url_pk
+      // are pre-built '&'-terminated strings). Drop the corresponding
+      // keys from `cur` so the canonical order is preserved when we
+      // splice them back in.
+      cur.delete('s');
+      cur.delete('s1'); cur.delete('s2'); cur.delete('s3');
+      cur.delete('s4'); cur.delete('s5'); cur.delete('s6');
+      cur.delete('s7'); cur.delete('s8');
+      cur.delete('pk');
+      // Build the canonicalised tail (everything except the six keys
+      // already covered by url_k/url_x/url_y/url_z/url_s/url_pk).
+      const tail = canonicalQS(cur).split('&').filter(function (kv) {
+        if (!kv) return false;
+        const k = kv.split('=')[0];
+        return k !== 'k' && k !== 'x' && k !== 'y' && k !== 'z';
+      });
+      const tailStr = tail.length ? tail.join('&') + '&' : '';
+      x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z
+                     + x.url_s + x.url_pk + tailStr;
+    })();
 
     // ---- Unlinked mode + per-section overrides ---------------------------
     // ?u=1 flips the page into "each section drives its own state" mode.
