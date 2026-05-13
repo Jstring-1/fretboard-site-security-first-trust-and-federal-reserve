@@ -5380,9 +5380,9 @@
   }
   function injectDragHandles() {
     _sectionEls().forEach(function (sec) {
-      const actions = sec.querySelector(':scope > .section_actions');
-      if (!actions) return;
-      if (actions.querySelector('.section_drag')) return;
+      const summary = sec.querySelector(':scope > summary');
+      if (!summary) return;
+      if (summary.querySelector(':scope > .section_drag')) return;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'section_drag';
@@ -5390,8 +5390,15 @@
       btn.setAttribute('aria-label', 'Drag to reorder section');
       btn.setAttribute('title', 'Drag to reorder section');
       btn.textContent = '⋮⋮';
-      // Drag handle goes FIRST so it sits left of Print / ?.
-      actions.insertBefore(btn, actions.firstChild);
+      // Inside summary so it stays visible when the section is
+      // collapsed (the rest of details > content is display:none).
+      // First child = leftmost. Clicks on the handle must NOT toggle
+      // the details — click handler below preventDefaults.
+      summary.insertBefore(btn, summary.firstChild);
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      });
     });
   }
   let _dragSourceEl = null;
@@ -5981,7 +5988,6 @@
       const enabled = !!hlVal && hlVal !== 'nothing';
       const dis = enabled ? '' : ' disabled';
       return '<div class="semi_shift_bar">'
-           +   '<span class="semi_shift_label">Shift</span>'
            +   '<button type="button" class="semi_shift_btn" data-shift="-1" data-section="'
            +     escAttr(sectionId) + '"' + dis
            +     ' title="Shift highlighted notes down 1 semitone">◀</button>'
@@ -6033,24 +6039,10 @@
     function buildHtml(xs, sectionId) {
 
     // Chord ID strip is now driven by the hl (color highlight) set,
-    // not the legacy pk yellow-ring set. The <details> wrapper is
-    // gone too — the strip renders inline below the shift bar.
-    function idClearHtml() {
-      const href = buildHlHref([]);
-      return '<a class="identify_clear_btn" href="' + escHtml(href)
-        +    '" data-section="' + sectionId
-        +    '" title="Clear highlighted notes">Clear</a>';
-    }
-    // Header that sits at the top of the strip — Chord ID label is
-    // gone (the section heading goes away too); we just expose the
-    // ? help button and the Clear pill, right-justified.
-    function headerBtnsHtml(showClear) {
-      return '<span class="identify_btns">'
-           +   (showClear ? idClearHtml() : '')
-           +   '<button type="button" class="section_help" data-help="chord_id"'
-           +     ' aria-label="About Chord ID">?</button>'
-           + '</span>';
-    }
+    // not the legacy pk yellow-ring set. The <details> wrapper, the
+    // Clear text, and the ? help link have all been removed — the
+    // strip renders just the readout + suggestion chips.
+    function headerBtnsHtml(_showClear) { return ''; }
 
     const hlArr = hlStrToArr(xs.hl);
     let html;
@@ -6058,7 +6050,6 @@
       const rem = 3 - hlArr.length;
       html = '<div class="identify_strip identify_hint">'
            + headerBtnsHtml(hlArr.length > 0)
-           + '<span class="identify_label">Identify:</span> '
            + 'highlight ' + (hlArr.length === 0 ? '3 or more' : (rem + ' more'))
            + ' note' + (rem === 1 ? '' : 's')
            + ' (click a fret cell, a piano key, or a note button) to identify a chord '
@@ -6153,22 +6144,18 @@
         + '<div class="identify_strip">'
         + headerBtnsHtml(true)
         + '  <div class="identify_head">'
-        + '    <span class="identify_label">Identify:</span>'
-        + '    <span class="identify_picks">notes: ' + escHtml(noteStr) + '</span>'
+        + '    <span class="identify_picks">' + escHtml(noteStr) + '</span>'
         + '    <span class="identify_filter">' + inKeyPill + '</span>'
         + '  </div>'
         + '  <div class="identify_row">'
-        + '    <span class="identify_bucket_label">Exact</span>'
         + '    <span class="identify_chips">' + chipsHtml(buckets.exact) + '</span>'
         + '  </div>'
         + '  <div class="identify_row">'
-        + '    <span class="identify_bucket_label">Contains</span>'
         + '    <span class="identify_chips">'
         +        chipsHtml(buckets.subset, function (it) { return it.name; })
         + '    </span>'
         + '  </div>'
         + '  <div class="identify_row">'
-        + '    <span class="identify_bucket_label">Could be (+ extras)</span>'
         + '    <span class="identify_extras_toggle">' + extrasPills + '</span>'
         + '    <span class="identify_chips">'
         +        chipsHtml(buckets.superset, function (it) { return it.name; })

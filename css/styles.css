@@ -1095,16 +1095,21 @@ details.collapsible.section                { position: relative;                
 @media print { .section_actions            { display: none !important; }                                               }
 
 /* Drag handle that lets the user re-order top-level sections.
-   Sits at the left of each section's actions cluster (⋮⋮ Print ?).
-   Browsers fire the dragstart only when the source has
-   draggable="true" — set on the button itself in JS. */
-.section_drag                              { background: transparent; border: 1px solid rgba(255,255,255,0.25);
+   Lives inside the <summary> (first child) so it remains visible
+   even when the section is collapsed. Anchored at the left edge,
+   centered vertically in the summary bar. */
+.section_drag                              { position: absolute; top: 50%; left: 10px;
+                                             transform: translateY(-50%);
+                                             background: transparent; border: 1px solid rgba(255,255,255,0.25);
                                              color: rgba(255,255,255,0.55);
                                              border-radius: 4px; padding: 1px 5px; cursor: grab;
                                              font: 600 0.95em var(--font); line-height: 1;
-                                             letter-spacing: -2px;                                                      }
+                                             letter-spacing: -2px; z-index: 3;                                          }
 .section_drag:hover                        { color: #fff; border-color: rgba(255,255,255,0.6);                          }
 .section_drag:active                       { cursor: grabbing;                                                          }
+/* Push the summary's title rightward so it doesn't collide with the
+   drag handle pinned to the left edge. */
+details.collapsible > summary              { padding-left: 36px;                                                       }
 .section_dragging                          { opacity: 0.4;                                                              }
 .section_drop_before                       { box-shadow: 0 -3px 0 0 var(--accent-hi, #ffeb00) inset;                    }
 .section_drop_after                        { box-shadow: 0 3px 0 0 var(--accent-hi, #ffeb00) inset;                     }
@@ -1446,14 +1451,26 @@ details.collapsible.section                { position: relative;                
 
 .identify_strip                            { position: relative; background: rgba(255,255,255,0.04); border-radius: 6px;
                                              padding: 10px 14px; font-size: 0.9em; line-height: 1.45;                }
+/* Strip the boxed-button look from Clear and ? inside the chord-ID
+   strip — they're plain clickable text now. */
+.identify_strip .identify_btns .identify_clear_btn,
+.identify_strip .identify_btns .section_help
+                                           { background: transparent !important; border: none !important;
+                                             color: var(--muted) !important;
+                                             padding: 0 4px !important;
+                                             width: auto !important; height: auto !important;
+                                             font: 600 0.8em var(--font);
+                                             letter-spacing: 0; line-height: 1;
+                                             text-decoration: underline; cursor: pointer;                            }
+.identify_strip .identify_btns .identify_clear_btn:hover,
+.identify_strip .identify_btns .section_help:hover
+                                           { color: var(--text) !important; background: transparent !important;       }
 .identify_hint                             { color: var(--muted); font-style: italic;                                }
 .identify_hint .identify_count             { color: #ffeb00;                                                          }
 .identify_label                            { font: 600 0.78em var(--font); letter-spacing: 0.06em;
                                              text-transform: uppercase; color: var(--muted); margin-right: 8px;       }
 .identify_head                             { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-                                             margin-bottom: 8px; padding-bottom: 6px;
-                                             padding-right: 110px;  /* reserve space for in-strip arrows + clear */
-                                             border-bottom: 1px solid rgba(255,255,255,0.08);                         }
+                                             margin-bottom: 4px;                                                       }
 .identify_picks                            { color: var(--text); font-weight: 600;                                    }
 .identify_clear                            { color: var(--muted); font-size: 0.85em;
                                              text-decoration: underline;                                              }
