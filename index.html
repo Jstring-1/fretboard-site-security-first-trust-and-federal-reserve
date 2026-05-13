@@ -135,19 +135,19 @@
 <!-- Styles + scripts. defer=async-download, in-order execution after DOM
      parse — same effect as the old "load at end of body" trick without
      the layout reflow. -->
-<link rel="stylesheet" href="css/styles.css?v=20260513.0007">
-<link rel="stylesheet" href="css/tab.css?v=20260513.0007">
+<link rel="stylesheet" href="css/styles.css?v=20260513.0011">
+<link rel="stylesheet" href="css/tab.css?v=20260513.0011">
 <!-- Tone.js — polyphonic sampler + synth + FX rack. Optional: if the
      CDN is unreachable, app.js falls back to its built-in triangle synth. -->
 <script defer src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
-<script defer src="js/data.js?v=20260513.0007"></script>
-<script defer src="js/chord_lookup.js?v=20260513.0007"></script>
-<script defer src="js/sortable.js?v=20260513.0007"></script>
-<script defer src="js/app.js?v=20260513.0007"></script>
-<script defer src="js/chord_boxes.js?v=20260513.0007"></script>
-<script defer src="js/tab.js?v=20260513.0007"></script>
-<script defer src="js/features.js?v=20260513.0007"></script>
-<script defer src="js/sheetmusic.js?v=20260513.0007"></script>
+<script defer src="js/data.js?v=20260513.0011"></script>
+<script defer src="js/chord_lookup.js?v=20260513.0011"></script>
+<script defer src="js/sortable.js?v=20260513.0011"></script>
+<script defer src="js/app.js?v=20260513.0011"></script>
+<script defer src="js/chord_boxes.js?v=20260513.0011"></script>
+<script defer src="js/tab.js?v=20260513.0011"></script>
+<script defer src="js/features.js?v=20260513.0011"></script>
+<script defer src="js/sheetmusic.js?v=20260513.0011"></script>
 </head>
 <body>
 
@@ -163,6 +163,7 @@
      tuning indicator now lives in the Fretboard section header. -->
 <header id="site_header" class="site_header_sticky">
   <span id="display_mode_group" class="display_mode_group" role="group" aria-label="Show notes and/or degrees">
+    <button type="button" class="display_mode_btn" data-display="none" title="Hide both note names and degrees" aria-label="Hide note names and degrees">⊘</button>
     <button type="button" class="display_mode_btn" data-display="notes" title="Show note names only">A</button>
     <button type="button" class="display_mode_btn" data-display="degrees" title="Show degrees only">1</button>
     <button type="button" class="display_mode_btn" data-display="both" title="Show notes and degrees (default)">A1</button>
@@ -333,7 +334,7 @@
   <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
   <a href="#" id="reset_section_order" style="display:none">Reset section order</a>
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260512.2122</div>
+  <div id="build_num">20260512.2133</div>
 </footer>
 
 </body>

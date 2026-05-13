@@ -375,7 +375,7 @@
     display_mode: {
       url:    'disp', ls: 'sf_display_mode',
       parse:  function (v) { v = String(v || '').toLowerCase();
-                              return (v === 'notes' || v === 'degrees') ? v : 'both'; },
+                              return (v === 'notes' || v === 'degrees' || v === 'none') ? v : 'both'; },
       lsFmt:  function (v) { return v === 'both' ? '' : v; },
       urlFmt: function (v) { return v === 'both' ? '' : v; },
       def:    'both',
@@ -4704,6 +4704,27 @@
     let _norm = search;
     try {
       const _p = new URLSearchParams(String(search || '').replace(/^\?/, ''));
+      // BEFORE canonicalising, override the c= param (collapsed
+      // sections) with what's currently in the DOM. This is the last
+      // line of defense against stale collapse state: the <details>
+      // toggle event is async, so callers that snapshot
+      // window.location.search before the event has fired could
+      // otherwise navigate with an out-of-date c=. Also sync LS for
+      // each section so applyCollapseFromUrl's LS fallback can't
+      // re-close a section the user has open.
+      // Skip on bare-clear navigations (site_clear) — those want a
+      // truly empty URL.
+      const _domSections = document.querySelectorAll('details.collapsible');
+      if (_domSections.length && _norm !== '?' && _norm !== '') {
+        const domClosed = [];
+        _domSections.forEach(function (d) {
+          const open = !!d.open;
+          if (!open) domClosed.push(d.id.replace('section_', ''));
+          try { window.localStorage.setItem('sf_collapse_' + d.id, open ? 'open' : 'closed'); } catch (e) {}
+        });
+        if (domClosed.length) _p.set('c', domClosed.join(','));
+        else _p.delete('c');
+      }
       const _qs = canonicalQS(_p);
       _norm = _qs ? '?' + _qs : '?';
     } catch (_) {}
@@ -5114,11 +5135,26 @@
           }
         }
       }
-      // Site-wide Clear: navigate to a truly bare URL — skip the
-      // PRESERVE merge so c=, disp, inst, qpc, idc, sort, ord, etc.
-      // all get wiped. Anything that still wants partial-clear can
-      // use its own link with a normal href.
+      // Site-wide Clear: navigate to a truly bare URL AND wipe every
+      // app-owned localStorage key (every key prefixed with "sf_").
+      // Skips the PRESERVE merge so c=, disp, inst, qpc, idc, sort,
+      // ord, etc. all reset. Anything that still wants partial-clear
+      // can use its own link with a normal href.
       if (a.id === 'site_clear') {
+        try {
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.indexOf('sf_') === 0) keys.push(k);
+          }
+          keys.forEach(function (k) { localStorage.removeItem(k); });
+        } catch (_) {}
+        // Open every collapsible BEFORE navigating, so applyState's
+        // applyCollapseFromUrl doesn't pull a stale value from the
+        // navigateTo defensive DOM-sync pass.
+        document.querySelectorAll('details.collapsible').forEach(function (d) {
+          d.setAttribute('open', '');
+        });
         navigateTo(url.search || '?');
         return;
       }
@@ -5467,11 +5503,21 @@
 
     document.body.addEventListener('dragover', function (e) {
       if (!_dragSourceEl) return;
-      const target = e.target.closest && e.target.closest('details.collapsible.section');
-      if (!target || target === _dragSourceEl) return;
-      e.preventDefault();   // allow drop
+      // ALWAYS preventDefault during a section drag, even when the
+      // cursor isn't over a valid target right this moment. Without
+      // this, the browser would reject the drop the instant the
+      // cursor drifts off a section (or onto a non-section element
+      // like the body padding) — and the drop event would never fire.
+      e.preventDefault();
       try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
-      // Cursor in the top half → drop ABOVE target; bottom half → BELOW.
+      const target = e.target.closest && e.target.closest('details.collapsible.section');
+      if (!target || target === _dragSourceEl) {
+        _sectionEls().forEach(function (s) {
+          s.classList.remove('section_drop_before');
+          s.classList.remove('section_drop_after');
+        });
+        return;
+      }
       const r = target.getBoundingClientRect();
       const above = (e.clientY - r.top) < (r.height / 2);
       _sectionEls().forEach(function (s) {
@@ -5487,9 +5533,9 @@
 
     document.body.addEventListener('drop', function (e) {
       if (!_dragSourceEl) return;
+      e.preventDefault();
       const target = e.target.closest && e.target.closest('details.collapsible.section');
       if (!target || target === _dragSourceEl) return;
-      e.preventDefault();
       const r = target.getBoundingClientRect();
       const above = (e.clientY - r.top) < (r.height / 2);
       if (above) target.parentNode.insertBefore(_dragSourceEl, target);

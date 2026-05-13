@@ -683,6 +683,13 @@ details.collapsible > summary { cursor: default; }
    show both. */
 body[data-display="notes"] .disp_deg                      { display: none !important;                                  }
 body[data-display="degrees"] .disp_note                   { display: none !important;                                  }
+/* "none" mode — hide BOTH note names and degrees everywhere. Lets
+   the user practice "what's this fret?" / "what degree is this?" by
+   running with a blank board. */
+body[data-display="none"] .disp_note,
+body[data-display="none"] .disp_deg                       { display: none !important;                                  }
+body[data-display="none"] .prog_bar_chord_row,
+body[data-display="none"] .prog_bar_degree_select         { display: none !important;                                  }
 /* Progression bars: degree dropdown is "the degree", the inline
    chord row (note + voicing) is "the note". */
 body[data-display="notes"] .prog_bar_degree_select        { display: none !important;                                  }
@@ -694,6 +701,10 @@ body[data-display="degrees"] .prog_bar_chord_row          { display: none !impor
   body[data-display="notes"] .disp_deg                    { display: none !important;                                  }
   body[data-display="degrees"] .prog_bar_chord_row,
   body[data-display="degrees"] .disp_note                 { display: none !important;                                  }
+  body[data-display="none"]   .prog_bar_chord_row,
+  body[data-display="none"]   .prog_bar_degree_select,
+  body[data-display="none"]   .disp_note,
+  body[data-display="none"]   .disp_deg                   { display: none !important;                                  }
 }
 /* Keyboard's white / black key cells naturally show only the note
    label; in "both" or "notes" mode keep that look (hide the injected
