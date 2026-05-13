@@ -881,43 +881,7 @@
     x.url_z = 'z=' + x.z + '&';
 
     x._self = '?';
-    // Base href used by every chord/scale chip link (callers append
-    // hl=…). Build it from the CURRENT URL params so persistence-only
-    // settings — collapsed-section list (c), display mode (disp),
-    // instrument (inst), qp/id closed lists (qpc/idc), progressions
-    // (prog/pmode/tempo), tab capture extras (ext, ik, sort, etc.) —
-    // survive a chip click. Without this, clicking a chord chip in
-    // the fretboard wipes c= and re-opens whatever sections the user
-    // had collapsed.
-    (function () {
-      const cur = new URLSearchParams(window.location.search);
-      // Overwrite the keys that the chord/scale links DO control,
-      // and drop hl entirely so the caller can append fresh.
-      cur.set('k', x.k);
-      cur.set('x', x.url_notes);
-      cur.set('y', x.y);
-      cur.set('z', x.z);
-      cur.delete('hl');
-      // s and pk get serialized by their own helpers (url_s / url_pk
-      // are pre-built '&'-terminated strings). Drop the corresponding
-      // keys from `cur` so the canonical order is preserved when we
-      // splice them back in.
-      cur.delete('s');
-      cur.delete('s1'); cur.delete('s2'); cur.delete('s3');
-      cur.delete('s4'); cur.delete('s5'); cur.delete('s6');
-      cur.delete('s7'); cur.delete('s8');
-      cur.delete('pk');
-      // Build the canonicalised tail (everything except the six keys
-      // already covered by url_k/url_x/url_y/url_z/url_s/url_pk).
-      const tail = canonicalQS(cur).split('&').filter(function (kv) {
-        if (!kv) return false;
-        const k = kv.split('=')[0];
-        return k !== 'k' && k !== 'x' && k !== 'y' && k !== 'z';
-      });
-      const tailStr = tail.length ? tail.join('&') + '&' : '';
-      x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z
-                     + x.url_s + x.url_pk + tailStr;
-    })();
+    x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z + x.url_s + x.url_pk;
 
     // ---- Unlinked mode + per-section overrides ---------------------------
     // ?u=1 flips the page into "each section drives its own state" mode.
@@ -5124,7 +5088,26 @@
           }
         }
       }
-      navigateTo(url.search || '?');
+      // Merge persistence-only params (collapsed sections, display
+      // mode, instrument, qp/id closed lists, progressions, sort,
+      // etc.) from the CURRENT URL into the navigation target. The
+      // chip's href only carries state-driving keys (k/x/y/z/s/pk +
+      // hl); everything else lives in window.location and must be
+      // folded in fresh at click time — NOT baked into the href at
+      // render time, because params like c= change every time the
+      // user opens/closes a section.
+      const PRESERVE = ['c', 'disp', 'inst', 'qpc', 'idc',
+                        'prog', 'pmode', 'tempo',
+                        'sort', 'td', 'fc', 'fcp', 'ext', 'ik', 'cmp'];
+      const target = new URLSearchParams((url.search || '').replace(/^\?/, ''));
+      const cur    = new URLSearchParams(window.location.search);
+      PRESERVE.forEach(function (k) {
+        if (target.has(k)) return;        // href already set this key
+        if (!cur.has(k))   return;        // nothing to carry over
+        cur.getAll(k).forEach(function (v) { target.append(k, v); });
+      });
+      const qs = canonicalQS(target);
+      navigateTo(qs ? '?' + qs : '?');
     });
   }
 
@@ -5765,6 +5748,73 @@
     return '?' + canonicalQS(p);
   }
 
+  // ◀ / ▶ semitone-shift bar — sits between the fretboard/keyboard and
+  // the Chord ID strip. Shifts BOTH the colored hl highlights (by
+  // bumping the site key k by ±1 semitone, which moves every degree
+  // up/down the neck) AND the yellow pk picks (note-by-note).
+  function renderShiftBars(x) {
+    const PCS = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+    const FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
+    function toSharp(n) {
+      const norm = bToFlat(sharpToHash(String(n)));
+      return FLAT_TO_SHARP[norm] || norm;
+    }
+    function shiftHtml(sectionId) {
+      const hasHl = String(x.hl || '').trim().length > 0;
+      const pkCount = String(x.pk || '').split(' ').filter(Boolean).length;
+      const enabled = hasHl || pkCount > 0;
+      const dis = enabled ? '' : ' disabled';
+      return '<div class="semi_shift_bar">'
+           +   '<span class="semi_shift_label">Shift</span>'
+           +   '<button type="button" class="semi_shift_btn" data-shift="-1" data-section="'
+           +     escAttr(sectionId) + '"' + dis
+           +     ' title="Shift highlighted notes down 1 semitone">◀</button>'
+           +   '<button type="button" class="semi_shift_btn" data-shift="1" data-section="'
+           +     escAttr(sectionId) + '"' + dis
+           +     ' title="Shift highlighted notes up 1 semitone">▶</button>'
+           + '</div>';
+    }
+    const fbEl = document.getElementById('fb_shift_root');
+    const kbEl = document.getElementById('kb_shift_root');
+    if (fbEl) fbEl.innerHTML = shiftHtml('section_2');
+    if (kbEl) kbEl.innerHTML = shiftHtml('section_4');
+
+    // One-shot click delegate at body level — handles both bars.
+    if (!document.body._semiShiftBound) {
+      document.body._semiShiftBound = true;
+      document.body.addEventListener('click', function (e) {
+        const btn = e.target.closest && e.target.closest('.semi_shift_btn');
+        if (!btn || btn.disabled) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = parseInt(btn.getAttribute('data-shift'), 10) || 0;
+        const sec   = btn.getAttribute('data-section');
+        // Bump the site key by ±1 semitone (sharp form). This shifts
+        // every colored hl degree up/down the neck without touching
+        // the hl param itself — the degrees stay the same relative
+        // to the new key, but their absolute fretboard positions
+        // move chromatically.
+        const params = new URLSearchParams(window.location.search);
+        const curK = params.get('k') || (window.SF_X && window.SF_X.k) || 'C';
+        const ki = PCS.indexOf(toSharp(curK));
+        if (ki >= 0) params.set('k', PCS[(ki + delta + 12) % 12]);
+        // Also shift the section's pk picks (yellow ring) by the
+        // same amount, so the chord-ID set moves with the highlights.
+        const pkArr  = readPkArrForSection(sec);
+        const pkNext = pkArr.map(function (n) {
+          const i = PCS.indexOf(toSharp(n));
+          return i < 0 ? n : PCS[(i + delta + 12) % 12];
+        });
+        params.delete('pk');
+        if (pkNext.length) {
+          params.set('pk', pkNext.map(function (n) { return urlNote(n); }).join(''));
+        }
+        const qs = canonicalQS(params);
+        navigateTo(qs ? '?' + qs : '?');
+      });
+    }
+  }
+
   function renderIdentifyStrips(xFB, xKB) {
     const fbHost = document.getElementById('fb_identify_root');
     const kbHost = document.getElementById('kb_identify_root');
@@ -5779,18 +5829,11 @@
     // section ids that should render collapsed.
     const idClosed = getSetting('id_closed') || [];
     const idOpen = idClosed.indexOf(sectionId) === -1;
-    // ← / → buttons that transpose every pick by ±1 semitone, sliding
-    // the yellow .note_pk highlights up or down the neck.
-    function idArrowsHtml() {
-      const pkCount = String(xs.pk || '').split(' ').filter(function (v) { return v.length; }).length;
-      const dis = pkCount === 0 ? ' disabled' : '';
-      return '<button type="button" class="identify_shift" data-section="' + sectionId
-        +    '" data-shift="-1"' + dis
-        +    ' title="Shift picks down 1 semitone (←)">◀</button>'
-        +    '<button type="button" class="identify_shift" data-section="' + sectionId
-        +    '" data-shift="1"' + dis
-        +    ' title="Shift picks up 1 semitone (→)">▶</button>';
-    }
+    // (Arrows that used to live here have moved out of the Chord ID
+    // strip and now sit in their own bar between the fretboard and
+    // the strip — see renderShiftBars below. The new bar shifts BOTH
+    // pk picks (yellow ring) AND hl highlights (colored degrees) by
+    // ±1 semitone.)
     // Clear control — anchor link (so it goes through the proven link
     // interceptor + anchor-scroll path) styled to match the toggle/shift
     // pills. Only meaningful once chord results are showing (≥3 picks).
@@ -5835,7 +5878,6 @@
            + ' fret cell' + (rem === 1 ? '' : 's') + ' or piano key'
            + (rem === 1 ? '' : 's') + ' to identify a chord '
            + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
-           + '<span class="identify_btns identify_btns_inline">' + idArrowsHtml() + '</span>'
            + '</div>';
     } else {
       const selMask = pkSetToMask(xs._pk_set);
@@ -5913,7 +5955,6 @@
         +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
       html = ''
         + '<div class="identify_strip">'
-        + '<span class="identify_btns">' + idArrowsHtml() + '</span>'
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
         + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
@@ -5953,30 +5994,6 @@
       host._extrasBound = true;
       const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
-        // ← / → arrows: chromatically shift every pick in this section
-        // by ±1 semitone. Yellow .note_pk highlights on the fretboard
-        // slide accordingly because the URL pk= rewrite re-renders.
-        const shiftBtn = e.target.closest && e.target.closest('.identify_shift');
-        if (shiftBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (shiftBtn.disabled) return;
-          const sec   = shiftBtn.getAttribute('data-section');
-          const delta = parseInt(shiftBtn.getAttribute('data-shift'), 10) || 0;
-          const PCS   = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
-          const cur   = readPkArrForSection(sec);
-          const next  = cur.map(function (n) {
-            const norm = bToFlat(sharpToHash(n));
-            const FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
-            const sharp = FLAT_TO_SHARP[norm] || norm;
-            const i = PCS.indexOf(sharp);
-            return i < 0 ? sharp : PCS[(i + delta + 12) % 12];
-          });
-          const href = buildPkHref(next, sec);
-          history.replaceState(null, '', window.location.pathname + href);
-          applyState();
-          return;
-        }
         // (Chord ID on/off toggle button removed — Chord ID is always on.
         // The <details> wrapper still lets users minimize the strip; that
         // open/closed state is persisted via the 'toggle' listener wired
@@ -6414,6 +6431,7 @@
       // so its degree labels reflect the new key.
       window.SF_TabCapture.refresh();
     }
+    renderShiftBars(x);             // ◀ / ▶ semitone shift bar above each Chord ID strip
     renderIdentifyStrips(xFB, xKB); // chord-identify strips below fretboard + keyboard
     applyPrintColors();
 

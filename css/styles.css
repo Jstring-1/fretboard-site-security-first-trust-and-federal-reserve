@@ -1405,6 +1405,23 @@ details.collapsible.section                { position: relative;                
 .identify_shift[disabled]:hover            { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.55); }
 @media print { .identify_btns              { display: none !important; }                                               }
 
+/* Semitone shift bar — lives between the fretboard/keyboard and the
+   Chord ID strip. Bumps the site key (and the section's pk picks)
+   by ±1 semitone, so every colored degree highlight and every
+   yellow ring slides up/down the neck together. */
+.semi_shift_bar                            { display: flex; align-items: center; justify-content: center;
+                                             gap: 8px; padding: 6px 14px;                                              }
+.semi_shift_label                          { font: 600 0.75em var(--font); letter-spacing: 0.08em;
+                                             text-transform: uppercase; color: var(--muted);                          }
+.semi_shift_btn                            { padding: 2px 12px; border-radius: 12px;
+                                             border: 1px solid rgba(255,255,255,0.35);
+                                             background: rgba(255,255,255,0.08); color: #fff;
+                                             font: 600 0.85em var(--font); cursor: pointer; line-height: 1;            }
+.semi_shift_btn:hover                      { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
+.semi_shift_btn[disabled]                  { opacity: 0.35; cursor: default;                                          }
+.semi_shift_btn[disabled]:hover            { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.35); }
+@media print { .semi_shift_bar             { display: none !important; }                                              }
+
 .identify_strip                            { position: relative; background: rgba(255,255,255,0.04); border-radius: 6px;
                                              padding: 10px 14px; font-size: 0.9em; line-height: 1.45;                }
 .identify_hint                             { color: var(--muted); font-style: italic;                                }
