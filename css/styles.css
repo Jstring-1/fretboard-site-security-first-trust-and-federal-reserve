@@ -1485,23 +1485,22 @@ details.collapsible > summary              { padding-left: 36px;                
                                              text-transform: uppercase; color: var(--muted); min-width: 110px;        }
 .identify_chips                            { display: flex; flex-wrap: wrap; gap: 4px; flex: 1;                       }
 .identify_empty                            { color: var(--muted); font-style: italic;                                  }
-.identify_chip                             { display: inline-block; padding: 2px 8px; font-size: 0.85em;
-                                             color: var(--text) !important; background: rgba(255,255,255,0.05);
-                                             border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
-                                             text-decoration: none; transition: background .12s, border-color .12s; }
-.identify_chip:hover                       { background: rgba(255,235,0,0.15); border-color: #ffeb00;                 }
-/* Engaged state = this chord's notes are currently color-highlighted
-   on the fretboard / keyboard. Blue so it's visually distinct from
-   the yellow chord-ID picks above (which use pk=). Click again to
-   un-highlight (handled in renderIdentifyStrips by swapping the
-   chip's href to one that drops hl=). */
+/* Chord-ID suggestion = plain clickable text. No button chrome.
+   Engaged (currently highlighted on the board) lights up cyan. */
+.identify_chip                             { display: inline-block; padding: 1px 4px; font-size: 0.9em;
+                                             color: var(--text) !important; background: transparent;
+                                             border: none; text-decoration: none;
+                                             cursor: pointer; transition: color .1s;                                   }
+.identify_chip:hover                       { color: var(--accent-hi) !important;                                       }
 a.identify_chip_on,
 a.identify_chip_on:link,
 a.identify_chip_on:visited,
-a.identify_chip_on:active                  { background: var(--accent-hi); color: #001014 !important;
-                                             border-color: var(--accent-hi);
+a.identify_chip_on:active                  { color: var(--accent-hi) !important;
                                              font-weight: 700;                                                          }
-a.identify_chip_on:hover                   { background: #6fffff; border-color: #6fffff;                                }
+a.identify_chip_on:hover                   { color: #6fffff !important;                                                 }
+/* Placeholder strip — reserves vertical space when chord ID has
+   nothing to say yet. Approx height of a 1-row strip. */
+.identify_placeholder                      { min-height: 96px;                                                          }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
 /* In-key filter pill sits inline next to the picks readout so it

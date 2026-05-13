@@ -4559,6 +4559,13 @@
 
   // ---------- auto-submit on any control change ----------
   function gatherAndNavigate() {
+    // Flush collapse state to URL synchronously. Without this, a
+    // form-control change RIGHT AFTER opening a section would
+    // navigate with the pre-toggle c= snapshot and slam the section
+    // shut on the next applyCollapseFromUrl.
+    if (typeof updateClosedInUrl === 'function') {
+      try { updateClosedInUrl(); } catch (_) {}
+    }
     const opt = document.getElementById('options_root');
     const fb = document.getElementById('fretboard_root');
     const parts = [];
@@ -5107,6 +5114,14 @@
           }
         }
       }
+      // Site-wide Clear: navigate to a truly bare URL — skip the
+      // PRESERVE merge so c=, disp, inst, qpc, idc, sort, ord, etc.
+      // all get wiped. Anything that still wants partial-clear can
+      // use its own link with a normal href.
+      if (a.id === 'site_clear') {
+        navigateTo(url.search || '?');
+        return;
+      }
       // Before snapshotting the URL, flush the collapse state to URL
       // synchronously. The <details> toggle event is async; without
       // this flush, clicking a link RIGHT AFTER opening a section
@@ -5363,12 +5378,16 @@
     // then any section not mentioned in saved order (in default order).
     const seen = new Set(want);
     const finalOrder = want.concat(def.filter(function (n) { return !seen.has(n); }));
-    // Re-attach each section to body in finalOrder. appendChild moves
-    // the element if it's already in the DOM, so we don't need to
-    // detach first.
+    // Re-attach each section ahead of the footer in finalOrder.
+    // insertBefore moves the element if it's already in the DOM, so
+    // we don't need to detach first. We anchor on the footer (NOT on
+    // body.appendChild) so the footer stays at the end of the page.
+    const footer = document.getElementById('site_footer');
     finalOrder.forEach(function (num) {
       const el = document.getElementById('section_' + num);
-      if (el) document.body.appendChild(el);
+      if (!el) return;
+      if (footer) document.body.insertBefore(el, footer);
+      else        document.body.appendChild(el);
     });
     updateResetOrderVisibility();
   }
@@ -5485,11 +5504,14 @@
     link._bound = true;
     link.addEventListener('click', function (e) {
       e.preventDefault();
-      // Restore the static index.html order.
+      // Restore the static index.html order, keeping the footer last.
       const def = _defaultSectionOrder();
+      const footer = document.getElementById('site_footer');
       def.forEach(function (num) {
         const el = document.getElementById('section_' + num);
-        if (el) document.body.appendChild(el);
+        if (!el) return;
+        if (footer) document.body.insertBefore(el, footer);
+        else        document.body.appendChild(el);
       });
       setSetting('section_order', []);
       updateResetOrderVisibility();
@@ -6062,13 +6084,9 @@
     const hlArr = hlStrToArr(xs.hl);
     let html;
     if (hlArr.length < 3) {
-      const rem = 3 - hlArr.length;
-      html = '<div class="identify_strip identify_hint">'
-           + headerBtnsHtml(hlArr.length > 0)
-           + 'highlight ' + (hlArr.length === 0 ? '3 or more' : (rem + ' more'))
-           + ' note' + (rem === 1 ? '' : 's')
-           + ' (click a fret cell, a piano key, or a note button) to identify a chord '
-           + '<span class="identify_count">(' + hlArr.length + '/3)</span>'
+      // Placeholder — keeps the strip's vertical space reserved so the
+      // page doesn't jump when chord ID data starts arriving.
+      html = '<div class="identify_strip identify_placeholder">'
            + '</div>';
     } else {
       const selMask = hlArrToMask(hlArr, xs.k);
