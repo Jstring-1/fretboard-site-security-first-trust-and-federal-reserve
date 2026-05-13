@@ -117,13 +117,26 @@
 }
 </script>
 
-<!-- Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-F0MLX7FVSC"></script>
+<!-- Analytics — gtag is deferred until after the window 'load' event
+     so its initial /g/collect POST doesn't race the rest of the boot
+     sequence (which sometimes shows up as a misleading "Fetch failed
+     loading" in the console even though the hit was sent via
+     keepalive). transport_type: 'beacon' forces navigator.sendBeacon,
+     which the browser doesn't surface as a fetch failure when the
+     page is mid-unload. -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-F0MLX7FVSC');
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-F0MLX7FVSC';
+      document.head.appendChild(s);
+      gtag('js', new Date());
+      gtag('config', 'G-F0MLX7FVSC', { transport_type: 'beacon' });
+    }, 0);
+  });
 </script>
 
 <!-- Icons / manifest -->
@@ -135,8 +148,8 @@
 <!-- Styles + scripts. defer=async-download, in-order execution after DOM
      parse — same effect as the old "load at end of body" trick without
      the layout reflow. -->
-<link rel="stylesheet" href="css/styles.css?v=20260513.0015">
-<link rel="stylesheet" href="css/tab.css?v=20260513.0015">
+<link rel="stylesheet" href="css/styles.css?v=20260513.0016">
+<link rel="stylesheet" href="css/tab.css?v=20260513.0016">
 <!-- Tone.js — polyphonic sampler + synth + FX rack. Lazy-loaded on
      first user audio interaction by app.js (loadTone()), not at page
      load: Tone instantiates an AudioContext + a deprecated
@@ -144,14 +157,14 @@
      console with autoplay-policy and deprecation warnings before the
      user has done anything. If the CDN is unreachable when first
      needed, the app falls back to its built-in triangle synth. -->
-<script defer src="js/data.js?v=20260513.0015"></script>
-<script defer src="js/chord_lookup.js?v=20260513.0015"></script>
-<script defer src="js/sortable.js?v=20260513.0015"></script>
-<script defer src="js/app.js?v=20260513.0015"></script>
-<script defer src="js/chord_boxes.js?v=20260513.0015"></script>
-<script defer src="js/tab.js?v=20260513.0015"></script>
-<script defer src="js/features.js?v=20260513.0015"></script>
-<script defer src="js/sheetmusic.js?v=20260513.0015"></script>
+<script defer src="js/data.js?v=20260513.0016"></script>
+<script defer src="js/chord_lookup.js?v=20260513.0016"></script>
+<script defer src="js/sortable.js?v=20260513.0016"></script>
+<script defer src="js/app.js?v=20260513.0016"></script>
+<script defer src="js/chord_boxes.js?v=20260513.0016"></script>
+<script defer src="js/tab.js?v=20260513.0016"></script>
+<script defer src="js/features.js?v=20260513.0016"></script>
+<script defer src="js/sheetmusic.js?v=20260513.0016"></script>
 </head>
 <body>
 
@@ -338,7 +351,7 @@
   <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
   <a href="#" id="reset_section_order" style="display:none">Reset section order</a>
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260513.0916</div>
+  <div id="build_num">20260513.0932</div>
 </footer>
 
 </body>
