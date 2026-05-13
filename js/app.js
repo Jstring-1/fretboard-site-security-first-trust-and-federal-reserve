@@ -1717,7 +1717,7 @@
                  + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escAttr(yTitle)
                  + '" aria-label="Toggle string direction">' + yLabel + '</a></td>';
     const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
-      '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">Custom Tuning: ' + cyoState.toUpperCase() + '</a>' +
+      '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">' + cyoState.toUpperCase() + '</a>' +
       '</td><td id="f0">X</td>'
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
@@ -1810,7 +1810,7 @@
       return a.name.localeCompare(b.name);
     });
     let customLoaderHtml = '<select class="custom_tun_loader" aria-label="Load a preset tuning into custom strings">';
-    customLoaderHtml += '<option value="">Load preset…</option>';
+    customLoaderHtml += '<option value="">Load…</option>';
     for (const t of _customLoaderRows) {
       const lbl = '(' + t.strs + ') ' + t.name + ' — ' + t.notes;
       customLoaderHtml += '<option value="' + escAttr(t.key) + '">' + escHtml(lbl) + '</option>';
@@ -5107,6 +5107,15 @@
           }
         }
       }
+      // Before snapshotting the URL, flush the collapse state to URL
+      // synchronously. The <details> toggle event is async; without
+      // this flush, clicking a link RIGHT AFTER opening a section
+      // would navigate using a stale URL whose c= still listed the
+      // section as closed — and applyCollapseFromUrl on the new URL
+      // would slam the section back shut.
+      if (typeof updateClosedInUrl === 'function') {
+        try { updateClosedInUrl(); } catch (_) {}
+      }
       // Merge persistence-only params (collapsed sections, display
       // mode, instrument, qp/id closed lists, progressions, sort,
       // etc.) from the CURRENT URL into the navigation target. The
@@ -5312,6 +5321,12 @@
         }
       }
       if (isClosed) d.removeAttribute('open'); else d.setAttribute('open', '');
+      // Sync LS to whatever we just resolved. The toggle event would
+      // normally do this, but it fires asynchronously and can lag
+      // behind a follow-up navigation — so if a user opened a section
+      // and immediately clicked a link inside, the next applyState
+      // could re-read a stale LS='closed' and slam the section shut.
+      try { window.localStorage.setItem('sf_collapse_' + d.id, isClosed ? 'closed' : 'open'); } catch (e) {}
     });
     // Clear the guard on the next tick so any user-triggered toggles
     // dispatched after this microtask still write to the URL normally.

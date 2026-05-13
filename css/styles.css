@@ -1098,21 +1098,25 @@ details.collapsible.section                { position: relative;                
    Lives inside the <summary> (first child) so it remains visible
    even when the section is collapsed. Anchored at the left edge,
    centered vertically in the summary bar. */
-.section_drag                              { position: absolute; top: 50%; left: 10px;
+.section_drag                              { position: absolute; top: 50%; left: 8px;
                                              transform: translateY(-50%);
-                                             background: transparent; border: 1px solid rgba(255,255,255,0.25);
-                                             color: rgba(255,255,255,0.55);
-                                             border-radius: 4px; padding: 1px 5px; cursor: grab;
+                                             background: transparent; border: none;
+                                             color: rgba(255,255,255,0.3);
+                                             padding: 1px 14px; cursor: grab;
                                              font: 600 0.95em var(--font); line-height: 1;
                                              letter-spacing: -2px; z-index: 3;                                          }
-.section_drag:hover                        { color: #fff; border-color: rgba(255,255,255,0.6);                          }
+.section_drag:hover                        { color: rgba(255,255,255,0.8);                                              }
 .section_drag:active                       { cursor: grabbing;                                                          }
 /* Push the summary's title rightward so it doesn't collide with the
    drag handle pinned to the left edge. */
 details.collapsible > summary              { padding-left: 36px;                                                       }
 .section_dragging                          { opacity: 0.4;                                                              }
-.section_drop_before                       { box-shadow: 0 -3px 0 0 var(--accent-hi, #ffeb00) inset;                    }
-.section_drop_after                        { box-shadow: 0 3px 0 0 var(--accent-hi, #ffeb00) inset;                     }
+/* Inset box-shadow: positive Y draws the band at the TOP inside the
+   element (light from below), negative Y at the BOTTOM. So
+   drop_before (cursor in top half = land above target) needs Y=+3,
+   and drop_after needs Y=-3. */
+.section_drop_before                       { box-shadow: 0 3px 0 0 var(--accent-hi, #ffeb00) inset;                     }
+.section_drop_after                        { box-shadow: 0 -3px 0 0 var(--accent-hi, #ffeb00) inset;                    }
 @media print { .section_drag               { display: none !important; }                                               }
 
 #reset_section_order                       { display: inline-block; margin: 8px 0 0;
