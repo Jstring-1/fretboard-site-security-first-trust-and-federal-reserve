@@ -324,7 +324,13 @@
     unknown.forEach(function (k) {
       params.getAll(k).forEach(function (v) { out.append(k, v); });
     });
-    return out.toString();
+    // URLSearchParams.toString() percent-encodes commas as %2C, but
+    // commas are legal in query strings (RFC 3986 sub-delims) and
+    // we use them as a separator in our comma-list params (c=, ord=,
+    // hl=, sort=, …). Decode them back for readable, shareable URLs.
+    // None of our param values intentionally contain a literal comma
+    // that needs to stay encoded.
+    return out.toString().replace(/%2C/g, ',');
   }
 
   // ---------- Settings registry (URL > localStorage > default) ----------
@@ -5135,26 +5141,12 @@
           }
         }
       }
-      // Site-wide Clear: navigate to a truly bare URL AND wipe every
-      // app-owned localStorage key (every key prefixed with "sf_").
-      // Skips the PRESERVE merge so c=, disp, inst, qpc, idc, sort,
-      // ord, etc. all reset. Anything that still wants partial-clear
-      // can use its own link with a normal href.
+      // Site-wide Clear: navigate to a truly bare URL — skip the
+      // PRESERVE merge so c=, disp, inst, qpc, idc, sort, ord, etc.
+      // all get wiped from the URL. localStorage is left intact so
+      // the user's section open/close preferences (and other per-
+      // browser settings) survive.
       if (a.id === 'site_clear') {
-        try {
-          const keys = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.indexOf('sf_') === 0) keys.push(k);
-          }
-          keys.forEach(function (k) { localStorage.removeItem(k); });
-        } catch (_) {}
-        // Open every collapsible BEFORE navigating, so applyState's
-        // applyCollapseFromUrl doesn't pull a stale value from the
-        // navigateTo defensive DOM-sync pass.
-        document.querySelectorAll('details.collapsible').forEach(function (d) {
-          d.setAttribute('open', '');
-        });
         navigateTo(url.search || '?');
         return;
       }
@@ -5501,25 +5493,46 @@
       _dragSourceEl = null;
     });
 
+    // Find the section whose rect's vertical range contains clientY.
+    // If the cursor is in a gap between sections (or below the last
+    // one), snap to the nearest section — drop areas are effectively
+    // unbounded vertically, so a drag can land in the empty space
+    // between two sections without losing the drop.
+    function _sectionAtY(clientY) {
+      const sections = _sectionEls().filter(function (s) { return s !== _dragSourceEl; });
+      if (!sections.length) return null;
+      let inside = null;
+      let nearest = null;
+      let nearestDist = Infinity;
+      for (let i = 0; i < sections.length; i++) {
+        const r = sections[i].getBoundingClientRect();
+        if (clientY >= r.top && clientY <= r.bottom) { inside = sections[i]; break; }
+        const d = clientY < r.top ? (r.top - clientY) : (clientY - r.bottom);
+        if (d < nearestDist) { nearestDist = d; nearest = sections[i]; }
+      }
+      return inside || nearest;
+    }
+    function _clearAllDropIndicators() {
+      _sectionEls().forEach(function (s) {
+        s.classList.remove('section_drop_before');
+        s.classList.remove('section_drop_after');
+      });
+    }
+
     document.body.addEventListener('dragover', function (e) {
       if (!_dragSourceEl) return;
       // ALWAYS preventDefault during a section drag, even when the
-      // cursor isn't over a valid target right this moment. Without
-      // this, the browser would reject the drop the instant the
-      // cursor drifts off a section (or onto a non-section element
-      // like the body padding) — and the drop event would never fire.
+      // cursor isn't directly over a section. Without this, the
+      // browser rejects the drop the instant the cursor drifts off
+      // a section (or onto a non-section element like body padding).
       e.preventDefault();
       try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
-      const target = e.target.closest && e.target.closest('details.collapsible.section');
-      if (!target || target === _dragSourceEl) {
-        _sectionEls().forEach(function (s) {
-          s.classList.remove('section_drop_before');
-          s.classList.remove('section_drop_after');
-        });
-        return;
-      }
+      const target = _sectionAtY(e.clientY);
+      if (!target) { _clearAllDropIndicators(); return; }
       const r = target.getBoundingClientRect();
-      const above = (e.clientY - r.top) < (r.height / 2);
+      // Cursor in upper half (or above the section entirely) → drop
+      // BEFORE the section. Lower half (or below it) → drop AFTER.
+      const above = (e.clientY < r.top) || ((e.clientY - r.top) < (r.height / 2));
       _sectionEls().forEach(function (s) {
         if (s === target) {
           s.classList.toggle('section_drop_before', above);
@@ -5534,10 +5547,10 @@
     document.body.addEventListener('drop', function (e) {
       if (!_dragSourceEl) return;
       e.preventDefault();
-      const target = e.target.closest && e.target.closest('details.collapsible.section');
+      const target = _sectionAtY(e.clientY);
       if (!target || target === _dragSourceEl) return;
       const r = target.getBoundingClientRect();
-      const above = (e.clientY - r.top) < (r.height / 2);
+      const above = (e.clientY < r.top) || ((e.clientY - r.top) < (r.height / 2));
       if (above) target.parentNode.insertBefore(_dragSourceEl, target);
       else       target.parentNode.insertBefore(_dragSourceEl, target.nextSibling);
       persistSectionOrderFromDom();
