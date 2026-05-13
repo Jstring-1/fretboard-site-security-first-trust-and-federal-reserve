@@ -135,19 +135,23 @@
 <!-- Styles + scripts. defer=async-download, in-order execution after DOM
      parse — same effect as the old "load at end of body" trick without
      the layout reflow. -->
-<link rel="stylesheet" href="css/styles.css?v=20260513.0014">
-<link rel="stylesheet" href="css/tab.css?v=20260513.0014">
-<!-- Tone.js — polyphonic sampler + synth + FX rack. Optional: if the
-     CDN is unreachable, app.js falls back to its built-in triangle synth. -->
-<script defer src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
-<script defer src="js/data.js?v=20260513.0014"></script>
-<script defer src="js/chord_lookup.js?v=20260513.0014"></script>
-<script defer src="js/sortable.js?v=20260513.0014"></script>
-<script defer src="js/app.js?v=20260513.0014"></script>
-<script defer src="js/chord_boxes.js?v=20260513.0014"></script>
-<script defer src="js/tab.js?v=20260513.0014"></script>
-<script defer src="js/features.js?v=20260513.0014"></script>
-<script defer src="js/sheetmusic.js?v=20260513.0014"></script>
+<link rel="stylesheet" href="css/styles.css?v=20260513.0015">
+<link rel="stylesheet" href="css/tab.css?v=20260513.0015">
+<!-- Tone.js — polyphonic sampler + synth + FX rack. Lazy-loaded on
+     first user audio interaction by app.js (loadTone()), not at page
+     load: Tone instantiates an AudioContext + a deprecated
+     ScriptProcessorNode probe on load, which would otherwise spam the
+     console with autoplay-policy and deprecation warnings before the
+     user has done anything. If the CDN is unreachable when first
+     needed, the app falls back to its built-in triangle synth. -->
+<script defer src="js/data.js?v=20260513.0015"></script>
+<script defer src="js/chord_lookup.js?v=20260513.0015"></script>
+<script defer src="js/sortable.js?v=20260513.0015"></script>
+<script defer src="js/app.js?v=20260513.0015"></script>
+<script defer src="js/chord_boxes.js?v=20260513.0015"></script>
+<script defer src="js/tab.js?v=20260513.0015"></script>
+<script defer src="js/features.js?v=20260513.0015"></script>
+<script defer src="js/sheetmusic.js?v=20260513.0015"></script>
 </head>
 <body>
 
@@ -334,7 +338,7 @@
   <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
   <a href="#" id="reset_section_order" style="display:none">Reset section order</a>
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20260512.2202</div>
+  <div id="build_num">20260513.0916</div>
 </footer>
 
 </body>

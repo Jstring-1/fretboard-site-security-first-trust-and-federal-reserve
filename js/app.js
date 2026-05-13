@@ -106,15 +106,35 @@
   let _toneInstrument = null;
   let _toneInstrumentKey = null;
   let _toneStarted = false;
+  // Lazy-load the Tone.js library on first call. Injecting at this
+  // point — inside a user gesture — keeps the AudioContext / deprecated
+  // ScriptProcessorNode probes off the console until the user
+  // actually needs audio.
+  let _toneLoadingPromise = null;
+  function loadTone() {
+    if (typeof window.Tone !== 'undefined') return Promise.resolve(window.Tone);
+    if (_toneLoadingPromise) return _toneLoadingPromise;
+    _toneLoadingPromise = new Promise(function (resolve) {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/tone@14.7.77/build/Tone.js';
+      s.async = true;
+      s.onload  = function () { resolve(window.Tone || null); };
+      s.onerror = function () { resolve(null); };
+      document.head.appendChild(s);
+    });
+    return _toneLoadingPromise;
+  }
+
   // Lazy-build a Tone.js voice based on the user's preference. Returns
   // a promise that resolves to the instrument node OR null when Tone
   // isn't available / the user chose the built-in fallback. Subsequent
   // calls with the same key reuse the cached node; switching keys
   // disposes the previous one.
   function ensureToneInstrument() {
-    if (typeof window.Tone === 'undefined') return Promise.resolve(null);
     const key = getInstrumentPref();
     if ((TONE_INSTRUMENTS[key] || {}).type === 'fallback') return Promise.resolve(null);
+    return loadTone().then(function (Tone) {
+      if (!Tone) return null;
     const startP = _toneStarted ? Promise.resolve()
                                 : window.Tone.start().then(function () { _toneStarted = true; });
     return startP.then(function () {
@@ -140,8 +160,12 @@
       _toneInstrument = inst;
       _toneInstrumentKey = key;
       return inst;
+    });
     }).catch(function () { return null; });
   }
+  // Warming pre-loads Tone on first user gesture. NOT called at page
+  // load — kept off the boot path so the autoplay-policy + deprecated-
+  // node warnings don't fire until the user actually wants audio.
   function preWarmTone() { ensureToneInstrument(); }
 
   // Play a single MIDI note. Routes through Tone.js when available;
@@ -149,17 +173,23 @@
   function playMidi(m, durSec) {
     if (!audioOn()) return;
     const dur = (typeof durSec === 'number' && durSec > 0) ? durSec : 0.9;
-    if (typeof window.Tone !== 'undefined'
-        && (TONE_INSTRUMENTS[getInstrumentPref()] || {}).type !== 'fallback') {
-      ensureToneInstrument().then(function (inst) {
-        if (!inst) { _playMidiFallback(m, dur); return; }
-        try {
-          const freq = midiToFreq(m);
-          inst.triggerAttackRelease(freq, dur);
-        } catch (_) { _playMidiFallback(m, dur); }
-      });
-      return;
+    const wantsTone = (TONE_INSTRUMENTS[getInstrumentPref()] || {}).type !== 'fallback';
+    if (!wantsTone) { _playMidiFallback(m, dur); return; }
+    // Tone may not be loaded yet on the very first note — kick off the
+    // lazy load via ensureToneInstrument. If the load + AudioContext-
+    // resume haven't finished by the time this returns, play the
+    // triangle fallback so the click feels responsive. Subsequent
+    // notes go through Tone.
+    const inst = (typeof window.Tone !== 'undefined' && _toneInstrument
+                  && _toneInstrumentKey === getInstrumentPref()) ? _toneInstrument : null;
+    if (inst) {
+      try {
+        inst.triggerAttackRelease(midiToFreq(m), dur);
+        return;
+      } catch (_) { /* fall through to fallback */ }
     }
+    // Warm Tone for next time.
+    ensureToneInstrument();
     _playMidiFallback(m, dur);
   }
   function _playMidiFallback(m, dur) {
