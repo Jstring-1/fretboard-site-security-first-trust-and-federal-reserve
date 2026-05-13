@@ -6161,7 +6161,7 @@
         +    (inKeyOnly
               ? 'Showing only chords rooted on ' + xs.k + '. Click to show all.'
               : 'Show only chords rooted on ' + xs.k + '.')
-        +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
+        +    '">' + escHtml(xs.k) + ' root</a>';
       // Notes corresponding to the current hl degrees, anchored on xs.k.
       const tonicPc = NOTE_TO_PC[xs.k];
       const noteStr = (tonicPc == null)
