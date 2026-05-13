@@ -6130,27 +6130,27 @@
     // One-shot click delegate at body level — handles both bars.
     if (!document.body._semiShiftBound) {
       document.body._semiShiftBound = true;
+      const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
       document.body.addEventListener('click', function (e) {
         const btn = e.target.closest && e.target.closest('.semi_shift_btn');
         if (!btn || btn.disabled) return;
         e.preventDefault();
         e.stopPropagation();
         const delta = parseInt(btn.getAttribute('data-shift'), 10) || 0;
-        const sec   = btn.getAttribute('data-section');
-        // Bump the site key by ±1 semitone (sharp form). This shifts
-        // every colored hl degree up/down the neck without touching
-        // the hl param itself — the degrees stay the same relative
-        // to the new key, but their absolute fretboard positions
-        // move chromatically.
-        const params = new URLSearchParams(window.location.search);
-        const curK = params.get('k') || (window.SF_X && window.SF_X.k) || 'C';
-        const ki = PCS.indexOf(toSharp(curK));
-        if (ki >= 0) params.set('k', PCS[(ki + delta + 12) % 12]);
-        // (pk yellow-ring picks are gone; nothing else to shift —
-        // the hl set is degree-relative and rides the key change.)
-        params.delete('pk');
-        const qs = canonicalQS(params);
-        navigateTo(qs ? '?' + qs : '?');
+        // Shift each highlighted DEGREE by ±1 semitone. The site key
+        // stays as the user set it; only the hl set rotates around
+        // the same tonal centre. Visually identical to bumping k
+        // (highlights move chromatically up/down the neck) but the
+        // grids, diatonic chart, and section header stay anchored
+        // on the chosen key.
+        const x = window.SF_X || {};
+        const cur = hlStrToArr(x.hl);
+        const next = cur.map(function (d) {
+          const off = _DEG_OFFSET[d];
+          if (off == null) return d;
+          return DEG_LBL[(off + delta + 12) % 12];
+        });
+        navigateTo(buildHlHref(next));
       });
     }
   }
