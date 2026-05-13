@@ -1093,6 +1093,28 @@ details.collapsible.section                { position: relative;                
                                              display: inline-flex; align-items: center; gap: 6px;
                                              z-index: 2;                                                                }
 @media print { .section_actions            { display: none !important; }                                               }
+
+/* Drag handle that lets the user re-order top-level sections.
+   Sits at the left of each section's actions cluster (⋮⋮ Print ?).
+   Browsers fire the dragstart only when the source has
+   draggable="true" — set on the button itself in JS. */
+.section_drag                              { background: transparent; border: 1px solid rgba(255,255,255,0.25);
+                                             color: rgba(255,255,255,0.55);
+                                             border-radius: 4px; padding: 1px 5px; cursor: grab;
+                                             font: 600 0.95em var(--font); line-height: 1;
+                                             letter-spacing: -2px;                                                      }
+.section_drag:hover                        { color: #fff; border-color: rgba(255,255,255,0.6);                          }
+.section_drag:active                       { cursor: grabbing;                                                          }
+.section_dragging                          { opacity: 0.4;                                                              }
+.section_drop_before                       { box-shadow: 0 -3px 0 0 var(--accent-hi, #ffeb00) inset;                    }
+.section_drop_after                        { box-shadow: 0 3px 0 0 var(--accent-hi, #ffeb00) inset;                     }
+@media print { .section_drag               { display: none !important; }                                               }
+
+#reset_section_order                       { display: inline-block; margin: 8px 0 0;
+                                             font: 0.78em var(--font); color: var(--muted);
+                                             text-decoration: underline; opacity: 0.7;                                  }
+#reset_section_order:hover                 { color: #fff; opacity: 1;                                                   }
+@media print { #reset_section_order        { display: none !important; }                                               }
 /* Build number snugs right under the logo. line-height:1 on both
    #site_title and #build_num kills the descender / leading extra
    space, so the only gap left is the negative margin-top here. */
@@ -1268,10 +1290,10 @@ details.collapsible.section                { position: relative;                
 /* Quick-pick chord + scale link strip above the fretboard / keyboard.
    <details> wrapper for collapse, two side-by-side buckets inside.
    Selected chip mirrors the chord/scale builder grid title-row state. */
-.qp_box                                    { padding: 0 14px 6px; }
+.qp_box                                    { padding: 0 14px 6px; margin-top: 0;                                    }
 .qp_summary                                { cursor: pointer; user-select: none; list-style: none;
                                              display: flex; align-items: center; gap: 8px;
-                                             padding: 2px 4px;
+                                             padding: 0 4px;
                                              font: 600 0.78em var(--font); color: var(--muted);
                                              text-transform: uppercase; letter-spacing: 0.06em;                       }
 .qp_summary::-webkit-details-marker        { display: none;                                                           }
@@ -1321,7 +1343,7 @@ details.collapsible.section                { position: relative;                
 /* Shared All / None row — flex, centred. Inherits .hl_pill styling so the
    buttons match the pill rows above. */
 .opt_row_allnone                           { display: flex; gap: 6px; justify-content: center;
-                                             padding: 4px 14px 0; line-height: 1;                                     }
+                                             padding: 2px 14px 0; line-height: 1;                                     }
 .opt_row_allnone a.hl_pill                 { display: inline-block; padding: 3px 12px; font-size: 0.85em;
                                              color: var(--text) !important; background: rgba(255,255,255,0.05);
                                              border: 1px solid rgba(255,255,255,0.12); border-radius: 4px;
@@ -1355,7 +1377,7 @@ details.collapsible.section                { position: relative;                
 
 /* Click-to-pick highlight for the chord identifier — fluorescent yellow.
    Inset shadow doesn't change cell dimensions (no layout shift). */
-#fretboard td.note_pk                      { box-shadow: inset 0 0 0 3px #ffeb00;                                    }
+/* Yellow-ring pk highlight has been removed. Class no longer styled. */
 #fretboard td[data-note]                   { cursor: pointer;                                                        }
 
 /* Keyboard pick ring uses the same yellow via a dynamic stylesheet rule

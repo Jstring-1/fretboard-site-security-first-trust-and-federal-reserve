@@ -307,7 +307,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'u'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -407,6 +407,16 @@
     id_closed: {
       url:    'idc', ls: 'sf_id_closed',
       parse:  function (v) { return String(v || '').split(',').filter(Boolean); },
+      lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
+      urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
+      def:    [],
+    },
+    // User-customized section order. Comma-list of section numbers
+    // (e.g. "11,2,3,6,9,4,7,8,10" — Progressions moved to top).
+    // Empty / absent = default order (whatever is in index.html).
+    section_order: {
+      url:    'ord', ls: 'sf_section_order',
+      parse:  function (v) { return String(v || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); },
       lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
       urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
       def:    [],
@@ -1755,7 +1765,9 @@
       let nutBg = (x['hl_' + flatToB(nutDeg)] === 'y') ? flatToB(nutDeg) : 'no_highlight';
       const f_cyo = (x.z === 'n') ? 'f_cyo_dark' : 'f_cyo';
       const nutNote = strizzle.toUpperCase();
-      const nutPkCls = (x._pk_set && x._pk_set.has(nutNote)) ? ' note_pk' : '';
+      // pk yellow-ring picks have been retired — clicks now toggle hl,
+      // chord ID reads from hl, and the note_pk class is no longer applied.
+      const nutPkCls = '';
 
       h += '<tr>';
       h += '<td id="' + f_cyo + '"><select class="inputs" name="s' + a + '">';
@@ -1773,7 +1785,7 @@
         let degAtFret = findKey(x._notedegrees, noteAtFret);
         let fbId = (x['hl_' + flatToB(degAtFret)] === 'y') ? flatToB(degAtFret) : 'no_highlight';
         const cls = (b === 1) ? 'nut1' : 'fb_td';
-        const cellPkCls = (x._pk_set && x._pk_set.has(noteAtFret)) ? ' note_pk' : '';
+        const cellPkCls = '';
         h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">'
            + '<span class="disp_note">' + escHtml(noteAtFret) + '</span>'
            + '<span class="disp_deg">(' + escHtml(degAtFret || '') + ')</span>'
@@ -3995,41 +4007,36 @@
       '  Chord ID',
       '  ========',
       '',
-      '  Click-to-pick chord identifier. Tells you what chord(s) the notes',
-      '  you click form — both on the fretboard AND on the keyboard.',
+      '  Tells you what chord(s) the currently HIGHLIGHTED notes form.',
+      '  Anything that adds a note to the color-highlight set feeds it:',
       '',
-      '  How to use:',
-      '    1. Make sure the Chord ID toggle (in this sub-section\'s summary)',
-      '       reads "on". Off = picks ignored.',
-      '    2. Click cells on the fretboard, or keys on the keyboard. Each',
-      '       click adds that note to the picks (yellow). Click again to',
-      '       remove. The "picked: …" line shows the running set.',
-      '    3. Once 3+ notes are picked, suggestion chips appear in three',
-      '       buckets:',
-      '         EXACT — chords whose notes exactly match your picks.',
-      '         CONTAINS — chords that fit inside your picks (you played',
-      '                    extras, but those notes are a chord by themselves).',
-      '         COULD BE (+ extras) — chords your picks are PART of; the +1',
-      '                    / +2 / +All toggle controls how many extra notes',
-      '                    are allowed.',
-      '    4. Click any suggestion chip to highlight that chord across the',
-      '       fretboard / keyboard in the current key\'s degree colours.',
-      '       The chip turns blue while it\'s the active suggestion. Click',
-      '       it again to drop the highlights — your picks stay.',
+      '    • Note buttons in the fretboard/keyboard summary row.',
+      '    • Clicking a fret cell or a piano key (toggles that note).',
+      '    • Chord & Scale Picks chips (one-shot replace).',
+      '    • Chord/Scale builder grid rows.',
+      '',
+      '  Once 3 or more notes are highlighted, suggestion chips appear',
+      '  in three buckets:',
+      '    EXACT — chords whose notes exactly match the highlights.',
+      '    CONTAINS — chords that fit inside the highlights (you have',
+      '               extras, but those notes are a chord by themselves).',
+      '    COULD BE (+ extras) — chords the highlights are PART of; the',
+      '               +1 / +2 / +All toggle controls how many extra',
+      '               notes are allowed.',
+      '',
+      '  Click any chip to highlight that chord across the fretboard /',
+      '  keyboard. The chip turns blue while engaged. Click it again to',
+      '  drop the highlights.',
       '',
       '  Filters:',
-      '    • IN KEY pill — narrows suggestions to chords whose ROOT matches',
-      '      the current key (e.g. key=E shows only E*, F♯=F♯*, …).',
-      '    • +1 / +2 / +All — caps the "could be" bucket\'s extra-notes count.',
+      '    • IN KEY pill — narrows suggestions to chords whose ROOT',
+      '      matches the current key.',
+      '    • +1 / +2 / +All — caps the "could be" bucket\'s extras count.',
       '',
-      '  Navigation buttons (top of the strip):',
-      '    • ◀ / ▶ — shift every pick by one semitone. Useful for sliding a',
-      '      chord shape up or down the neck.',
-      '    • Clear — drop all picks (the yellow notes).',
-      '',
-      '  The site-header Clear pill clears EVERYTHING (highlights + picks).',
-      '  The "None" pill in the fretboard clears only the colored highlights;',
-      '  yellow picks stay.',
+      '  Above the strip:',
+      '    • ◀ / ▶ shift bar — bumps the site key ±1 semitone, sliding',
+      '      every highlight up/down the neck.',
+      '    • Clear (right side of the strip) — drops every highlight.',
       ''
     ].join('\n'),
 
@@ -4616,6 +4623,18 @@
     if (_curPmode) parts.push('pmode=' + encodeURIComponent(_curPmode));
     const _curTempo = _curParams.get('tempo');
     if (_curTempo) parts.push('tempo=' + encodeURIComponent(_curTempo));
+
+    // Carry every persistence-only param: collapsed sections (c),
+    // display mode, instrument, quick-picks closed list, chord-id
+    // closed list, sort, tab-capture extras, section order, etc.
+    // Without these, a form-control change (key picker, tuning
+    // select, …) would strip them — re-opening collapsed sections
+    // and reverting display settings on every navigation.
+    ['c', 'disp', 'inst', 'qpc', 'idc', 'sort', 'td', 'fc', 'fcp',
+     'ext', 'ik', 'cmp', 'ord', 'id', 'idn'].forEach(function (k) {
+      const vals = _curParams.getAll(k);
+      vals.forEach(function (v) { parts.push(k + '=' + encodeURIComponent(v)); });
+    });
 
     // Custom-tuning strings combined into one no-separator `s=` param.
     // Three cases:
@@ -5300,6 +5319,161 @@
   }
   let _suppressCollapseUrl = false;
 
+  // ---------- Section reordering (drag-and-drop) ----------
+  function _sectionEls() {
+    return Array.prototype.slice.call(
+      document.querySelectorAll('body > details.collapsible.section')
+    );
+  }
+  function _sectionNum(el) {
+    const m = el && el.id && el.id.match(/^section_(\d+)$/);
+    return m ? m[1] : null;
+  }
+  function _defaultSectionOrder() {
+    // Whatever order the static index.html ships in. Cached on first
+    // call so a later DOM reorder doesn't change the "default".
+    if (!_defaultSectionOrder._cached) {
+      _defaultSectionOrder._cached = _sectionEls().map(_sectionNum).filter(Boolean);
+    }
+    return _defaultSectionOrder._cached.slice();
+  }
+  function applySectionOrder() {
+    const def = _defaultSectionOrder();
+    if (!def.length) return;
+    const want = (getSetting('section_order') || []).filter(function (n) {
+      return def.indexOf(n) !== -1;
+    });
+    if (!want.length) { updateResetOrderVisibility(); return; }
+    // Final order = saved-order entries first (in their saved order),
+    // then any section not mentioned in saved order (in default order).
+    const seen = new Set(want);
+    const finalOrder = want.concat(def.filter(function (n) { return !seen.has(n); }));
+    // Re-attach each section to body in finalOrder. appendChild moves
+    // the element if it's already in the DOM, so we don't need to
+    // detach first.
+    finalOrder.forEach(function (num) {
+      const el = document.getElementById('section_' + num);
+      if (el) document.body.appendChild(el);
+    });
+    updateResetOrderVisibility();
+  }
+  function _currentDomOrder() {
+    return _sectionEls().map(_sectionNum).filter(Boolean);
+  }
+  function _orderEquals(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  function persistSectionOrderFromDom() {
+    const cur = _currentDomOrder();
+    const def = _defaultSectionOrder();
+    setSetting('section_order', _orderEquals(cur, def) ? [] : cur);
+    updateResetOrderVisibility();
+  }
+  function updateResetOrderVisibility() {
+    const link = document.getElementById('reset_section_order');
+    if (!link) return;
+    const cur = _currentDomOrder();
+    const def = _defaultSectionOrder();
+    link.style.display = _orderEquals(cur, def) ? 'none' : '';
+  }
+  function injectDragHandles() {
+    _sectionEls().forEach(function (sec) {
+      const actions = sec.querySelector(':scope > .section_actions');
+      if (!actions) return;
+      if (actions.querySelector('.section_drag')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'section_drag';
+      btn.setAttribute('draggable', 'true');
+      btn.setAttribute('aria-label', 'Drag to reorder section');
+      btn.setAttribute('title', 'Drag to reorder section');
+      btn.textContent = '⋮⋮';
+      // Drag handle goes FIRST so it sits left of Print / ?.
+      actions.insertBefore(btn, actions.firstChild);
+    });
+  }
+  let _dragSourceEl = null;
+  function bindSectionDrag() {
+    if (document.body._sectionDragBound) return;
+    document.body._sectionDragBound = true;
+
+    document.body.addEventListener('dragstart', function (e) {
+      const handle = e.target.closest && e.target.closest('.section_drag');
+      if (!handle) return;
+      const section = handle.closest('details.collapsible.section');
+      if (!section) return;
+      _dragSourceEl = section;
+      section.classList.add('section_dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        // Firefox requires non-empty dataTransfer to fire a drag.
+        e.dataTransfer.setData('text/plain', section.id);
+      } catch (_) {}
+    });
+
+    document.body.addEventListener('dragend', function (e) {
+      const handle = e.target.closest && e.target.closest('.section_drag');
+      if (!handle) return;
+      _sectionEls().forEach(function (s) {
+        s.classList.remove('section_dragging');
+        s.classList.remove('section_drop_before');
+        s.classList.remove('section_drop_after');
+      });
+      _dragSourceEl = null;
+    });
+
+    document.body.addEventListener('dragover', function (e) {
+      if (!_dragSourceEl) return;
+      const target = e.target.closest && e.target.closest('details.collapsible.section');
+      if (!target || target === _dragSourceEl) return;
+      e.preventDefault();   // allow drop
+      try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+      // Cursor in the top half → drop ABOVE target; bottom half → BELOW.
+      const r = target.getBoundingClientRect();
+      const above = (e.clientY - r.top) < (r.height / 2);
+      _sectionEls().forEach(function (s) {
+        if (s === target) {
+          s.classList.toggle('section_drop_before', above);
+          s.classList.toggle('section_drop_after', !above);
+        } else {
+          s.classList.remove('section_drop_before');
+          s.classList.remove('section_drop_after');
+        }
+      });
+    });
+
+    document.body.addEventListener('drop', function (e) {
+      if (!_dragSourceEl) return;
+      const target = e.target.closest && e.target.closest('details.collapsible.section');
+      if (!target || target === _dragSourceEl) return;
+      e.preventDefault();
+      const r = target.getBoundingClientRect();
+      const above = (e.clientY - r.top) < (r.height / 2);
+      if (above) target.parentNode.insertBefore(_dragSourceEl, target);
+      else       target.parentNode.insertBefore(_dragSourceEl, target.nextSibling);
+      persistSectionOrderFromDom();
+    });
+  }
+
+  function bindResetSectionOrder() {
+    const link = document.getElementById('reset_section_order');
+    if (!link || link._bound) return;
+    link._bound = true;
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      // Restore the static index.html order.
+      const def = _defaultSectionOrder();
+      def.forEach(function (num) {
+        const el = document.getElementById('section_' + num);
+        if (el) document.body.appendChild(el);
+      });
+      setSetting('section_order', []);
+      updateResetOrderVisibility();
+    });
+  }
+
   function updateClosedInUrl() {
     const params = new URLSearchParams(window.location.search);
     const closed = [];
@@ -5458,13 +5632,11 @@
       const deg = DEGREES[semi];
       const inHighlightSet = anyHighlighted && (x['hl_' + deg.replace('♭', 'b')] === 'y');
       const def = KEYBOARD_NOTE_CLASSES[note];
-      const inPickSet = !!(x._pk_set && x._pk_set.has(note));
+      // Yellow-ring pk picks are gone; chord ID now reads from hl,
+      // and clicks toggle hl directly. Keyboard cells get only the
+      // colored hl background (below) — no extra inset stroke.
       def.cls.forEach(function (c) {
         const sel = '.ritz .waffle .' + c;
-        if (inPickSet) {
-          // Click-to-pick chord-identifier ring (fluorescent yellow).
-          css += sel + ' { box-shadow: inset 0 0 0 3px #ffeb00 !important; }\n';
-        }
         if (def.mode === 'bg') {
           // White-key column.
           if (inHighlightSet) {
@@ -5560,35 +5732,34 @@
       let note = cell.getAttribute('data-note');
       if (!note) return;
       // Normalize flat-spelled tuning notes (e.g. nut "B♭") into the
-      // sharp-form the pick set uses so toggling a flat-named cell
-      // matches an existing sharp-named pick (A♯ ≡ B♭).
+      // sharp form everything internal uses, so toggling a flat-named
+      // cell matches degree math anchored on sharps.
       const _FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
       note = _FLAT_TO_SHARP[note] || note;
       e.preventDefault();
       // Audio playback (off by default, toggled via the ♪ button in the
-      // Fretboard summary). Reads data-midi from the cell — independent
-      // of the chord-identifier pick logic that follows.
+      // Fretboard summary). Reads data-midi from the cell.
       if (audioOn()) {
         const midiStr = cell.getAttribute('data-midi');
         const m = midiStr ? parseInt(midiStr, 10) : NaN;
         if (!isNaN(m)) playMidi(m);
       }
-      // Section-aware: in unlinked mode each section has its own picks
-      // so the fretboard click writes s2_pk and the keyboard click
-      // writes s4_pk. Linked mode keeps the global `pk`.
       const _isKb = !!e.target.closest('.ritz');
-      const sectionId = _isKb ? 'section_4' : 'section_2';
-      // Chord ID off for this section → don't pick. Audio above still played.
-      if (!chordIdOn(sectionId)) return;
-      const cur = readPkArrForSection(sectionId)
-        .map(function (v) {
-          const f = bToFlat(sharpToHash(v));
-          const FLAT_TO_SHARP = { 'A♭':'G♯','B♭':'A♯','C♭':'B','D♭':'C♯','E♭':'D♯','F♭':'E','G♭':'F♯' };
-          return FLAT_TO_SHARP[f] || f;
-        });
-      const i = cur.indexOf(note);
-      const next = i === -1 ? cur.concat([note]) : cur.filter(function (n) { return n !== note; });
-      const href = buildPkHref(next, sectionId);
+      // Click-to-toggle now writes hl (color highlights) — same as
+      // clicking a note pill above the section. Yellow-ring pk picks
+      // are gone; chord ID reads from hl.
+      const x = window.SF_X || {};
+      const key = x.k || 'C';
+      const tonicPc = NOTE_TO_PC[key];
+      const notePc  = NOTE_TO_PC[note];
+      if (tonicPc == null || notePc == null) return;
+      const off = (notePc - tonicPc + 12) % 12;
+      const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+      const deg = DEG_LBL[off];
+      const curArr = hlStrToArr(x.hl);
+      const i = curArr.indexOf(deg);
+      const next = i === -1 ? curArr.concat([deg]) : curArr.filter(function (d) { return d !== deg; });
+      const href = buildHlHref(next);
       const qs = href.slice(1);
       const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
       // Anchor scroll to the clicked element so the page doesn't appear to
@@ -5636,6 +5807,52 @@
       if (pc !== undefined) m |= (1 << pc);
     });
     return m;
+  }
+  // Degree-string offsets used to project hl onto an absolute pitch
+  // class. '1'→0, '♭2'→1, '2'→2, … '7'→11. Accepts either ♭ or 'b'.
+  const _DEG_OFFSET = {
+    '1': 0,  '♭2': 1, 'b2': 1, '2': 2,
+    '♭3': 3, 'b3': 3, '3': 4, '4': 5,
+    '♭5': 6, 'b5': 6, '5': 7,
+    '♭6': 8, 'b6': 8, '6': 9,
+    '♭7':10, 'b7':10, '7':11
+  };
+  // Convert an hl-degree array (e.g. ['1','♭3','5']) to a 12-bit pitch
+  // class mask anchored at `key`. Empty / null returns 0.
+  function hlArrToMask(hlArr, key) {
+    if (!hlArr || !hlArr.length) return 0;
+    const tonic = NOTE_TO_PC[key];
+    if (tonic == null) return 0;
+    let m = 0;
+    hlArr.forEach(function (d) {
+      const off = _DEG_OFFSET[d];
+      if (off != null) m |= 1 << ((tonic + off) % 12);
+    });
+    return m;
+  }
+  // Parse xs.hl ("1 ♭3 5" / "nothing" / "") into a clean degree array.
+  function hlStrToArr(hlStr) {
+    const s = String(hlStr || '').trim();
+    if (!s || s === 'nothing') return [];
+    return s.split(/\s+/).filter(Boolean);
+  }
+  // Build a URL that replaces hl= with the given degree array (or
+  // strips it when empty). Preserves every other URL param.
+  function buildHlHref(degArr) {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('hl');
+    if (degArr && degArr.length) {
+      // Separator-free form (same shape as the rest of the site).
+      const enc = degArr.slice().sort(function (a, b) {
+        const ao = _DEG_OFFSET[a]; const bo = _DEG_OFFSET[b];
+        return (ao == null ? 99 : ao) - (bo == null ? 99 : bo);
+      }).map(function (d) { return d.replace('♭', 'b'); }).join('');
+      p.append('hl', enc);
+    }
+    // No specific chord chip is engaged when the user is hand-building
+    // a highlight set — drop idn so no chip lights up spuriously.
+    p.delete('idn');
+    return '?' + canonicalQS(p);
   }
   function popcount(n) {
     let c = 0;
@@ -5760,9 +5977,8 @@
       return FLAT_TO_SHARP[norm] || norm;
     }
     function shiftHtml(sectionId) {
-      const hasHl = String(x.hl || '').trim().length > 0;
-      const pkCount = String(x.pk || '').split(' ').filter(Boolean).length;
-      const enabled = hasHl || pkCount > 0;
+      const hlVal = String(x.hl || '').trim();
+      const enabled = !!hlVal && hlVal !== 'nothing';
       const dis = enabled ? '' : ' disabled';
       return '<div class="semi_shift_bar">'
            +   '<span class="semi_shift_label">Shift</span>'
@@ -5798,17 +6014,9 @@
         const curK = params.get('k') || (window.SF_X && window.SF_X.k) || 'C';
         const ki = PCS.indexOf(toSharp(curK));
         if (ki >= 0) params.set('k', PCS[(ki + delta + 12) % 12]);
-        // Also shift the section's pk picks (yellow ring) by the
-        // same amount, so the chord-ID set moves with the highlights.
-        const pkArr  = readPkArrForSection(sec);
-        const pkNext = pkArr.map(function (n) {
-          const i = PCS.indexOf(toSharp(n));
-          return i < 0 ? n : PCS[(i + delta + 12) % 12];
-        });
+        // (pk yellow-ring picks are gone; nothing else to shift —
+        // the hl set is degree-relative and rides the key change.)
         params.delete('pk');
-        if (pkNext.length) {
-          params.set('pk', pkNext.map(function (n) { return urlNote(n); }).join(''));
-        }
         const qs = canonicalQS(params);
         navigateTo(qs ? '?' + qs : '?');
       });
@@ -5824,69 +6032,46 @@
     // section state) so picks don't leak across in unlinked mode.
     function buildHtml(xs, sectionId) {
 
-    // Chord ID is always on; only its visibility (collapsed vs.
-    // expanded <details>) is user-controllable now. id_closed lists
-    // section ids that should render collapsed.
-    const idClosed = getSetting('id_closed') || [];
-    const idOpen = idClosed.indexOf(sectionId) === -1;
-    // (Arrows that used to live here have moved out of the Chord ID
-    // strip and now sit in their own bar between the fretboard and
-    // the strip — see renderShiftBars below. The new bar shifts BOTH
-    // pk picks (yellow ring) AND hl highlights (colored degrees) by
-    // ±1 semitone.)
-    // Clear control — anchor link (so it goes through the proven link
-    // interceptor + anchor-scroll path) styled to match the toggle/shift
-    // pills. Only meaningful once chord results are showing (≥3 picks).
+    // Chord ID strip is now driven by the hl (color highlight) set,
+    // not the legacy pk yellow-ring set. The <details> wrapper is
+    // gone too — the strip renders inline below the shift bar.
     function idClearHtml() {
-      const href = buildPkHref([], sectionId);
+      const href = buildHlHref([]);
       return '<a class="identify_clear_btn" href="' + escHtml(href)
         +    '" data-section="' + sectionId
-        +    '" title="Clear picks">Clear</a>';
+        +    '" title="Clear highlighted notes">Clear</a>';
     }
-    // Wrap output in a <details>. Default open; user clicks the
-    // summary to minimize. Persisted state lives in id_closed (URL
-    // 'idc' / LS 'sf_id_closed').
-    // Clear button — only show in the summary when there are picks to
-    // clear (≥1 yellow pk). The host click handler intercepts the link
-    // (e.preventDefault) so the click navigates without toggling the
-    // <details>.
-    const _summaryClear = (String(xs.pk || '').split(' ').filter(Boolean).length > 0)
-      ? idClearHtml()
-      : '';
-    function wrap(bodyHtml) {
-      return '<details class="identify_box"' + (idOpen ? ' open' : '')
-           +   ' data-id-section="' + escAttr(sectionId) + '">'
-           + '<summary class="identify_summary">'
-           +   '<span class="identify_label">Chord ID</span>'
-           +   '<span class="identify_btns">'
-           +     _summaryClear
-           +     '<button type="button" class="section_help" data-help="chord_id"'
-           +       ' aria-label="About Chord ID">?</button>'
-           +   '</span>'
-           + '</summary>'
-           + bodyHtml
-           + '</details>';
+    // Header that sits at the top of the strip — Chord ID label is
+    // gone (the section heading goes away too); we just expose the
+    // ? help button and the Clear pill, right-justified.
+    function headerBtnsHtml(showClear) {
+      return '<span class="identify_btns">'
+           +   (showClear ? idClearHtml() : '')
+           +   '<button type="button" class="section_help" data-help="chord_id"'
+           +     ' aria-label="About Chord ID">?</button>'
+           + '</span>';
     }
 
-    const pkArr = String(xs.pk || '').split(' ').filter(function (v) { return v.length; });
+    const hlArr = hlStrToArr(xs.hl);
     let html;
-    if (pkArr.length < 3) {
-      const rem = 3 - pkArr.length;
+    if (hlArr.length < 3) {
+      const rem = 3 - hlArr.length;
       html = '<div class="identify_strip identify_hint">'
+           + headerBtnsHtml(hlArr.length > 0)
            + '<span class="identify_label">Identify:</span> '
-           + 'click ' + (pkArr.length === 0 ? '3 or more' : (rem + ' more'))
-           + ' fret cell' + (rem === 1 ? '' : 's') + ' or piano key'
-           + (rem === 1 ? '' : 's') + ' to identify a chord '
-           + '<span class="identify_count">(' + pkArr.length + '/3)</span>'
+           + 'highlight ' + (hlArr.length === 0 ? '3 or more' : (rem + ' more'))
+           + ' note' + (rem === 1 ? '' : 's')
+           + ' (click a fret cell, a piano key, or a note button) to identify a chord '
+           + '<span class="identify_count">(' + hlArr.length + '/3)</span>'
            + '</div>';
     } else {
-      const selMask = pkSetToMask(xs._pk_set);
+      const selMask = hlArrToMask(hlArr, xs.k);
       const inKeyOnly = getIdentifyInKey();
       // "in key" now means "root letter == current key" — pass the key
       // string to classifyChords; keyMask kept open (0xFFF = no scale
       // restriction) so chord notes outside the diatonic scale still show.
       const buckets = classifyChords(selMask, 0xFFF, inKeyOnly ? xs.k : null);
-      const clearHref = buildPkHref([], sectionId);
+      const clearHref = buildHlHref([]);
 
       function chipsHtml(items, extractName) {
         if (!items.length) return '<span class="identify_empty">none</span>';
@@ -5953,11 +6138,23 @@
               ? 'Showing only chords rooted on ' + xs.k + '. Click to show all.'
               : 'Show only chords rooted on ' + xs.k + '.')
         +    '">in key' + (inKeyOnly ? ' (' + escHtml(xs.k) + ')' : '') + '</a>';
+      // Notes corresponding to the current hl degrees, anchored on xs.k.
+      const tonicPc = NOTE_TO_PC[xs.k];
+      const noteStr = (tonicPc == null)
+        ? ''
+        : hlArr.slice().sort(function (a, b) {
+            const ao = _DEG_OFFSET[a]; const bo = _DEG_OFFSET[b];
+            return (ao == null ? 99 : ao) - (bo == null ? 99 : bo);
+          }).map(function (d) {
+            const off = _DEG_OFFSET[d];
+            return off == null ? '' : PC_TO_NOTE[(tonicPc + off) % 12];
+          }).filter(Boolean).join(' ');
       html = ''
         + '<div class="identify_strip">'
+        + headerBtnsHtml(true)
         + '  <div class="identify_head">'
         + '    <span class="identify_label">Identify:</span>'
-        + '    <span class="identify_picks">picked: ' + escHtml(pkArr.join(' ')) + '</span>'
+        + '    <span class="identify_picks">notes: ' + escHtml(noteStr) + '</span>'
         + '    <span class="identify_filter">' + inKeyPill + '</span>'
         + '  </div>'
         + '  <div class="identify_row">'
@@ -5979,7 +6176,7 @@
         + '  </div>'
         + '</div>';
     }
-      return wrap(html);
+      return html;
     }
 
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
@@ -6456,6 +6653,14 @@
     // first render so there's no flash of the default mode while CSS
     // rules wait for bindDisplayModeButtons.
     document.body.setAttribute('data-display', getDisplayMode());
+    // Section reordering — cache the default order BEFORE we ever
+    // touch the DOM, inject drag handles, apply the saved order,
+    // then wire the drag delegates.
+    _defaultSectionOrder();
+    injectDragHandles();
+    applySectionOrder();
+    bindSectionDrag();
+    bindResetSectionOrder();
     applyState();
     bindCollapsibles();
     bindLinkInterceptor();
