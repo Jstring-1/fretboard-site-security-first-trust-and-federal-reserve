@@ -2128,6 +2128,61 @@ window.SF_DATA = {
             "info": "Duane Allman / slide guitar",
             "strs": 6
         },
+        "Vestapol": {
+            "name": "Vestapol",
+            "notes": "D A D F♯ A D",
+            "url_notes": "DADFsAD",
+            "rev_notes": "D A F♯ D A D",
+            "dgs": "1 5 1 3 5 1",
+            "rev_dgs": "1 5 3 1 5 1",
+            "udgs": "1 3 5",
+            "info": "From 'Sebastopol' piece (Crimean War) — D major",
+            "strs": 6
+        },
+        "Spanish": {
+            "name": "Spanish",
+            "notes": "D G D G B D",
+            "url_notes": "DGDGBD",
+            "rev_notes": "D B G D G D",
+            "dgs": "5 1 5 1 3 5",
+            "rev_dgs": "5 3 1 5 1 5",
+            "udgs": "1 3 5",
+            "info": "From 'Spanish Fandango' parlor piece — G major",
+            "strs": 6
+        },
+        "CrossNote": {
+            "name": "Cross-note",
+            "notes": "D A D F A D",
+            "url_notes": "DADFAD",
+            "rev_notes": "D A F D A D",
+            "dgs": "1 5 1 ♭3 5 1",
+            "rev_dgs": "1 5 ♭3 1 5 1",
+            "udgs": "1 ♭3 5",
+            "info": "Crossing minor ↔ major easily — D minor",
+            "strs": 6
+        },
+        "HalfSpanish": {
+            "name": "Half-Spanish",
+            "notes": "D G D G B E",
+            "url_notes": "DGDGBE",
+            "rev_notes": "E B G D G D",
+            "dgs": "5 1 5 1 3 6",
+            "rev_dgs": "6 3 1 5 1 5",
+            "udgs": "1 3 5 6",
+            "info": "Blues variant of Spanish — G major(ish)",
+            "strs": 6
+        },
+        "Bentonia": {
+            "name": "Bentonia",
+            "notes": "D A D F A D",
+            "url_notes": "DADFAD",
+            "rev_notes": "D A F D A D",
+            "dgs": "1 5 1 ♭3 5 1",
+            "rev_dgs": "1 5 ♭3 1 5 1",
+            "udgs": "1 ♭3 5",
+            "info": "Regional Mississippi blues name — D minor",
+            "strs": 6
+        },
         "EADG": {
             "name": "Bass",
             "notes": "E A D G",
