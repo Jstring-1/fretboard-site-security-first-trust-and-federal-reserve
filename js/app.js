@@ -2128,154 +2128,6 @@
     });
   }
 
-  // ---------- Wikipedia info popup ----------
-  // Small ⓘ icon on each chord / scale row that pops up a summary from
-  // Wikipedia's REST API. Kept modest on purpose: title + description
-  // + lead paragraph + thumbnail + a "Read full article" link that
-  // opens Wikipedia in a new tab.
-  const WIKI_CHORD_TITLES = {
-    'Maj': 'Major chord', 'Min': 'Minor chord',
-    'aug': 'Augmented triad', 'dim': 'Diminished triad',
-    'sus2': 'Suspended chord', 'sus4': 'Suspended chord',
-    'Maj6': 'Sixth chord', 'min6': 'Sixth chord',
-    'dom7': 'Dominant seventh chord', 'min7': 'Minor seventh chord',
-    'aug7': 'Augmented seventh chord',
-    '7♭5': 'Seven flat five chord',
-    'dim7': 'Diminished seventh chord',
-    'm7♭5': 'Half-diminished seventh chord',
-    'Maj7': 'Major seventh chord', 'min-Maj7': 'Minor major seventh chord',
-    'add9': 'Added tone chord', 'min9': 'Ninth chord',
-    '6add9': 'Sixth chord',
-    '9th': 'Ninth chord',
-    '7♭9': 'Dominant seventh flat nine chord',
-    'Maj9': 'Major ninth chord',
-    '7♯9': 'Dominant seventh sharp nine chord',
-    '11th': 'Eleventh chord', 'min11': 'Eleventh chord', '7♯11': 'Eleventh chord',
-    '13th': 'Thirteenth chord', 'min13': 'Thirteenth chord', 'Maj13': 'Thirteenth chord',
-    'min-Maj9': 'Ninth chord', '7♭13': 'Thirteenth chord', '13♭9': 'Thirteenth chord',
-    'sus2sus4': 'Suspended chord', 'add4': 'Added tone chord'
-  };
-  const WIKI_SCALE_TITLES = {
-    'Major': 'Major scale', 'Dorian': 'Dorian mode', 'Phrygian': 'Phrygian mode',
-    'Lydian': 'Lydian mode', 'Mixolydian': 'Mixolydian mode',
-    'Minor': 'Minor scale', 'Aeolian': 'Aeolian mode', 'Locrian': 'Locrian mode',
-    'Melodic Minor': 'Melodic minor scale', 'Harmonic Minor': 'Harmonic minor scale',
-    'Harmonic Major': 'Harmonic major scale',
-    'Phrygian Dominant': 'Phrygian dominant scale',
-    'Lydian Dominant': 'Lydian dominant scale',
-    'Hungarian Minor': 'Hungarian minor scale',
-    'Altered': 'Altered scale',
-    'Bebop Dominant': 'Bebop scale', 'Bebop Major': 'Bebop scale',
-    'Major Pentatonic': 'Pentatonic scale', 'maj pentatonic': 'Pentatonic scale',
-    'Minor Pentatonic': 'Pentatonic scale', 'min pentatonic': 'Pentatonic scale',
-    'Blues': 'Blues scale', 'Major Blues': 'Blues scale',
-    'Whole Tone': 'Whole-tone scale',
-    'Diminished': 'Octatonic scale', 'Half Whole Dim': 'Octatonic scale',
-    'Hirajoshi': 'Hirajoshi scale'
-  };
-  function wikiTitleFor(kind, label) {
-    if (kind === 'chord') return WIKI_CHORD_TITLES[label] || null;
-    if (kind === 'scale') return WIKI_SCALE_TITLES[label] || null;
-    return null;
-  }
-  const _wikiCache = new Map();
-  function wikiFetch(title) {
-    if (_wikiCache.has(title)) return Promise.resolve(_wikiCache.get(title));
-    const url = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title);
-    return fetch(url, { headers: { 'accept': 'application/json' } })
-      .then(function (r) {
-        if (!r.ok) throw new Error('Wikipedia ' + r.status);
-        return r.json();
-      })
-      .then(function (data) { _wikiCache.set(title, data); return data; })
-      .catch(function () { return null; });
-  }
-  function wikiInfoButtonHtml(kind, label) {
-    const title = wikiTitleFor(kind, label);
-    if (!title) return '';
-    return '<button type="button" class="wiki_info_btn"'
-         + ' data-wiki-kind="' + kind + '"'
-         + ' data-wiki-label="' + escAttr(label) + '"'
-         + ' aria-label="Show Wikipedia summary for ' + escAttr(label) + '"'
-         + ' title="Wikipedia summary for ' + escAttr(label) + '">&#9432;</button>';
-  }
-  function wikiOpenModal(kind, label) {
-    const title = wikiTitleFor(kind, label);
-    if (!title) return;
-    let overlay = document.getElementById('wiki_modal_overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'wiki_modal_overlay';
-      overlay.className = 'wiki_modal_overlay';
-      overlay.innerHTML = ''
-        + '<div class="wiki_modal" role="dialog" aria-labelledby="wiki_modal_title">'
-        +   '<button type="button" class="wiki_modal_close" aria-label="Close">×</button>'
-        +   '<div class="wiki_modal_body"></div>'
-        + '</div>';
-      document.body.appendChild(overlay);
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) wikiCloseModal();
-      });
-      overlay.querySelector('.wiki_modal_close').addEventListener('click', wikiCloseModal);
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') wikiCloseModal();
-      });
-    }
-    const body = overlay.querySelector('.wiki_modal_body');
-    body.innerHTML = '<div class="wiki_modal_loading">Loading “' + escHtml(label) + '” from Wikipedia…</div>';
-    overlay.classList.add('wiki_modal_open');
-    wikiFetch(title).then(function (data) {
-      if (!overlay.classList.contains('wiki_modal_open')) return;   // user closed already
-      if (!data) {
-        const searchHref = 'https://en.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(label);
-        body.innerHTML = '<h2 id="wiki_modal_title" class="wiki_modal_heading">' + escHtml(label) + '</h2>'
-                       + '<p class="wiki_modal_err">Couldn’t load a Wikipedia summary for this term.</p>'
-                       + '<p class="wiki_modal_footer">'
-                       + '<a href="' + searchHref + '" target="_blank" rel="noopener noreferrer">Search Wikipedia →</a>'
-                       + '</p>';
-        return;
-      }
-      const thumbUrl = data.thumbnail && data.thumbnail.source;
-      const pageUrl = (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page)
-                       || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(title));
-      let h = '';
-      h += '<h2 id="wiki_modal_title" class="wiki_modal_heading">' + escHtml(data.title || label) + '</h2>';
-      if (data.description) {
-        h += '<p class="wiki_modal_desc">' + escHtml(data.description) + '</p>';
-      }
-      if (thumbUrl) {
-        h += '<img class="wiki_modal_thumb" src="' + escAttr(thumbUrl) + '" alt="">';
-      }
-      h += '<div class="wiki_modal_extract">' + (data.extract_html || ('<p>' + escHtml(data.extract || '') + '</p>')) + '</div>';
-      h += '<p class="wiki_modal_footer">'
-         +   '<span class="wiki_modal_credit">Text from Wikipedia (CC BY-SA)</span>'
-         +   '<a href="' + escAttr(pageUrl) + '" target="_blank" rel="noopener noreferrer">Read full article →</a>'
-         + '</p>';
-      body.innerHTML = h;
-    });
-  }
-  function wikiCloseModal() {
-    const overlay = document.getElementById('wiki_modal_overlay');
-    if (overlay) overlay.classList.remove('wiki_modal_open');
-  }
-  // One-shot delegated click for every ⓘ button on the page.
-  if (typeof document !== 'undefined' && !document.body) {
-    document.addEventListener('DOMContentLoaded', wikiBindInfoBtns);
-  } else if (typeof document !== 'undefined' && !document.body._wikiInfoBound) {
-    wikiBindInfoBtns();
-  }
-  function wikiBindInfoBtns() {
-    if (!document.body || document.body._wikiInfoBound) return;
-    document.body._wikiInfoBound = true;
-    document.body.addEventListener('click', function (e) {
-      const btn = e.target.closest && e.target.closest('.wiki_info_btn');
-      if (!btn) return;
-      e.preventDefault();
-      e.stopPropagation();
-      wikiOpenModal(btn.getAttribute('data-wiki-kind'), btn.getAttribute('data-wiki-label'));
-    });
-  }
-
   function renderChordGrid(x) {
     const root = document.getElementById('chord_grid_root');
     const i1 = KEYS.indexOf(x.k);
@@ -2326,7 +2178,6 @@
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'chord');
       const labelCell = '<td class="' + labelTdCls + '">'
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
-                      + wikiInfoButtonHtml('chord', label)
                       + '</td>';
       h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
 
@@ -2424,7 +2275,6 @@
       const tip = degsAndNotesTip(label, chipDegs, x.k, 'scale');
       const labelCell = '<td class="' + labelTdCls + '">'
                       + '<a href="' + href + '" title="' + escAttr(tip) + '">' + escHtml(label) + '</a>'
-                      + wikiInfoButtonHtml('scale', label)
                       + '</td>';
       h += '<tr' + (isSelected ? ' class="cg_row_selected"' : '') + '>' + labelCell;
       for (const col of COLS) {
