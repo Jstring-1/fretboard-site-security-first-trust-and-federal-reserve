@@ -1742,6 +1742,11 @@
     // (see renderFretboardBelow) so the section header + Chord ID strip
     // sit closer to the neck without controls stacked on top of them.
 
+    // Chord ID lives in this gap — between the tuning picker and the
+    // fretboard grid — so it snugs directly against the neck. Populated
+    // by renderIdentifyStrips.
+    h += '<div id="fb_identify_root"></div>';
+
     h += '<table id="fretboard" data-custom="' + (x.z === 'y' ? 'on' : 'off') + '">';
 
     const cyoState = x.z === 'y' ? 'on' : 'off';
@@ -6430,32 +6435,24 @@
             const off = _DEG_OFFSET[d];
             return off == null ? '' : PC_TO_NOTE[(tonicPc + off) % 12];
           }).filter(Boolean).join(' ');
-      // Single-line layout: exact / contains / could-be all flow
-      // inline, separated by a thin bullet. Visual hierarchy uses
-      // font weight + opacity (exact = boldest, could-be = faintest)
-      // so the columns are readable without repeating "Exact:" labels.
-      const SEP = ' <span class="identify_sep">·</span> ';
+      // Single-line: picks + in-key + +N pills + every chord chip
+      // all flow on ONE horizontal row. Visual hierarchy via weight
+      // + opacity (exact boldest, could-be faintest) instead of
+      // labels. Fixed height + overflow hidden so the fretboard
+      // below never shifts.
+      const SEP = '<span class="identify_sep">·</span>';
       const exactHtml = chipGroupHtml(buckets.exact);
       const contHtml  = chipGroupHtml(buckets.subset,   function (it) { return it.name; });
       const couldHtml = chipGroupHtml(buckets.superset, function (it) { return it.name; });
       html = ''
         + '<div class="identify_strip identify_strip_inline">'
         + headerBtnsHtml(true)
-        + '  <div class="identify_head">'
-        + '    <span class="identify_picks">' + escHtml(noteStr) + '</span>'
-        + '    <span class="identify_filter">' + inKeyPill + '</span>'
-        + '    <span class="identify_extras_toggle">' + extrasPills + '</span>'
-        + '  </div>'
-        + '  <div class="identify_line">'
-        + '    <span class="identify_group identify_group_exact"'
-        +          (buckets.exact.length    ? '' : ' hidden') + '>' + exactHtml + '</span>'
-        +      (buckets.exact.length    && (buckets.subset.length   || buckets.superset.length) ? SEP : '')
-        + '    <span class="identify_group identify_group_contains"'
-        +          (buckets.subset.length   ? '' : ' hidden') + '>' + contHtml  + '</span>'
-        +      (buckets.subset.length   && buckets.superset.length ? SEP : '')
-        + '    <span class="identify_group identify_group_could"'
-        +          (buckets.superset.length ? '' : ' hidden') + '>' + couldHtml + '</span>'
-        + '  </div>'
+        + '  <span class="identify_picks">' + escHtml(noteStr) + '</span>'
+        + '  <span class="identify_filter">' + inKeyPill + '</span>'
+        + '  <span class="identify_extras_toggle">' + extrasPills + '</span>'
+        +    (buckets.exact.length ? SEP + '<span class="identify_group identify_group_exact">' + exactHtml + '</span>' : '')
+        +    (buckets.subset.length   ? SEP + '<span class="identify_group identify_group_contains">' + contHtml  + '</span>' : '')
+        +    (buckets.superset.length ? SEP + '<span class="identify_group identify_group_could">'    + couldHtml + '</span>' : '')
         + '</div>';
     }
       return html;
