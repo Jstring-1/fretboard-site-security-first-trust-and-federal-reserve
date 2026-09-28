@@ -1052,8 +1052,9 @@
     // degree on top and the resolved note (in the current key) below.
     h += comboPillsHtml(x, 'fb_hl_row');
 
-    // All / None pair for the combined pill row.
-    h += allNoneRowHtml('fb_allnone_row');
+    // NOTE: All/None used to sit here, directly below the pill row.
+    // It was moved into the shift bar below the fretboard so all
+    // "act on highlights" controls live in one place.
 
     h += '</div>';
     root.innerHTML = h;
@@ -6137,23 +6138,35 @@
       const norm = bToFlat(sharpToHash(String(n)));
       return FLAT_TO_SHARP[norm] || norm;
     }
-    function shiftHtml(sectionId) {
+    function shiftHtml(sectionId, includeAllNone) {
       const hlVal = String(x.hl || '').trim();
       const enabled = !!hlVal && hlVal !== 'nothing';
       const dis = enabled ? '' : ' disabled';
-      return '<div class="semi_shift_bar">'
-           +   '<button type="button" class="semi_shift_btn" data-shift="-1" data-section="'
-           +     escAttr(sectionId) + '"' + dis
-           +     ' title="Shift highlighted notes down 1 semitone">◀</button>'
-           +   '<button type="button" class="semi_shift_btn" data-shift="1" data-section="'
-           +     escAttr(sectionId) + '"' + dis
-           +     ' title="Shift highlighted notes up 1 semitone">▶</button>'
-           + '</div>';
+      let inner = '<div class="semi_shift_arrows">'
+                +   '<button type="button" class="semi_shift_btn" data-shift="-1" data-section="'
+                +     escAttr(sectionId) + '"' + dis
+                +     ' title="Shift highlighted notes down 1 semitone">◀</button>'
+                +   '<button type="button" class="semi_shift_btn" data-shift="1" data-section="'
+                +     escAttr(sectionId) + '"' + dis
+                +     ' title="Shift highlighted notes up 1 semitone">▶</button>'
+                + '</div>';
+      if (includeAllNone) {
+        // Reuses the same href logic that used to render above the fretboard.
+        const allHref  = buildHlHref(DEGREES.map(flatToB));
+        const noneHref = clearHlOnlyHref();
+        inner += '<div class="semi_shift_allnone">'
+              +   '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref)
+              +     '" title="Highlight all 12 degrees">All</a>'
+              +   '<a class="hl_pill hl_none_pill" href="' + escHtml(noneHref)
+              +     '" title="Clear all colored highlights (keeps chord-ID picks)">None</a>'
+              + '</div>';
+      }
+      return '<div class="semi_shift_bar">' + inner + '</div>';
     }
     const fbEl = document.getElementById('fb_shift_root');
     const kbEl = document.getElementById('kb_shift_root');
-    if (fbEl) fbEl.innerHTML = shiftHtml('section_2');
-    if (kbEl) kbEl.innerHTML = shiftHtml('section_4');
+    if (fbEl) fbEl.innerHTML = shiftHtml('section_2', true);
+    if (kbEl) kbEl.innerHTML = shiftHtml('section_4', false);
 
     // One-shot click delegate at body level — handles both bars.
     if (!document.body._semiShiftBound) {
