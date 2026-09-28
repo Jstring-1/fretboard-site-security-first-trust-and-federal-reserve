@@ -1048,16 +1048,27 @@
     // ABOVE the note-letter row so the user reads the abstract degree
     // first and the concrete pitch directly under it. Note row reorders
     // when the key changes (root note sits under degree 1).
-    // Combined degree+note pill row: 12 stacked buttons, each showing
-    // degree on top and the resolved note (in the current key) below.
-    h += comboPillsHtml(x, 'fb_hl_row');
-
-    // NOTE: All/None used to sit here, directly below the pill row.
-    // It was moved into the shift bar below the fretboard so all
-    // "act on highlights" controls live in one place.
+    // NOTE: the combined degree+note pill row used to sit here (above
+    // the fretboard grid). It was moved into #fb_below_root — see
+    // renderFretboardBelow() — so the section reads top → bottom:
+    //   Chord ID → tuning picker → fretboard → shift bar →
+    //   pill row → chord/scale quick picks.
+    // NOTE: All/None used to sit here too, directly below the pill
+    // row. It was moved into the shift bar below the fretboard so
+    // all "act on highlights" controls live in one place.
 
     h += '</div>';
     root.innerHTML = h;
+  }
+
+  // Render the pill row + chord/scale quick picks INTO #fb_below_root.
+  // These lived above the fretboard grid until the layout swap that
+  // hoisted the Chord ID strip to the top of the section.
+  function renderFretboardBelow(x) {
+    const root = document.getElementById('fb_below_root');
+    if (!root) return;
+    root.innerHTML = comboPillsHtml(x, 'fb_hl_row')
+                   + quickPicksHtml(x, 'quick_picks');
   }
 
   // ---------- tuning picker popover ----------
@@ -1726,10 +1737,10 @@
     h += '  <div id="options_root"></div>';
     h += '</div>';
 
-    // Quick-pick chord/scale links — copies of the chord_grid + scale_grid
-    // top rows, parked above the fretboard so the user doesn't have to
-    // scroll down to a builder section to apply a chord or scale.
-    h += quickPicksHtml(x, 'quick_picks');
+    // NOTE: quick-picks (chord + scale chip rows) used to render here,
+    // parked above the fretboard grid. They were moved to #fb_below_root
+    // (see renderFretboardBelow) so the section header + Chord ID strip
+    // sit closer to the neck without controls stacked on top of them.
 
     h += '<table id="fretboard" data-custom="' + (x.z === 'y' ? 'on' : 'off') + '">';
 
@@ -7217,8 +7228,9 @@
       // so its degree labels reflect the new key.
       window.SF_TabCapture.refresh();
     }
-    renderShiftBars(x);             // ◀ / ▶ semitone shift bar above each Chord ID strip
-    renderIdentifyStrips(xFB, xKB); // chord-identify strips below fretboard + keyboard
+    renderShiftBars(x);             // ◀ / ▶ semitone shift bar (+ All/None) below the fretboard
+    renderFretboardBelow(xFB);      // pill row + chord/scale quick picks below the shift bar
+    renderIdentifyStrips(xFB, xKB); // chord-identify strip above the fretboard (moved from below)
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
