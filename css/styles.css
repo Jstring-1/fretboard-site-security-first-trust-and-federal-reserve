@@ -1553,22 +1553,31 @@ a.identify_chip_on:active                  { color: var(--accent-hi) !important;
 a.identify_chip_on:hover                   { color: #6fffff !important;                                                 }
 /* Placeholder strip — reserves vertical space when chord ID has
    nothing to say yet. Approx height of a 1-row strip. */
-.identify_placeholder                      { min-height: 96px;                                                          }
+/* One consistent height for every state (placeholder, chord list,
+   over-cap warning) so switching between them doesn't shift the
+   fretboard below. Sized to fit the head row + 2 lines of chips. */
+#fb_identify_root .identify_strip          { height: 68px; box-sizing: border-box; overflow: hidden;                    }
+.identify_placeholder                      { min-height: 40px;                                                          }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
 /* --- Chord ID inline layout ------------------------------------------
-   All three buckets (exact / contains / could-be) flow on the same
-   wrapping row. Visual hierarchy uses weight + opacity instead of
-   labels: exact = bold + full brightness, contains = normal, could
-   = faded. Wraps to a 2nd line when the row overflows. */
+   Sits JUST above the fretboard, tight. Buckets flow on one line
+   (wraps to a 2nd if the row can't fit). Hierarchy via weight +
+   opacity: exact = boldest, contains = normal, could = faded. */
+#fb_identify_root                          { margin-bottom: 0;                                                         }
+#fb_identify_root .identify_strip_inline   { padding: 4px 10px; margin: 0 0 -2px 0;
+                                             font-size: 0.86em; line-height: 1.3;                                      }
+#fb_identify_root .identify_strip_inline .identify_head
+                                           { margin-bottom: 2px; gap: 8px;                                             }
 .identify_strip_inline .identify_line      { display: flex; flex-wrap: wrap; align-items: baseline;
-                                             gap: 6px 4px;                                                             }
-.identify_sep                              { color: rgba(255,255,255,0.35); padding: 0 2px;                            }
+                                             gap: 2px 3px;                                                             }
+.identify_strip_inline .identify_chip      { padding: 0 3px;                                                            }
+.identify_sep                              { color: rgba(255,255,255,0.35); padding: 0 1px;                            }
 .identify_group_exact .identify_chip       { font-weight: 700;                                                          }
 .identify_group_contains .identify_chip    { font-weight: 500;                                                          }
 .identify_group_could .identify_chip       { opacity: 0.65; font-weight: 400;                                           }
 .identify_group_could .identify_chip:hover { opacity: 1;                                                                }
-.identify_chips_more                       { display: inline-block; margin: 0 2px; padding: 0 4px;
+.identify_chips_more                       { display: inline-block; margin: 0 2px; padding: 0 3px;
                                              color: rgba(255,255,255,0.55) !important; font-size: 0.85em;
                                              text-decoration: underline; cursor: pointer;                              }
 .identify_chips_more:hover                 { color: var(--accent-hi) !important;                                       }

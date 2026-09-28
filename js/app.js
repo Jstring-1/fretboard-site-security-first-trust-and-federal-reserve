@@ -6390,8 +6390,9 @@
 
       // Render a group's chips with a cap + "+N more" progressive
       // disclosure. Especially useful for Could-be, which routinely
-      // returns 30+ chords.
-      const CHIP_CAP = 12;
+      // returns 30+ chords. Cap is small so the whole strip usually
+      // fits on one line.
+      const CHIP_CAP = 8;
       function chipGroupHtml(items, extractName) {
         if (!items.length) return '<span class="identify_empty">none</span>';
         const arr = items.map(function (it) { return chipHtml(it, extractName); });
