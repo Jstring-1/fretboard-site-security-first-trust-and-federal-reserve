@@ -1587,10 +1587,12 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
 .identify_chips_more:hover                 { color: var(--accent-hi) !important;                                       }
 .identify_chips_extras                     { display: inline;                                                           }
 
-/* --- Over-cap warning (>6 picks) -------------------------------------- */
-.identify_over                             { min-height: 40px; display: flex; align-items: center;
-                                             justify-content: center;                                                   }
-.identify_over_msg                         { color: rgba(255,196,90,0.9); font-size: 0.9em;                             }
+/* --- Over-cap warning (>6 picks) --------------------------------------
+   No min-height — the outer #fb_identify_root .identify_strip rule
+   already pins the strip to 28px so this state matches the others.  */
+.identify_over                             { justify-content: center;                                                   }
+.identify_over_msg                         { color: rgba(255,196,90,0.9); font-size: 0.85em;
+                                             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;           }
 
 /* --- Fretboard hover preview ------------------------------------------
    Bright ring around every fret whose note is in the hovered chord.
