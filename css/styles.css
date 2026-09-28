@@ -1556,6 +1556,44 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
 .identify_placeholder                      { min-height: 96px;                                                          }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
+/* --- Chord ID inline layout ------------------------------------------
+   All three buckets (exact / contains / could-be) flow on the same
+   wrapping row. Visual hierarchy uses weight + opacity instead of
+   labels: exact = bold + full brightness, contains = normal, could
+   = faded. Wraps to a 2nd line when the row overflows. */
+.identify_strip_inline .identify_line      { display: flex; flex-wrap: wrap; align-items: baseline;
+                                             gap: 6px 4px;                                                             }
+.identify_sep                              { color: rgba(255,255,255,0.35); padding: 0 2px;                            }
+.identify_group_exact .identify_chip       { font-weight: 700;                                                          }
+.identify_group_contains .identify_chip    { font-weight: 500;                                                          }
+.identify_group_could .identify_chip       { opacity: 0.65; font-weight: 400;                                           }
+.identify_group_could .identify_chip:hover { opacity: 1;                                                                }
+.identify_chips_more                       { display: inline-block; margin: 0 2px; padding: 0 4px;
+                                             color: rgba(255,255,255,0.55) !important; font-size: 0.85em;
+                                             text-decoration: underline; cursor: pointer;                              }
+.identify_chips_more:hover                 { color: var(--accent-hi) !important;                                       }
+.identify_chips_extras                     { display: inline;                                                           }
+
+/* --- Over-cap warning (>6 picks) -------------------------------------- */
+.identify_over                             { min-height: 40px; display: flex; align-items: center;
+                                             justify-content: center;                                                   }
+.identify_over_msg                         { color: rgba(255,196,90,0.9); font-size: 0.9em;                             }
+
+/* --- Fretboard hover preview ------------------------------------------
+   Bright ring around every fret whose note is in the hovered chord.
+   outline-offset -2 keeps it inset so it doesn't push cell size. */
+#fretboard td[data-chord-preview]          { outline: 2px solid rgba(255, 230, 0, 0.95);
+                                             outline-offset: -2px; position: relative; z-index: 1;                     }
+
+/* --- Dim All/None relative to the shift arrows -----------------------
+   User feedback: All/None read visually brighter than ◀ ▶ because
+   text runs full-width where the arrow glyphs don't. Trim their
+   background/border a touch. */
+.semi_shift_allnone a.hl_pill              { background: rgba(255,255,255,0.04);
+                                             border-color: rgba(255,255,255,0.22);                                     }
+.semi_shift_allnone a.hl_pill:hover        { background: rgba(255,255,255,0.16);
+                                             border-color: rgba(255,255,255,0.55);                                     }
+
 /* In-key filter pill sits inline next to the picks readout so it
    doesn't collide with the absolute-positioned .identify_btns cluster
    (◀ ▶ Clear ID) anchored to the strip's top-right corner. */

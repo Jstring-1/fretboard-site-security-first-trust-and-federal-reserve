@@ -5287,6 +5287,40 @@
         navigateTo(url.search || '?');
         return;
       }
+      // All / None pills — second click restores the highlights you
+      // had before pressing them. Guards against accidental wipes.
+      // Stash lives in localStorage keyed by 'sf_hl_stash'; cleared
+      // after a restore or any other hl-mutating click.
+      const isAll  = a.classList && a.classList.contains('hl_all_pill');
+      const isNone = a.classList && a.classList.contains('hl_none_pill');
+      if (isAll || isNone) {
+        const curHl = (window.SF_X && window.SF_X.hl) || '';
+        const curLen = hlStrToArr(curHl).length;
+        const inAll  = curLen === 12;
+        const inNone = curLen === 0;
+        let stash = null;
+        try { stash = window.localStorage.getItem('sf_hl_stash'); } catch (_) {}
+        if (isAll && inAll && stash != null) {
+          // Second click of All while already in all-12 state → restore.
+          try { window.localStorage.removeItem('sf_hl_stash'); } catch (_) {}
+          navigateTo(buildHlHref(hlStrToArr(stash)));
+          return;
+        }
+        if (isNone && inNone && stash != null) {
+          try { window.localStorage.removeItem('sf_hl_stash'); } catch (_) {}
+          navigateTo(buildHlHref(hlStrToArr(stash)));
+          return;
+        }
+        // First click (or click without a matching stash): stash the
+        // current hl string (even if empty — restore will still work),
+        // then apply the button's href.
+        try { window.localStorage.setItem('sf_hl_stash', curHl); } catch (_) {}
+        // Fall through to the standard link-navigation path below.
+      } else {
+        // Any other in-page navigation drops a stale stash so the next
+        // All/None press starts a fresh two-click cycle.
+        try { window.localStorage.removeItem('sf_hl_stash'); } catch (_) {}
+      }
       // Before snapshotting the URL, flush the collapse state to URL
       // synchronously. The <details> toggle event is async; without
       // this flush, clicking a link RIGHT AFTER opening a section
@@ -6291,11 +6325,21 @@
 
     const hlArr = hlStrToArr(xs.hl);
     let html;
+    // Cap: beyond 6 picked notes the Contains / Could-be lists explode
+    // and become unhelpful. 6 also matches standard guitar's simultaneous
+    // note ceiling.
+    const PICK_CAP = 6;
     if (hlArr.length < 3) {
       // Placeholder — keeps the strip's vertical space reserved so the
       // page doesn't jump when chord ID data starts arriving.
       html = '<div class="identify_strip identify_placeholder">'
            + '</div>';
+    } else if (hlArr.length > PICK_CAP) {
+      html = '<div class="identify_strip identify_over">'
+           + '<div class="identify_over_msg">'
+           +   'Too many notes selected (' + hlArr.length + '). '
+           +   'Pick ' + PICK_CAP + ' or fewer to identify a chord.'
+           + '</div></div>';
     } else {
       const selMask = hlArrToMask(hlArr, xs.k);
       const inKeyOnly = getIdentifyInKey();
@@ -6305,55 +6349,59 @@
       const buckets = classifyChords(selMask, 0xFFF, inKeyOnly ? xs.k : null);
       const clearHref = buildHlHref([]);
 
-      function chipsHtml(items, extractName) {
+      // Build ONE chip's HTML. Adds data-chord-pcs so a hover handler
+      // (see bindIdentifyHover) can outline every fretboard cell whose
+      // note is in this chord — a live preview of "what would light up
+      // if I clicked this chip."
+      function chipHtml(it, extractName) {
+        const name = extractName ? extractName(it) : it;
+        const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
+        let mask = 0;
+        for (let j = 0; j < data.length; j++) {
+          if (data[j][1] === name) { mask = data[j][0]; break; }
+        }
+        let root = null, rootPc = -1;
+        for (const n of PC_TO_NOTE) {
+          if (name.indexOf(n) === 0 && (root === null || n.length > root.length)) {
+            root = n; rootPc = NOTE_TO_PC[n];
+          }
+        }
+        let tip = name;
+        let pcsAttr = '';
+        if (mask && rootPc >= 0) {
+          const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+          const degs = [], notes = [], pcs = [];
+          for (let i = 0; i < 12; i++) {
+            if ((mask >> ((rootPc + i) % 12)) & 1) {
+              degs.push(DEG_LBL[i]);
+              notes.push(PC_TO_NOTE[(rootPc + i) % 12]);
+              pcs.push((rootPc + i) % 12);
+            }
+          }
+          tip = name + '\nDegrees: ' + degs.join(' ') + '\nNotes: ' + notes.join(' ');
+          pcsAttr = ' data-chord-pcs="' + pcs.join(',') + '"';
+        }
+        const isEngaged = !!(xs._id_active && xs._id_active === name);
+        const href = isEngaged ? clearHlOnlyHref() : (applyChordHref(name, mask) || '#');
+        const cls = 'identify_chip' + (isEngaged ? ' identify_chip_on' : '');
+        return '<a class="' + cls + '" href="' + escHtml(href)
+             + '" title="' + escAttr(tip) + '"' + pcsAttr + '>' + escHtml(name) + '</a>';
+      }
+
+      // Render a group's chips with a cap + "+N more" progressive
+      // disclosure. Especially useful for Could-be, which routinely
+      // returns 30+ chords.
+      const CHIP_CAP = 12;
+      function chipGroupHtml(items, extractName) {
         if (!items.length) return '<span class="identify_empty">none</span>';
-        return items.map(function (it) {
-          const name = extractName ? extractName(it) : it;
-          // Find this chord's mask so we can build an apply URL + tooltip.
-          const data = (window.SLANT_CHORDS && window.SLANT_CHORDS.chords) || [];
-          let mask = 0;
-          for (let j = 0; j < data.length; j++) {
-            if (data[j][1] === name) { mask = data[j][0]; break; }
-          }
-          // Resolve root + degree set so we can render tooltip + detect
-          // engagement (chip is "on" when x.k matches this chord's root and
-          // x.hl matches its degree set).
-          let root = null, rootPc = -1;
-          for (const n of PC_TO_NOTE) {
-            if (name.indexOf(n) === 0 && (root === null || n.length > root.length)) {
-              root = n; rootPc = NOTE_TO_PC[n];
-            }
-          }
-          let tip = name;
-          let degsStr = '';      // chord degrees relative to its OWN root (for tooltip)
-          if (mask && rootPc >= 0) {
-            const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
-            const degs = [], notes = [];
-            for (let i = 0; i < 12; i++) {
-              if ((mask >> ((rootPc + i) % 12)) & 1) {
-                degs.push(DEG_LBL[i]);
-                notes.push(PC_TO_NOTE[(rootPc + i) % 12]);
-              }
-            }
-            degsStr = degs.join(' ');
-            tip = name + '\nDegrees: ' + degsStr + '\nNotes: ' + notes.join(' ');
-          }
-          // Engagement is pinned to the exact chip the user clicked via
-          // ?idn=<name>. Multiple names can describe the same notes
-          // (Em7 = G6), so a degrees-match would light all of them up.
-          const isEngaged = !!(xs._id_active && xs._id_active === name);
-          let href;
-          if (isEngaged) {
-            // Disengage: drop hl= but keep pk= (yellow chord-ID picks)
-            // and every other URL param. Same helper the None pill uses,
-            // so unlinked-mode merging behaves consistently.
-            href = clearHlOnlyHref();
-          } else {
-            href = applyChordHref(name, mask) || '#';
-          }
-          const cls = 'identify_chip' + (isEngaged ? ' identify_chip_on' : '');
-          return '<a class="' + cls + '" href="' + escHtml(href) + '" title="' + escAttr(tip) + '">' + escHtml(name) + '</a>';
-        }).join('');
+        const arr = items.map(function (it) { return chipHtml(it, extractName); });
+        if (arr.length <= CHIP_CAP) return arr.join('');
+        const first = arr.slice(0, CHIP_CAP).join('');
+        const rest  = arr.slice(CHIP_CAP).join('');
+        const more  = arr.length - CHIP_CAP;
+        return first
+             + '<a href="#" class="identify_chips_more" data-more="1">+' + more + ' more</a>'
+             + '<span class="identify_chips_extras" hidden>' + rest + '</span>';
       }
 
       const extras = getIdentifyExtras();
@@ -6381,26 +6429,31 @@
             const off = _DEG_OFFSET[d];
             return off == null ? '' : PC_TO_NOTE[(tonicPc + off) % 12];
           }).filter(Boolean).join(' ');
+      // Single-line layout: exact / contains / could-be all flow
+      // inline, separated by a thin bullet. Visual hierarchy uses
+      // font weight + opacity (exact = boldest, could-be = faintest)
+      // so the columns are readable without repeating "Exact:" labels.
+      const SEP = ' <span class="identify_sep">·</span> ';
+      const exactHtml = chipGroupHtml(buckets.exact);
+      const contHtml  = chipGroupHtml(buckets.subset,   function (it) { return it.name; });
+      const couldHtml = chipGroupHtml(buckets.superset, function (it) { return it.name; });
       html = ''
-        + '<div class="identify_strip">'
+        + '<div class="identify_strip identify_strip_inline">'
         + headerBtnsHtml(true)
         + '  <div class="identify_head">'
         + '    <span class="identify_picks">' + escHtml(noteStr) + '</span>'
         + '    <span class="identify_filter">' + inKeyPill + '</span>'
-        + '  </div>'
-        + '  <div class="identify_row">'
-        + '    <span class="identify_chips">' + chipsHtml(buckets.exact) + '</span>'
-        + '  </div>'
-        + '  <div class="identify_row">'
-        + '    <span class="identify_chips">'
-        +        chipsHtml(buckets.subset, function (it) { return it.name; })
-        + '    </span>'
-        + '  </div>'
-        + '  <div class="identify_row">'
         + '    <span class="identify_extras_toggle">' + extrasPills + '</span>'
-        + '    <span class="identify_chips">'
-        +        chipsHtml(buckets.superset, function (it) { return it.name; })
-        + '    </span>'
+        + '  </div>'
+        + '  <div class="identify_line">'
+        + '    <span class="identify_group identify_group_exact"'
+        +          (buckets.exact.length    ? '' : ' hidden') + '>' + exactHtml + '</span>'
+        +      (buckets.exact.length    && (buckets.subset.length   || buckets.superset.length) ? SEP : '')
+        + '    <span class="identify_group identify_group_contains"'
+        +          (buckets.subset.length   ? '' : ' hidden') + '>' + contHtml  + '</span>'
+        +      (buckets.subset.length   && buckets.superset.length ? SEP : '')
+        + '    <span class="identify_group identify_group_could"'
+        +          (buckets.superset.length ? '' : ' hidden') + '>' + couldHtml + '</span>'
         + '  </div>'
         + '</div>';
     }
@@ -6409,6 +6462,35 @@
 
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
     if (kbHost) kbHost.innerHTML = buildHtml(xKB, 'section_4');
+
+    // Preview-on-hover: mousing over a chord chip outlines every
+    // fretboard cell whose note is in that chord, so you can see what
+    // the chord would look like before committing to a click. Uses
+    // bubbling mouseover/mouseout since mouseenter doesn't bubble.
+    [fbHost, kbHost].forEach(function (host) {
+      if (!host || host._previewBound) return;
+      host._previewBound = true;
+      host.addEventListener('mouseover', function (e) {
+        const chip = e.target.closest && e.target.closest('.identify_chip');
+        if (!chip) return;
+        const pcsStr = chip.getAttribute('data-chord-pcs');
+        if (!pcsStr) return;
+        const set = new Set(pcsStr.split(',').map(function (s) { return +s; }));
+        document.querySelectorAll('#fretboard td[data-note]').forEach(function (td) {
+          const pc = notePc(td.getAttribute('data-note'));
+          if (set.has(pc)) td.setAttribute('data-chord-preview', '1');
+        });
+      });
+      host.addEventListener('mouseout', function (e) {
+        const chip = e.target.closest && e.target.closest('.identify_chip');
+        if (!chip) return;
+        const rel = e.relatedTarget;
+        if (rel && chip.contains(rel)) return;
+        document.querySelectorAll('#fretboard td[data-chord-preview]').forEach(function (td) {
+          td.removeAttribute('data-chord-preview');
+        });
+      });
+    });
 
     // Wire +N pills + anchor-scroll for any link click inside the strip
     // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
@@ -6419,6 +6501,18 @@
       host._extrasBound = true;
       const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
       host.addEventListener('click', function (e) {
+        // "+N more" progressive-disclosure link — reveals the hidden
+        // extras span and hides the link itself. No navigation.
+        const more = e.target.closest && e.target.closest('.identify_chips_more');
+        if (more) {
+          e.preventDefault();
+          e.stopPropagation();
+          const parent = more.parentNode;
+          const extras = parent && parent.querySelector('.identify_chips_extras');
+          if (extras) extras.removeAttribute('hidden');
+          more.setAttribute('hidden', 'hidden');
+          return;
+        }
         // (Chord ID on/off toggle button removed — Chord ID is always on.
         // The <details> wrapper still lets users minimize the strip; that
         // open/closed state is persisted via the 'toggle' listener wired
