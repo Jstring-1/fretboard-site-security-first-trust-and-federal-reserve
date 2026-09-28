@@ -166,7 +166,28 @@ a:hover                                    {  color:var(--accent-hi);           
 .custom_tun_loader:hover                   {  border-color: var(--accent-hi);                                          }
 .custom_tun_loader:focus                   {  outline: none; border-color: var(--accent-hi);                          }
 .custom_tun_loader option                  {  background: var(--bg-elevated); color: var(--accent);                  }
-@media print { .custom_tun_loader { display: none !important; }                                                        }                         
+@media print { .custom_tun_loader { display: none !important; }                                                        }
+
+/* --- Custom-tuning column state --------------------------------------
+   When Custom is ON, tint the left column amber so it visibly reads as
+   "editable, not the preset." When OFF, dim the per-string selects and
+   the Load… dropdown to signal they're not doing anything until you
+   flip the switch above. */
+#fretboard[data-custom="on"] #f_cyo        {  background-color: rgba(255, 196, 90, 0.10) !important;
+                                              border-left: 2px solid rgba(255, 196, 90, 0.45);
+                                              border-right: 1px solid rgba(255, 196, 90, 0.25);                        }
+#fretboard[data-custom="on"] #f_cyo select {  background: rgba(255, 196, 90, 0.06);
+                                              border: 1px solid rgba(255, 196, 90, 0.35);                              }
+#fretboard[data-custom="on"] #f_cyo .custom_tun_loader
+                                           {  background: rgba(255, 196, 90, 0.08);
+                                              border-color: rgba(255, 196, 90, 0.35);                                  }
+#fretboard[data-custom="off"] select[name^="s"]
+                                           {  opacity: 0.35; pointer-events: none;
+                                              filter: grayscale(0.5);                                                  }
+#fretboard[data-custom="off"] .custom_tun_loader
+                                           {  opacity: 0.55; filter: grayscale(0.35);                                  }
+#fretboard[data-custom="off"] .custom_tun_loader:hover
+                                           {  opacity: 0.85; filter: none;                                             }                         
 #_5_                                       {  color:#dddddd;                                                         }
 ._i_                                       {  color:#ff0000;                                                         }
 ._ii_                                      {  color:#9900ff;                                                         }    

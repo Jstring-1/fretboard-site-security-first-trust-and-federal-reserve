@@ -1731,7 +1731,7 @@
     // scroll down to a builder section to apply a chord or scale.
     h += quickPicksHtml(x, 'quick_picks');
 
-    h += '<table id="fretboard">';
+    h += '<table id="fretboard" data-custom="' + (x.z === 'y' ? 'on' : 'off') + '">';
 
     const cyoState = x.z === 'y' ? 'on' : 'off';
     const cyoNextZ = x.z === 'y' ? 'n' : 'y';
