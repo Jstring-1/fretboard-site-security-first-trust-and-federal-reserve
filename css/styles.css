@@ -1455,10 +1455,12 @@ details.collapsible > summary              { padding-left: 36px;                
                                              gap: 18px; padding: 6px 14px;                                             }
 .semi_shift_arrows                         { display: flex; gap: 8px;                                                  }
 .semi_shift_allnone                        { display: flex; gap: 6px;                                                  }
-.semi_shift_allnone a.hl_pill              { display: inline-block; padding: 2px 12px; font-size: 0.85em;
+/* Match the .semi_shift_btn exactly so ◀ ▶ All None all read as one control cluster. */
+.semi_shift_allnone a.hl_pill              { display: inline-block; padding: 2px 12px;
                                              border-radius: 12px; border: 1px solid rgba(255,255,255,0.35);
                                              background: rgba(255,255,255,0.08); color: #fff;
-                                             text-decoration: none; line-height: 1.4;                                  }
+                                             font: 600 0.85em var(--font); line-height: 1;
+                                             text-decoration: none; cursor: pointer;                                   }
 .semi_shift_allnone a.hl_pill:hover        { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
 .semi_shift_label                          { font: 600 0.75em var(--font); letter-spacing: 0.08em;
                                              text-transform: uppercase; color: var(--muted);                          }
