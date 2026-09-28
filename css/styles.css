@@ -656,6 +656,18 @@ details.collapsible > summary { cursor: default; }
 @media print { .section_apply_all          { display: none !important; }                                                }
 /* Audio toggle (♪): off = subtle outline, on = filled accent. Sits to
    the right of the Linked toggle in the Fretboard summary. */
+.site_tips_wrap                            { display: inline-flex; align-items: center; gap: 4px;
+                                             margin-right: 4px; padding: 2px 6px 2px 4px;
+                                             font: 400 0.82em var(--font); color: rgba(255,255,255,0.7);
+                                             border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;
+                                             background: rgba(255,255,255,0.04); cursor: pointer;
+                                             user-select: none;                                                          }
+.site_tips_wrap:hover                      { color: var(--text); border-color: rgba(255,255,255,0.35);
+                                             background: rgba(255,255,255,0.10);                                        }
+.site_tips_wrap input[type="checkbox"]     { margin: 0; cursor: pointer; accent-color: var(--accent-hi);                }
+.site_tips_label                           { line-height: 1;                                                             }
+@media print { .site_tips_wrap             { display: none !important;                                                  } }
+
 .section_audio_toggle                      { display: inline-block; margin-left: 4px; padding: 2px 10px;
                                              border: 1px solid rgba(255,255,255,0.55); border-radius: 12px;
                                              background: rgba(255,255,255,0.18); color: #fff; cursor: pointer;

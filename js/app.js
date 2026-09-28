@@ -5010,6 +5010,73 @@
       }
     });
   }
+  // ---- Site-wide hover tooltips (Tips checkbox in the header) ------
+  // Persists in localStorage as 'sf_tips' — default 'on'. When off, JS
+  // moves every element's title="..." into data-sf-title="..." so the
+  // native browser tooltip stops popping. A MutationObserver keeps the
+  // suppression active as new elements are rendered.
+  let _tipsObs = null;
+  function tipsOn() { return localStorage.getItem('sf_tips') !== 'off'; }
+  function setTipsOn(on) {
+    if (on) localStorage.removeItem('sf_tips');
+    else    localStorage.setItem('sf_tips', 'off');
+  }
+  function _stripTitle(el) {
+    if (!el || !el.hasAttribute) return;
+    if (!el.hasAttribute('title')) return;
+    if (el.hasAttribute('data-sf-title')) { el.removeAttribute('title'); return; }
+    el.setAttribute('data-sf-title', el.getAttribute('title'));
+    el.removeAttribute('title');
+  }
+  function _restoreTitle(el) {
+    if (!el || !el.hasAttribute) return;
+    if (!el.hasAttribute('data-sf-title')) return;
+    el.setAttribute('title', el.getAttribute('data-sf-title'));
+    el.removeAttribute('data-sf-title');
+  }
+  function applyTipsSetting() {
+    const on = tipsOn();
+    const cb = document.getElementById('site_tips_toggle');
+    if (cb) cb.checked = on;
+    if (on) {
+      // Restore, disconnect observer.
+      document.querySelectorAll('[data-sf-title]').forEach(_restoreTitle);
+      if (_tipsObs) { _tipsObs.disconnect(); _tipsObs = null; }
+      return;
+    }
+    // Strip existing titles.
+    document.querySelectorAll('[title]').forEach(_stripTitle);
+    // Watch for future ones (new HTML injected by renders, attribute
+    // writes to existing elements, etc.).
+    if (_tipsObs) return;
+    _tipsObs = new MutationObserver(function (muts) {
+      for (const m of muts) {
+        if (m.type === 'attributes' && m.attributeName === 'title') {
+          _stripTitle(m.target);
+        } else if (m.type === 'childList') {
+          m.addedNodes.forEach(function (n) {
+            if (!n || n.nodeType !== 1) return;
+            _stripTitle(n);
+            if (n.querySelectorAll) n.querySelectorAll('[title]').forEach(_stripTitle);
+          });
+        }
+      }
+    });
+    _tipsObs.observe(document.body, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ['title']
+    });
+  }
+  function bindTipsToggle() {
+    const cb = document.getElementById('site_tips_toggle');
+    if (!cb || cb._sfBound) return;
+    cb._sfBound = true;
+    cb.checked = tipsOn();
+    cb.addEventListener('change', function () {
+      setTipsOn(cb.checked);
+      applyTipsSetting();
+    });
+  }
+
   // ---- Display mode (notes / degrees / both) -----------------------
   // Drives whether note names, degree labels, or both are shown in the
   // fretboard cells, chord/scale grid cells, and progression bars.
@@ -7195,6 +7262,8 @@
     renderQuiz();
     renderEar();
     bindEarTraining();
+    bindTipsToggle();
+    applyTipsSetting();
     window.addEventListener('popstate', applyState);
   }
 
