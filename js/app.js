@@ -1031,7 +1031,8 @@
     h += '<div class="opt_row opt_row_main">';
     const curLabel = '(' + x.strs + '-string) ' + x.name + ' — ' + x.notes + ' — (' + x.dgs + ')';
     h += '<div class="tun_picker" id="tun_picker">';
-    h +=   '<button type="button" class="tun_picker_btn inputs" id="tun_picker_btn" aria-haspopup="dialog" aria-expanded="false">';
+    h +=   '<button type="button" class="tun_picker_btn inputs" id="tun_picker_btn" aria-haspopup="dialog" aria-expanded="false"'
+       +     ' title="Change the tuning. Opens a searchable picker with 180+ presets — guitar, bass, ukulele, banjo, mandolin, lap &amp; pedal steel — filterable by string count.">';
     h +=     '<span class="tun_btn_main">' + escHtml(curLabel) + '</span>';
     h +=     '<span class="tun_btn_caret" aria-hidden="true">▾</span>';
     h +=   '</button>';
@@ -1639,7 +1640,10 @@
         style = ' style="background:' + bg + ' !important;color:' + fg
               + ' !important;border-color:' + bg + ' !important;"';
       }
-      h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style + '>'
+      const tipVerb = on ? 'Turn OFF' : 'Turn ON';
+      const tipStr  = tipVerb + ' the ' + deg + ' (' + (note || '?') + ') highlight across the fretboard and keyboard.';
+      h += '<a class="' + cls + '" href="' + escHtml(href) + '"' + style
+        +   ' title="' + escAttr(tipStr) + '">'
         +    '<span class="combo_pill_deg">' + escHtml(deg) + '</span>'
         +    '<span class="combo_pill_note">' + escHtml(note) + '</span>'
         +  '</a>';
@@ -1710,12 +1714,13 @@
 
   // Render the highlight pills + chord/scale chips above the keyboard so the
   // keyboard section is fully usable when the fretboard section is collapsed.
-  function renderKeyboardPicks(x) {
-    const root = document.getElementById('kb_picks_root');
+  // Renamed from renderKeyboardBelow. Matches the fretboard's post-neck
+  // layout: pill row + chord/scale quick picks. All/None now lives in
+  // the shift bar (see renderShiftBars) so the pill row stays lean.
+  function renderKeyboardBelow(x) {
+    const root = document.getElementById('kb_below_root');
     if (!root) return;
-    // Combined degree+note pill row + All/None + quick picks.
     root.innerHTML = comboPillsHtml(x, 'kb_hl_row')
-                   + allNoneRowHtml('kb_allnone_row')
                    + quickPicksHtml(x, 'kb_quick_picks');
   }
 
@@ -1769,8 +1774,11 @@
     const f0Cell = '<td id="f0" class="f0_y_switch"><a href="' + escHtml(yToggleHref)
                  + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escAttr(yTitle)
                  + '" aria-label="Toggle string direction">' + yLabel + '</a></td>';
+    const cyoTitle = x.z === 'y'
+      ? 'Custom tuning ON — click to switch back to the preset above.'
+      : 'Custom tuning OFF — click to enable per-string editing so you can hand-tune each string.';
     const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
-      '<a href="' + escHtml(toggleHref) + '" title="Click to toggle custom tuning">' + cyoState.toUpperCase() + '</a>' +
+      '<a href="' + escHtml(toggleHref) + '" title="' + escAttr(cyoTitle) + '" aria-label="Toggle custom tuning">' + cyoState.toUpperCase() + '</a>' +
       '</td><td id="f0">X</td>'
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
@@ -1862,8 +1870,10 @@
       if (a.name === b.name) return a.notes.localeCompare(b.notes);
       return a.name.localeCompare(b.name);
     });
-    let customLoaderHtml = '<select class="custom_tun_loader" aria-label="Load a preset tuning into custom strings">';
-    customLoaderHtml += '<option value="">Load…</option>';
+    let customLoaderHtml = '<select class="custom_tun_loader"'
+                         + ' aria-label="Seed custom-tuning strings from a preset"'
+                         + ' title="Copy a preset tuning’s notes into the per-string editors above. Turns Custom on if it isn’t already.">';
+    customLoaderHtml += '<option value="">Seed from preset…</option>';
     for (const t of _customLoaderRows) {
       const lbl = '(' + t.strs + ') ' + t.name + ' — ' + t.notes;
       customLoaderHtml += '<option value="' + escAttr(t.key) + '">' + escHtml(lbl) + '</option>';
@@ -4893,7 +4903,7 @@
         break;
       case 'section_4':
         if (typeof applyKeyboardColors === 'function') applyKeyboardColors(x);
-        if (typeof renderKeyboardPicks === 'function') renderKeyboardPicks(x);
+        if (typeof renderKeyboardBelow === 'function') renderKeyboardBelow(x);
         break;
       case 'section_6':
         if (typeof renderScaleGrid === 'function') renderScaleGrid(x);
@@ -6262,10 +6272,12 @@
       let inner = '<div class="semi_shift_arrows">'
                 +   '<button type="button" class="semi_shift_btn" data-shift="-1" data-section="'
                 +     escAttr(sectionId) + '"' + dis
-                +     ' title="Shift highlighted notes down 1 semitone">◀</button>'
+                +     ' aria-label="Shift highlights down one semitone"'
+                +     ' title="Shift every highlighted note DOWN by 1 semitone (moves the whole selection left on the neck). The key stays the same.">◀</button>'
                 +   '<button type="button" class="semi_shift_btn" data-shift="1" data-section="'
                 +     escAttr(sectionId) + '"' + dis
-                +     ' title="Shift highlighted notes up 1 semitone">▶</button>'
+                +     ' aria-label="Shift highlights up one semitone"'
+                +     ' title="Shift every highlighted note UP by 1 semitone (moves the whole selection right on the neck). The key stays the same.">▶</button>'
                 + '</div>';
       if (includeAllNone) {
         // Reuses the same href logic that used to render above the fretboard.
@@ -6273,9 +6285,9 @@
         const noneHref = clearHlOnlyHref();
         inner += '<div class="semi_shift_allnone">'
               +   '<a class="hl_pill hl_all_pill" href="' + escHtml(allHref)
-              +     '" title="Highlight all 12 degrees">All</a>'
+              +     '" title="Light up all 12 pitch classes at once. Click again to undo and restore your previous highlights.">All</a>'
               +   '<a class="hl_pill hl_none_pill" href="' + escHtml(noneHref)
-              +     '" title="Clear all colored highlights (keeps chord-ID picks)">None</a>'
+              +     '" title="Clear every colored highlight. Click again to undo and restore your previous highlights.">None</a>'
               + '</div>';
       }
       return '<div class="semi_shift_bar">' + inner + '</div>';
@@ -6283,7 +6295,7 @@
     const fbEl = document.getElementById('fb_shift_root');
     const kbEl = document.getElementById('kb_shift_root');
     if (fbEl) fbEl.innerHTML = shiftHtml('section_2', true);
-    if (kbEl) kbEl.innerHTML = shiftHtml('section_4', false);
+    if (kbEl) kbEl.innerHTML = shiftHtml('section_4', true);
 
     // One-shot click delegate at body level — handles both bars.
     if (!document.body._semiShiftBound) {
@@ -6432,7 +6444,16 @@
       // + opacity (exact boldest, could-be faintest) instead of
       // labels. Fixed height + overflow hidden so the fretboard
       // below never shifts.
-      const SEP = '<span class="identify_sep">·</span>';
+      // Semantic prefixes ("also:", "expand to:") replace the old ·
+      // separator so users get a plain-English hint about what each
+      // group of chord chips means, without paying the vertical cost
+      // of full labels.
+      const PFX_ALSO = '<span class="identify_prefix"'
+                     +  ' title="Chords that use a SUBSET of the notes you picked — you’re voicing this chord with extra notes on top.">'
+                     +  'also:</span>';
+      const PFX_EXPAND = '<span class="identify_prefix"'
+                       +  ' title="Chords that use a SUPERSET of the notes you picked — add the extra notes shown by the +1 / +2 pills and you’d be playing this.">'
+                       +  'expand to:</span>';
       const exactHtml = chipGroupHtml(buckets.exact);
       const contHtml  = chipGroupHtml(buckets.subset,   function (it) { return it.name; });
       const couldHtml = chipGroupHtml(buckets.superset, function (it) { return it.name; });
@@ -6441,9 +6462,9 @@
         + headerBtnsHtml(true)
         + '  <span class="identify_filter">' + inKeyPill + '</span>'
         + '  <span class="identify_extras_toggle">' + extrasPills + '</span>'
-        +    (buckets.exact.length ? SEP + '<span class="identify_group identify_group_exact">' + exactHtml + '</span>' : '')
-        +    (buckets.subset.length   ? SEP + '<span class="identify_group identify_group_contains">' + contHtml  + '</span>' : '')
-        +    (buckets.superset.length ? SEP + '<span class="identify_group identify_group_could">'    + couldHtml + '</span>' : '')
+        +    (buckets.exact.length    ? '<span class="identify_group identify_group_exact">'    + exactHtml + '</span>' : '')
+        +    (buckets.subset.length   ? PFX_ALSO   + '<span class="identify_group identify_group_contains">' + contHtml  + '</span>' : '')
+        +    (buckets.superset.length ? PFX_EXPAND + '<span class="identify_group identify_group_could">'    + couldHtml + '</span>' : '')
         + '</div>';
     }
       return html;
@@ -7292,7 +7313,7 @@
     renderKeyExtras(xKS);      // Key Sigs: this-key-contains + cadences + intervals
     applyKeyboardColors(xKB);
     applyKeyboardLabels(xKB);
-    renderKeyboardPicks(xKB);
+    renderKeyboardBelow(xKB);
     bindTuningPicker(x);
     applyCollapseFromUrl();
 

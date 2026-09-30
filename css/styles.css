@@ -1405,7 +1405,9 @@ details.collapsible > summary              { padding-left: 36px;                
 /* Wrap the keyboard's mirror controls in the same padded container as the
    fretboard form (#tunings_drop), so the highlight strip + chord/scale
    chip rows have matching side margins and a consistent gap below. */
-#kb_picks_root                             { display: flex; flex-direction: column;
+#kb_picks_root,
+#kb_below_root,
+#fb_below_root                             { display: flex; flex-direction: column;
                                              gap: 5px; padding: 10px 18px 14px;                                      }
 /* Combined degree + note pill row — one taller button per chromatic
    degree, with the degree label on top and the resolved note name in
@@ -1556,7 +1558,8 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
    over-cap warning) so switching between them doesn't shift the
    fretboard below. Applied inside the fretboard column where the
    strip now lives. */
-#fb_identify_root .identify_strip          { height: 28px; box-sizing: border-box; overflow: hidden;                    }
+#fb_identify_root .identify_strip,
+#kb_identify_root .identify_strip          { height: 28px; box-sizing: border-box; overflow: hidden;                    }
 .identify_placeholder                      { min-height: 0;                                                             }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
@@ -1565,8 +1568,10 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
    no background — just a single line of text/buttons. Every state
    (placeholder, chord list, over-cap warning) sits at the same fixed
    height so nothing below shifts. */
-#fb_identify_root                          { margin: 0; padding: 0;                                                    }
-#fb_identify_root .identify_strip          { background: transparent; border-radius: 0;
+#fb_identify_root,
+#kb_identify_root                          { margin: 0; padding: 0;                                                    }
+#fb_identify_root .identify_strip,
+#kb_identify_root .identify_strip          { background: transparent; border-radius: 0;
                                              padding: 2px 12px; margin: 0;
                                              font-size: 0.86em; line-height: 1.4;
                                              display: flex; flex-wrap: nowrap;
@@ -1576,6 +1581,8 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
                                              min-width: 0; overflow: hidden; text-overflow: ellipsis;                  }
 .identify_strip_inline .identify_chip      { padding: 0 3px;                                                            }
 .identify_sep                              { color: rgba(255,255,255,0.35); padding: 0 3px; flex-shrink: 0;            }
+.identify_prefix                           { color: rgba(255,255,255,0.55); font-size: 0.82em; font-style: italic;
+                                             padding: 0 4px 0 8px; flex-shrink: 0; letter-spacing: 0.02em;              }
 .identify_group_exact .identify_chip       { font-weight: 700;                                                          }
 .identify_group_contains .identify_chip    { font-weight: 500;                                                          }
 .identify_group_could .identify_chip       { opacity: 0.65; font-weight: 400;                                           }
@@ -1630,7 +1637,7 @@ a.identify_pill_on:link,
 a.identify_pill_on:visited,
 a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00 !important; border-color: #ffeb00;   }
 
-@media print { #quick_picks, #kb_quick_picks, #kb_picks_root,
+@media print { #quick_picks, #kb_quick_picks, #kb_picks_root, #kb_below_root, #fb_below_root,
                #fb_identify_root, #kb_identify_root          { display: none !important; }                            }
 
 /* ---------- Tuning picker (sortable / filterable popover) ---------- */
@@ -2465,8 +2472,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
 
   /* Wide reference tables: scroll horizontally inside their card so the
      viewport doesn't stretch sideways. The tables keep their min-width. */
-  #fretboard_root, #fb_identify_root,
-  #kb_picks_root, #kb_identify_root,
+  #fretboard_root, #fb_identify_root, #fb_below_root,
+  #kb_picks_root, #kb_below_root, #kb_identify_root,
   #keyboard_key_root, .ritz,
   #chord_grid_root, #scale_grid_root,
   #tunings_root                            { overflow-x: auto;
