@@ -1037,9 +1037,33 @@
     if (a) a.href = x._self;
   }
 
-  function renderOptions(x) {
-    const root = document.getElementById('options_root');
-    let h = '<div id="tunings_drop">';
+  // -------- Fretboard instance targeting --------
+  // Bundle every DOM id the fretboard renderers write into so a future
+  // second instance can render into its own set of divs. The default
+  // instance still emits the exact IDs that CSS + other code depend on;
+  // Commit 1 of Phase 4 only threads the mechanism, no behavior change.
+  const FB_TARGETS_DEFAULT = {
+    instanceId:    '',                    // '' = the original fretboard section
+    rootId:        'fretboard_root',
+    optionsId:     'options_root',
+    identifyId:    'fb_identify_root',
+    shiftId:       'fb_shift_root',
+    belowId:       'fb_below_root',
+    tableId:       'fretboard',
+    tuningsDropId: 'tunings_drop',
+    tunPickerId:   'tun_picker',
+    tunPickerBtnId:'tun_picker_btn',
+    tunPopId:      'tun_pop'
+  };
+  function fbTargets(overrides) {
+    return Object.assign({}, FB_TARGETS_DEFAULT, overrides || {});
+  }
+
+  function renderOptions(x, cfg) {
+    cfg = cfg || FB_TARGETS_DEFAULT;
+    const root = document.getElementById(cfg.optionsId);
+    if (!root) return;
+    let h = '<div id="' + cfg.tuningsDropId + '">';
 
     // Row 1: tuning picker. The string-direction (y) toggle now lives in
     // the fretboard's bottom row (replacing the open-string "X" marker)
@@ -1047,8 +1071,8 @@
     // stays in the canonical low → high order regardless.
     h += '<div class="opt_row opt_row_main">';
     const curLabel = '(' + x.strs + '-string) ' + x.name + ' — ' + x.notes + ' — (' + x.dgs + ')';
-    h += '<div class="tun_picker" id="tun_picker">';
-    h +=   '<button type="button" class="tun_picker_btn inputs" id="tun_picker_btn" aria-haspopup="dialog" aria-expanded="false"'
+    h += '<div class="tun_picker" id="' + cfg.tunPickerId + '">';
+    h +=   '<button type="button" class="tun_picker_btn inputs" id="' + cfg.tunPickerBtnId + '" aria-haspopup="dialog" aria-expanded="false"'
        +     ' title="Change the tuning. Opens a searchable picker with 180+ presets — guitar, bass, ukulele, banjo, mandolin, lap &amp; pedal steel — filterable by string count.">';
     h +=     '<span class="tun_btn_main">' + escHtml(curLabel) + '</span>';
     h +=     '<span class="tun_btn_caret" aria-hidden="true">▾</span>';
@@ -1056,7 +1080,7 @@
     h +=   '<select class="inputs tun_hidden_select" name="x" aria-hidden="true" tabindex="-1">';
     h +=     '<option value="' + escHtml(x.x) + '" selected>' + escHtml(curLabel) + '</option>';
     h +=   '</select>';
-    h +=   '<div class="tun_pop" id="tun_pop" hidden role="dialog" aria-label="Choose a tuning"></div>';
+    h +=   '<div class="tun_pop" id="' + cfg.tunPopId + '" hidden role="dialog" aria-label="Choose a tuning"></div>';
     h += '</div>';
     h += '</div>';
 
@@ -1079,14 +1103,16 @@
     root.innerHTML = h;
   }
 
-  // Render the pill row + chord/scale quick picks INTO #fb_below_root.
-  // These lived above the fretboard grid until the layout swap that
-  // hoisted the Chord ID strip to the top of the section.
-  function renderFretboardBelow(x) {
-    const root = document.getElementById('fb_below_root');
+  // Render the pill row + chord/scale quick picks INTO the below-neck
+  // slot. Instance-aware via cfg so a second fretboard can render into
+  // its own #fb_below_root_2 in a later commit.
+  function renderFretboardBelow(x, cfg) {
+    cfg = cfg || FB_TARGETS_DEFAULT;
+    const root = document.getElementById(cfg.belowId);
     if (!root) return;
-    root.innerHTML = comboPillsHtml(x, 'fb_hl_row')
-                   + quickPicksHtml(x, 'quick_picks');
+    const suf = cfg.instanceId || '';
+    root.innerHTML = comboPillsHtml(x, 'fb_hl_row'    + suf)
+                   + quickPicksHtml(x, 'quick_picks' + suf);
   }
 
   // ---------- tuning picker popover ----------
@@ -1741,8 +1767,10 @@
                    + quickPicksHtml(x, 'kb_quick_picks');
   }
 
-  function renderFretboard(x) {
-    const root = document.getElementById('fretboard_root');
+  function renderFretboard(x, cfg) {
+    cfg = cfg || FB_TARGETS_DEFAULT;
+    const root = document.getElementById(cfg.rootId);
+    if (!root) return;
     const rev = (x.y === 'y') ? 'rev_' : '';
     const tuningName = (x.z === 'y') ? 'Custom' : x.name;
     const tuningNotes = (x.z === 'y')
@@ -1756,7 +1784,7 @@
     // renderSummaryStatus). The fretboard header only carries the form.
     let h = '';
     h += '<div class="fb_header">';
-    h += '  <div id="options_root"></div>';
+    h += '  <div id="' + cfg.optionsId + '"></div>';
     h += '</div>';
 
     // NOTE: quick-picks (chord + scale chip rows) used to render here,
@@ -1767,9 +1795,9 @@
     // Chord ID lives in this gap — between the tuning picker and the
     // fretboard grid — so it snugs directly against the neck. Populated
     // by renderIdentifyStrips.
-    h += '<div id="fb_identify_root"></div>';
+    h += '<div id="' + cfg.identifyId + '"></div>';
 
-    h += '<table id="fretboard" data-custom="off">';
+    h += '<table id="' + cfg.tableId + '" data-custom="off">';
 
     // String-direction (y) toggle that lives in place of the open-string "X"
     // marker — one in each fretnums row so flipping the order is reachable
@@ -7354,12 +7382,12 @@
     const xCG = stateForSection('section_3', x);
     const xSG = stateForSection('section_6', x);
     const xKS = stateForSection('section_9', x);
-    renderFretboard(xFB);   // creates #options_root in the middle column
+    renderFretboard(xFB, FB_TARGETS_DEFAULT);   // creates #options_root
     // Form (tuning picker + degree/note pill rows) lives in the FRETBOARD
     // section, so it must reflect that section's effective state. In
     // linked mode xFB === x, so this is identical to passing the global
     // x; in unlinked mode it ensures the pills paint from s2_hl etc.
-    renderOptions(xFB);
+    renderOptions(xFB, FB_TARGETS_DEFAULT);
     renderChordGrid(xCG);
     renderScaleGrid(xSG);
     renderDiatonicChart(xCG);  // Chord Builder: 7 diatonic chords (T/S/D)
@@ -7392,7 +7420,7 @@
       window.SF_TabCapture.refresh();
     }
     renderShiftBars(x);             // ◀ / ▶ semitone shift bar (+ All/None) below the fretboard
-    renderFretboardBelow(xFB);      // pill row + chord/scale quick picks below the shift bar
+    renderFretboardBelow(xFB, FB_TARGETS_DEFAULT); // pill row + chord/scale quick picks below the shift bar
     renderIdentifyStrips(xFB, xKB); // chord-identify strip above the fretboard (moved from below)
     applyPrintColors();
 
