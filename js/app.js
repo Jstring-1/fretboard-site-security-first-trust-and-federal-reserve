@@ -1974,10 +1974,17 @@
     if (!slots.length) return;
     slots.forEach(function (s) {
       const target = s.getAttribute('data-summary-for');
-      // Only emit the compact toggle for sections that opt in. Per-section
-      // Clear and key rows are gone — the sticky header owns those now.
+      // Chord/Scale grid: compact-mode toggle stays.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
-      s.innerHTML = prefix;
+      // Per-section unlocked → show a compact key picker so the user
+      // can change THIS section's key without touching the global.
+      // Locked sections keep using the sticky-header key picker.
+      let picker = '';
+      if (x._unlocked && x._unlocked.has(target)) {
+        const xs = stateForSection(target, x);
+        picker = '<span class="section_key_inline">' + keyButtonsHtml(xs.k) + '</span>';
+      }
+      s.innerHTML = prefix + picker;
     });
   }
 

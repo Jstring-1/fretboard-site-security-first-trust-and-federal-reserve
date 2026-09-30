@@ -670,6 +670,25 @@ details.collapsible > summary { cursor: default; }
                                              background: rgba(255,255,255,0.08); color: #fff;
                                              cursor: pointer;                                                          }
 .section_lock:hover                        { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
+/* Inline per-section key picker — only rendered when the section is
+   unlocked. Shrunken chromatic buttons that live in the section
+   title bar so the user can drive that section's key independently
+   of the sticky-header global picker. */
+.section_key_inline                        { display: inline-flex; align-items: center; vertical-align: middle;
+                                             margin-right: 6px;                                                        }
+.section_key_inline .section_key_row       { display: inline-flex; gap: 2px; align-items: center;                       }
+.section_key_inline .key_label             { font: 600 0.7em var(--font); letter-spacing: 0.06em;
+                                             color: rgba(255,196,90,0.85); margin-right: 4px;                          }
+.section_key_inline .key_hidden_select     { display: none;                                                              }
+.section_key_inline .key_btn               { padding: 1px 5px; font: 600 0.72em var(--font); line-height: 1.2;
+                                             min-width: 18px; border-radius: 3px;
+                                             border: 1px solid rgba(255,255,255,0.15);
+                                             background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.72);
+                                             cursor: pointer;                                                            }
+.section_key_inline .key_btn:hover         { background: rgba(255,196,90,0.15); border-color: rgba(255,196,90,0.4);
+                                             color: #fff;                                                               }
+.section_key_inline .key_btn.active        { background: rgba(255,196,90,0.30); border-color: rgba(255,196,90,0.75);
+                                             color: #fff; font-weight: 700;                                             }
 .section_lock.section_lock_open            { background: rgba(255,196,90,0.20); border-color: rgba(255,196,90,0.6);
                                              color: #ffd88a;                                                           }
 .section_lock.section_lock_open:hover      { background: rgba(255,196,90,0.35);                                        }
