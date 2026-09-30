@@ -661,6 +661,19 @@ details.collapsible > summary { cursor: default; }
                                              background: rgba(255,255,255,0.18); color: #fff;
                                              cursor: pointer;                                                          }
 .section_print:hover                       { background: rgba(255,255,255,0.4); border-color: #fff;                   }
+/* Per-section lock icon — 🔒 = follows global key, 🔓 = section owns
+   its own state. Matches .section_print pill sizing so it doesn't
+   crowd the section_actions row. */
+.section_lock                              { display: inline-block; margin-left: 4px; padding: 1px 8px;
+                                             vertical-align: middle; font-size: 0.95em; line-height: 20px;
+                                             border-radius: 12px; border: 1px solid rgba(255,255,255,0.35);
+                                             background: rgba(255,255,255,0.08); color: #fff;
+                                             cursor: pointer;                                                          }
+.section_lock:hover                        { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.7); }
+.section_lock.section_lock_open            { background: rgba(255,196,90,0.20); border-color: rgba(255,196,90,0.6);
+                                             color: #ffd88a;                                                           }
+.section_lock.section_lock_open:hover      { background: rgba(255,196,90,0.35);                                        }
+@media print { .section_lock               { display: none !important; }                                               }
 /* "Apply all" toggle — same pill shape as section_print but the
    engaged state is highlighted with the cyan accent so it reads as
    "currently linking sections together." Disengaged is the default

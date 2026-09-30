@@ -337,7 +337,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -929,25 +929,37 @@
     x._self = '?';
     x._hilight_url = x._self + x.url_k + x.url_x + x.url_y + x.url_z + x.url_s + x.url_pk;
 
-    // ---- Unlinked mode + per-section overrides ---------------------------
-    // ?u=1 flips the page into "each section drives its own state" mode.
-    // While unlinked, params named like s<num>_<key> (e.g. s4_k=D,
-    // s4_hl=1,b3,5) override the same key for that section only. Stripped
-    // automatically when the user re-Links via the toggle button.
-    // Unlinked mode is retired — always treat the page as linked. Older
-    // bookmarks containing ?u=1 still load, but section-specific
-    // overrides are ignored so every section reflects the global state.
-    x._unlinked = false;
+    // ---- Per-section unlock + section-namespaced overrides ---------------
+    // Replaces the retired global "Unlinked" toggle. Each section can now
+    // be unlocked individually via its own lock icon (see the .section_lock
+    // button in the section_actions). The set of unlocked sections lives
+    // in the URL as `ul=2,4` (comma list of section numbers). When a
+    // section is unlocked, params named like s<num>_<key> (e.g. s4_k=D,
+    // s4_hl=1b35) override the same key for that section only.
+    x._unlocked = new Set();
+    const _ulRaw = (params.get('ul') || '').trim();
+    if (_ulRaw) {
+      _ulRaw.split(/[,\s]+/).forEach(function (n) {
+        const nn = parseInt(n, 10);
+        if (!isNaN(nn) && nn > 0) x._unlocked.add('section_' + nn);
+      });
+    }
+    // Kept for legacy call sites — `_unlinked` is true if any section is
+    // unlocked. The click-router still uses per-section data-unlocked
+    // rather than this flag.
+    x._unlinked = x._unlocked.size > 0;
     x._sectionOverrides = {};
-    if (false) {
-      for (const [k, v] of params.entries()) {
-        const m = k.match(/^s(\d+)_(.+)$/);
-        if (!m) continue;
-        const sec = 'section_' + m[1];
-        const field = m[2];
-        x._sectionOverrides[sec] = x._sectionOverrides[sec] || {};
-        x._sectionOverrides[sec][field] = v;
-      }
+    for (const [k, v] of params.entries()) {
+      const m = k.match(/^s(\d+)_(.+)$/);
+      if (!m) continue;
+      const sec = 'section_' + m[1];
+      // Only honour overrides for sections that are actually unlocked.
+      // Prevents stale s<n>_* params from an old bookmark from leaking
+      // into a section that the user re-locked in a later navigation.
+      if (!x._unlocked.has(sec)) continue;
+      const field = m[2];
+      x._sectionOverrides[sec] = x._sectionOverrides[sec] || {};
+      x._sectionOverrides[sec][field] = v;
     }
 
     return x;
@@ -4648,6 +4660,25 @@
     });
   }
 
+  // Delegate lock-icon clicks. Toggles the section's presence in
+  // ?ul=…, seeding or stripping its s<n>_* overrides in the same
+  // navigation so the section keeps rendering its current state
+  // right up to the point of unlock (and rejoins global on lock).
+  function bindSectionLocks() {
+    if (document.body._sectionLockBound) return;
+    document.body._sectionLockBound = true;
+    document.body.addEventListener('click', function (e) {
+      const btn = e.target.closest && e.target.closest('.section_lock');
+      if (!btn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const sec = btn.getAttribute('data-lock-section');
+      if (!sec) return;
+      const href = toggleSectionLockHref(sec);
+      if (href) navigateTo(href);
+    });
+  }
+
   // ---------- auto-submit on any control change ----------
   function gatherAndNavigate() {
     // Flush collapse state to URL synchronously. Without this, a
@@ -4842,21 +4873,18 @@
       //                        section override. URL state untouched, so
       //                        other sections keep whatever key they had.
       if (e && e.target && e.target.matches && e.target.matches('select[name="k"]')) {
-        const unlinked = document.body.getAttribute('data-apply-all') === 'off';
-        if (unlinked) {
-          // Project the new key onto the current URL as a section-
-          // namespaced param so it persists + is shareable. Other
-          // sections + the global k stay put.
-          const sectionEl = e.target.closest('details.section, details.collapsible');
-          if (sectionEl) {
-            const fakeLinkSearch = '?k=' + encodeURIComponent(urlNote(e.target.value));
-            const merged = mergeSectionOverrideUrl(sectionEl.id, fakeLinkSearch);
-            if (merged != null) {
-              navigateTo(merged);
-              return;
-            }
+        // Per-section unlock: a key change inside an unlocked section
+        // writes s<n>_k so the section can drift from the global key.
+        // Otherwise fall through to global navigation.
+        const sectionEl = e.target.closest('details.section, details.collapsible');
+        if (sectionEl && sectionEl.getAttribute('data-unlocked') === 'true') {
+          const fakeLinkSearch = '?k=' + encodeURIComponent(urlNote(e.target.value));
+          const merged = mergeSectionOverrideUrl(sectionEl.id, fakeLinkSearch);
+          if (merged != null) {
+            navigateTo(merged);
+            return;
           }
-          return;  // safety: don't fall through to global navigate
+          return;  // safety: don't fall through if merge failed
         }
         document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
           if (sel !== e.target) sel.value = e.target.value;
@@ -4984,24 +5012,69 @@
     return qs ? ('?' + qs) : '?';
   }
 
-  // ---- Linked / Unlinked toggle (fretboard summary) -----------------
-  // URL is the source of truth: `u=1` → unlinked (each section can
-  // hold its own state via s<n>_* params). No `u` → linked (one
-  // global state, current behavior). The toggle navigates the URL,
-  // so reload + share preserve whichever mode you were in.
-  let _applyAllBound = false;
+  // ---- Per-section lock icons (replaces the retired Unlinked toggle) --
+  // Each supported section has a 🔒 / 🔓 button in its section_actions.
+  // Locked (default) → section reads the global k / hl / x / …
+  // Unlocked → section is added to ?ul=… and gains its own s<n>_k etc.
+  // overrides that survive global key changes.
   function paintApplyAllToggle() {
-    // Unlinked mode is retired — always force linked so any code still
-    // reading body[data-apply-all] gets a deterministic answer.
+    // Legacy hook kept for compatibility — force linked at the body
+    // level. The per-section unlock state is what actually drives
+    // click routing now.
     document.body.setAttribute('data-apply-all', 'on');
-    const $btn = document.getElementById('apply_all_toggle');
-    if (!$btn) return;
-    const params = new URLSearchParams(window.location.search);
-    const unlinked = params.get('u') === '1';
-    document.body.setAttribute('data-apply-all', unlinked ? 'off' : 'on');
-    $btn.classList.toggle('on', !unlinked);
-    $btn.textContent = unlinked ? 'Unlinked' : 'Linked';
-    $btn.setAttribute('aria-pressed', unlinked ? 'false' : 'true');
+  }
+  function paintSectionLocks(x) {
+    document.querySelectorAll('.section_lock').forEach(function (btn) {
+      const sec = btn.getAttribute('data-lock-section');
+      const unlocked = x._unlocked && x._unlocked.has(sec);
+      btn.textContent = unlocked ? '🔓' : '🔒';
+      btn.classList.toggle('section_lock_open', !!unlocked);
+      btn.setAttribute('aria-pressed', unlocked ? 'true' : 'false');
+      btn.setAttribute('title', unlocked
+        ? 'This section is UNLOCKED — it holds its own key + highlights. Click to relink to the global key.'
+        : 'This section follows the global key. Click to unlock so you can drive it independently.');
+      const details = document.getElementById(sec);
+      if (details) details.setAttribute('data-unlocked', unlocked ? 'true' : 'false');
+    });
+  }
+  function _sectionNumFromId(sectionId) {
+    const m = String(sectionId || '').match(/^section_(\d+)$/);
+    return m ? m[1] : null;
+  }
+  // Build a URL that toggles the given section's unlock state. Locking
+  // strips all s<n>_* params for that section (returns it to global
+  // state). Unlocking seeds s<n>_k + s<n>_hl from the current global
+  // state so the section stays visually anchored while the user is
+  // free to drift the global key without affecting this section.
+  function toggleSectionLockHref(sectionId) {
+    const sNum = _sectionNumFromId(sectionId);
+    if (!sNum) return null;
+    const p = new URLSearchParams(window.location.search);
+    const cur = (p.get('ul') || '').trim();
+    const list = cur ? cur.split(/[,\s]+/).filter(Boolean) : [];
+    const idx = list.indexOf(sNum);
+    if (idx >= 0) {
+      // Currently unlocked → lock: drop from list + strip s<n>_* params.
+      list.splice(idx, 1);
+      const prefix = 's' + sNum + '_';
+      const keysToDelete = [];
+      p.forEach(function (_, k) { if (k.indexOf(prefix) === 0) keysToDelete.push(k); });
+      keysToDelete.forEach(function (k) { p.delete(k); });
+    } else {
+      // Currently locked → unlock: add to list + seed s<n>_k + s<n>_hl
+      // from current global values.
+      list.push(sNum);
+      const x = window.SF_X || {};
+      if (x.k) p.set('s' + sNum + '_k', String(x.k));
+      const hlRaw = String(x.hl || '').trim();
+      if (hlRaw && hlRaw !== 'nothing') {
+        p.set('s' + sNum + '_hl', hlRaw.replace(/\s+/g, '').replace(/♭/g, 'b'));
+      }
+    }
+    if (list.length) p.set('ul', list.join(','));
+    else             p.delete('ul');
+    const qs = p.toString();
+    return qs ? '?' + qs : '?';
   }
   // ---- Audio toggle (♪) — Fretboard summary ----------------------
   let _audioToggleBound = false;
@@ -5277,20 +5350,15 @@
       if (url.origin !== window.location.origin) return;
       if (url.pathname !== window.location.pathname) return;
       e.preventDefault();
-      // "Unlinked" mode → state-mutating clicks (chord cells, scale
-      // cells, keysig rows, highlight pills) write section-namespaced
-      // params (s<n>_k, s<n>_hl, s<n>_x, ...) onto the CURRENT URL
-      // instead of replacing it. This way other sections keep their
-      // overrides AND the unlinked state survives reload + share.
-      const unlinked = document.body.getAttribute('data-apply-all') === 'off';
-      if (unlinked) {
-        const sectionEl = a.closest('details.section, details.collapsible');
-        if (sectionEl) {
-          const merged = mergeSectionOverrideUrl(sectionEl.id, url.search || '');
-          if (merged != null) {
-            navigateTo(merged);
-            return;
-          }
+      // Per-section unlock: a click inside a <details data-unlocked="true">
+      // writes s<n>_k / s<n>_hl / s<n>_x etc. instead of replacing the
+      // global state. Other sections keep their own overrides untouched.
+      const sectionEl = a.closest('details.section, details.collapsible');
+      if (sectionEl && sectionEl.getAttribute('data-unlocked') === 'true') {
+        const merged = mergeSectionOverrideUrl(sectionEl.id, url.search || '');
+        if (merged != null) {
+          navigateTo(merged);
+          return;
         }
       }
       // Site-wide Clear: navigate to a truly bare URL — skip the
@@ -5355,13 +5423,21 @@
       // user opens/closes a section.
       const PRESERVE = ['c', 'disp', 'inst', 'qpc', 'idc',
                         'prog', 'pmode', 'tempo',
-                        'sort', 'td', 'fc', 'fcp', 'ext', 'ik', 'cmp'];
+                        'sort', 'td', 'fc', 'fcp', 'ext', 'ik', 'cmp', 'ul'];
       const target = new URLSearchParams((url.search || '').replace(/^\?/, ''));
       const cur    = new URLSearchParams(window.location.search);
       PRESERVE.forEach(function (k) {
         if (target.has(k)) return;        // href already set this key
         if (!cur.has(k))   return;        // nothing to carry over
         cur.getAll(k).forEach(function (v) { target.append(k, v); });
+      });
+      // Also carry over every section-namespaced override (s<n>_*)
+      // so a click in one section doesn't erase another unlocked
+      // section's state.
+      cur.forEach(function (v, k) {
+        if (!/^s\d+_/.test(k)) return;
+        if (target.has(k)) return;
+        target.append(k, v);
       });
       const qs = canonicalQS(target);
       navigateTo(qs ? '?' + qs : '?');
@@ -7319,6 +7395,7 @@
 
     renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding
     renderSummaryStatus(x);  // compact key/tuning text in each title bar
+    paintSectionLocks(x);    // 🔒 / 🔓 button state + data-unlocked on <details>
     bindAutoSubmit();        // so the change-listener catches them
     bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
@@ -7370,6 +7447,7 @@
     bindCollapsibles();
     bindLinkInterceptor();
     bindHelpButtons();
+    bindSectionLocks();
     bindPrintButtons();
     bindExportButtons();
     bindSummaryExtras();
