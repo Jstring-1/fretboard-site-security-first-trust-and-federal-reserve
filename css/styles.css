@@ -1528,7 +1528,6 @@ details.collapsible > summary              { padding-left: 36px;                
                                              text-transform: uppercase; color: var(--muted); margin-right: 8px;       }
 .identify_head                             { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
                                              margin-bottom: 4px;                                                       }
-.identify_picks                            { color: var(--text); font-weight: 600;                                    }
 .identify_clear                            { color: var(--muted); font-size: 0.85em;
                                              text-decoration: underline;                                              }
 .identify_clear:hover                      { color: var(--text);                                                      }
@@ -1586,6 +1585,13 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
                                              text-decoration: underline; cursor: pointer;                              }
 .identify_chips_more:hover                 { color: var(--accent-hi) !important;                                       }
 .identify_chips_extras                     { display: inline;                                                           }
+/* Both of these carry the `hidden` attribute to start with, and an author
+   rule beats the UA's [hidden]{display:none} no matter the specificity —
+   so without these the extras were never hidden at all: the "+N more"
+   link sat in the middle of a fully-expanded list and clicking it did
+   nothing visible.                                                      */
+.identify_chips_more[hidden],
+.identify_chips_extras[hidden]             { display: none;                                                             }
 
 /* --- Over-cap warning (>6 picks) --------------------------------------
    No min-height — the outer #fb_identify_root .identify_strip rule

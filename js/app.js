@@ -6424,18 +6424,10 @@
               ? 'Showing only chords rooted on ' + xs.k + '. Click to show all.'
               : 'Show only chords rooted on ' + xs.k + '.')
         +    '">' + escHtml(xs.k) + ' root</a>';
-      // Notes corresponding to the current hl degrees, anchored on xs.k.
-      const tonicPc = NOTE_TO_PC[xs.k];
-      const noteStr = (tonicPc == null)
-        ? ''
-        : hlArr.slice().sort(function (a, b) {
-            const ao = _DEG_OFFSET[a]; const bo = _DEG_OFFSET[b];
-            return (ao == null ? 99 : ao) - (bo == null ? 99 : bo);
-          }).map(function (d) {
-            const off = _DEG_OFFSET[d];
-            return off == null ? '' : PC_TO_NOTE[(tonicPc + off) % 12];
-          }).filter(Boolean).join(' ');
-      // Single-line: picks + in-key + +N pills + every chord chip
+      // (The picked notes used to be spelled out here. They're already on
+      // the fretboard and in the grid below, so the strip starts at the
+      // filter and keeps its width for chord names.)
+      // Single-line: in-key + +N pills + every chord chip
       // all flow on ONE horizontal row. Visual hierarchy via weight
       // + opacity (exact boldest, could-be faintest) instead of
       // labels. Fixed height + overflow hidden so the fretboard
@@ -6447,7 +6439,6 @@
       html = ''
         + '<div class="identify_strip identify_strip_inline">'
         + headerBtnsHtml(true)
-        + '  <span class="identify_picks">' + escHtml(noteStr) + '</span>'
         + '  <span class="identify_filter">' + inKeyPill + '</span>'
         + '  <span class="identify_extras_toggle">' + extrasPills + '</span>'
         +    (buckets.exact.length ? SEP + '<span class="identify_group identify_group_exact">' + exactHtml + '</span>' : '')
