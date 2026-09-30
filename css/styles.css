@@ -168,11 +168,14 @@ a:hover                                    {  color:var(--accent-hi);           
 .custom_tun_loader option                  {  background: var(--bg-elevated); color: var(--accent);                  }
 @media print { .custom_tun_loader { display: none !important; }                                                        }
 
-/* --- Custom-tuning column state --------------------------------------
-   When Custom is ON, tint the left column amber so it visibly reads as
-   "editable, not the preset." When OFF, dim the per-string selects and
-   the Load… dropdown to signal they're not doing anything until you
-   flip the switch above. */
+/* Custom tuning was retired in Phase 3 — leftmost column now just
+   shows the string number as a plain muted label. */
+.fb_string_num                             {  color: rgba(255,255,255,0.35);
+                                              font-size: 0.78em; font-weight: 600;
+                                              padding: 4px 2px;                                                        }
+/* --- Custom-tuning column state (legacy — kept in case an old URL
+       still surfaces data-custom="on"; the fretboard renderer now
+       hard-codes "off"). --------------------------------------- */
 #fretboard[data-custom="on"] #f_cyo        {  background-color: rgba(255, 196, 90, 0.10) !important;
                                               border-left: 2px solid rgba(255, 196, 90, 0.45);
                                               border-right: 1px solid rgba(255, 196, 90, 0.25);                        }

@@ -697,6 +697,11 @@
       }
     }
 
+    // Custom tuning has been retired from the UI (Phase 3). Force z='n'
+    // so old bookmarks carrying z=y quietly fall back to the preset the
+    // rest of the URL points at instead of rendering as "Custom".
+    x.z = 'n';
+
     // Merge in the chosen tuning
     const tun = TUNINGS[x.x];
     for (const k in tun) x[k] = tun[k];
@@ -1764,14 +1769,8 @@
     // by renderIdentifyStrips.
     h += '<div id="fb_identify_root"></div>';
 
-    h += '<table id="fretboard" data-custom="' + (x.z === 'y' ? 'on' : 'off') + '">';
+    h += '<table id="fretboard" data-custom="off">';
 
-    const cyoState = x.z === 'y' ? 'on' : 'off';
-    const cyoNextZ = x.z === 'y' ? 'n' : 'y';
-    // Build a toggle URL that flips just the z param (preserving the rest)
-    const toggleParams = new URLSearchParams(window.location.search);
-    if (cyoNextZ === 'y') toggleParams.set('z', 'y'); else toggleParams.delete('z');
-    const toggleHref = '?' + toggleParams.toString();
     // String-direction (y) toggle that lives in place of the open-string "X"
     // marker — one in each fretnums row so flipping the order is reachable
     // from either end of the fretboard without scrolling back to the form.
@@ -1786,12 +1785,11 @@
     const f0Cell = '<td id="f0" class="f0_y_switch"><a href="' + escHtml(yToggleHref)
                  + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escAttr(yTitle)
                  + '" aria-label="Toggle string direction">' + yLabel + '</a></td>';
-    const cyoTitle = x.z === 'y'
-      ? 'Custom tuning ON — click to switch back to the preset above.'
-      : 'Custom tuning OFF — click to enable per-string editing so you can hand-tune each string.';
-    const fretnumsTop = '<tr id="fretnums"><td class="fb_sm cyo_switch cyo_' + cyoState + '" id="' + (x.z === 'y' ? 'f_cyo' : 'f_cyo_dark') + '">' +
-      '<a href="' + escHtml(toggleHref) + '" title="' + escAttr(cyoTitle) + '" aria-label="Toggle custom tuning">' + cyoState.toUpperCase() + '</a>' +
-      '</td><td id="f0">X</td>'
+    // Custom tuning removed. Leftmost corner used to hold the OFF/ON
+    // switch; it's now an inert placeholder. Users pick from the 180+
+    // presets in the tuning popover (per-string editing lives in Phase
+    // 3 follow-up — for now just retire the visible cell).
+    const fretnumsTop = '<tr id="fretnums"><td class="fb_sm" id="f_cyo_dark"></td><td id="f0">X</td>'
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
@@ -1808,7 +1806,10 @@
 
     const str = {};
     for (let a = 1; a <= 12; a++) {
-      str[a] = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim();
+      // Custom tuning removed — always read from the preset (x['x' + a]).
+      // Old URLs with z=y + s1..sN still parse cleanly but the notes
+      // aren't used anymore.
+      str[a] = String(x['x' + a]).trim();
     }
 
     // Compute open-string MIDI for every string (1..N) using the heuristic
@@ -1836,19 +1837,15 @@
       const c = KEYS.indexOf(strizzle.toUpperCase());
       let nutDeg = findKey(x._notedegrees, strizzle.toUpperCase());
       let nutBg = (x['hl_' + flatToB(nutDeg)] === 'y') ? flatToB(nutDeg) : 'no_highlight';
-      const f_cyo = (x.z === 'n') ? 'f_cyo_dark' : 'f_cyo';
       const nutNote = strizzle.toUpperCase();
       // pk yellow-ring picks have been retired — clicks now toggle hl,
       // chord ID reads from hl, and the note_pk class is no longer applied.
       const nutPkCls = '';
 
       h += '<tr>';
-      h += '<td id="' + f_cyo + '"><select class="inputs" name="s' + a + '">';
-      h += '<option value="' + escHtml(x['s' + a]) + '">' + escHtml(x['s' + a]) + '</option>';
-      for (const note of ALLNOTES) {
-        h += '<option value="' + escHtml(note) + '">' + escHtml(note) + '</option>';
-      }
-      h += '</select></td>';
+      // Leftmost column: was per-string dropdown for Custom mode.
+      // Custom is retired; the cell now just labels the string number.
+      h += '<td class="fb_string_num" id="f_cyo_dark">' + a + '</td>';
       const _openMidi = _midiByStr[a];
       h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" data-midi="' + _openMidi + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
 
@@ -1867,33 +1864,11 @@
       h += '</tr>';
     }
 
-    // "Load preset into custom" dropdown — sits in the bottom-left empty
-    // cell. Picking a preset populates s1..sN with that tuning's notes
-    // (mapped high → low to match the s1=top-string convention) and
-    // navigates. Doesn't touch x or fcp filters; always shows every
-    // tuning in the database. Visible whether custom tuning is on or
-    // off — users may want to set up a custom tuning before engaging.
-    const _customLoaderRows = Object.keys(TUNINGS).map(function (k) {
-      const t = TUNINGS[k];
-      return { key: k, strs: +t.strs, name: t.name, notes: t.notes };
-    });
-    _customLoaderRows.sort(function (a, b) {
-      if (a.strs !== b.strs) return a.strs - b.strs;
-      if (a.name === b.name) return a.notes.localeCompare(b.notes);
-      return a.name.localeCompare(b.name);
-    });
-    let customLoaderHtml = '<select class="custom_tun_loader"'
-                         + ' aria-label="Seed custom-tuning strings from a preset"'
-                         + ' title="Copy a preset tuning’s notes into the per-string editors above. Turns Custom on if it isn’t already.">';
-    customLoaderHtml += '<option value="">Seed from preset…</option>';
-    for (const t of _customLoaderRows) {
-      const lbl = '(' + t.strs + ') ' + t.name + ' — ' + t.notes;
-      customLoaderHtml += '<option value="' + escAttr(t.key) + '">' + escHtml(lbl) + '</option>';
-    }
-    customLoaderHtml += '</select>';
-
+    // "Seed from preset..." dropdown retired along with Custom tuning.
+    // Users pick tunings from the main popover above; the bottom-left
+    // cell is now just an inert placeholder.
     const fretnumsBot = '<tr id="fretnums">'
-      + '<td id="f_cyo">' + customLoaderHtml + '</td>' + f0Cell
+      + '<td class="fb_sm" id="f_cyo_dark"></td>' + f0Cell
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
