@@ -1322,7 +1322,7 @@
       h += '</tr>';
     });
     if (!rows.length) {
-      h += '<tr><td colspan="5" class="tun_pop_empty">No tunings match.</td></tr>';
+      h += '<tr><td colspan="5" class="tun_pop_empty">No tunings match that filter. Try fewer words, a different string count, or clear the filter.</td></tr>';
     }
     h += '</tbody></table></div>';
     pop.innerHTML = h;
@@ -2324,7 +2324,7 @@
         html += '<span class="st_dgs">(' + escHtml(String(dgsStr).trim()) + ')</span>';
       }
       if (isCustom) {
-        html += '<span class="st_custom_pill" aria-label="custom tuning engaged">custom</span>';
+        html += '<span class="st_custom_pill" aria-label="custom tuning engaged" title="Custom tuning is engaged on this fretboard. Open the tuning picker and switch to a preset to leave custom mode.">custom</span>';
       }
       tunEl.innerHTML = html;
     }
@@ -3652,7 +3652,7 @@
     h +=   '<span class="prog_input_sep" aria-hidden="true">/</span>';
     // Mode (palette) dropdown — moved into the input row per user
     // request, sits to the left of Play.
-    h +=   '<select class="prog_mode_select" title="Palette source">';
+    h +=   '<select class="prog_mode_select" title="Which mode\'s diatonic chords fill the palette chips below. Changing it rewrites the palette only — Roman tokens already in your progression stay as typed.">';
     _PROG_MODE_ORDER.forEach(function (key) {
       const cfg = _PROG_MODES[key];
       const sel = (key === pmode) ? ' selected' : '';
@@ -3774,7 +3774,7 @@
       }
       // Bar menu — replaces the old "Try instead" subs popup. Single
       // option for now: highlight the chord on the fretboard / keyboard.
-      h += '<button type="button" class="prog_bar_menu" title="Bar actions" aria-label="Actions">⋯</button>';
+      h += '<button type="button" class="prog_bar_menu" title="Open per-bar actions (highlight this chord on the fretboard &amp; keyboard, etc.)." aria-label="Actions">⋯</button>';
       h += '<div class="prog_bar_menu_pop" hidden>';
       h +=   '<a class="prog_bar_menu_item" href="' + escHtml(highlightHref) + '">'
          +     'Highlight on fretboard / keyboard'

@@ -1111,6 +1111,11 @@ select option                              { color: var(--text); background: var
 /* Make the Linked / Audio / Clear / Account pills share the same pill
    shape so they sit on a clean right-side row. inline-flex centres the
    text vertically so the Clear anchor doesn't float to the top. */
+#site_global_controls .section_help        { width: 26px; height: 26px; line-height: 24px;
+                                             font-size: 0.95em; margin-right: 4px;
+                                             background: rgba(255,255,255,0.18);
+                                             border: 1px solid rgba(255,255,255,0.55);                                 }
+#site_global_controls .section_help:hover  { background: rgba(255,255,255,0.4); border-color: #fff;                   }
 #site_global_controls .section_audio_toggle,
 #site_global_controls .section_clear,
 #site_global_controls .auth_btn,
