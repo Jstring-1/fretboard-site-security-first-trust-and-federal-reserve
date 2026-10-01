@@ -141,6 +141,11 @@ a:hover                                    {  color:var(--accent-hi);           
 #_1_, #_b2_, #_2_, #_b3_, #_3_, #_4_, #_b5_, #_b6_, #_6_, #_b7_, #_7_
                                            {  color:#000000 !important;                                              }
 #_no_highlight_, #_x_                      {  color:#333333 !important;                                              }
+/* When any degree is highlighted, fade the non-chosen cells' text so
+   the colored picks visually pop. Applies to BOTH fretboards. */
+#fretboard[data-any-hl="y"] #_no_highlight_,
+#fretboard_2[data-any-hl="y"] #_no_highlight_
+                                           {  color: rgba(100,100,100,0.55) !important;                                }
 /* The fretboard's _5_ cells stay light-text-on-dark-blue, but in the
    chord + scale builder grids the _5_ header / chord-label cells use
    the shared light-grey background — so their text needs to be dark

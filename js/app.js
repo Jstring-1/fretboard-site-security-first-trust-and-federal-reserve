@@ -1981,7 +1981,14 @@
     h += '<div id="' + cfg.identifyId + '"></div>';
 
     const lhOn = (x.lh === 'y');
-    h += '<table id="' + cfg.tableId + '" data-custom="off" data-lh="' + (lhOn ? 'y' : 'n') + '">';
+    // data-any-hl flips to "y" whenever any degree is highlighted so
+    // CSS can fade non-chosen cells and make the picks stand out.
+    const anyHlActive = DEGREES.some(function (d) {
+      return x['hl_' + d.replace('♭', 'b')] === 'y';
+    });
+    h += '<table id="' + cfg.tableId + '" data-custom="off"'
+      +    ' data-lh="' + (lhOn ? 'y' : 'n') + '"'
+      +    ' data-any-hl="' + (anyHlActive ? 'y' : 'n') + '">';
 
     // String-direction (y) toggle that lives in place of the open-string "X"
     // marker — one in each fretnums row so flipping the order is reachable
@@ -2177,19 +2184,27 @@
       const target = s.getAttribute('data-summary-for');
       // Chord/Scale grid: compact-mode toggle stays.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
-      // Per-section unlocked → show a compact key dropdown next to the
-      // 🔓 icon so the user can change THIS section's key without
-      // touching the global. Locked sections keep using the sticky-
-      // header key picker.
+      // Compact key dropdown lives next to the 🔒 icon on every
+      // section that supports per-section state (fretboard, keyboard,
+      // chord builder, scale builder, key sigs — all five that got
+      // the lock icon in Phase 2). Shows the EFFECTIVE key for that
+      // section: the section's own s<n>_k if unlocked, otherwise the
+      // global. Changing it writes s<n>_k and unlocks the section —
+      // one click is all it takes to drive this view independently.
       let picker = '';
-      if (x._unlocked && x._unlocked.has(target)) {
+      const supportsLock = !!document.querySelector(
+        '.section_lock[data-lock-section="' + target + '"]'
+      );
+      if (supportsLock) {
         const xs = stateForSection(target, x);
+        const isUnlocked = !!(x._unlocked && x._unlocked.has(target));
         let opts = '';
         for (const a of ALLNOTES) {
           const sel = (a === xs.k) ? ' selected' : '';
           opts += '<option value="' + escHtml(a) + '"' + sel + '>' + escHtml(a) + '</option>';
         }
-        picker = '<span class="section_key_inline section_key_picker">'
+        picker = '<span class="section_key_inline section_key_picker'
+               +    (isUnlocked ? ' section_key_inline_unlocked' : '') + '">'
                +   '<span class="section_key_inline_lab">KEY</span>'
                +   '<select class="inputs section_key_inline_sel key_hidden_select" name="k">'
                +     opts
@@ -5092,10 +5107,33 @@
       //                        section override. URL state untouched, so
       //                        other sections keep whatever key they had.
       if (e && e.target && e.target.matches && e.target.matches('select[name="k"]')) {
-        // Per-section unlock: a key change inside an unlocked section
-        // writes s<n>_k so the section can drift from the global key.
-        // Otherwise fall through to global navigation.
+        // Per-section key dropdown: lives inside a .section_key_inline
+        // span rendered by renderSummaryExtras. A change always writes
+        // s<n>_k AND unlocks the section (adds it to ul=) so the view
+        // actually reflects the new key — the user doesn't need a
+        // separate click on the lock icon first.
+        const inlinePicker = e.target.closest && e.target.closest('.section_key_inline');
         const sectionEl = e.target.closest('details.section, details.collapsible');
+        if (inlinePicker && sectionEl) {
+          const sNum = _sectionNumFromId(sectionEl.id);
+          const fakeLinkSearch = '?k=' + encodeURIComponent(urlNote(e.target.value));
+          const merged = mergeSectionOverrideUrl(sectionEl.id, fakeLinkSearch);
+          if (merged != null) {
+            const p = new URLSearchParams(merged.replace(/^\?/, ''));
+            const cur = (p.get('ul') || '').trim();
+            const list = cur ? cur.split(/[,\s]+/).filter(Boolean) : [];
+            if (sNum && list.indexOf(sNum) === -1) {
+              list.push(sNum);
+              p.set('ul', list.join(','));
+            }
+            navigateTo('?' + p.toString());
+            return;
+          }
+          return;
+        }
+        // Fallback: an unlocked section whose change didn't come from
+        // the inline picker (legacy code paths). Preserve the earlier
+        // behaviour.
         if (sectionEl && sectionEl.getAttribute('data-unlocked') === 'true') {
           const fakeLinkSearch = '?k=' + encodeURIComponent(urlNote(e.target.value));
           const merged = mergeSectionOverrideUrl(sectionEl.id, fakeLinkSearch);
@@ -5103,7 +5141,7 @@
             navigateTo(merged);
             return;
           }
-          return;  // safety: don't fall through if merge failed
+          return;
         }
         document.querySelectorAll('.section_key_picker select[name="k"]').forEach(function (sel) {
           if (sel !== e.target) sel.value = e.target.value;
