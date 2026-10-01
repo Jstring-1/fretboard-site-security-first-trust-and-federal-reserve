@@ -106,6 +106,18 @@ table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;         
   white-space: nowrap !important;
   border: 0 !important;
 }
+/* Section lead paragraphs — one-line summary of what each section
+   does, shown muted and compact right under the section's title bar.
+   Visible to sighted users and remains readable to crawlers (not
+   using .sr_only). Hidden when printing so sheets stay dense. */
+.section_lead {
+  margin: 2px 14px 6px;
+  color: rgba(255,255,255,0.42);
+  font: 400 0.82em var(--font);
+  line-height: 1.35;
+  text-align: center;
+}
+@media print { .section_lead { display: none !important; } }
 
 /*********************************************************************************************************************
                             FONT FAMILY
