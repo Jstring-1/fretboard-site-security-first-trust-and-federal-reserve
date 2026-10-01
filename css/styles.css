@@ -1689,7 +1689,9 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
 /* --- Fretboard hover preview ------------------------------------------
    Bright ring around every fret whose note is in the hovered chord.
    outline-offset -2 keeps it inset so it doesn't push cell size. */
-#fretboard td[data-chord-preview]          { outline: 2px solid rgba(255, 230, 0, 0.95);
+#fretboard td[data-chord-preview],
+#keyboard [data-chord-preview],
+#keyboard_2 [data-chord-preview]           { outline: 2px solid rgba(255, 230, 0, 0.95);
                                              outline-offset: -2px; position: relative; z-index: 1;                     }
 
 /* --- Dim All/None relative to the shift arrows -----------------------

@@ -6880,21 +6880,28 @@
     // strip highlights #2, not #1.
     if (!document.body._chordPreviewBound) {
       document.body._chordPreviewBound = true;
-      function _targetFretboards(chip) {
-        // Walk up from the chip to the owning section. The site
-        // only has two fretboards right now, so this is a simple
-        // id-based pick.
+      function _targetBoards(chip) {
+        // Walk up from the chip to the owning section and return
+        // THAT section's board (fretboard or keyboard). A chip in
+        // a fretboard section highlights the fretboard; a chip in
+        // a keyboard section highlights the keyboard.
         const sectionEl = chip.closest && chip.closest('details.section');
-        if (!sectionEl) return [document.getElementById('fretboard')];
-        if (sectionEl.id === 'section_13') {
-          const fb2 = document.getElementById('fretboard_2');
-          return fb2 ? [fb2] : [];
+        const id = sectionEl && sectionEl.id;
+        const out = [];
+        if (id === 'section_13') {
+          const el = document.getElementById('fretboard_2');
+          if (el) out.push(el);
+        } else if (id === 'section_4') {
+          const el = document.querySelector('#section_4 .ritz .waffle');
+          if (el) out.push(el);
+        } else if (id === 'section_14') {
+          const el = document.querySelector('#section_14 .ritz .waffle');
+          if (el) out.push(el);
+        } else {
+          const el = document.getElementById('fretboard');
+          if (el) out.push(el);
         }
-        // All other sections (fretboard #1, keyboards) default to
-        // the primary fretboard — hovering a chip in the keyboard
-        // strip still highlights the primary neck.
-        const fb = document.getElementById('fretboard');
-        return fb ? [fb] : [];
+        return out;
       }
       function _clearPreview() {
         document.querySelectorAll('[data-chord-preview]').forEach(function (td) {
@@ -6908,8 +6915,8 @@
         if (!pcsStr) return;
         const set = new Set(pcsStr.split(',').map(function (s) { return +s; }));
         _clearPreview();
-        _targetFretboards(chip).forEach(function (fb) {
-          fb.querySelectorAll('td[data-note]').forEach(function (td) {
+        _targetBoards(chip).forEach(function (board) {
+          board.querySelectorAll('[data-note]').forEach(function (td) {
             const pc = notePc(td.getAttribute('data-note'));
             if (set.has(pc)) td.setAttribute('data-chord-preview', '1');
           });
