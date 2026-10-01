@@ -1,5 +1,25 @@
 // Fretboard.site — client-side rewrite of the PHP renderer.
 // Variable names mirror the original PHP ($x, $rev, $hilight_url) for traceability.
+//
+// Table of contents (search for "// ====" to jump between majors):
+//   ====  Audio / Tone.js lazy loading               (~ 70-220)
+//   ====  Data constants + URL helpers               (~ 240-370)
+//   ====  SETTINGS registry (round-trip URL + LS)    (~ 380-520)
+//   ====  parseState / canonicalQS / applyChord href (~ 620-900)
+//   ====  Fretboard renderers + instance targeting   (~ 1040-1900)
+//   ====  Keyboard renderers + instance targeting    (~ 1905-2250)
+//   ====  SECTIONS registry (per-section dispatch)   (~ 1970-2010)
+//   ====  Summary status + section locks + title     (~ 2200-2600)
+//   ====  Tuning picker + custom tuning editor       (~ 2600-3300)
+//   ====  Chord/scale builder grids + modes/diatonic (~ 2900-4300)
+//   ====  SECTION_HELP wrapper (data in help_text.js)(~ 4305-4315)
+//   ====  View-source modal                          (~ 4315-4400)
+//   ====  Shift arrows + All/None + link interceptor (~ 5100-5700)
+//   ====  Chord ID identify strip + hover preview    (~ 5900-6500)
+//   ====  Shift bar builder                          (~ 6200-6280)
+//   ====  Quiz + ear training                        (~ 6655-7360)
+//   ====  applyState (main render orchestrator)      (~ 7415-7520)
+//   ====  Init                                       (~ 7520-7580)
 
 (function () {
   'use strict';
@@ -1037,10 +1057,10 @@
   }
 
   // -------- Fretboard instance targeting --------
-  // Bundle every DOM id the fretboard renderers write into so a future
-  // second instance can render into its own set of divs. The default
-  // instance still emits the exact IDs that CSS + other code depend on;
-  // Commit 1 of Phase 4 only threads the mechanism, no behavior change.
+  // Bundle every DOM id the fretboard renderers write into so each
+  // instance renders into its own set of divs. FB_TARGETS_DEFAULT
+  // drives the primary fretboard; FB_TARGETS_2 (below) drives the
+  // second comparison fretboard — see also SECTIONS registry.
   const FB_TARGETS_DEFAULT = {
     instanceId:    '',                    // '' = the original fretboard section
     rootId:        'fretboard_root',
@@ -1905,10 +1925,9 @@
   }
 
   // -------- Keyboard instance targeting --------
-  // Mirrors FB_TARGETS_DEFAULT for the keyboard section. Lets a future
-  // second keyboard instance render into its own divs without touching
-  // the first one's DOM. Commit 2 of Phase 4 threads the mechanism;
-  // behavior is unchanged for the single existing instance.
+  // Mirrors FB_TARGETS_DEFAULT for the keyboard section. Each
+  // keyboard renders into its own divs so the second comparison
+  // keyboard doesn't step on the first.
   const KB_TARGETS_DEFAULT = {
     instanceId:    '',
     sectionId:     'section_4',
@@ -6272,8 +6291,8 @@
       return '<div class="semi_shift_bar">' + inner + '</div>';
     }
     // Instance list: each entry = { containerId, sectionId, includeAllNone }.
-    // Default = original fretboard + original keyboard. Phase 4 commit 3
-    // will append entries for the second-instance sections.
+    // Default = primary fretboard + primary keyboard. Caller passes
+    // extended instances (section_13 / section_14) via the second arg.
     const instances = (arguments.length > 1 && Array.isArray(arguments[1]))
       ? arguments[1]
       : [
@@ -6484,9 +6503,9 @@
 
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
     if (kbHost) kbHost.innerHTML = buildHtml(xKB, 'section_4');
-    // Extra instances (Phase 4 commit 3): each entry = { containerId,
-    // sectionId, state }. Lets Fretboard #2 / Keyboard #2 drive their
-    // own chord-ID strip from their own per-section state.
+    // Extra instances: each entry = { containerId, sectionId, state }.
+    // Lets Fretboard #2 / Keyboard #2 drive their own chord-ID strip
+    // from their own per-section state.
     if (Array.isArray(extraInstances)) {
       extraInstances.forEach(function (inst) {
         const el = document.getElementById(inst.containerId);
