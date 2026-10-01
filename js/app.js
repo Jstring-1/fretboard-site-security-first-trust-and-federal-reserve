@@ -6582,16 +6582,13 @@
   // Build a URL that pre-loads the chord — we set k= to the chord's root and
   // hl= to its degrees relative to that root. Strip pk= so the user moves
   // from "what is this?" to "show me this chord on the board" cleanly.
-  function applyChordHref(chordName, chordMask) {
+  function applyChordHref(chordName, chordMask, keyOverride) {
     // Translate the chord's pitch classes into degrees relative to the
-    // CURRENT site key — don't reset k. Users were finding it jarring
-    // that clicking a chord chip would warp the page to a new key.
-    // Now: page key stays put, the chord's notes light up at whatever
-    // degrees they happen to be in that key (a I-chord always shows
-    // 1/3/5; a IV chord in C shows 4/6/1; an Em chip while in C shows
-    // 3/5/7, etc.).
+    // SECTION's key (or the global if no override is passed). Section
+    // chord-ID strips pass their own xs.k so #2's chip clicks compute
+    // the right degrees even when #2 is on a different key than global.
     const x = window.SF_X;
-    const tonic = (x && x.k) ? x.k : 'C';
+    const tonic = keyOverride || (x && x.k) || 'C';
     const tonicPc = NOTE_TO_PC[tonic];
     if (tonicPc == null) return null;
     const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
@@ -6789,7 +6786,10 @@
           pcsAttr = ' data-chord-pcs="' + pcs.join(',') + '"';
         }
         const isEngaged = !!(xs._id_active && xs._id_active === name);
-        const href = isEngaged ? clearHlOnlyHref() : (applyChordHref(name, mask) || '#');
+        // Pass xs.k so section_13 / section_14 strips compute degrees
+        // against their own key — a #2-only key change doesn't make
+        // #2's chord ID chips rewrite the global hl with wrong offsets.
+        const href = isEngaged ? clearHlOnlyHref() : (applyChordHref(name, mask, xs.k) || '#');
         const cls = 'identify_chip' + (isEngaged ? ' identify_chip_on' : '');
         return '<a class="' + cls + '" href="' + escHtml(href)
              + '" title="' + escAttr(tip) + '"' + pcsAttr + '>' + escHtml(name) + '</a>';
