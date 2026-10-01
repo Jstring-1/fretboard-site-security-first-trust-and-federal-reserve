@@ -220,7 +220,7 @@ a:hover,a,a:link,a:visited,a:active        {  text-decoration:none;             
                             PADDING / MARGINS
 *********************************************************************************************************************/
 #fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
-                                           {  margin: 12px auto 12px auto;        padding: 0;                        }
+                                           {  margin: 4px auto 4px auto;         padding: 0;                        }
 body                                       {  margin: 0;                          padding: 0;                        }
 .pro                                       {  margin-left:-5px; }
 h1, h2, h3, h4, input                      {  margin: 6px auto 6px auto ; }
@@ -316,9 +316,9 @@ table td                                   {  vertical-align:middle;            
    column and fret 1, mimicking the actual instrument. Each cell paints
    half (6px) so together they read as one continuous 12px nut with a
    subtle inset for depth. */
-.nut                                       {  border-right:6px solid #e8e2d4 !important;
+.nut                                       {  border-right:9px solid #e8e2d4 !important;
                                               box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
-.nut1                                      {  border-left:6px solid #e8e2d4 !important;
+.nut1                                      {  border-left:9px solid #e8e2d4 !important;
                                               box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
 #view_src, #print_btn                      {  border:1px solid #5fe8e0;                                              }
@@ -977,7 +977,7 @@ select option                              { color: var(--text); background: var
 /*********************************************************************************************************************
                             FRETBOARD HEADER (single stack: key info, tuning info, form)
 *********************************************************************************************************************/
-.fb_header                                 { padding: 8px 16px 4px; text-align: center;                                }
+.fb_header                                 { padding: 4px 16px 2px; text-align: center;                                }
 .fb_header #info_l, .fb_header #info_r     { display: block !important; float: none !important;
                                              margin: 0 0 2px !important; text-align: center !important;
                                              font-size: 0.95em; opacity: 0.9;                                          }
@@ -1443,7 +1443,7 @@ details.collapsible > summary              { padding-left: 36px;                
 #kb_picks_root,
 #kb_below_root,
 #fb_below_root                             { display: flex; flex-direction: column;
-                                             gap: 5px; padding: 10px 18px 14px;                                      }
+                                             gap: 4px; padding: 4px 18px 6px;                                        }
 /* Combined degree + note pill row — one taller button per chromatic
    degree, with the degree label on top and the resolved note name in
    the current key on the bottom. Replaces the previous two-row layout
@@ -1807,14 +1807,16 @@ a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00
                                              background: #1a1a1a; color: var(--text);
                                              border: 1px solid #333; border-radius: 3px;
                                              font: 500 0.85em var(--font);                                             }
-.tun_pop_custom_foot                       { display: flex; justify-content: space-between; align-items: center;
+.tun_pop_custom_foot                       { display: flex; justify-content: flex-end; align-items: center;
                                              gap: 8px; padding-top: 8px; flex-wrap: wrap;
                                              border-top: 1px solid rgba(255,255,255,0.08);                             }
-.tun_pop_custom_strs                       { color: rgba(255,255,255,0.65); font-size: 0.82em;
+.tun_pop_custom_strs                       { margin-right: auto;
+                                             color: rgba(255,255,255,0.65); font-size: 0.82em;
                                              display: inline-flex; align-items: center; gap: 4px;                      }
 .tun_pop_custom_count                      { background: #1a1a1a; color: var(--text);
                                              border: 1px solid #333; border-radius: 3px;
-                                             padding: 2px 6px; width: auto;                                            }
+                                             padding: 2px 6px;
+                                             width: auto; max-width: 68px;                                             }
 .tun_pop_custom_cancel,
 .tun_pop_custom_apply                      { padding: 4px 14px; border-radius: 4px; font: 500 0.9em var(--font);
                                              cursor: pointer; border: 1px solid rgba(255,255,255,0.25);                 }
@@ -2888,7 +2890,7 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
    mask all come out identical. */
 #fretboard_2                                { background-color: #555555; border: 0 !important;
                                               border-spacing: 1px;
-                                              margin: 12px auto 12px auto; padding: 0;
+                                              margin: 4px auto 4px auto; padding: 0;
                                               border-radius: 8px; overflow: hidden;                                     }
 #fretboard_2 td                             { box-sizing: border-box; border: 0 !important;
                                               border-radius: 3px;                                                       }
@@ -2897,8 +2899,16 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 #fretboard_2 td[data-note]                  { cursor: pointer;                                                         }
 #fretboard_2 td[data-chord-preview]         { outline: 2px solid rgba(255, 230, 0, 0.95);
                                               outline-offset: -2px; position: relative; z-index: 1;                    }
-/* Nut separator (last column of the fretboard "open string" cell) */
-#fretboard_2 .nut                           { border-right: 6px solid #e8e2d4 !important;                              }
+/* Nut separators — mirror the primary's .nut/.nut1 rules at a higher
+   specificity so #fretboard_2 td { border: 0 } can't erase them. */
+#fretboard_2 td.nut                         { border-right: 9px solid #e8e2d4 !important;
+                                              box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
+#fretboard_2 td.nut1                        { border-left: 9px solid #e8e2d4 !important;
+                                              box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
+#fretboard td.nut                           { border-right: 9px solid #e8e2d4 !important;
+                                              box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
+#fretboard td.nut1                          { border-left: 9px solid #e8e2d4 !important;
+                                              box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
 /* Containers around the second fretboard */
 #fretboard_root_2                           { position: relative;                                                       }
 #fb_identify_root_2                         { margin: 0; padding: 0;                                                    }
@@ -2910,7 +2920,7 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
                                               align-items: center; gap: 4px;
                                               white-space: nowrap; overflow: hidden;                                    }
 #fb_below_root_2                            { display: flex; flex-direction: column;
-                                              gap: 5px; padding: 10px 18px 14px;                                        }
+                                              gap: 4px; padding: 4px 18px 6px;                                          }
 /* Tuning picker on the second instance uses the same .tun_picker /
    .tun_pop classes as the primary, so no extra rules needed beyond
    positioning context. */
