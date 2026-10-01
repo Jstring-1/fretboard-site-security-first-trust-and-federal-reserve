@@ -2162,13 +2162,24 @@
       const target = s.getAttribute('data-summary-for');
       // Chord/Scale grid: compact-mode toggle stays.
       let prefix = (target === 'section_3' || target === 'section_6') ? compactToggleHtml() : '';
-      // Per-section unlocked → show a compact key picker so the user
-      // can change THIS section's key without touching the global.
-      // Locked sections keep using the sticky-header key picker.
+      // Per-section unlocked → show a compact key dropdown next to the
+      // 🔓 icon so the user can change THIS section's key without
+      // touching the global. Locked sections keep using the sticky-
+      // header key picker.
       let picker = '';
       if (x._unlocked && x._unlocked.has(target)) {
         const xs = stateForSection(target, x);
-        picker = '<span class="section_key_inline">' + keyButtonsHtml(xs.k) + '</span>';
+        let opts = '';
+        for (const a of ALLNOTES) {
+          const sel = (a === xs.k) ? ' selected' : '';
+          opts += '<option value="' + escHtml(a) + '"' + sel + '>' + escHtml(a) + '</option>';
+        }
+        picker = '<span class="section_key_inline section_key_picker">'
+               +   '<span class="section_key_inline_lab">KEY</span>'
+               +   '<select class="inputs section_key_inline_sel key_hidden_select" name="k">'
+               +     opts
+               +   '</select>'
+               + '</span>';
       }
       s.innerHTML = prefix + picker;
     });
