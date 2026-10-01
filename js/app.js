@@ -1800,7 +1800,7 @@
     identifyId:    'kb_identify_root',
     shiftId:       'kb_shift_root',
     belowId:       'kb_below_root',
-    scopeSelector: '.ritz .waffle'       // CSS prefix for key cells
+    scopeSelector: '#section_4 .ritz .waffle'   // section-scoped so dynamic CSS stays in-section
   };
   function kbTargets(overrides) {
     return Object.assign({}, KB_TARGETS_DEFAULT, overrides || {});
@@ -6008,7 +6008,7 @@
     for (const note in KEYBOARD_NOTE_CLASSES) {
       const def = KEYBOARD_NOTE_CLASSES[note];
       (def.lbl || def.cls).forEach(function (c) {
-        document.querySelectorAll('.ritz .waffle .' + c).forEach(function (el) {
+        document.querySelectorAll(cfg.scopeSelector + ' .' + c).forEach(function (el) {
           el.setAttribute('data-note', note);
         });
       });
@@ -6018,7 +6018,7 @@
     // step through the diatonic offsets [0,2,3,5,7,8,10] from each A.
     // Black keys step through [1,4,6,9,11].
     (function () {
-      const tbl = document.getElementById('keyboard');
+      const tbl = document.getElementById(cfg.tableId);
       if (!tbl) return;
       const rows = tbl.querySelectorAll('tr');
       // Find the black-key and white-key rows by inspecting their first td label.
@@ -6080,7 +6080,7 @@
       // and clicks toggle hl directly. Keyboard cells get only the
       // colored hl background (below) — no extra inset stroke.
       def.cls.forEach(function (c) {
-        const sel = '.ritz .waffle .' + c;
+        const sel = cfg.scopeSelector + ' .' + c;
         if (def.mode === 'bg') {
           // White-key column.
           if (inHighlightSet) {
@@ -6117,7 +6117,7 @@
       // Only on cells that actually carry the note letter (avoids duplicate
       // labels on the spacer cells above each white key).
       (def.lbl || def.cls).forEach(function (c) {
-        const sel = '.ritz .waffle .' + c;
+        const sel = cfg.scopeSelector + ' .' + c;
         let degColor;
         if (def.mode === 'bg') {
           degColor = inHighlightSet     ? '#000'
@@ -6189,20 +6189,31 @@
         if (!isNaN(m)) playMidi(m);
       }
       const _isKb = !!e.target.closest('.ritz');
-      // Click-to-toggle now writes hl (color highlights) — same as
-      // clicking a note pill above the section. Yellow-ring pk picks
-      // are gone; chord ID reads from hl.
-      const x = window.SF_X || {};
-      const key = x.k || 'C';
+      // Click-to-toggle writes hl. If the clicked cell is inside an
+      // unlocked section, route via mergeSectionOverrideUrl so the
+      // toggle writes s<n>_hl instead of the global hl — this is what
+      // lets Fretboard #2 / Keyboard #2 pick notes without stepping
+      // on the primary instances.
+      const sectionEl = cell.closest('details.section, details.collapsible');
+      const sectionUnlocked = !!(sectionEl && sectionEl.getAttribute('data-unlocked') === 'true');
+      let xState = window.SF_X || {};
+      if (sectionUnlocked && typeof stateForSection === 'function') {
+        xState = stateForSection(sectionEl.id, xState);
+      }
+      const key = xState.k || 'C';
       const tonicPc = NOTE_TO_PC[key];
       const notePc  = NOTE_TO_PC[note];
       if (tonicPc == null || notePc == null) return;
       const off = (notePc - tonicPc + 12) % 12;
       const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
       const deg = DEG_LBL[off];
-      const curArr = hlStrToArr(x.hl);
+      const curArr = hlStrToArr(xState.hl);
       const i = curArr.indexOf(deg);
       const next = i === -1 ? curArr.concat([deg]) : curArr.filter(function (d) { return d !== deg; });
+      if (sectionUnlocked && sectionEl) {
+        const merged = mergeSectionOverrideUrl(sectionEl.id, buildHlHref(next));
+        if (merged != null) { navigateTo(merged); return; }
+      }
       const href = buildHlHref(next);
       const qs = href.slice(1);
       const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
@@ -7570,6 +7581,23 @@
   }
 
   // ---------- init ----------
+  // Clone the primary keyboard's giant waffle table into #kb_waffle_wrap_2
+  // so Keyboard #2 can render without us duplicating ~5KB of inline HTML
+  // in index.html. Renames the inner <table id="keyboard"> to
+  // id="keyboard_2" and preserves everything else (classes, structure)
+  // so the CSS keeps working. No-op when section_14 isn't on the page.
+  function cloneKeyboardIntoSection14() {
+    const target = document.getElementById('kb_waffle_wrap_2');
+    if (!target || target._kbCloned) return;
+    const sourceWrap = document.querySelector('#section_4 .ritz');
+    if (!sourceWrap) return;
+    const clone = sourceWrap.cloneNode(true);
+    const tbl = clone.querySelector('#keyboard');
+    if (tbl) tbl.id = 'keyboard_2';
+    target.appendChild(clone);
+    target._kbCloned = true;
+  }
+
   function init() {
     // Reflect URL-driven display preferences on the body BEFORE the
     // first render so there's no flash of the default mode while CSS
@@ -7579,6 +7607,9 @@
     // touch the DOM, inject drag handles, apply the saved order,
     // then wire the drag delegates.
     _defaultSectionOrder();
+    // Clone the primary keyboard's waffle table into section_14 BEFORE
+    // the first applyState so Keyboard #2 has a real DOM to render into.
+    cloneKeyboardIntoSection14();
     injectDragHandles();
     applySectionOrder();
     bindSectionDrag();
