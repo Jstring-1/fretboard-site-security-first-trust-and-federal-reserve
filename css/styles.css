@@ -69,7 +69,8 @@ body, #hl_button                           {  background-color: var(--bg) !impor
 /* Table bg now acts as the "grout" between cells — darker than the cell
    fills (#a8a8a8) so the 1px border-spacing reads as a deliberate frame
    around every cell rather than empty gap. */
-#fretboard, #chord_grid, #scale_grid       {  background-color:#555555;                                              }
+:is(#fretboard, #fretboard_2), #chord_grid, #scale_grid
+                                           {  background-color:#555555;                                              }
 #_no_highlight_, #_x_                      {  background-color:#a8a8a8;                                              }
 /* Slightly lighter grey for the empty interior cells in the chord +
    scale builder grids so the populated cells pop a bit more. */
@@ -143,8 +144,7 @@ a:hover                                    {  color:var(--accent-hi);           
 #_no_highlight_, #_x_                      {  color:#333333 !important;                                              }
 /* When any degree is highlighted, fade the non-chosen cells' text so
    the colored picks visually pop. Applies to BOTH fretboards. */
-#fretboard[data-any-hl="y"] #_no_highlight_,
-#fretboard_2[data-any-hl="y"] #_no_highlight_
+:is(#fretboard, #fretboard_2)[data-any-hl="y"] #_no_highlight_
                                            {  color: rgba(100,100,100,0.55) !important;                                }
 /* The fretboard's _5_ cells stay light-text-on-dark-blue, but in the
    chord + scale builder grids the _5_ header / chord-label cells use
@@ -224,7 +224,7 @@ a:hover,a,a:link,a:visited,a:active        {  text-decoration:none;             
 /*********************************************************************************************************************
                             PADDING / MARGINS
 *********************************************************************************************************************/
-#fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
+:is(#fretboard, #fretboard_2), #chord_grid, #scale_grid, :is(#keyboard, #keyboard_2), #tunings
                                            {  margin: 4px auto 4px auto;         padding: 0;                        }
 body                                       {  margin: 0;                          padding: 0;                        }
 .pro                                       {  margin-left:-5px; }
@@ -250,7 +250,8 @@ body, #info_l, #info_r, #view_src, #print_btn, #f_cyo, #f_cyo_dark, #tunings tr
 #view_src, #info_l                         {  float:left;                                                            }
 #print_btn, #info_r                        {  float:right;                                                           }
              
-#keyboard td,#keyboard tr                  {  white-space:nowrap; overflow:hidden;                                   }
+:is(#keyboard, #keyboard_2) td, :is(#keyboard, #keyboard_2) tr
+                                           {  white-space:nowrap; overflow:hidden;                                   }
 table                                      {  table-layout:fixed; position:inherit;                                  }
 #section_3,#section_4,#section_5, #section_1,#section_2
                                            {  table-layout:fixed;                                                    }
@@ -261,7 +262,7 @@ table td                                   {  vertical-align:middle;            
 *********************************************************************************************************************/
 #view_src, #print_btn, #hl_button, #hl_button_x
                                            {  border-radius:10px;                                                    }
-#fretboard, #chord_grid, #scale_grid, #keyboard, #tunings
+:is(#fretboard, #fretboard_2), #chord_grid, #scale_grid, :is(#keyboard, #keyboard_2), #tunings
                                            {  border-radius:8px;     overflow:hidden;                                }
 /* Keyboard sits on a grey piano-body inside the dark section frame —
    matches the fretboard's tabletop colour. */
@@ -306,8 +307,10 @@ table td                                   {  vertical-align:middle;            
 /* Drop the horizontal border between the black-key row (5th tr) and the
    white-key row (6th tr) so the black keys rest seamlessly on the white
    keys instead of being visually capped by a divider line. */
-#keyboard > tbody > tr:nth-of-type(5) > td   {  border-bottom: none !important;                                       }
-#keyboard > tbody > tr:nth-of-type(6) > td   {  border-top: none !important;                                          }
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-of-type(5) > td
+                                             {  border-bottom: none !important;                                       }
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-of-type(6) > td
+                                             {  border-top: none !important;                                          }
 /* Steel Gauges, MXR EQ band, and Frequency Hz rows: drop the multicolor
    scheme and let the populated cells match the white-key bg below them.
    Also clears the grey text override on the row's blank/label cells. */
@@ -809,9 +812,11 @@ body[data-display="degrees"] .prog_bar_chord_row          { display: none !impor
 /* Keyboard's white / black key cells naturally show only the note
    label; in "both" or "notes" mode keep that look (hide the injected
    .disp_deg span). In "degrees" mode swap to degrees. */
-#keyboard .disp_deg                                       { display: none;                                              }
-body[data-display="degrees"] #keyboard .disp_deg          { display: inline !important;                                 }
-body[data-display="degrees"] #keyboard .disp_note         { display: none !important;                                  }
+:is(#keyboard, #keyboard_2) .disp_deg                     { display: none;                                              }
+body[data-display="degrees"] :is(#keyboard, #keyboard_2) .disp_deg
+                                                          { display: inline !important;                                 }
+body[data-display="degrees"] :is(#keyboard, #keyboard_2) .disp_note
+                                                          { display: none !important;                                  }
 /* Instrument selector — small dropdown next to the Audio (♪) toggle in
    the sticky header. Mirrors the toggle's pill shape so they read as
    a paired control. */
@@ -1351,9 +1356,10 @@ details.collapsible > summary              { padding-left: 36px;                
    cell edges. */
 /* Cells get no individual border — the table bg shows through the 1px
    border-spacing as a thin dark grout between every cell. */
-#fretboard td,
+:is(#fretboard, #fretboard_2) td,
 #chord_grid td, #scale_grid td             { border: 0 !important;                                                   }
-#fretboard, #chord_grid, #scale_grid       { border: 0 !important;                                                   }
+:is(#fretboard, #fretboard_2), #chord_grid, #scale_grid
+                                           { border: 0 !important;                                                   }
 /* Cells without an explicit background (chord/scale name labels and degree
    header rows) need one too so they don't show through as the dark grout. */
 #chord_grid .cg_chord_label, #chord_grid .cg_deg_header,
@@ -1366,11 +1372,12 @@ details.collapsible > summary              { padding-left: 36px;                
 #scale_grid .cg_corner_label               { color: #555; font: italic 600 0.78em var(--font);
                                              letter-spacing: 0.06em; text-transform: uppercase;
                                              text-align: center;                                                     }
-#fretboard td, #chord_grid td, #scale_grid td
+:is(#fretboard, #fretboard_2) td, #chord_grid td, #scale_grid td
                                            { border-radius: 3px;                                                      }
 /* Cell spacing so the rounded corners actually show up between neighbours
    instead of butting up against each other. */
-#fretboard, #chord_grid, #scale_grid       { border-spacing: 1px;                                                     }
+:is(#fretboard, #fretboard_2), #chord_grid, #scale_grid
+                                           { border-spacing: 1px;                                                     }
 /* Consistent row heights inside the chord and scale builder grids so the
    data cells feel as deliberate as the fretboard's fret rows. */
 /* Both grids now have the same column count and the same cell-content
@@ -1412,9 +1419,9 @@ details.collapsible > summary              { padding-left: 36px;                
 /* Pin the fretboard row + cell heights so the table doesn't grow/shrink
    when the highlight state changes between renders. box-sizing keeps any
    border inside the cell so it doesn't add to the row size. */
-#fretboard tr                              { height: 32px;                                                            }
-#fretboard #fretnums                       { height: 24px;                                                            }
-#fretboard td                              { box-sizing: border-box;                                                  }
+:is(#fretboard, #fretboard_2) tr           { height: 32px;                                                            }
+:is(#fretboard, #fretboard_2) #fretnums    { height: 24px;                                                            }
+:is(#fretboard, #fretboard_2) td           { box-sizing: border-box;                                                  }
 
 /* Highlighted-degree markers on the fretboard: now signalled only by the
    cell's degree-coloured background — no yellow ring. */
@@ -1512,7 +1519,8 @@ details.collapsible > summary              { padding-left: 36px;                
 /* Click-to-pick highlight for the chord identifier — fluorescent yellow.
    Inset shadow doesn't change cell dimensions (no layout shift). */
 /* Yellow-ring pk highlight has been removed. Class no longer styled. */
-#fretboard td[data-note]                   { cursor: pointer;                                                        }
+:is(#fretboard, #fretboard_2) td[data-note]
+                                           { cursor: pointer;                                                        }
 
 /* Keyboard pick ring uses the same yellow via a dynamic stylesheet rule
    added by applyKeyboardColors (see app.js). Cursor styling here so static
@@ -1689,9 +1697,9 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
 /* --- Fretboard hover preview ------------------------------------------
    Bright ring around every fret whose note is in the hovered chord.
    outline-offset -2 keeps it inset so it doesn't push cell size. */
-#fretboard td[data-chord-preview],
-#keyboard [data-chord-preview],
-#keyboard_2 [data-chord-preview]           { outline: 2px solid rgba(255, 230, 0, 0.95);
+:is(#fretboard, #fretboard_2) td[data-chord-preview],
+:is(#keyboard, #keyboard_2) [data-chord-preview]
+                                           { outline: 2px solid rgba(255, 230, 0, 0.95);
                                              outline-offset: -2px; position: relative; z-index: 1;                     }
 
 /* --- Dim All/None relative to the shift arrows -----------------------
@@ -1927,28 +1935,29 @@ a.identify_pill_on:active                  { background: #ffeb00; color: #1a1a00
    force dark text so the numbers stay readable on the colored cell bgs the
    inline ritz CSS sets up. Higher specificity beats those .ritz .waffle
    colour rules. */
-#keyboard > tbody > tr:nth-child(-n+4) > td,
-#keyboard > tbody > tr:nth-child(-n+4) > td.s0,
-#keyboard > tbody > tr:nth-child(-n+4) > td[class^="s"]
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-child(-n+4) > td,
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-child(-n+4) > td.s0,
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-child(-n+4) > td[class^="s"]
                                            { color: #1a1a1a !important;                                              }
 
 /* Bottom 2 keyboard rows (Instrument Ranges — Guitar / Bass): same treatment.
    The "Guitar" / "Bass" labels and any future range text read as black. */
-#keyboard > tbody > tr:nth-last-child(-n+2) > td,
-#keyboard > tbody > tr:nth-last-child(-n+2) > td.s0,
-#keyboard > tbody > tr:nth-last-child(-n+2) > td[class^="s"]
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-last-child(-n+2) > td,
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-last-child(-n+2) > td.s0,
+:is(#keyboard, #keyboard_2) > tbody > tr:nth-last-child(-n+2) > td[class^="s"]
                                            { color: #1a1a1a !important;                                              }
 
 /* Keyboard bookend cells: leftmost row labels (s0 = Octaves / EQ / etc.,
    s11 = Steel Gauges, s31 = Black Keys label) and the rightmost trailing
    cells (s10/s21/s46) read as a neutral grey "header column" — distinct
    from both the page bg and the white piano keys. */
-#keyboard > tbody > tr > td.s0,
-#keyboard > tbody > tr > td.s10,
-#keyboard > tbody > tr > td.s11,
-#keyboard > tbody > tr > td.s21,
-#keyboard > tbody > tr > td.s31,
-#keyboard > tbody > tr > td.s46              { background-color: #a8a8a8 !important;
+:is(#keyboard, #keyboard_2) > tbody > tr > td.s0,
+:is(#keyboard, #keyboard_2) > tbody > tr > td.s10,
+:is(#keyboard, #keyboard_2) > tbody > tr > td.s11,
+:is(#keyboard, #keyboard_2) > tbody > tr > td.s21,
+:is(#keyboard, #keyboard_2) > tbody > tr > td.s31,
+:is(#keyboard, #keyboard_2) > tbody > tr > td.s46
+                                             { background-color: #a8a8a8 !important;
                                               color: #1a1a1a !important;                                              }
 
 /* Sortable header buttons */
@@ -2926,51 +2935,39 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 
 /* ========================================================
    Second instances — Fretboard #2 (section_13) & Keyboard #2
-   (section_14). Mirrors the primary styles by re-applying each
-   rule to the _2-suffixed IDs. Table cell ids like #f0, #f_cyo
-   and #fretnums intentionally duplicate across both instances
-   and already match the originals.
+   (section_14).
+
+   Shared appearance (table surface, cell borders, row heights,
+   nut, chord-preview outline, degrees-mode label swap, keyboard
+   bookend colours, instrument-range text colour, left-handed
+   mirror, etc.) is handled directly on the primary selectors
+   above via :is(#fretboard, #fretboard_2) and
+   :is(#keyboard, #keyboard_2) — one source of truth, so the
+   two instances cannot drift. The block below only carries the
+   genuinely instance-specific rules (left-handed mirror still
+   needs an :is() variant for the primary #fretboard rule, and
+   the second instance has its own container IDs).
    ======================================================== */
-/* Shared table surface — mirrors the primary fretboard's full set
-   of base rules so cells, rows, margins, and the rounded corner
-   mask all come out identical. */
-#fretboard_2                                { background-color: #555555; border: 0 !important;
-                                              border-spacing: 1px;
-                                              margin: 4px auto 4px auto; padding: 0;
-                                              border-radius: 8px; overflow: hidden;                                     }
-#fretboard_2 td                             { box-sizing: border-box; border: 0 !important;
-                                              border-radius: 3px;                                                       }
-#fretboard_2 tr                             { height: 32px;                                                             }
-#fretboard_2 #fretnums                      { height: 24px;                                                             }
-#fretboard_2 td[data-note]                  { cursor: pointer;                                                         }
-#fretboard_2 td[data-chord-preview]         { outline: 2px solid rgba(255, 230, 0, 0.95);
-                                              outline-offset: -2px; position: relative; z-index: 1;                    }
 /* Left-handed mode — mirror the fretboard horizontally. The whole
    table flips via scaleX(-1), then each cell's INNER content flips
    back so note labels, fret numbers, and the LH / L→H buttons all
    read the right way around. Nut border on .nut / .nut1 is swapped
    so the cream band still lives between the open-string column and
    fret 1 after the mirror. */
-#fretboard[data-lh="y"],
-#fretboard_2[data-lh="y"]                  { transform: scaleX(-1);                                                     }
-#fretboard[data-lh="y"] td,
-#fretboard_2[data-lh="y"] td               { transform: scaleX(-1);                                                     }
-/* After scaleX, the cream nut-right strip visually appears on the
-   LEFT side of the flipped cell. That's correct because the whole
-   row is mirrored — the nut still sits between the open-string
-   column and fret 1 on the user's screen. */
+:is(#fretboard, #fretboard_2)[data-lh="y"]
+                                           { transform: scaleX(-1);                                                     }
+:is(#fretboard, #fretboard_2)[data-lh="y"] td
+                                           { transform: scaleX(-1);                                                     }
 
-/* Nut separators — mirror the primary's .nut/.nut1 rules at a higher
-   specificity so #fretboard_2 td { border: 0 } can't erase them. */
-#fretboard_2 td.nut                         { border-right: 7px solid #e8e2d4 !important;
-                                              box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
-#fretboard_2 td.nut1                        { border-left: 7px solid #e8e2d4 !important;
-                                              box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
-#fretboard td.nut                           { border-right: 7px solid #e8e2d4 !important;
-                                              box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
-#fretboard td.nut1                          { border-left: 7px solid #e8e2d4 !important;
-                                              box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
-/* Containers around the second fretboard */
+/* Nut separators — written at :is()-ID specificity so cell
+   `border: 0 !important` cannot erase them. */
+:is(#fretboard, #fretboard_2) td.nut        { border-right: 7px solid #e8e2d4 !important;
+                                              box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                              }
+:is(#fretboard, #fretboard_2) td.nut1       { border-left: 7px solid #e8e2d4 !important;
+                                              box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                               }
+
+/* Containers around the second fretboard — these ids are unique
+   to instance 2 so they stay as plain id selectors. */
 #fretboard_root_2                           { position: relative;                                                       }
 #fb_identify_root_2                         { margin: 0; padding: 0;                                                    }
 #fb_identify_root_2 .identify_strip         { height: 28px; box-sizing: border-box; overflow: hidden;
@@ -2987,33 +2984,6 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
    positioning context. */
 #tun_picker_2                               { position: relative; display: inline-block;                                }
 #tun_pop_2                                  { position: absolute; z-index: 50;                                           }
-
-/* Second keyboard — mirrors each #keyboard-scoped rule onto
-   #keyboard_2. The .ritz .waffle .sNN classes already apply to
-   both via class matching. */
-#keyboard_2 td, #keyboard_2 tr              { white-space: nowrap; overflow: hidden;                                    }
-#keyboard_2 > tbody > tr:nth-of-type(5) > td { border-bottom: none !important;                                          }
-#keyboard_2 > tbody > tr:nth-of-type(6) > td { border-top: none !important;                                             }
-#keyboard_2 .disp_deg                       { display: none;                                                            }
-body[data-display="degrees"] #keyboard_2 .disp_deg  { display: inline !important;                                       }
-body[data-display="degrees"] #keyboard_2 .disp_note { display: none !important;                                        }
-/* Top 4 keyboard rows: dark text so numbers stay readable on the
-   coloured cell backgrounds the inline ritz CSS sets up. */
-#keyboard_2 > tbody > tr:nth-child(-n+4) > td,
-#keyboard_2 > tbody > tr:nth-child(-n+4) > td.s0,
-#keyboard_2 > tbody > tr:nth-child(-n+4) > td[class^="s"] { color: #1a1a1a !important;                                 }
-/* Bottom 2 keyboard rows (Instrument Ranges). */
-#keyboard_2 > tbody > tr:nth-last-child(-n+2) > td,
-#keyboard_2 > tbody > tr:nth-last-child(-n+2) > td.s0,
-#keyboard_2 > tbody > tr:nth-last-child(-n+2) > td[class^="s"] { color: #1a1a1a !important;                            }
-/* Bookend cells: left-edge row labels and right-edge trailing cells
-   get a neutral grey piano-body colour. */
-#keyboard_2 > tbody > tr > td.s0,
-#keyboard_2 > tbody > tr > td.s10,
-#keyboard_2 > tbody > tr > td.s11,
-#keyboard_2 > tbody > tr > td.s21,
-#keyboard_2 > tbody > tr > td.s31,
-#keyboard_2 > tbody > tr > td.s46            { background-color: #a8a8a8 !important;                                   }
 
 @media print {
   #section_13, #section_14                  { display: none !important;                                                }

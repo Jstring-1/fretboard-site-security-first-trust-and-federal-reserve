@@ -10,8 +10,17 @@
   const DEGREES = D.degrees;            // ["1","♭2","2","♭3","3","4","♭5","5","♭6","6","♭7","7"]
   const EXTENSIONS = D.extensions;
   const URL_NOTE_CHECK = D.url_note_check;
-  const URL_CHECK = D.url_check;
   const DEF_X = D.def_x;
+  // URL_CHECK = y/n flag params. Derived from DEF_X so adding a new
+  // boolean flag (e.g. "lh") only requires setting its def_x entry
+  // to "y" or "n" — the validator in parseState() picks it up
+  // automatically. Previously this list was hand-maintained in
+  // data.js, which caused silent drop-outs when it drifted (the lh
+  // bug: ?lh=y was written to the URL but parseState ignored it).
+  const URL_CHECK = Object.keys(DEF_X).filter(function (k) {
+    const v = DEF_X[k];
+    return v === 'y' || v === 'n';
+  });
   const SCALES = D.scales;
   const CHORDS = D.chords;
   const GRID = D.grid;
@@ -472,7 +481,12 @@
     const cfg = SETTINGS[name];
     if (!cfg) return null;
     if (sectionId && cfg.perSection) {
-      const suffix = sectionId === 'section_4' ? '_kb' : '_fb';
+      // Suffix per board kind so fretboard and keyboard sections keep
+      // separate per-section preferences in localStorage. The registry
+      // owns the kind lookup; unknown ids fall back to '_fb' (the
+      // historical default for the original two sections).
+      const sec = (typeof getSection === 'function') ? getSection(sectionId) : null;
+      const suffix = (sec && sec.kind === 'kb') ? '_kb' : '_fb';
       return cfg.ls + suffix;
     }
     return cfg.ls;
@@ -1937,6 +1951,34 @@
     belowId:       'kb_below_root_2',
     scopeSelector: '#section_14 .ritz .waffle'
   });
+
+  // -------- Section registry --------
+  // Single source of truth for every rendered section. Replaces hand-
+  // rolled section_2/4/13/14 branches that used to live inside
+  // _targetBoards, _settingLSKey, rerenderSectionWithState, and the
+  // identify-strip anchor-scroll helper. Adding a third fretboard or
+  // keyboard is now one row here, not a hunt-and-patch across the file.
+  //
+  //   id       — the <details> element id in index.html
+  //   kind     — 'fb' | 'kb' | 'cg' | 'sg' | 'ks' (dispatches rerender)
+  //   cfg      — FB_/KB_TARGETS_* instance config (fb/kb only)
+  //   boardSel — CSS selector for the board element the chord-preview
+  //              hover should outline cells inside (fb/kb only)
+  const SECTIONS = [
+    { id: 'section_2',  kind: 'fb', cfg: FB_TARGETS_DEFAULT, boardSel: '#fretboard' },
+    { id: 'section_13', kind: 'fb', cfg: FB_TARGETS_2,       boardSel: '#fretboard_2' },
+    { id: 'section_4',  kind: 'kb', cfg: KB_TARGETS_DEFAULT, boardSel: '#section_4 .ritz .waffle' },
+    { id: 'section_14', kind: 'kb', cfg: KB_TARGETS_2,       boardSel: '#section_14 .ritz .waffle' },
+    { id: 'section_3',  kind: 'cg' },
+    { id: 'section_6',  kind: 'sg' },
+    { id: 'section_9',  kind: 'ks' }
+  ];
+  function getSection(id) {
+    for (let i = 0; i < SECTIONS.length; i++) {
+      if (SECTIONS[i].id === id) return SECTIONS[i];
+    }
+    return null;
+  }
 
   // Render the highlight pills + chord/scale chips below the keyboard.
   // Instance-aware via cfg so a future Keyboard #2 renders into its own
@@ -5179,21 +5221,23 @@
   // link's URL parsed into a SF_X-shape via parseState).
   function rerenderSectionWithState(sectionId, x) {
     if (!x) return;
-    switch (sectionId) {
-      case 'section_2':
-        if (typeof renderFretboard === 'function') renderFretboard(x);
+    const sec = getSection(sectionId);
+    if (!sec) return;
+    switch (sec.kind) {
+      case 'fb':
+        if (typeof renderFretboard === 'function') renderFretboard(x, sec.cfg);
         break;
-      case 'section_3':
-        if (typeof renderChordGrid === 'function') renderChordGrid(x);
+      case 'kb':
+        if (typeof applyKeyboardColors === 'function') applyKeyboardColors(x, sec.cfg);
+        if (typeof renderKeyboardBelow  === 'function') renderKeyboardBelow(x,  sec.cfg);
         break;
-      case 'section_4':
-        if (typeof applyKeyboardColors === 'function') applyKeyboardColors(x);
-        if (typeof renderKeyboardBelow === 'function') renderKeyboardBelow(x);
+      case 'cg':
+        if (typeof renderChordGrid     === 'function') renderChordGrid(x);
         break;
-      case 'section_6':
-        if (typeof renderScaleGrid === 'function') renderScaleGrid(x);
+      case 'sg':
+        if (typeof renderScaleGrid     === 'function') renderScaleGrid(x);
         break;
-      case 'section_9':
+      case 'ks':
         if (typeof renderKeySignatures === 'function') renderKeySignatures(x);
         break;
     }
@@ -6884,23 +6928,15 @@
         // Walk up from the chip to the owning section and return
         // THAT section's board (fretboard or keyboard). A chip in
         // a fretboard section highlights the fretboard; a chip in
-        // a keyboard section highlights the keyboard.
+        // a keyboard section highlights the keyboard. Mapping lives
+        // in the SECTIONS registry so adding a third board = one row.
         const sectionEl = chip.closest && chip.closest('details.section');
-        const id = sectionEl && sectionEl.id;
+        const id  = sectionEl && sectionEl.id;
+        const sec = getSection(id);
+        const sel = (sec && sec.boardSel) || '#fretboard';
         const out = [];
-        if (id === 'section_13') {
-          const el = document.getElementById('fretboard_2');
-          if (el) out.push(el);
-        } else if (id === 'section_4') {
-          const el = document.querySelector('#section_4 .ritz .waffle');
-          if (el) out.push(el);
-        } else if (id === 'section_14') {
-          const el = document.querySelector('#section_14 .ritz .waffle');
-          if (el) out.push(el);
-        } else {
-          const el = document.getElementById('fretboard');
-          if (el) out.push(el);
-        }
+        const el  = document.querySelector(sel);
+        if (el) out.push(el);
         return out;
       }
       function _clearPreview() {
