@@ -5243,20 +5243,14 @@
     ['hl', 'pk'].forEach(f => {
       const k = 's' + sNum + '_' + f;
       if (!link.has(f)) return;            // click didn't touch this field
-      // Skip if the link's value is identical to the current global —
-      // that means the click is just preserving the URL field, not
-      // changing it (e.g. a hl pill click whose href still carries
-      // pk=… from the URL). Without this guard, every pill click would
-      // overwrite the section's picks with the global picks.
       const linkAll = link.getAll(f).join(',');
       const curAll  = cur.getAll(f).join(',');
-      if (linkAll === curAll) return;
-      // Otherwise the click is changing this field for the section.
-      // Three cases:
-      //   - non-empty value → write the new value.
-      //   - explicit empty (`hl=` / `pk=`) → keep the section override
-      //       but with an empty value, so the section stays cleared
-      //       instead of inheriting the global value.
+      // Skip ONLY when both link and current global carry the same
+      // non-empty value — that's a preserve-pass-through click. An
+      // explicit empty link value (`hl=` from the None pill) MUST be
+      // projected to the section so a locked-view-matches-empty case
+      // doesn't swallow the clear.
+      if (linkAll === curAll && linkAll !== '') return;
       const arr = link.getAll(f).filter(function (v) { return v.length; });
       if (arr.length) cur.set(k, arr.join(','));
       else            cur.set(k, '');
@@ -6637,7 +6631,12 @@
       return FLAT_TO_SHARP[norm] || norm;
     }
     function shiftHtml(sectionId, includeAllNone) {
-      const hlVal = String(x.hl || '').trim();
+      // Read the EFFECTIVE hl for this section so #2's shift bar
+      // enables when #2 has its own picks even if the global is empty.
+      const xs = (sectionId && typeof stateForSection === 'function')
+                 ? stateForSection(sectionId, x)
+                 : x;
+      const hlVal = String(xs.hl || '').trim();
       const enabled = !!hlVal && hlVal !== 'nothing';
       const dis = enabled ? '' : ' disabled';
       let inner = '<div class="semi_shift_arrows">'
@@ -6677,7 +6676,10 @@
       if (el) el.innerHTML = shiftHtml(inst.sectionId, inst.includeAllNone !== false);
     });
 
-    // One-shot click delegate at body level — handles both bars.
+    // One-shot click delegate at body level — handles every shift bar
+    // (both fretboards, both keyboards). Routes to section-override
+    // when the button lives inside an unlocked section so #2's shift
+    // arrows actually move #2's highlights instead of the globals.
     if (!document.body._semiShiftBound) {
       document.body._semiShiftBound = true;
       const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
@@ -6687,19 +6689,27 @@
         e.preventDefault();
         e.stopPropagation();
         const delta = parseInt(btn.getAttribute('data-shift'), 10) || 0;
-        // Shift each highlighted DEGREE by ±1 semitone. The site key
-        // stays as the user set it; only the hl set rotates around
-        // the same tonal centre. Visually identical to bumping k
-        // (highlights move chromatically up/down the neck) but the
-        // grids, diatonic chart, and section header stay anchored
-        // on the chosen key.
-        const x = window.SF_X || {};
-        const cur = hlStrToArr(x.hl);
+        const sectionId = btn.getAttribute('data-section') || '';
+        // Read the EFFECTIVE hl for this section. For an unlocked
+        // section that lives in ul=, stateForSection returns the
+        // section's own s<n>_hl via virtualSearchForSection; for a
+        // locked section it falls back to the global x.
+        const gx = window.SF_X || {};
+        const xs = (sectionId && typeof stateForSection === 'function')
+                   ? stateForSection(sectionId, gx)
+                   : gx;
+        const cur = hlStrToArr(xs.hl);
         const next = cur.map(function (d) {
           const off = _DEG_OFFSET[d];
           if (off == null) return d;
           return DEG_LBL[(off + delta + 12) % 12];
         });
+        const sectionEl = sectionId ? document.getElementById(sectionId) : null;
+        const sectionUnlocked = !!(sectionEl && sectionEl.getAttribute('data-unlocked') === 'true');
+        if (sectionUnlocked) {
+          const merged = mergeSectionOverrideUrl(sectionId, buildHlHref(next));
+          if (merged != null) { navigateTo(merged); return; }
+        }
         navigateTo(buildHlHref(next));
       });
     }
