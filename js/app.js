@@ -697,11 +697,6 @@
       }
     }
 
-    // Custom tuning has been retired from the UI (Phase 3). Force z='n'
-    // so old bookmarks carrying z=y quietly fall back to the preset the
-    // rest of the URL points at instead of rendering as "Custom".
-    x.z = 'n';
-
     // Merge in the chosen tuning
     const tun = TUNINGS[x.x];
     for (const k in tun) x[k] = tun[k];
@@ -1190,6 +1185,57 @@
     return out;
   }
 
+  // Custom-tuning editor state, per picker instance. Keyed by the
+  // picker's DOM id so Fretboard #1's and Fretboard #2's popovers can
+  // be in different modes independently.
+  const _tunPickerMode = {};   // { 'tun_pop': 'list' | 'custom', 'tun_pop_2': ... }
+  const _tunPickerCustomDraft = {};   // { 'tun_pop': { strs: 6, notes: [...] } }
+
+  function _renderCustomEditor(x, cfg) {
+    const draft = _tunPickerCustomDraft[cfg.tunPopId]
+                  || { strs: +x.strs || 6, notes: null };
+    const strs = draft.strs;
+    // Seed notes from the current tuning when the user first opens the
+    // editor (so they start from a reasonable baseline). Later edits
+    // live in the draft so re-renders don't blow them away.
+    let notes = draft.notes;
+    if (!notes || notes.length !== strs) {
+      notes = [];
+      for (let i = 1; i <= strs; i++) {
+        notes.push((x.z === 'y' ? x['s' + i] : x['x' + i]) || 'E');
+      }
+      draft.strs = strs;
+      draft.notes = notes;
+      _tunPickerCustomDraft[cfg.tunPopId] = draft;
+    }
+    let h = '<div class="tun_pop_custom">';
+    h += '<div class="tun_pop_custom_hint">Pick a note for each string. Top row is the HIGHEST pitch (string 1).</div>';
+    h += '<div class="tun_pop_custom_rows">';
+    for (let i = 1; i <= strs; i++) {
+      const cur = notes[i - 1] || 'E';
+      h += '<div class="tun_pop_custom_row">';
+      h += '  <span class="tun_pop_custom_label">String ' + i + '</span>';
+      h += '  <select class="tun_pop_custom_note" data-str="' + i + '">';
+      for (const n of ALLNOTES) {
+        h += '<option value="' + escAttr(n) + '"' + (n === cur ? ' selected' : '') + '>' + escHtml(n) + '</option>';
+      }
+      h += '  </select>';
+      h += '</div>';
+    }
+    h += '</div>';
+    h += '<div class="tun_pop_custom_foot">';
+    h += '  <label class="tun_pop_custom_strs">Strings <select class="tun_pop_custom_count">';
+    for (let n = 4; n <= 12; n++) {
+      h += '<option value="' + n + '"' + (n === strs ? ' selected' : '') + '>' + n + '</option>';
+    }
+    h += '  </select></label>';
+    h += '  <button type="button" class="tun_pop_custom_cancel">Cancel</button>';
+    h += '  <button type="button" class="tun_pop_custom_apply">Apply</button>';
+    h += '</div>';
+    h += '</div>';
+    return h;
+  }
+
   function renderTuningPicker(x, cfg) {
     cfg = cfg || FB_TARGETS_DEFAULT;
     const pop = document.getElementById(cfg.tunPopId);
@@ -1202,13 +1248,22 @@
       { k: 'dgs',   label: 'Degrees' },
       { k: 'info',  label: 'Info' }
     ];
+    const mode = _tunPickerMode[cfg.tunPopId] || 'list';
     let h = '';
     h += '<div class="tun_pop_head">';
-    h += '  <input type="search" class="tun_pop_filter" placeholder="filter — e.g. ‘8 A6’ or ‘E9 emmons’" value="' + escHtml(_tunPickerFilter) + '" autocomplete="off" spellcheck="false">';
+    h += '  <input type="search" class="tun_pop_filter" placeholder="filter — e.g. ‘8 A6’ or ‘E9 emmons’" value="' + escHtml(_tunPickerFilter) + '" autocomplete="off" spellcheck="false"'
+       +    (mode === 'custom' ? ' disabled' : '') + '>';
     h += '  <span class="tun_pop_count">' + rows.length + ' / ' + Object.keys(TUNINGS).length + '</span>';
+    h += '  <button type="button" class="tun_pop_custom_btn' + (mode === 'custom' ? ' active' : '') + '"'
+       +    ' title="Hand-tune every string. Starts from the currently-selected tuning."'
+       +    '>✎ Custom…</button>';
     h += '  <button type="button" class="tun_pop_csv section_export" data-export="tunings"'
        +    ' title="Download the currently filtered tunings as CSV">CSV</button>';
     h += '</div>';
+    if (mode === 'custom') {
+      pop.innerHTML = h + _renderCustomEditor(x, cfg);
+      return;
+    }
     // Quick string-count radios — one click filter for the most common
     // selectors. The filter text input still works on top of this.
     const quick = ['', '4', '5', '6', '8', '10', '12'];
@@ -1314,7 +1369,71 @@
         if (f) { f.focus(); try { f.setSelectionRange(at, at); } catch (_) {} }
       }
     });
+    pop.addEventListener('change', function (e) {
+      const draft = _tunPickerCustomDraft[cfg.tunPopId];
+      // Per-string note change in the custom editor.
+      if (e.target.classList && e.target.classList.contains('tun_pop_custom_note')) {
+        if (!draft) return;
+        const idx = parseInt(e.target.getAttribute('data-str'), 10) - 1;
+        if (!isNaN(idx) && idx >= 0 && idx < draft.notes.length) {
+          draft.notes[idx] = e.target.value;
+        }
+        return;
+      }
+      // String-count change — resize the draft, keeping existing notes
+      // where they still fit, and re-render.
+      if (e.target.classList && e.target.classList.contains('tun_pop_custom_count')) {
+        if (!draft) return;
+        const n = parseInt(e.target.value, 10);
+        if (isNaN(n) || n < 1 || n > 12) return;
+        const next = draft.notes.slice(0, n);
+        while (next.length < n) next.push('E');
+        draft.strs = n;
+        draft.notes = next;
+        renderTuningPicker(x, cfg);
+        return;
+      }
+    });
     pop.addEventListener('click', function (e) {
+      // Toggle Custom-tuning editor mode.
+      const custBtn = e.target.closest && e.target.closest('.tun_pop_custom_btn');
+      if (custBtn) {
+        const cur = _tunPickerMode[cfg.tunPopId] || 'list';
+        _tunPickerMode[cfg.tunPopId] = (cur === 'custom') ? 'list' : 'custom';
+        if (_tunPickerMode[cfg.tunPopId] === 'list') {
+          // Discard any unapplied draft when the user leaves the editor
+          // without hitting Apply.
+          delete _tunPickerCustomDraft[cfg.tunPopId];
+        }
+        renderTuningPicker(x, cfg);
+        return;
+      }
+      // Custom editor — Cancel: discard draft, back to list.
+      if (e.target.closest && e.target.closest('.tun_pop_custom_cancel')) {
+        _tunPickerMode[cfg.tunPopId] = 'list';
+        delete _tunPickerCustomDraft[cfg.tunPopId];
+        renderTuningPicker(x, cfg);
+        return;
+      }
+      // Custom editor — Apply: build URL with z=y + s1..sN + strs,
+      // close popover + navigate.
+      if (e.target.closest && e.target.closest('.tun_pop_custom_apply')) {
+        const draft = _tunPickerCustomDraft[cfg.tunPopId];
+        if (!draft || !draft.notes || !draft.notes.length) return;
+        const params = new URLSearchParams(window.location.search);
+        params.set('z', 'y');
+        // s1..sN packed into the compact ?s=... form the site already
+        // uses for custom tunings.
+        const encoded = draft.notes.map(function (n) { return urlNote(String(n || 'E')); }).join('.');
+        params.set('s', encoded);
+        // Clear any lingering legacy sN params so they can't contradict.
+        for (let i = 1; i <= 12; i++) params.delete('s' + i);
+        _tunPickerMode[cfg.tunPopId] = 'list';
+        delete _tunPickerCustomDraft[cfg.tunPopId];
+        close();
+        navigateTo('?' + canonicalQS(params));
+        return;
+      }
       const strBtn = e.target.closest && e.target.closest('.tun_pop_str_btn');
       if (strBtn) {
         const want = strBtn.getAttribute('data-strs') || '';
@@ -1898,10 +2017,10 @@
 
     const str = {};
     for (let a = 1; a <= 12; a++) {
-      // Custom tuning removed — always read from the preset (x['x' + a]).
-      // Old URLs with z=y + s1..sN still parse cleanly but the notes
-      // aren't used anymore.
-      str[a] = String(x['x' + a]).trim();
+      // When z=y a custom tuning is engaged — read notes from s1..sN
+      // (set by the custom-tuning editor in the tuning popover).
+      // Otherwise use the preset notes.
+      str[a] = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim();
     }
 
     // Compute open-string MIDI for every string (1..N) using the heuristic
