@@ -337,7 +337,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -1980,7 +1980,8 @@
     // by renderIdentifyStrips.
     h += '<div id="' + cfg.identifyId + '"></div>';
 
-    h += '<table id="' + cfg.tableId + '" data-custom="off">';
+    const lhOn = (x.lh === 'y');
+    h += '<table id="' + cfg.tableId + '" data-custom="off" data-lh="' + (lhOn ? 'y' : 'n') + '">';
 
     // String-direction (y) toggle that lives in place of the open-string "X"
     // marker — one in each fretnums row so flipping the order is reachable
@@ -1996,11 +1997,25 @@
     const f0Cell = '<td id="f0" class="f0_y_switch"><a href="' + escHtml(yToggleHref)
                  + '" class="y_switch y_switch_sm y_' + yState + '" title="' + escAttr(yTitle)
                  + '" aria-label="Toggle string direction">' + yLabel + '</a></td>';
-    // Custom tuning removed. Leftmost corner used to hold the OFF/ON
-    // switch; it's now an inert placeholder. Users pick from the 180+
-    // presets in the tuning popover (per-string editing lives in Phase
-    // 3 follow-up — for now just retire the visible cell).
-    const fretnumsTop = '<tr id="fretnums"><td class="fb_sm" id="f_cyo_dark"></td><td id="f0">X</td>'
+    // Left-handed (lh) toggle lives in the leftmost corner cell that
+    // used to hold the retired custom-tuning OFF/ON switch. Flipping
+    // mirrors the fretboard horizontally so the nut sits on the RIGHT
+    // and fret 12 on the LEFT — standard orientation for left-handed
+    // players.
+    const lhToggleParams = new URLSearchParams(window.location.search);
+    if (!lhOn) lhToggleParams.set('lh', 'y'); else lhToggleParams.delete('lh');
+    const lhToggleHref = '?' + lhToggleParams.toString();
+    const lhLabel = lhOn ? 'RH' : 'LH';
+    const lhTitle = lhOn
+      ? 'Left-handed mode ON. Click to flip back to right-handed.'
+      : 'Right-handed mode. Click to flip the fretboard horizontally for left-handed players.';
+    const lhCorner = '<td class="fb_sm lh_switch_cell" id="f_cyo_dark">'
+                   + '<a href="' + escHtml(lhToggleHref) + '" class="lh_switch'
+                   + (lhOn ? ' lh_on' : '')
+                   + '" title="' + escAttr(lhTitle) + '"'
+                   + ' aria-label="Toggle left-handed fretboard orientation">'
+                   + lhLabel + '</a></td>';
+    const fretnumsTop = '<tr id="fretnums">' + lhCorner + '<td id="f0">X</td>'
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'
@@ -2079,7 +2094,7 @@
     // Users pick tunings from the main popover above; the bottom-left
     // cell is now just an inert placeholder.
     const fretnumsBot = '<tr id="fretnums">'
-      + '<td class="fb_sm" id="f_cyo_dark"></td>' + f0Cell
+      + lhCorner + f0Cell
       + '<td id="f1"><span class="fret_minor">1</span></td>'
       + '<td id="f2"><span class="fret_minor">2</span></td>'
       + '<td id="f3">3</td>'

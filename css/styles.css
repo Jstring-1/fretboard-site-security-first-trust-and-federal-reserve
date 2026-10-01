@@ -877,6 +877,17 @@ body[data-display="degrees"] #keyboard .disp_note         { display: none !impor
 .y_off                                     { background-color: #2e2e2e;                                                }
 .y_on                                      { background-color: var(--accent-hi); color: #000 !important;               }
 .y_switch:hover                            { filter: brightness(1.12); border-color: rgba(255,255,255,0.4);            }
+/* LH / RH left-handed toggle — same compact pill shape as .y_switch,
+   warm amber so it reads as a separate orientation control. */
+.lh_switch_cell                            { padding: 0 !important;                                                   }
+.lh_switch                                 { display: inline-flex; align-items: center; justify-content: center;
+                                             padding: 3px 8px; margin: 0; border-radius: 5px;
+                                             font: 600 0.75em/1 inherit; letter-spacing: 0.04em;
+                                             text-decoration: none; color: #fff !important;
+                                             background-color: #2e2e2e;
+                                             border: 1px solid transparent; cursor: pointer;                          }
+.lh_switch:hover                           { filter: brightness(1.15); border-color: rgba(255,196,90,0.6);             }
+.lh_switch.lh_on                           { background-color: rgba(255,196,90,0.85); color: #000 !important;         }
 .opt_row_main                              { gap: 0;                                                                  }
 
 /* Tunings List filter bar — search input + quick-filter buttons in a
@@ -2914,6 +2925,21 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 #fretboard_2 td[data-note]                  { cursor: pointer;                                                         }
 #fretboard_2 td[data-chord-preview]         { outline: 2px solid rgba(255, 230, 0, 0.95);
                                               outline-offset: -2px; position: relative; z-index: 1;                    }
+/* Left-handed mode — mirror the fretboard horizontally. The whole
+   table flips via scaleX(-1), then each cell's INNER content flips
+   back so note labels, fret numbers, and the LH / L→H buttons all
+   read the right way around. Nut border on .nut / .nut1 is swapped
+   so the cream band still lives between the open-string column and
+   fret 1 after the mirror. */
+#fretboard[data-lh="y"],
+#fretboard_2[data-lh="y"]                  { transform: scaleX(-1);                                                     }
+#fretboard[data-lh="y"] td,
+#fretboard_2[data-lh="y"] td               { transform: scaleX(-1);                                                     }
+/* After scaleX, the cream nut-right strip visually appears on the
+   LEFT side of the flipped cell. That's correct because the whole
+   row is mirrored — the nut still sits between the open-string
+   column and fret 1 on the user's screen. */
+
 /* Nut separators — mirror the primary's .nut/.nut1 rules at a higher
    specificity so #fretboard_2 td { border: 0 } can't erase them. */
 #fretboard_2 td.nut                         { border-right: 9px solid #e8e2d4 !important;
