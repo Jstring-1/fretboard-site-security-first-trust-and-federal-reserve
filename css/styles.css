@@ -2841,10 +2841,14 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
    and #fretnums intentionally duplicate across both instances
    and already match the originals.
    ======================================================== */
-/* Shared table surface */
+/* Shared table surface — mirrors the primary fretboard's full set
+   of base rules so cells, rows, margins, and the rounded corner
+   mask all come out identical. */
 #fretboard_2                                { background-color: #555555; border: 0 !important;
-                                              border-spacing: 1px;                                                      }
-#fretboard_2 td                             { box-sizing: border-box; padding: 4px;                                    }
+                                              border-spacing: 1px;
+                                              margin: 12px auto 12px auto; padding: 0;
+                                              border-radius: 8px; overflow: hidden;                                     }
+#fretboard_2 td                             { box-sizing: border-box;                                                   }
 #fretboard_2 tr                             { height: 32px;                                                             }
 #fretboard_2 #fretnums                      { height: 24px;                                                             }
 #fretboard_2 td[data-note]                  { cursor: pointer;                                                         }
