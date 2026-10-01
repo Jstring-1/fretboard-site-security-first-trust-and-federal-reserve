@@ -4952,6 +4952,12 @@
       else            cur.set(k, '');
     });
 
+    // `idn` is a GLOBAL chord-engaged marker (not section-namespaced),
+    // but a chord chip's link URL carries it. Without carrying it over
+    // to the merged result, a chord-chip click in an unlocked section
+    // would drop idn, which in turn means the chip renders disengaged
+    // and a second click fails to toggle off.
+    if (link.has('idn')) cur.set('idn', link.get('idn'));
     // Make sure the unlinked flag stays on; otherwise on next render
     // we'd parse the s<n>_* params as junk.
     cur.set('u', '1');
@@ -6701,11 +6707,21 @@
         if (chip) {
           const engaged = chip.classList.contains('identify_chip_on');
           if (engaged) {
-            // Click same chord → restore stash if present, else fall back
-            // to the chip's own clearHlOnlyHref href.
+            // Click same chord → restore the pre-chord URL stash. If the
+            // stash is missing (first-visit of a shared URL that already
+            // carried idn=…, or a prior render swept it), fall back to
+            // simply removing idn: the chord's own hl notes stay engaged
+            // on the board — leaving them is less destructive than wiping
+            // highlights the user never explicitly chose to clear.
             const stash = _getChordStash(sec.id);
             _setChordStash(sec.id, null);
-            if (stash) target = stash;
+            if (stash) {
+              target = stash;
+            } else {
+              const p = new URLSearchParams(window.location.search);
+              p.delete('idn');
+              target = '?' + p.toString();
+            }
           } else {
             // Click a new/other chord → stash the pre-chord URL once. Don't
             // overwrite an existing stash: switching from chord A to chord B
@@ -6713,13 +6729,13 @@
             if (!_getChordStash(sec.id)) {
               _setChordStash(sec.id, window.location.search || '?');
             }
-            // In unlinked mode, project the chord's hl into s<n>_hl so the
-            // click only touches this section — same mechanism the shift
-            // arrows and note picks already use. Without this, chord-chip
-            // clicks on an unlocked section would write to global hl and
-            // the section's own view would stay unchanged.
+            // In unlocked mode, project the chord's hl into s<n>_hl so
+            // the click only touches this section — same mechanism the
+            // shift arrows and note picks already use. The paintSectionLocks
+            // helper writes data-unlocked="true"/"false" (NOT "y"), so the
+            // string match has to agree with it.
             const sectionEl = chip.closest && chip.closest('details.section');
-            const unlocked = sectionEl && sectionEl.getAttribute('data-unlocked') === 'y';
+            const unlocked = sectionEl && sectionEl.getAttribute('data-unlocked') === 'true';
             if (unlocked && typeof mergeSectionOverrideUrl === 'function') {
               const merged = mergeSectionOverrideUrl(sec.id, target);
               if (merged) target = merged;
