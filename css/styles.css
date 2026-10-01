@@ -1100,10 +1100,11 @@ select option                              { color: var(--text); background: var
 #global_key_row .section_key_picker        { justify-content: center !important;
                                              padding: 0 !important;                                                      }
 @media print { #global_key_row             { display: none !important;                                                  } }
-/* Suppress any per-section key rows that older code paths might still
-   inject — the global one above is the single source of truth now. */
+/* Suppress legacy per-section key rows that older code paths might
+   still inject (the one that lived outside the summary bar). The
+   inline per-section key picker inside .summary_extras is now
+   intentional — don't hide those. */
 .section_key_row_outer                     { display: none !important;                                                  }
-.summary_extras .section_key_picker        { display: none !important;                                                  }
 /* (#site_tuning + #site_global_controls layout is set in the
    .site_header_sticky block above; this block intentionally left
    minimal so it doesn't override the flex centering.) */
