@@ -1755,16 +1755,35 @@
     return h;
   }
 
-  // Render the highlight pills + chord/scale chips above the keyboard so the
-  // keyboard section is fully usable when the fretboard section is collapsed.
-  // Renamed from renderKeyboardBelow. Matches the fretboard's post-neck
-  // layout: pill row + chord/scale quick picks. All/None now lives in
-  // the shift bar (see renderShiftBars) so the pill row stays lean.
-  function renderKeyboardBelow(x) {
-    const root = document.getElementById('kb_below_root');
+  // -------- Keyboard instance targeting --------
+  // Mirrors FB_TARGETS_DEFAULT for the keyboard section. Lets a future
+  // second keyboard instance render into its own divs without touching
+  // the first one's DOM. Commit 2 of Phase 4 threads the mechanism;
+  // behavior is unchanged for the single existing instance.
+  const KB_TARGETS_DEFAULT = {
+    instanceId:    '',
+    sectionId:     'section_4',
+    tableId:       'keyboard',
+    keyRootId:     'keyboard_key_root',
+    identifyId:    'kb_identify_root',
+    shiftId:       'kb_shift_root',
+    belowId:       'kb_below_root',
+    scopeSelector: '.ritz .waffle'       // CSS prefix for key cells
+  };
+  function kbTargets(overrides) {
+    return Object.assign({}, KB_TARGETS_DEFAULT, overrides || {});
+  }
+
+  // Render the highlight pills + chord/scale chips below the keyboard.
+  // Instance-aware via cfg so a future Keyboard #2 renders into its own
+  // #kb_below_root_2 without stepping on this one.
+  function renderKeyboardBelow(x, cfg) {
+    cfg = cfg || KB_TARGETS_DEFAULT;
+    const root = document.getElementById(cfg.belowId);
     if (!root) return;
-    root.innerHTML = comboPillsHtml(x, 'kb_hl_row')
-                   + quickPicksHtml(x, 'kb_quick_picks');
+    const suf = cfg.instanceId || '';
+    root.innerHTML = comboPillsHtml(x, 'kb_hl_row'     + suf)
+                   + quickPicksHtml(x, 'kb_quick_picks' + suf);
   }
 
   function renderFretboard(x, cfg) {
@@ -5220,11 +5239,12 @@
   // Tag every keyboard label cell with both note + degree spans so the
   // CSS display-mode rules can show one or the other. Runs after
   // applyKeyboardColors (which sets data-note on each cell).
-  function applyKeyboardLabels(x) {
+  function applyKeyboardLabels(x, cfg) {
+    cfg = cfg || KB_TARGETS_DEFAULT;
     const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
     const keyPc = NOTE_PC[x.k];
     if (keyPc == null) return;
-    document.querySelectorAll('.ritz .waffle [data-note]').forEach(function (el) {
+    document.querySelectorAll(cfg.scopeSelector + ' [data-note]').forEach(function (el) {
       const note = el.getAttribute('data-note');
       const notePc = NOTE_PC[note];
       if (notePc == null) return;
@@ -5926,11 +5946,15 @@
     '♭7': '#a64d79', '7':  '#ff00ff'
   };
 
-  function applyKeyboardColors(x) {
-    let style = document.getElementById('keyboard_dynamic_style');
+  function applyKeyboardColors(x, cfg) {
+    cfg = cfg || KB_TARGETS_DEFAULT;
+    // Dynamic <style> tag id is instance-aware too so each keyboard
+    // can carry its own degree colouring without stepping on the other.
+    const styleId = 'keyboard_dynamic_style' + (cfg.instanceId || '');
+    let style = document.getElementById(styleId);
     if (!style) {
       style = document.createElement('style');
-      style.id = 'keyboard_dynamic_style';
+      style.id = styleId;
       document.head.appendChild(style);
     }
     // Tag every keyboard label cell with data-note so the click-to-pick
@@ -6378,10 +6402,19 @@
       }
       return '<div class="semi_shift_bar">' + inner + '</div>';
     }
-    const fbEl = document.getElementById('fb_shift_root');
-    const kbEl = document.getElementById('kb_shift_root');
-    if (fbEl) fbEl.innerHTML = shiftHtml('section_2', true);
-    if (kbEl) kbEl.innerHTML = shiftHtml('section_4', true);
+    // Instance list: each entry = { containerId, sectionId, includeAllNone }.
+    // Default = original fretboard + original keyboard. Phase 4 commit 3
+    // will append entries for the second-instance sections.
+    const instances = (arguments.length > 1 && Array.isArray(arguments[1]))
+      ? arguments[1]
+      : [
+          { containerId: 'fb_shift_root', sectionId: 'section_2', includeAllNone: true },
+          { containerId: 'kb_shift_root', sectionId: 'section_4', includeAllNone: true }
+        ];
+    instances.forEach(function (inst) {
+      const el = document.getElementById(inst.containerId);
+      if (el) el.innerHTML = shiftHtml(inst.sectionId, inst.includeAllNone !== false);
+    });
 
     // One-shot click delegate at body level — handles both bars.
     if (!document.body._semiShiftBound) {
@@ -6411,7 +6444,7 @@
     }
   }
 
-  function renderIdentifyStrips(xFB, xKB) {
+  function renderIdentifyStrips(xFB, xKB, extraInstances) {
     const fbHost = document.getElementById('fb_identify_root');
     const kbHost = document.getElementById('kb_identify_root');
     if (!fbHost && !kbHost) return;
@@ -6558,6 +6591,15 @@
 
     if (fbHost) fbHost.innerHTML = buildHtml(xFB, 'section_2');
     if (kbHost) kbHost.innerHTML = buildHtml(xKB, 'section_4');
+    // Extra instances (Phase 4 commit 3): each entry = { containerId,
+    // sectionId, state }. Lets Fretboard #2 / Keyboard #2 drive their
+    // own chord-ID strip from their own per-section state.
+    if (Array.isArray(extraInstances)) {
+      extraInstances.forEach(function (inst) {
+        const el = document.getElementById(inst.containerId);
+        if (el) el.innerHTML = buildHtml(inst.state, inst.sectionId);
+      });
+    }
 
     // Preview-on-hover: mousing over a chord chip outlines every
     // fretboard cell whose note is in that chord, so you can see what
@@ -7397,9 +7439,9 @@
     renderTuningsTable(x);
     renderKeySignatures(xKS);
     renderKeyExtras(xKS);      // Key Sigs: this-key-contains + cadences + intervals
-    applyKeyboardColors(xKB);
-    applyKeyboardLabels(xKB);
-    renderKeyboardBelow(xKB);
+    applyKeyboardColors(xKB, KB_TARGETS_DEFAULT);
+    applyKeyboardLabels(xKB, KB_TARGETS_DEFAULT);
+    renderKeyboardBelow(xKB, KB_TARGETS_DEFAULT);
     bindTuningPicker(x);
     applyCollapseFromUrl();
 
