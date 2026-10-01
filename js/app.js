@@ -1962,27 +1962,17 @@
     scopeSelector: '#section_14 .ritz .waffle'
   });
 
-  // -------- Chord-chip compare-clicker stash --------
-  // Per-section stash: when the user clicks a suggested-chord chip in
-  // an identify strip, remember the URL they were on BEFORE the click
-  // so a second click (on the same engaged chip, or on the strip's
-  // Clear link) can navigate back to the exact state they had — hl,
-  // pk, section overrides and all. Clicking a DIFFERENT chord while
-  // one is engaged does NOT re-stash: "revert" always points at the
-  // user's original picks, not at the previous chord. Stashes are
-  // cleared on each applyState() tick where no chord is active (so a
-  // reload with no idn in the URL doesn't carry forward a stale stash).
-  function _chordStashKey(sectionId) { return 'sf_chord_stash_' + sectionId; }
-  function _getChordStash(sectionId) {
-    try { return localStorage.getItem(_chordStashKey(sectionId)) || null; }
-    catch (_) { return null; }
-  }
-  function _setChordStash(sectionId, searchStr) {
-    try {
-      if (searchStr) localStorage.setItem(_chordStashKey(sectionId), searchStr);
-      else           localStorage.removeItem(_chordStashKey(sectionId));
-    } catch (_) {}
-  }
+  // One-time sweep: an earlier version of the Chord ID strip stored a
+  // per-section compare-clicker stash in localStorage under keys of
+  // the form sf_chord_stash_<sectionId>. Chord chips are now display-
+  // only, so those stashes are stale. Wipe them so nothing's left
+  // referencing a feature that no longer exists.
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('sf_chord_stash_') === 0) localStorage.removeItem(k);
+    }
+  } catch (_) {}
 
   // -------- Section registry --------
   // Single source of truth for every rendered section. Replaces hand-
@@ -6497,14 +6487,17 @@
           tip = name + '\nDegrees: ' + degs.join(' ') + '\nNotes: ' + notes.join(' ');
           pcsAttr = ' data-chord-pcs="' + pcs.join(',') + '"';
         }
-        const isEngaged = !!(xs._id_active && xs._id_active === name);
-        // Pass xs.k so section_13 / section_14 strips compute degrees
-        // against their own key — a #2-only key change doesn't make
-        // #2's chord ID chips rewrite the global hl with wrong offsets.
-        const href = isEngaged ? clearHlOnlyHref() : (applyChordHref(name, mask, xs.k) || '#');
-        const cls = 'identify_chip' + (isEngaged ? ' identify_chip_on' : '');
-        return '<a class="' + cls + '" href="' + escHtml(href)
-             + '" title="' + escAttr(tip) + '"' + pcsAttr + '>' + escHtml(name) + '</a>';
+        // Chord chips are display-only: hovering highlights the chord's
+        // notes on the fretboard / keyboard (see the chord-preview hover
+        // handler), and the tooltip spells out the chord's degrees + notes.
+        // The user picks notes themselves (click fret cells / piano keys)
+        // if they want the chord engaged — this avoids the toggle-chip
+        // trap where the chord's own click rewrites hl, the suggestions
+        // list re-renders from the new hl, and the chip the user just
+        // clicked no longer appears in the list to click back off.
+        return '<span class="identify_chip"'
+             + ' title="' + escAttr(tip) + '"' + pcsAttr + '>'
+             + escHtml(name) + '</span>';
       }
 
       // Render a group's chips with a cap + "+N more" progressive
@@ -6696,52 +6689,14 @@
         if (url.origin !== window.location.origin) return;
         if (url.pathname !== window.location.pathname) return;
 
-        // Compare-clicker stash management for the chord chips.
-        // The chip's href is already engagement-aware (clearHlOnlyHref when
-        // the chip is the active one, otherwise applyChordHref). We layer a
-        // per-section stash on top so "revert" doesn't just empty hl — it
-        // restores the exact URL the user had before clicking any chord.
-        let target = url.search || '?';
-        const chip = link.classList && link.classList.contains('identify_chip')
-                   ? link : null;
-        if (chip) {
-          const engaged = chip.classList.contains('identify_chip_on');
-          if (engaged) {
-            // Click same chord → restore the pre-chord URL stash. If the
-            // stash is missing (first-visit of a shared URL that already
-            // carried idn=…, or a prior render swept it), fall back to
-            // simply removing idn: the chord's own hl notes stay engaged
-            // on the board — leaving them is less destructive than wiping
-            // highlights the user never explicitly chose to clear.
-            const stash = _getChordStash(sec.id);
-            _setChordStash(sec.id, null);
-            if (stash) {
-              target = stash;
-            } else {
-              const p = new URLSearchParams(window.location.search);
-              p.delete('idn');
-              target = '?' + p.toString();
-            }
-          } else {
-            // Click a new/other chord → stash the pre-chord URL once. Don't
-            // overwrite an existing stash: switching from chord A to chord B
-            // should still revert to the user's own picks, not to chord A.
-            if (!_getChordStash(sec.id)) {
-              _setChordStash(sec.id, window.location.search || '?');
-            }
-            // In unlocked mode, project the chord's hl into s<n>_hl so
-            // the click only touches this section — same mechanism the
-            // shift arrows and note picks already use. The paintSectionLocks
-            // helper writes data-unlocked="true"/"false" (NOT "y"), so the
-            // string match has to agree with it.
-            const sectionEl = chip.closest && chip.closest('details.section');
-            const unlocked = sectionEl && sectionEl.getAttribute('data-unlocked') === 'true';
-            if (unlocked && typeof mergeSectionOverrideUrl === 'function') {
-              const merged = mergeSectionOverrideUrl(sec.id, target);
-              if (merged) target = merged;
-            }
-          }
-        }
+        // Chord-ID suggestion chips are now display-only <span>s (see
+        // chipHtml above), so no stash / toggle logic is needed here —
+        // the user picks notes directly on the fretboard / keyboard
+        // after seeing which chord they'd form via the hover preview.
+        // Any <a> that gets here is some other strip link (e.g. the
+        // Clear-picks text if a section re-adds it later), so just
+        // navigate to its href.
+        const target = url.search || '?';
 
         e.preventDefault();
         e.stopPropagation();

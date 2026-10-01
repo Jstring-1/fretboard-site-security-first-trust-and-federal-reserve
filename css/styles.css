@@ -1588,19 +1588,15 @@ details.collapsible > summary              { padding-left: 36px;                
                                              text-transform: uppercase; color: var(--muted); min-width: 110px;        }
 .identify_chips                            { display: flex; flex-wrap: wrap; gap: 4px; flex: 1;                       }
 .identify_empty                            { color: var(--muted); font-style: italic;                                  }
-/* Chord-ID suggestion = plain clickable text. No button chrome.
-   Engaged (currently highlighted on the board) lights up cyan. */
+/* Chord-ID suggestion = display-only text label. Hovering outlines
+   the chord's notes on the board (see data-chord-preview CSS), but
+   the chip itself is not clickable — the user picks notes directly
+   on the fretboard / keyboard if they want to engage the chord. */
 .identify_chip                             { display: inline-block; padding: 1px 4px; font-size: 0.9em;
-                                             color: var(--text) !important; background: transparent;
-                                             border: none; text-decoration: none;
-                                             cursor: pointer; transition: color .1s;                                   }
-.identify_chip:hover                       { color: var(--accent-hi) !important;                                       }
-a.identify_chip_on,
-a.identify_chip_on:link,
-a.identify_chip_on:visited,
-a.identify_chip_on:active                  { color: var(--accent-hi) !important;
-                                             font-weight: 700;                                                          }
-a.identify_chip_on:hover                   { color: #6fffff !important;                                                 }
+                                             color: var(--text); background: transparent;
+                                             border: none; cursor: default;
+                                             transition: color .1s;                                                    }
+.identify_chip:hover                       { color: var(--accent-hi);                                                   }
 /* Placeholder strip — reserves vertical space when chord ID has
    nothing to say yet. Approx height of a 1-row strip. */
 /* One consistent height for every state (placeholder, chord list,
@@ -1659,11 +1655,13 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
                                              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;           }
 
 /* --- Fretboard hover preview ------------------------------------------
-   Bright ring around every fret whose note is in the hovered chord.
+   Ring around every fret whose note is in the hovered chord. Black
+   reads cleanly over every degree-colour background without competing
+   for the viewer's eye the way the old bright-yellow ring did.
    outline-offset -2 keeps it inset so it doesn't push cell size. */
 :is(#fretboard, #fretboard_2) td[data-chord-preview],
 :is(#keyboard, #keyboard_2) [data-chord-preview]
-                                           { outline: 2px solid rgba(255, 230, 0, 0.95);
+                                           { outline: 2px solid rgba(0, 0, 0, 0.9);
                                              outline-offset: -2px; position: relative; z-index: 1;                     }
 
 /* --- Dim All/None relative to the shift arrows -----------------------
