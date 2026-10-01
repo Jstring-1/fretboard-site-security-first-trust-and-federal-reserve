@@ -1,25 +1,21 @@
 // Fretboard.site — client-side rewrite of the PHP renderer.
 // Variable names mirror the original PHP ($x, $rev, $hilight_url) for traceability.
 //
-// Table of contents (search for "// ====" to jump between majors):
-//   ====  Audio / Tone.js lazy loading               (~ 70-220)
-//   ====  Data constants + URL helpers               (~ 240-370)
-//   ====  SETTINGS registry (round-trip URL + LS)    (~ 380-520)
-//   ====  parseState / canonicalQS / applyChord href (~ 620-900)
-//   ====  Fretboard renderers + instance targeting   (~ 1040-1900)
-//   ====  Keyboard renderers + instance targeting    (~ 1905-2250)
-//   ====  SECTIONS registry (per-section dispatch)   (~ 1970-2010)
-//   ====  Summary status + section locks + title     (~ 2200-2600)
-//   ====  Tuning picker + custom tuning editor       (~ 2600-3300)
-//   ====  Chord/scale builder grids + modes/diatonic (~ 2900-4300)
-//   ====  SECTION_HELP wrapper (data in help_text.js)(~ 4305-4315)
-//   ====  View-source modal                          (~ 4315-4400)
-//   ====  Shift arrows + All/None + link interceptor (~ 5100-5700)
-//   ====  Chord ID identify strip + hover preview    (~ 5900-6500)
-//   ====  Shift bar builder                          (~ 6200-6280)
-//   ====  Quiz + ear training                        (~ 6655-7360)
-//   ====  applyState (main render orchestrator)      (~ 7415-7520)
-//   ====  Init                                       (~ 7520-7580)
+// Table of contents (search for "// ===" to jump between majors):
+//   ===  Audio (Tone.js + Web Audio synth fallback)    ~  49
+//   ===  SETTINGS registry (URL > localStorage > def)  ~ 397
+//   ===  parseState — URL → application state          ~ 605
+//   ===  Fretboard renderers (primary + comparison)    ~1066
+//   ===  Keyboard renderers (primary + comparison)     ~1936
+//   ===  Section registry (SECTIONS)                   ~1988
+//   ===  Chord + Scale builder grids, modes, inversions~2512
+//   ===  Key Signatures + Circle of Fifths             ~2769
+//   ===  Help modals (text in js/help_text.js)         ~4390
+//   ===  Link interceptor + navigation                 ~5299
+//   ===  Chord ID — shift bars + identify strips       ~6286
+//   ===  Quiz + Ear Training                           ~6740
+//   ===  applyState — main render orchestrator         ~7460
+//   ===  Init                                          ~7600
 
 (function () {
   'use strict';
@@ -46,6 +42,9 @@
   const GRID = D.grid;
   const TUNINGS = D.tunings;
 
+  // ============================================================
+  // === Audio (Tone.js + Web Audio synth fallback)            ===
+  // ============================================================
   // ---------- audio (Web Audio API synth, off by default) -------------
   // Persistence in localStorage so the user's preference survives reload
   // without polluting the URL. Opt-in: nothing plays unless the ♪ toggle
@@ -391,7 +390,9 @@
     return out.toString().replace(/%2C/g, ',');
   }
 
-  // ---------- Settings registry (URL > localStorage > default) ----------
+  // ============================================================
+  // === SETTINGS registry (URL > localStorage > default)      ===
+  // ============================================================
   // Single source-of-truth for non-state-driving display toggles.
   //   - URL is authoritative when the param is present (so a shared
   //     bookmark reproduces the receiver's view exactly).
@@ -597,7 +598,9 @@
     return out;
   }
 
-  // ---------- parse URL → x ----------
+  // ============================================================
+  // === parseState — URL / localStorage → application state   ===
+  // ============================================================
   function parseState(searchOverride) {
     // searchOverride: optional `?k=A&hl=…` string. Used by the per-
     // section rerender path when "Apply: all" is off — we parse the
@@ -1056,7 +1059,9 @@
     if (a) a.href = x._self;
   }
 
-  // -------- Fretboard instance targeting --------
+  // ============================================================
+  // === Fretboard renderers (primary + comparison)            ===
+  // ============================================================
   // Bundle every DOM id the fretboard renderers write into so each
   // instance renders into its own set of divs. FB_TARGETS_DEFAULT
   // drives the primary fretboard; FB_TARGETS_2 (below) drives the
@@ -1924,7 +1929,9 @@
     return h;
   }
 
-  // -------- Keyboard instance targeting --------
+  // ============================================================
+  // === Keyboard renderers (primary + comparison)             ===
+  // ============================================================
   // Mirrors FB_TARGETS_DEFAULT for the keyboard section. Each
   // keyboard renders into its own divs so the second comparison
   // keyboard doesn't step on the first.
@@ -1980,23 +1987,70 @@
   // -------- Section registry --------
   // Single source of truth for every rendered section. Replaces hand-
   // rolled section_2/4/13/14 branches that used to live inside
-  // _targetBoards, _settingLSKey, rerenderSectionWithState, and the
-  // identify-strip anchor-scroll helper. Adding a third fretboard or
-  // keyboard is now one row here, not a hunt-and-patch across the file.
+  // _targetBoards, _settingLSKey, rerenderSectionWithState,
+  // the identify-strip anchor-scroll helper, and applyState's
+  // top-level call list. Adding a third fretboard or keyboard is
+  // now one row here, not a hunt-and-patch across the file.
   //
   //   id       — the <details> element id in index.html
   //   kind     — 'fb' | 'kb' | 'cg' | 'sg' | 'ks' (dispatches rerender)
   //   cfg      — FB_/KB_TARGETS_* instance config (fb/kb only)
   //   boardSel — CSS selector for the board element the chord-preview
   //              hover should outline cells inside (fb/kb only)
+  //   render   — full render for applyState; the forEach order below
+  //              is the actual call order each applyState tick runs.
+  //              Second-instance renders bail cleanly when their DOM
+  //              root isn't on the page (so section_14 etc. can be
+  //              hidden without crashing applyState).
   const SECTIONS = [
-    { id: 'section_2',  kind: 'fb', cfg: FB_TARGETS_DEFAULT, boardSel: '#fretboard' },
-    { id: 'section_13', kind: 'fb', cfg: FB_TARGETS_2,       boardSel: '#fretboard_2' },
-    { id: 'section_4',  kind: 'kb', cfg: KB_TARGETS_DEFAULT, boardSel: '#section_4 .ritz .waffle' },
-    { id: 'section_14', kind: 'kb', cfg: KB_TARGETS_2,       boardSel: '#section_14 .ritz .waffle' },
-    { id: 'section_3',  kind: 'cg' },
-    { id: 'section_6',  kind: 'sg' },
-    { id: 'section_9',  kind: 'ks' }
+    { id: 'section_2',  kind: 'fb', cfg: FB_TARGETS_DEFAULT, boardSel: '#fretboard',
+      render: function (xs) {
+        renderFretboard(xs, this.cfg);
+        renderOptions(xs, this.cfg);
+      }
+    },
+    { id: 'section_13', kind: 'fb', cfg: FB_TARGETS_2,       boardSel: '#fretboard_2',
+      render: function (xs) {
+        if (!document.getElementById('fretboard_root_2')) return;
+        renderFretboard(xs, this.cfg);
+        renderOptions(xs, this.cfg);
+      }
+    },
+    { id: 'section_3',  kind: 'cg',
+      render: function (xs) {
+        renderChordGrid(xs);
+        renderDiatonicChart(xs);
+        renderInversions(xs);
+        renderProgressions(xs);
+      }
+    },
+    { id: 'section_6',  kind: 'sg',
+      render: function (xs) {
+        renderScaleGrid(xs);
+        renderModes(xs);
+      }
+    },
+    { id: 'section_9',  kind: 'ks',
+      render: function (xs) {
+        renderKeySignatures(xs);
+        renderKeyExtras(xs);
+      }
+    },
+    { id: 'section_4',  kind: 'kb', cfg: KB_TARGETS_DEFAULT, boardSel: '#section_4 .ritz .waffle',
+      render: function (xs) {
+        applyKeyboardColors(xs, this.cfg);
+        applyKeyboardLabels(xs, this.cfg);
+        renderKeyboardBelow(xs, this.cfg);
+      }
+    },
+    { id: 'section_14', kind: 'kb', cfg: KB_TARGETS_2,       boardSel: '#section_14 .ritz .waffle',
+      render: function (xs) {
+        if (!document.getElementById('section_14')) return;
+        applyKeyboardColors(xs, this.cfg);
+        applyKeyboardLabels(xs, this.cfg);
+        renderKeyboardBelow(xs, this.cfg);
+      }
+    }
   ];
   function getSection(id) {
     for (let i = 0; i < SECTIONS.length; i++) {
@@ -2451,6 +2505,10 @@
     });
   }
 
+  // ============================================================
+  // === Chord + Scale builder grids, modes, diatonic, inversions ===
+  // === progressions                                          ===
+  // ============================================================
   function renderChordGrid(x) {
     const root = document.getElementById('chord_grid_root');
     const i1 = KEYS.indexOf(x.k);
@@ -2704,6 +2762,9 @@
     return s;
   }
 
+  // ============================================================
+  // === Key Signatures + Circle of Fifths                     ===
+  // ============================================================
   function renderKeySignatures(x) {
     const root = document.getElementById('key_signatures_root');
     if (!root) return;
@@ -4322,7 +4383,10 @@
     root.innerHTML = h;
   }
 
-  // ---------- About / per-section help popups ----------
+  // ============================================================
+  // === Help modals + view-source modal                       ===
+  // ============================================================
+  // About / per-section help popups.
   // Help strings live in js/help_text.js so this file stays focused on
   // behaviour. Fall back to an empty object if that script failed to
   // load so the ? buttons degrade gracefully (modal just shows nothing)
@@ -5228,6 +5292,9 @@
   // instead of triggering a full page navigation. Catches both '?foo=bar'
   // hrefs AND bare-pathname hrefs (which fire when, say, deselecting the last
   // highlight pill empties the query string and the helper returns the path).
+  // ============================================================
+  // === Link interceptor + navigation                         ===
+  // ============================================================
   function bindLinkInterceptor() {
     document.body.addEventListener('click', function (e) {
       const a = e.target.closest && e.target.closest('a');
@@ -6213,6 +6280,9 @@
   // Build a URL that pre-loads the chord — we set k= to the chord's root and
   // hl= to its degrees relative to that root. Strip pk= so the user moves
   // from "what is this?" to "show me this chord on the board" cleanly.
+  // ============================================================
+  // === Chord ID — shift bars + identify strips + hover       ===
+  // ============================================================
   function applyChordHref(chordName, chordMask, keyOverride) {
     // Translate the chord's pitch classes into degrees relative to the
     // SECTION's key (or the global if no override is passed). Section
@@ -6673,7 +6743,16 @@
     });
   }
 
-  // ---------- learn / quiz ----------
+  // ============================================================
+  // === QUIZ + EAR TRAINING                                   ===
+  // ============================================================
+  // Everything from here through the "END QUIZ" banner belongs to
+  // the Quiz (section_7) + Ear Training (section_12) features.
+  // Deep closures over KEYS/DEGREES/SCALES/CHORDS/escHtml and the
+  // audio helpers keep it inline rather than in its own file for
+  // now; the audit flagged this chunk as a future js/quiz.js
+  // candidate but the extraction needs a dependency-injection
+  // bootstrap first.
   let _quizCurrent = null;
 
   function _qDegList(hl) {
@@ -7383,7 +7462,17 @@
     feedback.appendChild(next);
   }
 
-  // ---------- per-state render ----------
+  // ============================================================
+  // === END QUIZ + EAR TRAINING                               ===
+  // ============================================================
+
+  // ============================================================
+  // === applyState — main render orchestrator                 ===
+  // ============================================================
+  // Called on page load, popstate, and after every URL-mutating
+  // click. Walks the SECTIONS registry to render each section
+  // from its own effective state, then handles the non-section
+  // bits (tunings table, shift bars, identify strips).
   function applyState() {
     // Suppress transient <details> toggle events fired by Chrome as
     // the parser swaps qp_box via innerHTML below. Without this, the
@@ -7394,49 +7483,28 @@
     const x = parseState();
     window.SF_X = x;
     renderTitle(x);
-    // When the URL says "unlinked", each section gets its own state
-    // built by overlaying that section's s<n>_* overrides onto the
-    // global params. Sections without overrides use the global x.
-    // Linked mode (default) → every section sees the same x.
-    const xFB = stateForSection('section_2', x);
-    const xKB = stateForSection('section_4', x);
-    const xCG = stateForSection('section_3', x);
-    const xSG = stateForSection('section_6', x);
-    const xKS = stateForSection('section_9', x);
-    const xFB2 = stateForSection('section_13', x);  // Fretboard #2
-    const xKB2 = stateForSection('section_14', x);  // Keyboard #2
-    renderFretboard(xFB, FB_TARGETS_DEFAULT);   // creates #options_root
-    // Form (tuning picker + degree/note pill rows) lives in the FRETBOARD
-    // section, so it must reflect that section's effective state. In
-    // linked mode xFB === x, so this is identical to passing the global
-    // x; in unlinked mode it ensures the pills paint from s2_hl etc.
-    renderOptions(xFB, FB_TARGETS_DEFAULT);
-    // Second fretboard — only renders when its DOM root is present.
-    if (document.getElementById('fretboard_root_2')) {
-      renderFretboard(xFB2, FB_TARGETS_2);
-      renderOptions(xFB2, FB_TARGETS_2);
-    }
-    renderChordGrid(xCG);
-    renderScaleGrid(xSG);
-    renderDiatonicChart(xCG);  // Chord Builder: 7 diatonic chords (T/S/D)
-    renderInversions(xCG);     // Chord Builder: inversions of current chord
-    renderProgressions(xCG);   // Chord Progressions section
-    renderModes(xSG);          // Scale Builder: 7 modes from current key
+    // Per-section effective state. In linked mode each entry equals
+    // the global x; in unlinked mode stateForSection folds that
+    // section's s<n>_* overrides on top.
+    const states = {};
+    SECTIONS.forEach(function (sec) {
+      states[sec.id] = stateForSection(sec.id, x);
+    });
+    // Run every section's render in SECTIONS order. The registry
+    // owns the call list (plus any "only when DOM root exists"
+    // guards for the second-instance sections).
+    SECTIONS.forEach(function (sec) {
+      if (sec.render) sec.render(states[sec.id]);
+    });
+    // Tunings table is not section-scoped — it mirrors the global
+    // tuning picker's filter / sort state, which doesn't vary per
+    // section even when a section is unlocked.
     renderTuningsTable(x);
-    renderKeySignatures(xKS);
-    renderKeyExtras(xKS);      // Key Sigs: this-key-contains + cadences + intervals
-    applyKeyboardColors(xKB, KB_TARGETS_DEFAULT);
-    applyKeyboardLabels(xKB, KB_TARGETS_DEFAULT);
-    renderKeyboardBelow(xKB, KB_TARGETS_DEFAULT);
-    // Second keyboard — only when its DOM root is present.
-    if (document.getElementById('section_14')) {
-      applyKeyboardColors(xKB2, KB_TARGETS_2);
-      applyKeyboardLabels(xKB2, KB_TARGETS_2);
-      renderKeyboardBelow(xKB2, KB_TARGETS_2);
-    }
-    bindTuningPicker(xFB, FB_TARGETS_DEFAULT);
+    // Tuning picker is instance-aware but needs binding each tick
+    // because its popover DOM is rebuilt by renderOptions above.
+    bindTuningPicker(states.section_2, FB_TARGETS_DEFAULT);
     if (document.getElementById('tun_picker_btn_2')) {
-      bindTuningPicker(xFB2, FB_TARGETS_2);
+      bindTuningPicker(states.section_13, FB_TARGETS_2);
     }
     applyCollapseFromUrl();
 
@@ -7467,19 +7535,19 @@
       shiftInstances.push({ containerId: 'kb_shift_root_2', sectionId: 'section_14', includeAllNone: true });
     }
     renderShiftBars(x, shiftInstances);
-    renderFretboardBelow(xFB, FB_TARGETS_DEFAULT); // pill row + chord/scale quick picks below the shift bar
+    renderFretboardBelow(states.section_2, FB_TARGETS_DEFAULT); // pill row + chord/scale quick picks below the shift bar
     if (document.getElementById('fb_below_root_2')) {
-      renderFretboardBelow(xFB2, FB_TARGETS_2);
+      renderFretboardBelow(states.section_13, FB_TARGETS_2);
     }
     // Chord-identify strips — primary pair + any second-instance extras.
     const idExtras = [];
     if (document.getElementById('fb_identify_root_2')) {
-      idExtras.push({ containerId: 'fb_identify_root_2', sectionId: 'section_13', state: xFB2 });
+      idExtras.push({ containerId: 'fb_identify_root_2', sectionId: 'section_13', state: states.section_13 });
     }
     if (document.getElementById('kb_identify_root_2')) {
-      idExtras.push({ containerId: 'kb_identify_root_2', sectionId: 'section_14', state: xKB2 });
+      idExtras.push({ containerId: 'kb_identify_root_2', sectionId: 'section_14', state: states.section_14 });
     }
-    renderIdentifyStrips(xFB, xKB, idExtras);
+    renderIdentifyStrips(states.section_2, states.section_4, idExtras);
 
     // Sweep stale chord-chip stashes: with no chord engaged (no idn in
     // URL), there's nothing to revert to, so an old stash would only
@@ -7508,7 +7576,9 @@
     setTimeout(function () { window._suppressDetailsToggle = false; }, 0);
   }
 
-  // ---------- init ----------
+  // ============================================================
+  // === Init                                                  ===
+  // ============================================================
   // Clone the primary keyboard's giant waffle table into #kb_waffle_wrap_2
   // so Keyboard #2 can render without us duplicating ~5KB of inline HTML
   // in index.html. Renames the inner <table id="keyboard"> to
