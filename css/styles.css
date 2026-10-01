@@ -689,18 +689,30 @@ details.collapsible > summary { cursor: default; }
                                              color: rgba(255,196,90,0.85); margin-right: 4px;                          }
 /* The inline dropdown version — the key_hidden_select rule below is kept
    so legacy button-row renderings don't surface the hidden <select>,
-   but the new .section_key_inline_sel is a visible select so override. */
+   but the new .section_key_inline_sel is a visible select so override.
+   DEFAULT (locked) state is faded; the _unlocked modifier brings it
+   back to full amber so the user can see which sections are driving
+   their own key. */
 .section_key_inline .section_key_inline_sel  { display: inline-block !important;
                                                padding: 1px 4px; font: 600 0.78em var(--font);
                                                line-height: 1.3; min-width: 44px;
-                                               background: rgba(255,196,90,0.15); color: #ffd88a;
-                                               border: 1px solid rgba(255,196,90,0.55); border-radius: 4px;
-                                               cursor: pointer;                                                           }
+                                               background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.45);
+                                               border: 1px solid rgba(255,255,255,0.18); border-radius: 4px;
+                                               cursor: pointer; opacity: 0.6;                                             }
 .section_key_inline .section_key_inline_sel:hover
-                                             { background: rgba(255,196,90,0.3); border-color: rgba(255,196,90,0.85);
-                                               color: #fff;                                                               }
+                                             { background: rgba(255,196,90,0.25); border-color: rgba(255,196,90,0.6);
+                                               color: #fff; opacity: 1;                                                   }
 .section_key_inline .section_key_inline_lab  { font: 600 0.7em var(--font); letter-spacing: 0.08em;
-                                               color: rgba(255,196,90,0.75); margin-right: 4px;                           }
+                                               color: rgba(255,255,255,0.4); margin-right: 4px;                           }
+/* Unlocked = this section is driving its own key. Picker lights up amber. */
+.section_key_inline.section_key_inline_unlocked .section_key_inline_sel
+                                             { background: rgba(255,196,90,0.22); color: #ffd88a;
+                                               border-color: rgba(255,196,90,0.7); opacity: 1;                            }
+.section_key_inline.section_key_inline_unlocked .section_key_inline_sel:hover
+                                             { background: rgba(255,196,90,0.35); border-color: rgba(255,196,90,0.9);
+                                               color: #fff;                                                               }
+.section_key_inline.section_key_inline_unlocked .section_key_inline_lab
+                                             { color: rgba(255,196,90,0.85);                                              }
 .section_key_inline .key_hidden_select:not(.section_key_inline_sel)
                                              { display: none;                                                             }
 .section_key_inline .key_btn               { padding: 1px 5px; font: 600 0.72em var(--font); line-height: 1.2;
