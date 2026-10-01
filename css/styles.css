@@ -316,9 +316,9 @@ table td                                   {  vertical-align:middle;            
    column and fret 1, mimicking the actual instrument. Each cell paints
    half (6px) so together they read as one continuous 12px nut with a
    subtle inset for depth. */
-.nut                                       {  border-right:9px solid #e8e2d4 !important;
+.nut                                       {  border-right:7px solid #e8e2d4 !important;
                                               box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
-.nut1                                      {  border-left:9px solid #e8e2d4 !important;
+.nut1                                      {  border-left:7px solid #e8e2d4 !important;
                                               box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
 table, table td                            {  border:1px solid var(--border); border-collapse:separate;               }
 #view_src, #print_btn                      {  border:1px solid #5fe8e0;                                              }
@@ -2942,13 +2942,13 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 
 /* Nut separators — mirror the primary's .nut/.nut1 rules at a higher
    specificity so #fretboard_2 td { border: 0 } can't erase them. */
-#fretboard_2 td.nut                         { border-right: 9px solid #e8e2d4 !important;
+#fretboard_2 td.nut                         { border-right: 7px solid #e8e2d4 !important;
                                               box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
-#fretboard_2 td.nut1                        { border-left: 9px solid #e8e2d4 !important;
+#fretboard_2 td.nut1                        { border-left: 7px solid #e8e2d4 !important;
                                               box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
-#fretboard td.nut                           { border-right: 9px solid #e8e2d4 !important;
+#fretboard td.nut                           { border-right: 7px solid #e8e2d4 !important;
                                               box-shadow: inset -1px 0 0 rgba(0,0,0,0.45);                            }
-#fretboard td.nut1                          { border-left: 9px solid #e8e2d4 !important;
+#fretboard td.nut1                          { border-left: 7px solid #e8e2d4 !important;
                                               box-shadow: inset 1px 0 0 rgba(0,0,0,0.45);                             }
 /* Containers around the second fretboard */
 #fretboard_root_2                           { position: relative;                                                       }

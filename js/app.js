@@ -5250,8 +5250,8 @@
       btn.classList.toggle('section_lock_open', !!unlocked);
       btn.setAttribute('aria-pressed', unlocked ? 'true' : 'false');
       btn.setAttribute('title', unlocked
-        ? 'This section is UNLOCKED — it holds its own key + highlights. Click to relink to the global key.'
-        : 'This section follows the global key. Click to unlock so you can drive it independently.');
+        ? 'This section is UNLOCKED — showing its own key + highlights. Click to compare against the global view (your section notes stay saved).'
+        : 'This section follows the global key. Click to switch to this section’s own key + highlights (previously-saved picks come back).');
       const details = document.getElementById(sec);
       if (details) details.setAttribute('data-unlocked', unlocked ? 'true' : 'false');
     });
@@ -5272,22 +5272,34 @@
     const cur = (p.get('ul') || '').trim();
     const list = cur ? cur.split(/[,\s]+/).filter(Boolean) : [];
     const idx = list.indexOf(sNum);
+    const prefix = 's' + sNum + '_';
+    const hasOwnState = (function () {
+      let any = false;
+      p.forEach(function (_, k) { if (k.indexOf(prefix) === 0) any = true; });
+      return any;
+    })();
     if (idx >= 0) {
-      // Currently unlocked → lock: drop from list + strip s<n>_* params.
+      // Currently unlocked (showing section's own state) → lock
+      // (show global). KEEP the s<n>_* params stashed in the URL so
+      // a second click can bring the independent view back without
+      // the user having to re-pick notes. This is what makes the
+      // lock a "compare" clicker.
       list.splice(idx, 1);
-      const prefix = 's' + sNum + '_';
-      const keysToDelete = [];
-      p.forEach(function (_, k) { if (k.indexOf(prefix) === 0) keysToDelete.push(k); });
-      keysToDelete.forEach(function (k) { p.delete(k); });
     } else {
-      // Currently locked → unlock: add to list + seed s<n>_k + s<n>_hl
-      // from current global values.
+      // Currently locked (showing global). Switch to UNLOCKED.
       list.push(sNum);
-      const x = window.SF_X || {};
-      if (x.k) p.set('s' + sNum + '_k', String(x.k));
-      const hlRaw = String(x.hl || '').trim();
-      if (hlRaw && hlRaw !== 'nothing') {
-        p.set('s' + sNum + '_hl', hlRaw.replace(/\s+/g, '').replace(/♭/g, 'b'));
+      // If this section has never had its own state, seed s<n>_k +
+      // s<n>_hl from the current global values so the first unlock
+      // doesn't look empty. If a prior stash exists (user has
+      // toggled before), leave it untouched so the "revert to the
+      // notes I had before" semantic works.
+      if (!hasOwnState) {
+        const x = window.SF_X || {};
+        if (x.k) p.set('s' + sNum + '_k', String(x.k));
+        const hlRaw = String(x.hl || '').trim();
+        if (hlRaw && hlRaw !== 'nothing') {
+          p.set('s' + sNum + '_hl', hlRaw.replace(/\s+/g, '').replace(/♭/g, 'b'));
+        }
       }
     }
     if (list.length) p.set('ul', list.join(','));
