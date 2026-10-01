@@ -6873,33 +6873,56 @@
     }
 
     // Preview-on-hover: mousing over a chord chip outlines every
-    // fretboard cell whose note is in that chord, so you can see what
-    // the chord would look like before committing to a click. Uses
-    // bubbling mouseover/mouseout since mouseenter doesn't bubble.
-    [fbHost, kbHost].forEach(function (host) {
-      if (!host || host._previewBound) return;
-      host._previewBound = true;
-      host.addEventListener('mouseover', function (e) {
+    // fretboard cell whose note is in that chord. Delegated at
+    // document.body so the hover works for BOTH identify strips
+    // (section_2 + section_13) and targets the fretboard that
+    // belongs to the chip's section — a chip in Fretboard #2's
+    // strip highlights #2, not #1.
+    if (!document.body._chordPreviewBound) {
+      document.body._chordPreviewBound = true;
+      function _targetFretboards(chip) {
+        // Walk up from the chip to the owning section. The site
+        // only has two fretboards right now, so this is a simple
+        // id-based pick.
+        const sectionEl = chip.closest && chip.closest('details.section');
+        if (!sectionEl) return [document.getElementById('fretboard')];
+        if (sectionEl.id === 'section_13') {
+          const fb2 = document.getElementById('fretboard_2');
+          return fb2 ? [fb2] : [];
+        }
+        // All other sections (fretboard #1, keyboards) default to
+        // the primary fretboard — hovering a chip in the keyboard
+        // strip still highlights the primary neck.
+        const fb = document.getElementById('fretboard');
+        return fb ? [fb] : [];
+      }
+      function _clearPreview() {
+        document.querySelectorAll('[data-chord-preview]').forEach(function (td) {
+          td.removeAttribute('data-chord-preview');
+        });
+      }
+      document.body.addEventListener('mouseover', function (e) {
         const chip = e.target.closest && e.target.closest('.identify_chip');
         if (!chip) return;
         const pcsStr = chip.getAttribute('data-chord-pcs');
         if (!pcsStr) return;
         const set = new Set(pcsStr.split(',').map(function (s) { return +s; }));
-        document.querySelectorAll('#fretboard td[data-note]').forEach(function (td) {
-          const pc = notePc(td.getAttribute('data-note'));
-          if (set.has(pc)) td.setAttribute('data-chord-preview', '1');
+        _clearPreview();
+        _targetFretboards(chip).forEach(function (fb) {
+          fb.querySelectorAll('td[data-note]').forEach(function (td) {
+            const pc = notePc(td.getAttribute('data-note'));
+            if (set.has(pc)) td.setAttribute('data-chord-preview', '1');
+          });
         });
       });
-      host.addEventListener('mouseout', function (e) {
+      document.body.addEventListener('mouseout', function (e) {
         const chip = e.target.closest && e.target.closest('.identify_chip');
         if (!chip) return;
         const rel = e.relatedTarget;
         if (rel && chip.contains(rel)) return;
-        document.querySelectorAll('#fretboard td[data-chord-preview]').forEach(function (td) {
-          td.removeAttribute('data-chord-preview');
-        });
+        _clearPreview();
       });
-    });
+    }
 
     // Wire +N pills + anchor-scroll for any link click inside the strip
     // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
