@@ -1214,8 +1214,8 @@
     for (let i = 1; i <= strs; i++) {
       const cur = notes[i - 1] || 'E';
       h += '<div class="tun_pop_custom_row">';
-      h += '  <span class="tun_pop_custom_label">String ' + i + '</span>';
-      h += '  <select class="tun_pop_custom_note" data-str="' + i + '">';
+      h += '  <span class="tun_pop_custom_label">' + i + '</span>';
+      h += '  <select class="tun_pop_custom_note" data-str="' + i + '" aria-label="String ' + i + '">';
       for (const n of ALLNOTES) {
         h += '<option value="' + escAttr(n) + '"' + (n === cur ? ' selected' : '') + '>' + escHtml(n) + '</option>';
       }
