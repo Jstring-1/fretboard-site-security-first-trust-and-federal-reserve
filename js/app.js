@@ -6376,11 +6376,10 @@
       // Visual cue that keys are clickable
       el.style.cursor = 'pointer';
     });
-    const kb = document.querySelector('.ritz .waffle');
-    if (kb && !kb._pickBound) {
-      kb._pickBound = true;
-      kb.addEventListener('click', handler);
-    }
+    // (Previously bound handler directly on `.ritz .waffle` here too.
+    // Removed — the body-level delegate above handles both keyboards.
+    // Keeping both caused every key click to fire twice, which
+    // toggled hl on then back off and looked like nothing happened.)
   }
 
   // ---------- chord identify strip ----------
