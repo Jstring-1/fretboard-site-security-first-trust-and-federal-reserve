@@ -2890,12 +2890,15 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
                                               border-spacing: 1px;
                                               margin: 12px auto 12px auto; padding: 0;
                                               border-radius: 8px; overflow: hidden;                                     }
-#fretboard_2 td                             { box-sizing: border-box;                                                   }
+#fretboard_2 td                             { box-sizing: border-box; border: 0 !important;
+                                              border-radius: 3px;                                                       }
 #fretboard_2 tr                             { height: 32px;                                                             }
 #fretboard_2 #fretnums                      { height: 24px;                                                             }
 #fretboard_2 td[data-note]                  { cursor: pointer;                                                         }
 #fretboard_2 td[data-chord-preview]         { outline: 2px solid rgba(255, 230, 0, 0.95);
                                               outline-offset: -2px; position: relative; z-index: 1;                    }
+/* Nut separator (last column of the fretboard "open string" cell) */
+#fretboard_2 .nut                           { border-right: 6px solid #e8e2d4 !important;                              }
 /* Containers around the second fretboard */
 #fretboard_root_2                           { position: relative;                                                       }
 #fb_identify_root_2                         { margin: 0; padding: 0;                                                    }
@@ -2923,14 +2926,17 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 #keyboard_2 .disp_deg                       { display: none;                                                            }
 body[data-display="degrees"] #keyboard_2 .disp_deg  { display: inline !important;                                       }
 body[data-display="degrees"] #keyboard_2 .disp_note { display: none !important;                                        }
+/* Top 4 keyboard rows: dark text so numbers stay readable on the
+   coloured cell backgrounds the inline ritz CSS sets up. */
 #keyboard_2 > tbody > tr:nth-child(-n+4) > td,
 #keyboard_2 > tbody > tr:nth-child(-n+4) > td.s0,
-#keyboard_2 > tbody > tr:nth-child(-n+4) > td[class^="s"] { background-color: transparent !important;
-                                                            color: #c0c0c0 !important;                                 }
+#keyboard_2 > tbody > tr:nth-child(-n+4) > td[class^="s"] { color: #1a1a1a !important;                                 }
+/* Bottom 2 keyboard rows (Instrument Ranges). */
 #keyboard_2 > tbody > tr:nth-last-child(-n+2) > td,
 #keyboard_2 > tbody > tr:nth-last-child(-n+2) > td.s0,
-#keyboard_2 > tbody > tr:nth-last-child(-n+2) > td[class^="s"] { background-color: transparent !important;
-                                                                 color: #c0c0c0 !important;                            }
+#keyboard_2 > tbody > tr:nth-last-child(-n+2) > td[class^="s"] { color: #1a1a1a !important;                            }
+/* Bookend cells: left-edge row labels and right-edge trailing cells
+   get a neutral grey piano-body colour. */
 #keyboard_2 > tbody > tr > td.s0,
 #keyboard_2 > tbody > tr > td.s10,
 #keyboard_2 > tbody > tr > td.s11,
