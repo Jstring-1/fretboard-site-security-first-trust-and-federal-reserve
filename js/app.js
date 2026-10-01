@@ -5471,9 +5471,14 @@
           return;
         }
         // First click (or click without a matching stash): stash the
-        // current hl string (even if empty — restore will still work),
-        // then apply the button's href.
-        try { window.localStorage.setItem('sf_hl_stash', curHl); } catch (_) {}
+        // current hl string (even if empty — restore will still work).
+        // DON'T overwrite an existing stash: if the user already did
+        // All → stashed 1-3-5 → now presses None, we want the stash
+        // to KEEP 1-3-5 so a second None restores the original, not
+        // the intermediate all-12 state.
+        if (stash == null) {
+          try { window.localStorage.setItem('sf_hl_stash', curHl); } catch (_) {}
+        }
         // Fall through to the standard link-navigation path below.
       } else {
         // Any other in-page navigation drops a stale stash so the next
