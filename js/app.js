@@ -1952,6 +1952,28 @@
     scopeSelector: '#section_14 .ritz .waffle'
   });
 
+  // -------- Chord-chip compare-clicker stash --------
+  // Per-section stash: when the user clicks a suggested-chord chip in
+  // an identify strip, remember the URL they were on BEFORE the click
+  // so a second click (on the same engaged chip, or on the strip's
+  // Clear link) can navigate back to the exact state they had — hl,
+  // pk, section overrides and all. Clicking a DIFFERENT chord while
+  // one is engaged does NOT re-stash: "revert" always points at the
+  // user's original picks, not at the previous chord. Stashes are
+  // cleared on each applyState() tick where no chord is active (so a
+  // reload with no idn in the URL doesn't carry forward a stale stash).
+  function _chordStashKey(sectionId) { return 'sf_chord_stash_' + sectionId; }
+  function _getChordStash(sectionId) {
+    try { return localStorage.getItem(_chordStashKey(sectionId)) || null; }
+    catch (_) { return null; }
+  }
+  function _setChordStash(sectionId, searchStr) {
+    try {
+      if (searchStr) localStorage.setItem(_chordStashKey(sectionId), searchStr);
+      else           localStorage.removeItem(_chordStashKey(sectionId));
+    } catch (_) {}
+  }
+
   // -------- Section registry --------
   // Single source of truth for every rendered section. Replaces hand-
   // rolled section_2/4/13/14 branches that used to live inside
@@ -6967,14 +6989,22 @@
       });
     }
 
-    // Wire +N pills + anchor-scroll for any link click inside the strip
-    // (delegated, idempotent). Without anchor-scroll, the Clear-picks link
-    // shrinks the strip, which lets every section above it slide up — and
-    // the user sees the page jump toward the URL bar.
-    [fbHost, kbHost].forEach(function (host) {
+    // Wire +N pills + chord-chip stash + anchor-scroll for any link click
+    // inside EVERY identify strip (both fretboards + both keyboards),
+    // delegated, idempotent. Iterating the SECTIONS registry means a
+    // third instance later gets wired automatically.
+    SECTIONS.forEach(function (sec) {
+      if (sec.kind !== 'fb' && sec.kind !== 'kb') return;
+      if (!sec.cfg || !sec.cfg.identifyId) return;
+      const host = document.getElementById(sec.cfg.identifyId);
       if (!host || host._extrasBound) return;
       host._extrasBound = true;
-      const anchorSel = (host === fbHost) ? '#fretboard' : '#section_4';
+      // Anchor the viewport on the section's board so the strip can
+      // reflow (chord chips appearing/disappearing) without the page
+      // appearing to scroll under the user.
+      const anchorSel = (sec.kind === 'fb')
+                      ? ('#' + sec.cfg.tableId)
+                      : ('#' + sec.id);
       host.addEventListener('click', function (e) {
         // "+N more" progressive-disclosure link — reveals the hidden
         // extras span and hides the link itself. No navigation.
@@ -7014,11 +7044,49 @@
         try { url = new URL(link.href, window.location.href); } catch (_) { return; }
         if (url.origin !== window.location.origin) return;
         if (url.pathname !== window.location.pathname) return;
+
+        // Compare-clicker stash management for the chord chips.
+        // The chip's href is already engagement-aware (clearHlOnlyHref when
+        // the chip is the active one, otherwise applyChordHref). We layer a
+        // per-section stash on top so "revert" doesn't just empty hl — it
+        // restores the exact URL the user had before clicking any chord.
+        let target = url.search || '?';
+        const chip = link.classList && link.classList.contains('identify_chip')
+                   ? link : null;
+        if (chip) {
+          const engaged = chip.classList.contains('identify_chip_on');
+          if (engaged) {
+            // Click same chord → restore stash if present, else fall back
+            // to the chip's own clearHlOnlyHref href.
+            const stash = _getChordStash(sec.id);
+            _setChordStash(sec.id, null);
+            if (stash) target = stash;
+          } else {
+            // Click a new/other chord → stash the pre-chord URL once. Don't
+            // overwrite an existing stash: switching from chord A to chord B
+            // should still revert to the user's own picks, not to chord A.
+            if (!_getChordStash(sec.id)) {
+              _setChordStash(sec.id, window.location.search || '?');
+            }
+            // In unlinked mode, project the chord's hl into s<n>_hl so the
+            // click only touches this section — same mechanism the shift
+            // arrows and note picks already use. Without this, chord-chip
+            // clicks on an unlocked section would write to global hl and
+            // the section's own view would stay unchanged.
+            const sectionEl = chip.closest && chip.closest('details.section');
+            const unlocked = sectionEl && sectionEl.getAttribute('data-unlocked') === 'y';
+            if (unlocked && typeof mergeSectionOverrideUrl === 'function') {
+              const merged = mergeSectionOverrideUrl(sec.id, target);
+              if (merged) target = merged;
+            }
+          }
+        }
+
         e.preventDefault();
         e.stopPropagation();
         const anchorEl = document.querySelector(anchorSel);
         const before = anchorEl ? anchorEl.getBoundingClientRect().top : null;
-        navigateTo(url.search || '?');
+        navigateTo(target);
         if (before !== null) {
           const el = document.querySelector(anchorSel);
           if (el) {
@@ -7839,6 +7907,17 @@
       idExtras.push({ containerId: 'kb_identify_root_2', sectionId: 'section_14', state: xKB2 });
     }
     renderIdentifyStrips(xFB, xKB, idExtras);
+
+    // Sweep stale chord-chip stashes: with no chord engaged (no idn in
+    // URL), there's nothing to revert to, so an old stash would only
+    // leak forward into the user's NEXT chord-chip click as a bogus
+    // revert target. Idn is global, so one check serves every section.
+    if (!x._id_active) {
+      SECTIONS.forEach(function (sec) {
+        if (sec.kind === 'fb' || sec.kind === 'kb') _setChordStash(sec.id, null);
+      });
+    }
+
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
