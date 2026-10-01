@@ -134,8 +134,15 @@ just calls `/api/admin-ip` to ask whether its IP is on the allowlist.
 ## Frontend state model
 
 URL is the source of truth for almost everything. Bookmark = save.
-**Linked-only** — the unlinked / per-section override mode was retired
-(too brittle; users rarely needed independent sections).
+
+**Linked + per-section unlinked** — the default is linked (every
+section sees the same `x`), but each fretboard / keyboard / grid
+section has a 🔒 lock button that flips the section into unlinked
+mode. Its state then lives under `s<N>_*` namespaced params
+(`s2_k`, `s13_hl`, `s14_pk`, …) which `stateForSection(id, x)`
+overlays onto the global `x`. See `virtualSearchForSection`,
+`mergeSectionOverrideUrl`, and `data-unlocked`/`data-apply-all`
+in app.js.
 
 Global params:
 
@@ -163,7 +170,9 @@ bookmarks keep working.
 How this works in code:
 
 - `parseState(searchOverride?)` reads URL → builds `x` with helpers
-  (`x._hl_set` mask, etc.). `x._unlinked` is forced false now.
+  (`x._hl_set` mask, etc.). `stateForSection(sectionId, x)` resolves
+  the effective state for a section by overlaying any `s<N>_*`
+  overrides on top of the globals.
 - The link interceptor at `bindLinkInterceptor` is the central
   same-origin click choke-point — every internal `<a>` click flows
   through `navigateTo(url.search)` which `pushState` + `applyState()`.

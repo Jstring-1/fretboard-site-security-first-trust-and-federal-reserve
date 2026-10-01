@@ -1,7 +1,15 @@
-# Allow all crawlers full access — every URL on the site is a public
-# permalink to a fretboard / chord / scale / tab view.
+# Allow all crawlers full access to the live single-page app — every
+# URL on the site is a public permalink to a fretboard / chord / scale
+# / tab view. Development and vendor directories are disallowed so
+# they don't dilute search quality or expose non-site content.
 User-agent: *
 Allow: /
+Disallow: /_books/
+Disallow: /_legacy/
+Disallow: /scripts/
+Disallow: /server/
+Disallow: /migrations/
+Disallow: /data/
 
 # Sitemap index
 Sitemap: https://fretboard.site/sitemap.xml

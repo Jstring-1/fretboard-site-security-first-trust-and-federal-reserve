@@ -159,43 +159,13 @@ a:hover                                    {  color:var(--accent-hi);           
    they're readable but don't compete with the marker frets (3, 5, 7, 9, 12). */
 #fretnums .fret_minor                      {  font-size: 0.78em; color: #555555; opacity: 0.85;                       }
 
-/* "Load preset into custom" dropdown — sits in the bottom-left empty cell
-   under the custom-tuning column. Compact native select sized to fit the
-   cell width. Picking a preset populates s1..sN without touching x. */
-.custom_tun_loader                         {  width: 100%; box-sizing: border-box;
-                                              padding: 4px 6px; font: 400 0.9em var(--font);
-                                              background: var(--bg-elevated); color: var(--accent);
-                                              border: 1px solid #2a2a2a; border-radius: 3px;
-                                              cursor: pointer; text-align: center;
-                                              -webkit-appearance: none; -moz-appearance: none; appearance: none;       }
-.custom_tun_loader:hover                   {  border-color: var(--accent-hi);                                          }
-.custom_tun_loader:focus                   {  outline: none; border-color: var(--accent-hi);                          }
-.custom_tun_loader option                  {  background: var(--bg-elevated); color: var(--accent);                  }
-@media print { .custom_tun_loader { display: none !important; }                                                        }
-
-/* Custom tuning was retired in Phase 3 — leftmost column now just
-   shows the string number as a plain muted label. */
+/* Leftmost fretboard column — string number as a plain muted label.
+   (The old "custom tuning" preset-loader dropdown that lived in this
+   cell was retired in Phase 3; the custom editor now lives inside
+   the tuning picker popover instead.) */
 .fb_string_num                             {  color: rgba(255,255,255,0.35);
                                               font-size: 0.78em; font-weight: 600;
                                               padding: 4px 2px;                                                        }
-/* --- Custom-tuning column state (legacy — kept in case an old URL
-       still surfaces data-custom="on"; the fretboard renderer now
-       hard-codes "off"). --------------------------------------- */
-#fretboard[data-custom="on"] #f_cyo        {  background-color: rgba(255, 196, 90, 0.10) !important;
-                                              border-left: 2px solid rgba(255, 196, 90, 0.45);
-                                              border-right: 1px solid rgba(255, 196, 90, 0.25);                        }
-#fretboard[data-custom="on"] #f_cyo select {  background: rgba(255, 196, 90, 0.06);
-                                              border: 1px solid rgba(255, 196, 90, 0.35);                              }
-#fretboard[data-custom="on"] #f_cyo .custom_tun_loader
-                                           {  background: rgba(255, 196, 90, 0.08);
-                                              border-color: rgba(255, 196, 90, 0.35);                                  }
-#fretboard[data-custom="off"] select[name^="s"]
-                                           {  opacity: 0.35; pointer-events: none;
-                                              filter: grayscale(0.5);                                                  }
-#fretboard[data-custom="off"] .custom_tun_loader
-                                           {  opacity: 0.55; filter: grayscale(0.35);                                  }
-#fretboard[data-custom="off"] .custom_tun_loader:hover
-                                           {  opacity: 0.85; filter: none;                                             }                         
 #_5_                                       {  color:#dddddd;                                                         }
 ._i_                                       {  color:#ff0000;                                                         }
 ._ii_                                      {  color:#9900ff;                                                         }    
@@ -506,9 +476,7 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print] .prog_bar_remove,
     body[data-print] .prog_bar_menu_pop,
     body[data-print] .kx_cad_play,
-    body[data-print] .audio_toggle,
-    body[data-print] .section_apply_all
-                                                    {  display: none !important;                                        }
+    body[data-print] .audio_toggle              {  display: none !important;                                        }
 
     /* Section 3 chord builder: hide nested Progressions sub-section so
        the chord grid + diatonic chart fit on one landscape page. */
@@ -646,10 +614,16 @@ details.collapsible:not([open]) > summary  { border-bottom-color: transparent;  
 /* Title + arrow centered as one click target, ~3× the text width so users
    can tap-to-toggle without aiming directly at the small text. Sits on top
    of the absolutely-positioned right-side controls via a higher z-index. */
+/* .summary_title can be a <span> OR an <h1> (section_2 uses h1 so the
+   visible section header doubles as the page's primary heading). The
+   explicit font/margin/display resets keep the two shapes rendering
+   identically — without them h1 inherits its UA 2em bold-block default. */
 details.collapsible > summary .summary_title { font-weight: 700; cursor: pointer;
                                              position: absolute; top: 50%; left: 50%;
                                              transform: translate(-50%, -50%);
-                                             padding: 4px 40px; border-radius: 6px; z-index: 1;                       }
+                                             padding: 4px 40px; border-radius: 6px; z-index: 1;
+                                             font-size: inherit; margin: 0;
+                                             display: inline-block; line-height: inherit;         }
 /* When a section's summary has the key-button row below the title,
    anchor the title to the top of the bar instead of letting absolute
    positioning leave it floating in the vertical centre of the whole
@@ -731,22 +705,8 @@ details.collapsible > summary { cursor: default; }
                                              color: #ffd88a;                                                           }
 .section_lock.section_lock_open:hover      { background: rgba(255,196,90,0.35);                                        }
 @media print { .section_lock               { display: none !important; }                                               }
-/* "Apply all" toggle — same pill shape as section_print but the
-   engaged state is highlighted with the cyan accent so it reads as
-   "currently linking sections together." Disengaged is the default
-   neutral chip look. */
-.section_apply_all                         { display: inline-block; margin-left: 4px; padding: 2px 10px;
-                                             vertical-align: middle; font: 600 0.78em inherit;
-                                             border-radius: 12px; border: 1px solid rgba(255,255,255,0.55);
-                                             background: rgba(255,255,255,0.18); color: #fff;
-                                             cursor: pointer; letter-spacing: 0.02em;                                  }
-.section_apply_all:hover                   { background: rgba(255,255,255,0.4); border-color: #fff;                    }
-.section_apply_all.on                      { background: var(--accent-hi); border-color: var(--accent-hi);
-                                             color: #001014;                                                           }
-.section_apply_all.on:hover                { background: #fff; border-color: #fff; color: #001014;                     }
-@media print { .section_apply_all          { display: none !important; }                                                }
 /* Audio toggle (♪): off = subtle outline, on = filled accent. Sits to
-   the right of the Linked toggle in the Fretboard summary. */
+   the right of the audio-related controls in the sticky header. */
 .site_tips_wrap                            { display: inline-flex; align-items: center; gap: 4px;
                                              margin-right: 4px; padding: 2px 6px 2px 4px;
                                              font: 400 0.82em var(--font); color: rgba(255,255,255,0.7);
@@ -1139,7 +1099,6 @@ select option                              { color: var(--text); background: var
 /* Make the Linked / Audio / Clear / Account pills share the same pill
    shape so they sit on a clean right-side row. inline-flex centres the
    text vertically so the Clear anchor doesn't float to the top. */
-#site_global_controls .section_apply_all,
 #site_global_controls .section_audio_toggle,
 #site_global_controls .section_clear,
 #site_global_controls .auth_btn,
@@ -1151,7 +1110,6 @@ select option                              { color: var(--text); background: var
                                              background: rgba(255,255,255,0.18); color: #fff !important;
                                              text-decoration: none; cursor: pointer; white-space: nowrap;
                                              max-width: 110px; overflow: hidden; text-overflow: ellipsis;               }
-#site_global_controls .section_apply_all:hover,
 #site_global_controls .section_audio_toggle:hover,
 #site_global_controls .section_clear:hover,
 #site_global_controls .auth_btn:hover      { background: rgba(255,255,255,0.4); border-color: #fff;                    }
@@ -1201,12 +1159,10 @@ select option                              { color: var(--text); background: var
                                              border-color: var(--accent-hi);                                            }
 #account_modal .am_btn_primary:hover       { background: #fff; border-color: #fff;                                       }
 @media print { #account_modal              { display: none !important; }                                               }
-/* Active/engaged states for the toggles — match the existing accent. */
-#site_global_controls .section_apply_all.on,
+/* Active/engaged state for the audio toggle — match the existing accent. */
 #site_global_controls .section_audio_toggle.on
                                            { background: var(--accent-hi); border-color: var(--accent-hi);
                                              color: #001014 !important;                                                  }
-#site_global_controls .section_apply_all.on:hover,
 #site_global_controls .section_audio_toggle.on:hover
                                            { background: #fff; border-color: #fff;                                       }
 /* The audio toggle is a 1-glyph button — keep it round and tight. */
@@ -1532,21 +1488,10 @@ details.collapsible > summary              { padding-left: 36px;                
 /* Collapsible wrapper. Open mirrors the ID-toggle state — when ID is
    engaged the box is open, when disengaged the body collapses behind a
    header that still carries the toggle so the user can flip it back. */
-.identify_box                              { background: rgba(255,255,255,0.03); border-radius: 8px;
-                                             border: 1px solid rgba(255,255,255,0.08);                                 }
-.identify_box[open]                        { background: rgba(255,255,255,0.04);                                       }
-.identify_summary                          { display: flex; align-items: center; gap: 10px;
-                                             padding: 6px 14px; cursor: pointer;
-                                             list-style: none; user-select: none;                                       }
-.identify_summary::-webkit-details-marker  { display: none;                                                            }
-.identify_summary::before                  { content: "▶"; display: inline-block; width: 0.8em;
-                                             font-size: 0.7em; color: var(--muted-dim);
-                                             transition: transform 120ms;                                              }
-.identify_box[open] > .identify_summary::before  { transform: rotate(90deg);                                          }
-.identify_summary .identify_label          { font: 600 0.78em var(--font); letter-spacing: 0.06em;
-                                             text-transform: uppercase; color: var(--accent-hi);                       }
-.identify_summary_state                    { font: 400 0.78em var(--font); color: var(--muted);                        }
-.identify_summary .identify_btns           { position: static; margin-left: auto;                                      }
+/* (Legacy .identify_box collapsible wrapper rules were removed when
+   the Chord ID strip became always-rendered inline rather than a
+   collapsible <details>. The strip now lives directly in the section
+   body, no summary header, no persisted open/closed state.) */
 /* Per-strip control cluster (◀ / ▶ shift, ID toggle) — pinned to the
    right edge of the identify strip so it sits in the same plane as
    the section's print button. */
@@ -1648,6 +1593,8 @@ a.identify_chip_on:hover                   { color: #6fffff !important;         
 #fb_identify_root .identify_strip,
 #kb_identify_root .identify_strip          { height: 28px; box-sizing: border-box; overflow: hidden;                    }
 .identify_placeholder                      { min-height: 0;                                                             }
+.identify_hint                             { color: rgba(255,255,255,0.45); font-size: 0.82em; font-style: italic;
+                                             padding: 0 6px;                                                            }
 .identify_extras_toggle                    { display: inline-flex; gap: 2px; margin-right: 4px;                       }
 
 /* --- Chord ID inline layout ------------------------------------------
@@ -2595,10 +2542,18 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
    stack vertically. Pills wrap, fonts shrink slightly, padding tightens.
    ===================================================================== */
 @media (max-width: 700px) {
-  #mobile_hint                             { display: block; padding: 10px 14px;
+  #mobile_hint                             { display: flex; align-items: flex-start; gap: 8px;
+                                             padding: 10px 14px;
                                              background: rgba(255,235,0,0.10); color: #ffe680;
                                              border-bottom: 1px solid rgba(255,235,0,0.25);
                                              font-size: 0.85em; line-height: 1.35;                                    }
+  #mobile_hint[data-dismissed="1"]         { display: none;                                                          }
+  #mobile_hint > span                      { flex: 1 1 auto; min-width: 0;                                           }
+  #mobile_hint_dismiss                     { flex: 0 0 auto; background: transparent; color: inherit;
+                                             border: 1px solid rgba(255,235,0,0.40); border-radius: 50%;
+                                             width: 24px; height: 24px; padding: 0; line-height: 1;
+                                             cursor: pointer; font-size: 1em;                                        }
+  #mobile_hint_dismiss:hover               { background: rgba(255,235,0,0.18);                                       }
 
   /* Section padding tightens; the inner tables get their own scroll. */
   .section, .nested_section                { padding-left: 6px; padding-right: 6px;                                   }

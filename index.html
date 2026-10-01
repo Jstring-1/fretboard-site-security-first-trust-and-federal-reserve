@@ -5,17 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
 
 <!-- Primary SEO -->
-<title>Fretboard — Guitar Chord & Scale Finder, Piano Keyboard, Fretboard & Tab Editor</title>
-<meta name="description" content="Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, chord identifier, circle of fifths, and 176-tuning database. Works for guitar, bass, ukulele, banjo, mandolin, lap & pedal steel.">
-<meta name="keywords" content="guitar chord finder, guitar scales, chord builder, scale finder, chord identifier, fretboard, piano keyboard, piano scales, music theory practice, circle of fifths, key signatures, tab editor, transpose tool, alternate tunings, ukulele chords, bass scales, banjo, mandolin, lap steel, pedal steel">
+<title>Fretboard.site — Free Guitar Chord & Scale Finder, Piano, Tab Editor</title>
+<meta name="description" content="Free in-browser guitar chord finder, scale builder, fretboard explorer, piano keyboard, chord identifier, circle of fifths, and tab editor across 176 tunings.">
 <meta name="author" content="Fretboard.site">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="canonical" href="https://fretboard.site/">
 
+<!-- Content-Security-Policy. GitHub Pages can't send real headers so
+     this ships as a meta tag; same enforcement, limited directives.
+     Trust list:
+       script-src — self, Google Analytics (gtag), unpkg (Tone.js).
+       style-src  — self + inline (section rendering + a handful of
+                    hl-colour inline overrides use style="…").
+       media-src  — tonejs.github.io hosts the Salamander piano samples
+                    the audio feature lazy-loads.
+       connect-src — fretches to tonejs.github.io for the sample buffers
+                    + GA beacon endpoints.
+     frame-ancestors 'none' blocks clickjacking framing. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://*.google-analytics.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.google-analytics.com; media-src 'self' https://tonejs.github.io; connect-src 'self' https://*.google-analytics.com https://*.googletagmanager.com https://tonejs.github.io; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
+
 <!-- Open Graph (Facebook / LinkedIn / iMessage previews) -->
 <meta property="og:site_name" content="Fretboard.site">
-<meta property="og:title" content="Fretboard — Guitar Chord & Scale Finder, Piano Keyboard, Fretboard & Tab Editor">
+<meta property="og:title" content="Fretboard.site — Free Guitar Chord & Scale Finder, Piano, Tab Editor">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://fretboard.site/">
 <meta property="og:description" content="Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, chord identifier, circle of fifths, and 176-tuning database. Works for guitar, bass, ukulele, banjo, mandolin, lap & pedal steel.">
@@ -26,7 +38,7 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Fretboard — Guitar Chord & Scale Finder, Piano Keyboard, Fretboard">
+<meta name="twitter:title" content="Fretboard.site — Free Guitar Chord & Scale Finder, Piano, Tab Editor">
 <meta name="twitter:description" content="Free guitar chord finder, scale builder, fretboard explorer, piano keyboard, tab editor, circle of fifths, and 176-tuning database for guitar, bass, uke, banjo, and steel.">
 <meta name="twitter:image" content="https://fretboard.site/img/android-chrome-384x384.png">
 
@@ -47,9 +59,12 @@
     "Guitar chord builder grid covering 28+ chord types",
     "Scale builder grid covering 16 scales (modes, pentatonic, blues, etc.)",
     "Click-to-pick chord identifier — name the notes you played",
-    "Interactive fretboard for 4- to 12-string instruments in any key",
-    "Piano keyboard view with octave-correct frequencies and degree colouring",
+    "Interactive fretboard for 4- to 12-string instruments in any key, with a second comparison fretboard for A/B tuning or key work",
+    "Piano keyboard view with octave-correct frequencies and degree colouring, with a second comparison keyboard",
     "Circle of fifths and Key Signatures reference with treble-clef staves",
+    "Progression builder with chord timeline, playback and tempo control",
+    "Ear training — intervals, chord qualities, and scale degree drills",
+    "Fake-book progression search across hundreds of jazz standards and lead sheets",
     "In-page tab editor with fretboard-click capture, print and handwriting blanks",
     "Endless music-theory practice quiz",
     "176 alternate tunings across guitar, bass, ukulele, banjo, lap and pedal steel",
@@ -141,15 +156,23 @@
 
 <!-- Icons / manifest -->
 <link rel="icon" href="img/favicon.ico">
-<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="manifest" href="img/site.webmanifest">
+
+<!-- Analytics preconnect — overlap DNS/TLS with page parse so the
+     deferred gtag loader (fired on window load) hits a warm socket. -->
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
 
 <!-- Styles + scripts. defer=async-download, in-order execution after DOM
      parse — same effect as the old "load at end of body" trick without
      the layout reflow. -->
-<link rel="stylesheet" href="css/styles.css?v=20261001.1349">
-<link rel="stylesheet" href="css/tab.css?v=20261001.1349">
+<!-- Preload the main app script so the browser fetches it in parallel
+     with CSS parse instead of waiting for HTML parse completion. The
+     visible fretboard SVG is painted by app.js, so this directly
+     improves LCP. -->
+<link rel="preload" href="js/app.js?v=20261001.1401" as="script">
+<link rel="stylesheet" href="css/styles.css?v=20261001.1401">
+<link rel="stylesheet" href="css/tab.css?v=20261001.1401">
 <!-- Tone.js — polyphonic sampler + synth + FX rack. Lazy-loaded on
      first user audio interaction by app.js (loadTone()), not at page
      load: Tone instantiates an AudioContext + a deprecated
@@ -157,21 +180,24 @@
      console with autoplay-policy and deprecation warnings before the
      user has done anything. If the CDN is unreachable when first
      needed, the app falls back to its built-in triangle synth. -->
-<script defer src="js/data.js?v=20261001.1349"></script>
-<script defer src="js/chord_lookup.js?v=20261001.1349"></script>
-<script defer src="js/sortable.js?v=20261001.1349"></script>
-<script defer src="js/app.js?v=20261001.1349"></script>
-<script defer src="js/chord_boxes.js?v=20261001.1349"></script>
-<script defer src="js/tab.js?v=20261001.1349"></script>
-<script defer src="js/features.js?v=20261001.1349"></script>
-<script defer src="js/sheetmusic.js?v=20261001.1349"></script>
+<script defer src="js/data.js?v=20261001.1401"></script>
+<script defer src="js/chord_lookup.js?v=20261001.1401"></script>
+<script defer src="js/sortable.js?v=20261001.1401"></script>
+<script defer src="js/app.js?v=20261001.1401"></script>
+<script defer src="js/chord_boxes.js?v=20261001.1401"></script>
+<script defer src="js/tab.js?v=20261001.1401"></script>
+<script defer src="js/features.js?v=20261001.1401"></script>
+<script defer src="js/sheetmusic.js?v=20261001.1401"></script>
 </head>
 <body>
 
 <!-- Mobile-only hint. Shown on portrait phones; hidden on tablets/desktop
-     and on landscape phones via the @media rules in styles.css. -->
+     and on landscape phones via the @media rules in styles.css. The
+     close button writes `sf_mobile_hint_hidden=1` to localStorage so
+     repeat visitors who dismissed the banner never see it again. -->
 <div id="mobile_hint" role="note">
-  Fretboard.site is a desktop tool — rotate to landscape (or open on a wider screen) for the best experience. Tables here scroll sideways on touch.
+  <span>Fretboard.site — free guitar chord &amp; scale finder, piano keyboard, tab editor. Built for desktop; rotate to landscape or open on a wider screen for the full layout.</span>
+  <button type="button" id="mobile_hint_dismiss" aria-label="Dismiss mobile notice" title="Hide this notice (we won't show it again on this device).">×</button>
 </div>
 
 <!-- Sticky site header: notes/degrees toggle on the left, KEY pills
@@ -202,8 +228,8 @@
      so the layout stays minimal. -->
 <p id="seo_lede" class="sr_only">Fretboard.site is a free, browser-based music tool: build chords across 28+ types, audition 16 scales (including modes, pentatonic, and blues), identify chords from notes you played, explore a fretboard for any 4- to 12-string instrument across 176 alternate tunings, see every key signature with the circle of fifths, and edit guitar tablature inline. Works for guitar, bass, ukulele, banjo, mandolin, lap steel, and pedal steel.</p>
 
-<details id="section_2" class="collapsible section" open><summary><span class="summary_title">Fretboard.site</span><span class="summary_status"></span></summary>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_2"></span><button type="button" class="section_lock" data-lock-section="section_2" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_2" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About">?</button></div>
+<details id="section_2" class="collapsible section" open><summary><h1 class="summary_title">Fretboard.site</h1><span class="summary_status"></span></summary>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_2"></span><button type="button" class="section_lock" data-lock-section="section_2" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_2" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Interactive guitar fretboard explorer</h2>
   <p class="sr_only">Pick a tuning and a key, then highlight any chord or scale to see every position of those notes laid out across the entire fretboard. Supports 4- to 12-string instruments — guitar, bass, ukulele, banjo, mandolin, lap steel, pedal steel — plus a fully editable Custom tuning. Click any fret cell to identify the chord those notes form.</p>
   <div id="fretboard_root"></div>
@@ -214,7 +240,7 @@
 
 
 <details id="section_11" class="collapsible section" open><summary><span class="summary_title">Progressions</span></summary><br/>
-  <div class="section_actions"><button type="button" class="section_print" data-print-section="section_11" aria-label="Print">Print</button><button type="button" class="section_help" data-help="progressions" aria-label="About">?</button></div>
+  <div class="section_actions"><button type="button" class="section_print" data-print-section="section_11" aria-label="Print">Print</button><button type="button" class="section_help" data-help="progressions" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h3 class="sr_only">Common chord progressions</h3>
   <p class="sr_only">Common chord progressions from rock, pop, jazz, blues, and 50s doo-wop — transposed into the current key. Click any chord to highlight it; press play to audition the progression with the synth.</p>
   <div id="progressions_root"></div>
@@ -222,7 +248,7 @@
 </details>
 
 <details id="section_3" class="collapsible section" open><summary><span class="summary_title">Chord Builder Grid</span><span class="summary_status"></span></summary><br/>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_3"></span><button type="button" class="section_lock" data-lock-section="section_3" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_3" aria-label="Print">Print</button><button type="button" class="section_help" data-help="chord_grid" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_3"></span><button type="button" class="section_lock" data-lock-section="section_3" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_3" aria-label="Print">Print</button><button type="button" class="section_help" data-help="chord_grid" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Chord builder — 28+ chord types in any key</h2>
   <p class="sr_only">Browse every common chord type — major (maj), minor (min), 7, m7, maj7, m7♭5 (half-diminished), dim, dim7, aug, sus2, sus4, 6, m6, 9, m9, maj9, 11, 13, add9 — laid out as a grid by interval. Pick any cell to highlight that chord across the fretboard and piano keyboard. Hover any chord label to see its degrees and the actual notes in the current key.</p>
   <div id="diatonic_root"></div>
@@ -232,7 +258,7 @@
 </details>
 
 <details id="section_6" class="collapsible section" open><summary><span class="summary_title">Scale Builder Grid</span><span class="summary_status"></span></summary><br/>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_6"></span><button type="button" class="section_lock" data-lock-section="section_6" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_6" aria-label="Print">Print</button><button type="button" class="section_help" data-help="scale_grid" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_6"></span><button type="button" class="section_lock" data-lock-section="section_6" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_6" aria-label="Print">Print</button><button type="button" class="section_help" data-help="scale_grid" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Scale builder — modes, pentatonic, blues, and more</h2>
   <p class="sr_only">All 16 essential scales in any key: major (Ionian), Dorian, Phrygian, Lydian, Mixolydian, natural minor (Aeolian), Locrian, harmonic minor, melodic minor, major pentatonic, minor pentatonic, blues, whole tone, diminished, chromatic, and more. Click any scale to highlight every note across the fretboard and keyboard.</p>
   <div id="modes_root"></div>
@@ -241,7 +267,7 @@
 </details>
 
 <details id="section_9" class="collapsible section" open><summary><span class="summary_title">Key Signatures</span><span class="summary_status"></span></summary><br/>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_9"></span><button type="button" class="section_lock" data-lock-section="section_9" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_9" aria-label="Print">Print</button><button type="button" class="section_help" data-help="key_signatures" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_9"></span><button type="button" class="section_lock" data-lock-section="section_9" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_9" aria-label="Print">Print</button><button type="button" class="section_help" data-help="key_signatures" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Key signatures and circle of fifths reference</h2>
   <p class="sr_only">Every major key shown with its treble-clef staff, the count of sharps or flats, the actual accidental notes in canonical order, and a hand-signal mnemonic (fingers up = sharps, fingers down = flats). Includes an interactive Circle of Fifths showing each major key paired with its relative minor — click any wedge to set that key.</p>
   <div id="key_signatures_root"></div>
@@ -250,7 +276,7 @@
 </details>
 
 <details id="section_4" class="collapsible section" open><summary><span class="summary_title">Keyboard</span><span class="summary_status"></span></summary><br/>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_4"></span><button type="button" class="section_lock" data-lock-section="section_4" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_4" aria-label="Print">Print</button><button type="button" class="section_help" data-help="keyboard" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_4"></span><button type="button" class="section_lock" data-lock-section="section_4" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_4" aria-label="Print">Print</button><button type="button" class="section_help" data-help="keyboard" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Interactive piano keyboard with degree colouring</h2>
   <p class="sr_only">Full piano keyboard from A0 to C8 showing every note, octave numbers, frequencies in Hz, recommended steel-string gauges, 10-band EQ frequencies, and instrument ranges (guitar, bass, vocals). Pick a key and a chord or scale to colour the notes by their scale degree. Click keys to identify chords from the notes you select.</p>
   <div id="keyboard_key_root"></div>
@@ -262,7 +288,7 @@
 </details>
 
 <details id="section_7" class="collapsible section" open><summary><span class="summary_title">Quiz</span></summary><br/>
-  <div class="section_actions"><button type="button" class="section_help" data-help="learn" aria-label="About">?</button></div>
+  <div class="section_actions"><button type="button" class="section_help" data-help="learn" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Music theory practice quiz</h2>
   <p class="sr_only">Endless drill on key signatures, sharp / flat counts, the notes that make up each accidental, and chord intervals. Answer as many as you like — every question is randomly generated so the practice never repeats.</p>
   <div id="quiz_root"></div>
@@ -270,7 +296,7 @@
 </details>
 
 <details id="section_8" class="collapsible section feature_tab" open><summary><span class="summary_title">Tab</span></summary><br/>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_8"></span><button type="button" class="section_help" data-help="tab" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_8"></span><button type="button" class="section_help" data-help="tab" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">In-page guitar tab editor</h2>
   <p class="sr_only">Lightweight tab notation editor. Type fret numbers, articulation symbols (h hammer, p pull, / slide up, \ slide down, ~ vibrato, x mute), and use Tab/Enter/arrow keys to navigate cells. Capture frets directly from the mini-fretboard, print blank tab paper for handwriting practice, or print your tab with chord boxes. Supports 4- to 12-string instruments with any tuning.</p>
   <div id="tab_section_root">
@@ -283,7 +309,7 @@
       <label class="tab_ctl"><span>Beats / measure</span><input id="ctl_beats" type="number" min="2" max="12" value="4"></label>
       <label class="tab_ctl"><span>Subdivisions</span><select id="ctl_subdiv"><option value="1">1 (qtr)</option><option value="2" selected>2 (8th)</option><option value="3">3 (triplet)</option><option value="4">4 (16th)</option></select></label>
       <label class="tab_ctl"><span>Measures / line</span><select id="ctl_per_line"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></label>
-      <button type="button" id="btn_clear" class="ctl_btn">Clear notes</button>
+      <button type="button" id="btn_clear" class="ctl_btn" title="Erase every fret number from the tab. Chord boxes, title, tuning, and settings stay.">Clear notes</button>
       <button type="button" id="btn_low_high" class="ctl_btn" title="Reverse string order (highest at top)">⇅ flip strings</button>
       <button type="button" class="btn_print_blank ctl_btn" title="Print blank tab pages">Print blank</button>
       <button type="button" class="btn_print_tab ctl_btn" title="Print tab only (no chord boxes)">Print tab</button>
@@ -323,8 +349,8 @@
         <span class="cb_hint">Click a fret to place a dot. Click above the box to toggle × (mute) or ○ (open). Use −/+ to slide the box up the neck.</span>
       </summary>
       <div class="cb_controls">
-        <button type="button" id="cb_add" class="ctl_btn">+ Add box</button>
-        <button type="button" id="cb_clear" class="ctl_btn">Clear all</button>
+        <button type="button" id="cb_add" class="ctl_btn" title="Add a blank chord-box diagram above the tab.">+ Add box</button>
+        <button type="button" id="cb_clear" class="ctl_btn" title="Remove every chord-box diagram. Written tab is untouched.">Clear all</button>
       </div>
       <div id="chord_boxes_grid"></div>
     </details>
@@ -340,7 +366,7 @@
 </details>
 
 <details id="section_10" class="collapsible section feature_sheetmusic" open><summary><span class="summary_title">Sheet Music</span></summary><br/>
-  <div class="section_actions"><button type="button" class="section_help" data-help="sheetmusic" aria-label="About">?</button></div>
+  <div class="section_actions"><button type="button" class="section_help" data-help="sheetmusic" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Searchable sheet-music & chord-progression library</h2>
   <p class="sr_only">Searchable progressions extracted from a 4,000+ jazz / pop fake-book library. Each song shows key, time signature, chord changes, and Nashville-degree analysis so you can transpose chord-by-chord into any key.</p>
   <div id="sheetmusic_root">
@@ -352,7 +378,7 @@
 </details>
 
 <details id="section_12" class="collapsible section"><summary><span class="summary_title">Ear Training</span></summary><br/>
-  <div class="section_actions"><button type="button" class="section_help" data-help="ear_training" aria-label="About">?</button></div>
+  <div class="section_actions"><button type="button" class="section_help" data-help="ear_training" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Ear training — interval &amp; chord identification drills</h2>
   <p class="sr_only">Plays a randomly-chosen root note plus either a second note (interval mode) or the remaining notes of a chord (chord mode). Guess what you hear from the buttons below. Playback can be melodic (notes in sequence), harmonic (notes at the same time), or both. The pool of intervals or chord families is user-configurable. Uses whatever instrument voice you have selected for the rest of the site.</p>
   <div id="ear_root"></div>
@@ -360,7 +386,7 @@
 </details>
 
 <details id="section_14" class="collapsible section kb_instance_2" data-kb-inst="2" open><summary><span class="summary_title">Keyboard #2</span><span class="summary_status"></span></summary><br/>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_14"></span><button type="button" class="section_lock" data-lock-section="section_14" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_14" aria-label="Print">Print</button><button type="button" class="section_help" data-help="keyboard" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_14"></span><button type="button" class="section_lock" data-lock-section="section_14" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_14" aria-label="Print">Print</button><button type="button" class="section_help" data-help="keyboard" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Second keyboard — independent key</h2>
   <p class="sr_only">A second interactive piano keyboard. Follows the global key by default; unlock the 🔒 icon in its title bar to give it its own key and highlights so you can compare two keys side by side.</p>
   <div id="keyboard_key_root_2"></div>
@@ -372,7 +398,7 @@
 </details>
 
 <details id="section_13" class="collapsible section fb_instance_2" data-fb-inst="2" open><summary><span class="summary_title">Fretboard #2</span><span class="summary_status"></span></summary>
-  <div class="section_actions"><span class="summary_extras" data-summary-for="section_13"></span><button type="button" class="section_lock" data-lock-section="section_13" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_13" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About">?</button></div>
+  <div class="section_actions"><span class="summary_extras" data-summary-for="section_13"></span><button type="button" class="section_lock" data-lock-section="section_13" aria-label="Toggle: this section follows the global key or holds its own">🔒</button><button type="button" class="section_print" data-print-section="section_13" aria-label="Print">Print</button><button type="button" class="section_help" data-help="fretboard" aria-label="About" title="About this section: what it does and what each control is for.">?</button></div>
   <h2 class="sr_only">Second fretboard — independent tuning and key</h2>
   <p class="sr_only">A second interactive fretboard. Follows the global key by default; unlock the 🔒 icon in its title bar to give it its own tuning, key, and highlights so you can compare two tunings or two keys side by side.</p>
   <div id="fretboard_root_2"></div>
@@ -382,10 +408,10 @@
 </details>
 
 <footer id="site_footer">
-  <h1 id="site_title"><a href="?"><span class="sr_only">Fretboard.site — Free Guitar Chord &amp; Scale Finder, Piano Keyboard, Fretboard Explorer, and Tab Editor</span><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></h1>
-  <a href="#" id="reset_section_order" style="display:none">Reset section order</a>
+  <div id="site_title"><a href="?" aria-label="Reset to Fretboard.site home view"><span class="slant" aria-hidden="true">Fret</span><span class="finder" aria-hidden="true">board</span><span class="pro" aria-hidden="true">.site</span></a></div>
+  <a href="#" id="reset_section_order" style="display:none" title="Return every section to the original top-to-bottom order.">Reset section order</a>
   <a href="#" id="footer_witherfork">Jimmy Witherfork Strikes Again</a>
-  <div id="build_num">20261001.1349</div>
+  <div id="build_num">20261001.1401</div>
 </footer>
 
 </body>

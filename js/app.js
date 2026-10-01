@@ -126,6 +126,11 @@
     _toneLoadingPromise = new Promise(function (resolve) {
       const s = document.createElement('script');
       s.src = 'https://unpkg.com/tone@14.7.77/build/Tone.js';
+      // SRI pin — if unpkg's copy of this exact version is ever
+      // tampered with, the browser refuses to execute it and the
+      // app falls back to its built-in synth instead.
+      s.integrity = 'sha384-OIQZlttB2MRaZyoi526rVHiNUGYEq4MAMxDbTkwghmmqxs556T5g5LY926GH7NYM';
+      s.crossOrigin = 'anonymous';
       s.async = true;
       s.onload  = function () { resolve(window.Tone || null); };
       s.onerror = function () { resolve(null); };
@@ -218,12 +223,6 @@
     osc.start(t0);
     osc.stop(t0 + dur + 0.05);
   }
-
-  // Chord ID is always on. The section can be visually collapsed via
-  // the <details> summary in the strip — that state lives in
-  // id_closed (see SETTINGS). Click-to-pick keeps working regardless.
-  function chordIdOn(/* sectionId */) { return true; }
-  function setChordIdOn(/* sectionId, on */) { /* no-op kept for legacy call sites */ }
 
   // Pitch-class lookup keyed by display note name (sharp form as KEYS uses).
   const NOTE_PC = {
@@ -346,7 +345,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'idc', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -442,15 +441,6 @@
     // qp_closed is read/written directly via the helpers below.
     qp_closed: {
       url:    'qpc', ls: 'sf_qp_closed',
-      parse:  function (v) { return String(v || '').split(',').filter(Boolean); },
-      lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
-      urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
-      def:    [],
-    },
-    // Chord-ID box open/closed state (per section). Same comma-list
-    // shape as qp_closed; entries are 'section_2' / 'section_4'.
-    id_closed: {
-      url:    'idc', ls: 'sf_id_closed',
       parse:  function (v) { return String(v || '').split(',').filter(Boolean); },
       lsFmt:  function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
       urlFmt: function (v) { return Array.isArray(v) && v.length ? v.join(',') : ''; },
@@ -1591,12 +1581,6 @@
           const closed = (getSetting('qp_closed') || []).filter(function (s) { return s !== id; });
           if (!det.open) closed.push(id);
           setSetting('qp_closed', closed);
-        } else if (det.classList.contains('identify_box')) {
-          const sec = det.getAttribute('data-id-section');
-          if (!sec) return;
-          const closed = (getSetting('id_closed') || []).filter(function (s) { return s !== sec; });
-          if (!det.open) closed.push(sec);
-          setSetting('id_closed', closed);
         }
       }, true);  // capture: <details> toggle events don't bubble
     };
@@ -2050,7 +2034,7 @@
     const anyHlActive = DEGREES.some(function (d) {
       return x['hl_' + d.replace('♭', 'b')] === 'y';
     });
-    h += '<table id="' + cfg.tableId + '" data-custom="off"'
+    h += '<table id="' + cfg.tableId + '"'
       +    ' data-lh="' + (lhOn ? 'y' : 'n') + '"'
       +    ' data-any-hl="' + (anyHlActive ? 'y' : 'n') + '">';
 
@@ -4348,8 +4332,11 @@
       '    • TUNING picker (top-left) — click to open a sortable / filterable',
       '      table of 176 preset tunings. The number of strings + the preset',
       '      drive what each row shows.',
-      '    • CUSTOM toggle — turns on per-string dropdowns so you can build',
-      '      your own tuning. Sticks until you turn it off.',
+      '    • CUSTOM tab (inside the tuning picker) — switch to Custom to',
+      '      build your own tuning string by string; the tuning picker',
+      '      saves it and uses it until you pick a different preset.',
+      '    • LH / RH — mirror the fretboard horizontally for left-handed',
+      '      play (the nut moves to the right, fret 12 to the left).',
       '    • L→H / H→L — flips the string order (high pitch on top vs.',
       '      bottom). Personal preference.',
       '    • DEGREE / NOTE PILLS — twelve stacked buttons across the top, one',
@@ -5057,7 +5044,7 @@
     // Without these, a form-control change (key picker, tuning
     // select, …) would strip them — re-opening collapsed sections
     // and reverting display settings on every navigation.
-    ['c', 'disp', 'inst', 'qpc', 'idc', 'sort', 'td', 'fc', 'fcp',
+    ['c', 'disp', 'inst', 'qpc', 'sort', 'td', 'fc', 'fcp',
      'ext', 'ik', 'cmp', 'ord', 'id', 'idn'].forEach(function (k) {
       const vals = _curParams.getAll(k);
       vals.forEach(function (v) { parts.push(k + '=' + encodeURIComponent(v)); });
@@ -5214,7 +5201,7 @@
       gatherAndNavigate();
     };
     document.querySelectorAll(
-      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select:not(.custom_tun_loader), .section_key_picker select[name="k"]'
+      '#options_root select, #options_root input[type="checkbox"], #fretboard_root select, .section_key_picker select[name="k"]'
     ).forEach(function (el) {
       el.addEventListener('change', handler);
     });
@@ -5472,20 +5459,31 @@
       if (_tipsObs) { _tipsObs.disconnect(); _tipsObs = null; }
       return;
     }
-    // Strip existing titles.
-    document.querySelectorAll('[title]').forEach(_stripTitle);
+    // Strip existing titles — but KEEP the Tips toggle's own title, so a
+    // user who accidentally turned Tips off still gets a hover hint
+    // telling them this checkbox is what re-enables tooltips.
+    document.querySelectorAll('[title]').forEach(function (el) {
+      if (el.id === 'site_tips_wrap' || el.id === 'site_tips_toggle') return;
+      _stripTitle(el);
+    });
     // Watch for future ones (new HTML injected by renders, attribute
     // writes to existing elements, etc.).
     if (_tipsObs) return;
+    function _isTipsToggleEl(el) {
+      return el && el.id && (el.id === 'site_tips_wrap' || el.id === 'site_tips_toggle');
+    }
     _tipsObs = new MutationObserver(function (muts) {
       for (const m of muts) {
         if (m.type === 'attributes' && m.attributeName === 'title') {
+          if (_isTipsToggleEl(m.target)) continue;
           _stripTitle(m.target);
         } else if (m.type === 'childList') {
           m.addedNodes.forEach(function (n) {
             if (!n || n.nodeType !== 1) return;
-            _stripTitle(n);
-            if (n.querySelectorAll) n.querySelectorAll('[title]').forEach(_stripTitle);
+            if (!_isTipsToggleEl(n)) _stripTitle(n);
+            if (n.querySelectorAll) n.querySelectorAll('[title]').forEach(function (q) {
+              if (!_isTipsToggleEl(q)) _stripTitle(q);
+            });
           });
         }
       }
@@ -5502,6 +5500,26 @@
     cb.addEventListener('change', function () {
       setTipsOn(cb.checked);
       applyTipsSetting();
+    });
+  }
+
+  // Mobile narrow-screen dismiss. Pre-mark the banner hidden when
+  // localStorage says the user already dismissed it in a prior visit;
+  // click handler toggles both the attribute and persistence.
+  function bindMobileHint() {
+    const hint = document.getElementById('mobile_hint');
+    if (!hint || hint._sfBound) return;
+    hint._sfBound = true;
+    try {
+      if (localStorage.getItem('sf_mobile_hint_hidden') === '1') {
+        hint.setAttribute('data-dismissed', '1');
+      }
+    } catch (_) {}
+    const btn = document.getElementById('mobile_hint_dismiss');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      hint.setAttribute('data-dismissed', '1');
+      try { localStorage.setItem('sf_mobile_hint_hidden', '1'); } catch (_) {}
     });
   }
 
@@ -5627,38 +5645,6 @@
     });
   }
 
-  // Wire the custom-tuning preset loader. When the user picks a preset
-  // from this dropdown, we map the preset's notes (low → high in the
-  // data) into s1..sN (high → low — s1 is the topmost / highest string)
-  // and navigate. The main x= tuning is left untouched, so the user can
-  // mix a different preset's notes into a different-string-count main
-  // tuning if they want.
-  function bindCustomTuningLoader() {
-    const sel = document.querySelector('.custom_tun_loader');
-    if (!sel || sel._customLoaderBound) return;
-    sel._customLoaderBound = true;
-    sel.addEventListener('change', function () {
-      const key = sel.value;
-      if (!key || !TUNINGS[key]) return;
-      const preset = TUNINGS[key];
-      const noteList = String(preset.notes).split(/\s+/).reverse(); // high → low
-      const params = new URLSearchParams(window.location.search);
-      // Drop legacy s1..s12 + the compact s= so we can rewrite cleanly.
-      params.delete('s');
-      for (let i = 1; i <= 12; i++) params.delete('s' + i);
-      const sVals = noteList.slice(0, 12).map(function (n) { return urlNote(n); });
-      while (sVals.length && !sVals[sVals.length - 1]) sVals.pop();
-      if (sVals.length) {
-        // Same encoding as ?x= — note tokens with no separator unless
-        // there's an internal gap (which the loader never produces).
-        const _hasGap = sVals.some(function (v) { return !v; });
-        params.set('s', sVals.join(_hasGap ? '.' : ''));
-      }
-      const qs = params.toString();
-      navigateTo(qs ? '?' + qs : '?');
-    });
-  }
-
   // Intercept clicks on any same-page link so we update via pushState
   // instead of triggering a full page navigation. Catches both '?foo=bar'
   // hrefs AND bare-pathname hrefs (which fire when, say, deselecting the last
@@ -5693,7 +5679,7 @@
         }
       }
       // Site-wide Clear: navigate to a truly bare URL — skip the
-      // PRESERVE merge so c=, disp, inst, qpc, idc, sort, ord, etc.
+      // PRESERVE merge so c=, disp, inst, qpc, sort, ord, etc.
       // all get wiped from the URL. localStorage is left intact so
       // the user's section open/close preferences (and other per-
       // browser settings) survive.
@@ -5757,7 +5743,7 @@
       // folded in fresh at click time — NOT baked into the href at
       // render time, because params like c= change every time the
       // user opens/closes a section.
-      const PRESERVE = ['c', 'disp', 'inst', 'qpc', 'idc',
+      const PRESERVE = ['c', 'disp', 'inst', 'qpc',
                         'prog', 'pmode', 'tempo',
                         'sort', 'td', 'fc', 'fcp', 'ext', 'ik', 'cmp', 'ul'];
       const target = new URLSearchParams((url.search || '').replace(/^\?/, ''));
@@ -6801,8 +6787,13 @@
     const PICK_CAP = 6;
     if (hlArr.length < 3) {
       // Placeholder — keeps the strip's vertical space reserved so the
-      // page doesn't jump when chord ID data starts arriving.
+      // page doesn't jump when chord ID data starts arriving. Shown as
+      // a hint so first-time users know what the empty strip is for.
       html = '<div class="identify_strip identify_placeholder">'
+           +   '<span class="identify_hint">'
+           +     'Click 3+ notes on the ' + (sectionId.indexOf('kb') >= 0 || sectionId === 'section_4' || sectionId === 'section_14' ? 'keyboard' : 'fretboard')
+           +     ' to see which chords those notes form.'
+           +   '</span>'
            + '</div>';
     } else if (hlArr.length > PICK_CAP) {
       html = '<div class="identify_strip identify_over">'
@@ -6874,7 +6865,9 @@
         const rest  = arr.slice(CHIP_CAP).join('');
         const more  = arr.length - CHIP_CAP;
         return first
-             + '<a href="#" class="identify_chips_more" data-more="1">+' + more + ' more</a>'
+             + '<a href="#" class="identify_chips_more" data-more="1"'
+             +   ' title="Reveal ' + more + ' more chord matches that were trimmed to keep this strip to one row.">+'
+             +   more + ' more</a>'
              + '<span class="identify_chips_extras" hidden>' + rest + '</span>';
       }
 
@@ -6882,7 +6875,10 @@
       const extrasPills = ['1', '2', 'All'].map(function (lbl) {
         const v = lbl === 'All' ? Infinity : +lbl;
         const on = (extras === v) ? ' identify_pill_on' : '';
-        return '<a class="identify_pill' + on + '" href="#" data-extras="' + lbl + '">+' + lbl + '</a>';
+        const t = (lbl === 'All')
+                ? 'In the "expand to" suggestions, allow any number of extra notes beyond the ones you picked.'
+                : 'In the "expand to" suggestions, allow at most ' + lbl + ' extra note' + (lbl === '1' ? '' : 's') + ' beyond the ones you picked.';
+        return '<a class="identify_pill' + on + '" href="#" data-extras="' + lbl + '" title="' + escAttr(t) + '">+' + lbl + '</a>';
       }).join('');
 
       const inKeyPill = '<a class="identify_pill identify_pill_inkey'
@@ -7811,11 +7807,10 @@
   // ---------- per-state render ----------
   function applyState() {
     // Suppress transient <details> toggle events fired by Chrome as
-    // the parser swaps qp_box / identify_box via innerHTML below.
-    // Without this, the toggle delegate would persist them into
-    // qp_closed / id_closed (writing ?qpc=… / ?idc=… into the URL via
-    // setSetting's history.replaceState) even though no user clicked
-    // a summary.
+    // the parser swaps qp_box via innerHTML below. Without this, the
+    // toggle delegate would persist them into qp_closed (writing
+    // ?qpc=… into the URL via setSetting's history.replaceState)
+    // even though no user clicked a summary.
     window._suppressDetailsToggle = true;
     const x = parseState();
     window.SF_X = x;
@@ -7870,7 +7865,6 @@
     renderSummaryStatus(x);  // compact key/tuning text in each title bar
     paintSectionLocks(x);    // 🔒 / 🔓 button state + data-unlocked on <details>
     bindAutoSubmit();        // so the change-listener catches them
-    bindCustomTuningLoader();// custom-tuning preset loader (bottom-left cell)
     bindCompactToggles();    // chord/scale grid compact-mode checkboxes
     bindGridRowClicks();     // whole-row click → triggers row's chord/scale link
     bindNotePick();          // click fret cells / keyboard keys to pick notes
@@ -7984,6 +7978,7 @@
     bindEarTraining();
     bindTipsToggle();
     applyTipsSetting();
+    bindMobileHint();
     window.addEventListener('popstate', applyState);
   }
 
