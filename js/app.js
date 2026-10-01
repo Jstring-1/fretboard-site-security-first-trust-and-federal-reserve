@@ -1058,6 +1058,23 @@
   function fbTargets(overrides) {
     return Object.assign({}, FB_TARGETS_DEFAULT, overrides || {});
   }
+  // Second-instance fretboard — Fretboard #2 (section_13). Suffixes
+  // every container ID so getElementById disambiguates cleanly; cell
+  // IDs inside the <table> intentionally stay the same (duplicate
+  // but CSS matches both and no JS looks them up by id).
+  const FB_TARGETS_2 = fbTargets({
+    instanceId:    '_2',
+    rootId:        'fretboard_root_2',
+    optionsId:     'options_root_2',
+    identifyId:    'fb_identify_root_2',
+    shiftId:       'fb_shift_root_2',
+    belowId:       'fb_below_root_2',
+    tableId:       'fretboard_2',
+    tuningsDropId: 'tunings_drop_2',
+    tunPickerId:   'tun_picker_2',
+    tunPickerBtnId:'tun_picker_btn_2',
+    tunPopId:      'tun_pop_2'
+  });
 
   function renderOptions(x, cfg) {
     cfg = cfg || FB_TARGETS_DEFAULT;
@@ -1173,8 +1190,9 @@
     return out;
   }
 
-  function renderTuningPicker(x) {
-    const pop = document.getElementById('tun_pop');
+  function renderTuningPicker(x, cfg) {
+    cfg = cfg || FB_TARGETS_DEFAULT;
+    const pop = document.getElementById(cfg.tunPopId);
     if (!pop) return;
     const rows = _tunPickerFiltered(_tunPickerSorted(_tunPickerRows(x)));
     const cols = [
@@ -1235,9 +1253,10 @@
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
-  function bindTuningPicker(x) {
-    const btn = document.getElementById('tun_picker_btn');
-    const pop = document.getElementById('tun_pop');
+  function bindTuningPicker(x, cfg) {
+    cfg = cfg || FB_TARGETS_DEFAULT;
+    const btn = document.getElementById(cfg.tunPickerBtnId);
+    const pop = document.getElementById(cfg.tunPopId);
     if (!btn || !pop) return;
     // Seed the popover's quick-filter from URL state on each render so
     // the persisted ?fcp=… choice stays selected across reloads.
@@ -1246,7 +1265,7 @@
     function open() {
       pop.hidden = false;
       btn.setAttribute('aria-expanded', 'true');
-      renderTuningPicker(x);
+      renderTuningPicker(x, cfg);
       // focus the filter input for instant typing
       setTimeout(function () {
         const f = pop.querySelector('.tun_pop_filter');
@@ -1290,7 +1309,7 @@
         _tunPickerFilter = e.target.value;
         // Preserve focus + caret across re-render
         const at = e.target.selectionStart;
-        renderTuningPicker(x);
+        renderTuningPicker(x, cfg);
         const f = pop.querySelector('.tun_pop_filter');
         if (f) { f.focus(); try { f.setSelectionRange(at, at); } catch (_) {} }
       }
@@ -1306,7 +1325,7 @@
         if (want) params.set('fcp', want); else params.delete('fcp');
         const qs = canonicalQS(params);
         history.replaceState({}, '', qs ? '?' + qs : window.location.pathname);
-        renderTuningPicker(x);
+        renderTuningPicker(x, cfg);
         return;
       }
       const th = e.target.closest && e.target.closest('.tun_pop_th');
@@ -1317,7 +1336,7 @@
         } else {
           _tunPickerSort = { col: col, dir: col === 'strs' ? 'asc' : 'asc' };
         }
-        renderTuningPicker(x);
+        renderTuningPicker(x, cfg);
         return;
       }
       const row = e.target.closest && e.target.closest('.tun_pop_row');
@@ -1325,10 +1344,23 @@
         const key = row.getAttribute('data-key');
         if (key) {
           close();
-          // Apply the new tuning by setting the hidden select + dispatching
-          // change → bindAutoSubmit → gatherAndNavigate, which preserves every
-          // other URL param.
-          const sel = document.querySelector('.tun_hidden_select');
+          // If the picker lives inside an unlocked section, route the
+          // tuning change through mergeSectionOverrideUrl so it writes
+          // s<n>_x instead of the global x. This is what makes
+          // Fretboard #2 able to carry its own tuning.
+          const sectionEl = pop.closest && pop.closest('details.section, details.collapsible');
+          if (sectionEl && sectionEl.getAttribute('data-unlocked') === 'true') {
+            const fakeLinkSearch = '?x=' + encodeURIComponent(String(key));
+            const merged = mergeSectionOverrideUrl(sectionEl.id, fakeLinkSearch);
+            if (merged != null) {
+              navigateTo(merged);
+              return;
+            }
+          }
+          // Otherwise fall back to the global path: set the hidden
+          // select + dispatch change → gatherAndNavigate.
+          const sel = (pop.parentNode && pop.parentNode.querySelector('.tun_hidden_select'))
+                      || document.querySelector('.tun_hidden_select');
           if (sel) {
             // Make sure the option exists before setting value (single-option select)
             const opt = document.createElement('option');
@@ -1773,6 +1805,19 @@
   function kbTargets(overrides) {
     return Object.assign({}, KB_TARGETS_DEFAULT, overrides || {});
   }
+  // Second-instance keyboard — Keyboard #2 (section_14). Second
+  // instance uses its own scope selector so applyKeyboardColors /
+  // Labels only touch its cells.
+  const KB_TARGETS_2 = kbTargets({
+    instanceId:    '_2',
+    sectionId:     'section_14',
+    tableId:       'keyboard_2',
+    keyRootId:     'keyboard_key_root_2',
+    identifyId:    'kb_identify_root_2',
+    shiftId:       'kb_shift_root_2',
+    belowId:       'kb_below_root_2',
+    scopeSelector: '#section_14 .ritz .waffle'
+  });
 
   // Render the highlight pills + chord/scale chips below the keyboard.
   // Instance-aware via cfg so a future Keyboard #2 renders into its own
@@ -6181,10 +6226,15 @@
         }
       }
     }
-    const fb = document.getElementById('fretboard');
-    if (fb && !fb._pickBound) {
-      fb._pickBound = true;
-      fb.addEventListener('click', handler);
+    // Delegate at document.body so BOTH fretboard instances (and both
+    // keyboards) use the same handler — getElementById would only
+    // bind to the first #fretboard.
+    if (!document.body._notePickBound) {
+      document.body._notePickBound = true;
+      document.body.addEventListener('click', function (e) {
+        if (!e.target.closest) return;
+        if (e.target.closest('#fretboard, #fretboard_2, .ritz .waffle')) handler(e);
+      });
     }
     document.querySelectorAll('.ritz .waffle [data-note]').forEach(function (el) {
       // Visual cue that keys are clickable
@@ -7424,12 +7474,19 @@
     const xCG = stateForSection('section_3', x);
     const xSG = stateForSection('section_6', x);
     const xKS = stateForSection('section_9', x);
+    const xFB2 = stateForSection('section_13', x);  // Fretboard #2
+    const xKB2 = stateForSection('section_14', x);  // Keyboard #2
     renderFretboard(xFB, FB_TARGETS_DEFAULT);   // creates #options_root
     // Form (tuning picker + degree/note pill rows) lives in the FRETBOARD
     // section, so it must reflect that section's effective state. In
     // linked mode xFB === x, so this is identical to passing the global
     // x; in unlinked mode it ensures the pills paint from s2_hl etc.
     renderOptions(xFB, FB_TARGETS_DEFAULT);
+    // Second fretboard — only renders when its DOM root is present.
+    if (document.getElementById('fretboard_root_2')) {
+      renderFretboard(xFB2, FB_TARGETS_2);
+      renderOptions(xFB2, FB_TARGETS_2);
+    }
     renderChordGrid(xCG);
     renderScaleGrid(xSG);
     renderDiatonicChart(xCG);  // Chord Builder: 7 diatonic chords (T/S/D)
@@ -7442,7 +7499,16 @@
     applyKeyboardColors(xKB, KB_TARGETS_DEFAULT);
     applyKeyboardLabels(xKB, KB_TARGETS_DEFAULT);
     renderKeyboardBelow(xKB, KB_TARGETS_DEFAULT);
-    bindTuningPicker(x);
+    // Second keyboard — only when its DOM root is present.
+    if (document.getElementById('section_14')) {
+      applyKeyboardColors(xKB2, KB_TARGETS_2);
+      applyKeyboardLabels(xKB2, KB_TARGETS_2);
+      renderKeyboardBelow(xKB2, KB_TARGETS_2);
+    }
+    bindTuningPicker(xFB, FB_TARGETS_DEFAULT);
+    if (document.getElementById('tun_picker_btn_2')) {
+      bindTuningPicker(xFB2, FB_TARGETS_2);
+    }
     applyCollapseFromUrl();
 
     renderSummaryExtras(x);  // populate summary dropdowns BEFORE binding
@@ -7461,9 +7527,31 @@
       // so its degree labels reflect the new key.
       window.SF_TabCapture.refresh();
     }
-    renderShiftBars(x);             // ◀ / ▶ semitone shift bar (+ All/None) below the fretboard
+    // Shift bars — fretboard, keyboard, and (when present) both second instances.
+    const shiftInstances = [
+      { containerId: 'fb_shift_root', sectionId: 'section_2', includeAllNone: true },
+      { containerId: 'kb_shift_root', sectionId: 'section_4', includeAllNone: true }
+    ];
+    if (document.getElementById('fb_shift_root_2')) {
+      shiftInstances.push({ containerId: 'fb_shift_root_2', sectionId: 'section_13', includeAllNone: true });
+    }
+    if (document.getElementById('kb_shift_root_2')) {
+      shiftInstances.push({ containerId: 'kb_shift_root_2', sectionId: 'section_14', includeAllNone: true });
+    }
+    renderShiftBars(x, shiftInstances);
     renderFretboardBelow(xFB, FB_TARGETS_DEFAULT); // pill row + chord/scale quick picks below the shift bar
-    renderIdentifyStrips(xFB, xKB); // chord-identify strip above the fretboard (moved from below)
+    if (document.getElementById('fb_below_root_2')) {
+      renderFretboardBelow(xFB2, FB_TARGETS_2);
+    }
+    // Chord-identify strips — primary pair + any second-instance extras.
+    const idExtras = [];
+    if (document.getElementById('fb_identify_root_2')) {
+      idExtras.push({ containerId: 'fb_identify_root_2', sectionId: 'section_13', state: xFB2 });
+    }
+    if (document.getElementById('kb_identify_root_2')) {
+      idExtras.push({ containerId: 'kb_identify_root_2', sectionId: 'section_14', state: xKB2 });
+    }
+    renderIdentifyStrips(xFB, xKB, idExtras);
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time

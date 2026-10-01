@@ -2833,3 +2833,34 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 @media print {
   #section_12                               { display: none !important;                                                }
 }
+
+/* ---------- Second Fretboard instance (section_13) ----------
+   Alias the key fretboard container styles so the _2-suffixed IDs
+   emitted by FB_TARGETS_2 get the same visual treatment as the
+   originals. Table-cell IDs (f_cyo, f0..f12, degree-coloured _1_
+   etc.) are intentionally duplicated at the DOM level and already
+   matched by the existing rules — no new rules needed for those. */
+#fretboard_2                                { background-color: #555555; border: 0 !important; border-spacing: 1px;    }
+#fretboard_2 td                             {                                                                           }
+#fretboard_root_2                           { position: relative;                                                       }
+#fretboard_2[data-custom="off"] select[name^="s"]
+                                            { opacity: 0.35; pointer-events: none; filter: grayscale(0.5);              }
+#options_root_2                             {                                                                           }
+#tunings_drop_2 .opt_row                    { margin: 0 0 6px 0;                                                        }
+/* Chord ID strip for the second fretboard mirrors the first instance:
+   fixed 28px height, naked flex row sitting snug above the neck. */
+#fb_identify_root_2                         { margin: 0; padding: 0;                                                    }
+#fb_identify_root_2 .identify_strip         { height: 28px; box-sizing: border-box; overflow: hidden;
+                                              background: transparent; border-radius: 0;
+                                              padding: 2px 12px; margin: 0;
+                                              font-size: 0.86em; line-height: 1.4;
+                                              display: flex; flex-wrap: nowrap;
+                                              align-items: center; gap: 4px;
+                                              white-space: nowrap; overflow: hidden;                                    }
+#fb_below_root_2                            { display: flex; flex-direction: column;
+                                              gap: 5px; padding: 10px 18px 14px;                                        }
+#tun_picker_2                               { position: relative;                                                       }
+#tun_pop_2                                  { position: absolute; z-index: 50;                                           }
+@media print {
+  #section_13                               { display: none !important;                                                }
+}
