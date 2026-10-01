@@ -97,13 +97,15 @@ window.SF_DATA = {
     ],
     "url_check": [
         "y",
-        "z"
+        "z",
+        "lh"
     ],
     "def_x": {
         "x": "EADGBE",
         "k": "E",
         "y": "n",
         "z": "n",
+        "lh": "n",
         "s1": "E",
         "s2": "B",
         "s3": "G♯",
