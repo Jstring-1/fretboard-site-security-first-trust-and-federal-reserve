@@ -5343,6 +5343,7 @@
     });
   }
 
+  let _applyAllBound = false;
   function bindApplyAllToggle() {
     paintApplyAllToggle();          // always repaint to reflect URL state
     if (_applyAllBound) return;
