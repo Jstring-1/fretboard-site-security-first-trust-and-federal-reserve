@@ -7520,16 +7520,6 @@
     }
     renderIdentifyStrips(states.section_2, states.section_4, idExtras);
 
-    // Sweep stale chord-chip stashes: with no chord engaged (no idn in
-    // URL), there's nothing to revert to, so an old stash would only
-    // leak forward into the user's NEXT chord-chip click as a bogus
-    // revert target. Idn is global, so one check serves every section.
-    if (!x._id_active) {
-      SECTIONS.forEach(function (sec) {
-        if (sec.kind === 'fb' || sec.kind === 'kb') _setChordStash(sec.id, null);
-      });
-    }
-
     applyPrintColors();
 
     // Sortable tables get rebuilt every render — bind a fresh instance each time
