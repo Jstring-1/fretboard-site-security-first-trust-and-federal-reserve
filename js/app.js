@@ -364,11 +364,15 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'pn', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'sn', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'n', 'hl', 'pk', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
+  // Params whose absence already means this value — never worth spending
+  // URL characters on.
+  const URL_DEFAULTS = { x: DEF_X.x, y: 'n', z: 'n', lh: 'n' };
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
     URL_PARAM_ORDER.forEach(function (k) {
+      if (Object.prototype.hasOwnProperty.call(URL_DEFAULTS, k) && params.get(k) === URL_DEFAULTS[k]) return;
       if (params.has(k)) {
         params.getAll(k).forEach(function (v) { out.append(k, v); });
       }
@@ -433,17 +437,6 @@
       lsFmt:  function (v) { return v ? '1' : ''; },
       urlFmt: function (v) { return v ? '1' : ''; },
       def:    false,
-    },
-    // Single-note pick mode (default ON): clicking a fret / key lights
-    // only that exact cell (tracked in the pn= URL param) instead of every
-    // cell sharing its pitch class. Chord ID still reads the pitch classes
-    // from hl. Turning it off restores the classic click-a-note-class mode.
-    single_note: {
-      url:    'sn',  ls: 'sf_single_note',
-      parse:  function (v) { return v !== '0' && v !== 'off'; },
-      lsFmt:  function (v) { return v ? '' : 'off'; },
-      urlFmt: function (v) { return v ? '' : '0'; },
-      def:    true,
     },
     // Note / degree / both display mode toggle in the sticky header.
     // Drives label spans across fretboard, grids, progression bars,
@@ -562,24 +555,147 @@
     return params.getAll('hl').flatMap(_tokenizeHl);
   }
 
-  // Single-note pick tokens: "<string>-<fret>" (fretboard) or "m<midi>"
-  // (keyboard), joined by '.' in the pn= param.
-  function parsePnList(raw) {
-    return String(raw || '').split(/[.,]/).filter(function (t) {
-      return /^\d{1,2}-\d{1,2}$/.test(t) || /^m\d{1,3}$/.test(t);
-    });
+  // ---- Picks: the highlight state --------------------------------------
+  // Highlights are ABSOLUTE picks, stored in the n= URL param as dot-
+  // separated tokens:
+  //   C  Cs  D …   a pitch class — lights every position / octave ("ALL")
+  //   a3           a fretboard cell: string 1 (a) fret 3; fret 0 = open
+  //   60           a piano key by MIDI number (21–108)
+  // Because picks are absolute, changing the key only relabels the degrees
+  // (x.hl is DERIVED from the picks at parse time); the lit notes stay put.
+  // Legacy hl= (degrees relative to k) is still accepted and converted.
+  const PC_TOK = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
+  const _LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const _FLAT2SHARP = { 'A♭': 'G♯', 'B♭': 'A♯', 'C♭': 'B', 'D♭': 'C♯', 'E♭': 'D♯', 'F♭': 'E', 'G♭': 'F♯' };
+  function emptyPicks() { return { pcs: new Set(), cells: new Set(), keys: new Set() }; }
+  function clonePicks(p) {
+    p = p || emptyPicks();
+    return { pcs: new Set(p.pcs), cells: new Set(p.cells), keys: new Set(p.keys) };
   }
-  function singleNoteOn() { return !!getSetting('single_note'); }
-  // The exact cells a board should light, or null when the board should
-  // fall back to pitch-class highlighting (mode off, or no picks of this
-  // board's kind). kind: 'fb' (fretboard) | 'kb' (keyboard).
-  function boardPicks(x, kind) {
-    if (!x || !x._pn || !x._pn.size || !singleNoteOn()) return null;
-    const out = new Set();
-    x._pn.forEach(function (t) {
-      if ((t.charAt(0) === 'm') === (kind === 'kb')) out.add(t);
+  function cellTok(a, b) { return String.fromCharCode(96 + a) + b; }
+  function parsePicks(raw) {
+    const out = emptyPicks();
+    String(raw || '').split(/[.,]/).forEach(function (t) {
+      let m;
+      if ((m = t.match(/^([A-G])([sb#♯♭]?)$/))) {
+        const acc = m[2];
+        const d = (acc === 's' || acc === '#' || acc === '♯') ? 1 : (acc ? -1 : 0);
+        out.pcs.add((_LETTER_PC[m[1]] + d + 12) % 12);
+      } else if ((m = t.match(/^([a-l])(\d{1,2})$/)) && +m[2] <= 12) {
+        out.cells.add(t);
+      } else if (/^\d{2,3}$/.test(t) && +t >= 21 && +t <= 108) {
+        out.keys.add(+t);
+      }
     });
-    return out.size ? out : null;
+    return out;
+  }
+  function serializePicks(p) {
+    const pcs = Array.from(p.pcs).sort(function (a, b) { return a - b; })
+                     .map(function (pc) { return PC_TOK[pc]; });
+    const cells = Array.from(p.cells).sort(function (a, b) {
+      return (a.charCodeAt(0) - b.charCodeAt(0)) || (parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10));
+    });
+    const keys = Array.from(p.keys).sort(function (a, b) { return a - b; }).map(String);
+    return pcs.concat(cells, keys).join('.');
+  }
+  // Pitch class (0–11, C-based) of a fretboard cell token under state x's
+  // tuning, or null when the string doesn't exist in that tuning.
+  function cellPc(tok, x) {
+    const a = tok.charCodeAt(0) - 96;
+    const b = parseInt(tok.slice(1), 10);
+    if (a < 1 || a > (+x.strs || 6)) return null;
+    const open = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim().toUpperCase();
+    return NOTE_PC[open] == null ? null : (NOTE_PC[open] + b) % 12;
+  }
+  // Every pitch class touched by a pick set (pitch-class picks + the notes
+  // under cell picks + the notes of key picks).
+  function picksPcs(p, x) {
+    const s = new Set(p.pcs);
+    p.cells.forEach(function (t) { const pc = cellPc(t, x); if (pc != null) s.add(pc); });
+    p.keys.forEach(function (m) { s.add(m % 12); });
+    return s;
+  }
+  // Remove every pick that lands on pitch class pc (token, cells, keys).
+  function dropPicksAtPc(p, pc, x) {
+    p.pcs.delete(pc);
+    Array.from(p.cells).forEach(function (t) { if (cellPc(t, x) === pc) p.cells.delete(t); });
+    Array.from(p.keys).forEach(function (m) { if (m % 12 === pc) p.keys.delete(m); });
+  }
+  function keyFromParam(v) {
+    const f = bToFlat(sharpToHash(String(v || '')));
+    return _FLAT2SHARP[f] || f;
+  }
+  // Degree list ("1","b3",…) relative to `key` → pitch classes.
+  function degsToPcs(degs, key) {
+    const t = NOTE_PC[key];
+    if (t == null) return [];
+    return degs.map(function (d) { return DEGREES.indexOf(bToFlat(d)); })
+               .filter(function (i) { return i >= 0; })
+               .map(function (i) { return (t + i) % 12; });
+  }
+  // Convert a legacy / link-style hl= in `p` into the absolute n= form, using
+  // the link's own k (or fallbackKey). Mutates p. keepEmpty leaves an explicit
+  // n= when the result is empty (a section merge needs "cleared" spelled out).
+  function absolutizeHl(p, fallbackKey, keepEmpty) {
+    if (!p.has('hl')) return p;
+    const key = p.has('k') ? keyFromParam(p.get('k')) : (fallbackKey || DEF_X.k);
+    const P = emptyPicks();
+    degsToPcs(readHlParam(p), key).forEach(function (pc) { P.pcs.add(pc); });
+    p.delete('hl');
+    p.delete('pk');
+    const s = serializePicks(P);
+    if (s || keepEmpty) p.set('n', s); else p.delete('n');
+    return p;
+  }
+  // One-time rewrite of an old-style address bar (hl= / s<n>_hl= degrees,
+  // plus retired params) into the canonical absolute form, so bookmarks and
+  // previously shared links keep working and re-share in the short form.
+  function upgradeLegacyUrl() {
+    const p = new URLSearchParams(window.location.search);
+    let changed = false;
+    if (p.has('hl')) { absolutizeHl(p); changed = true; }
+    Array.from(p.keys()).forEach(function (k) {
+      const m = k.match(/^s(\d+)_hl$/);
+      if (!m) return;
+      const tmp = new URLSearchParams();
+      tmp.set('hl', p.get(k));
+      const kk = p.get('s' + m[1] + '_k') || p.get('k');
+      if (kk) tmp.set('k', kk);
+      absolutizeHl(tmp, null, true);
+      p.set('s' + m[1] + '_n', tmp.get('n'));
+      p.delete(k);
+      p.delete('s' + m[1] + '_pk');
+      changed = true;
+    });
+    ['pk', 'pn', 'sn', 'u'].forEach(function (k) {
+      if (p.has(k)) { p.delete(k); changed = true; }
+    });
+    if (!changed) return;
+    const qs = canonicalQS(p);
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+  }
+  // Current-URL link whose picks are replaced by P (explicit empty n= when
+  // P is empty so a section merge sees "cleared"; navigateTo drops it for
+  // global links).
+  function nHref(P) {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('hl');
+    p.delete('pk');
+    p.delete('idn');
+    p.set('n', serializePicks(P));
+    return '?' + canonicalQS(p);
+  }
+  // ALL mode (clicking lights every position of a note) is a per-browser
+  // preference; the picks it produces are what get shared, not the mode.
+  function allNotesOn() {
+    try { return localStorage.getItem('sf_all_notes') === '1'; } catch (_) { return false; }
+  }
+  function setAllNotes(on) {
+    try {
+      if (on) localStorage.setItem('sf_all_notes', '1');
+      else    localStorage.removeItem('sf_all_notes');
+    } catch (_) {}
+    applyState();
   }
 
   // Pick-set tokenizer. Each note is `[A-G]` followed by an optional
@@ -746,11 +862,6 @@
       x.pk = validPk.join(' ');
     }
 
-    // Single-note picks (pn=): exact fretboard cells ("3-5" = string 3,
-    // fret 5; fret 0 = open string) and piano keys ("m60" = MIDI 60),
-    // dot-separated. Invalid tokens are dropped.
-    x._pn = new Set(parsePnList(params.get('pn')));
-
     // Apply defaults
     if (def === 'y' || !hasParams) {
       for (const k in DEF_X) x[k] = DEF_X[k];
@@ -908,11 +1019,30 @@
     const tempoRaw = parseInt(params.get('tempo') || '', 10);
     x._tempo = (tempoRaw >= 40 && tempoRaw <= 240) ? tempoRaw : 100;
 
+    // Highlight picks → derived degree set. n= is the canonical absolute
+    // form; a present hl= is the legacy / link form (degrees relative to
+    // k, meaning "every position") and wins when both appear.
+    let _picks;
+    if (params.has('hl')) {
+      _picks = emptyPicks();
+      degsToPcs(readHlParam(params), x.k).forEach(function (pc) { _picks.pcs.add(pc); });
+    } else {
+      _picks = parsePicks(params.get('n'));
+    }
+    x._picks = _picks;
+    x._picksRaw = serializePicks(_picks);
+    const _pcsAll = picksPcs(_picks, x);
+    const _tonic = NOTE_PC[x.k];
+    const _hlDegs = (_tonic == null) ? [] : DEGREES.filter(function (_d, i) {
+      return _pcsAll.has((_tonic + i) % 12);
+    });
+    x.hl = _hlDegs.length ? _hlDegs.join(' ') : (hasParams ? 'nothing' : '');
+
     // hl_arr → flags
-    if (x.hl === undefined || x.hl === null) x.hl = '';
     const hlArr = String(x.hl).split(' ').filter(v => v !== '' && v !== 'nothing');
-    // Compact single-key form for emitted URLs (?hl=1,b3,5).
-    x.url_hl = hlArr.length ? 'hl=' + hlArr.map(flatToB).join('') + '&' : '';
+    // Highlights are no longer carried in emitted URLs as degrees (they
+    // live in n=), so link builders that append url_hl add nothing.
+    x.url_hl = '';
     // Legacy multi-key form, kept ONLY for matching against SCALES / CHORDS /
     // GRID values in data.js (which are still expressed as &hl=…&hl=…). Not
     // emitted into any URL. If we later regen data.js with the compact form,
@@ -1050,12 +1180,11 @@
       // hl / pk / s are multi/special — preserve their relative order
       out.append(k, v);
     });
-    // Exact-cell picks (pn) are tied to the highlight set they produced:
-    // a section with its own hl but no pn of its own must not inherit the
-    // global pn, or it would restrict itself to cells from another view.
-    if (sectionOverrides.hl !== undefined && sectionOverrides.pn === undefined) {
-      out.delete('pn');
-    }
+    // A section override of either highlight form (n= or legacy hl=) must
+    // fully replace the global one — hl= beats n= in parseState, so a
+    // lingering global hl= would otherwise shadow the section's n=.
+    if (sectionOverrides.n !== undefined && sectionOverrides.hl === undefined) out.delete('hl');
+    if (sectionOverrides.hl !== undefined && sectionOverrides.n === undefined) out.delete('n');
     // Apply this section's overrides on top
     for (const [field, raw] of Object.entries(sectionOverrides)) {
       // Multi-value fields go comma-separated when prefixed; expand
@@ -1834,6 +1963,20 @@
     return readPkParam(params);
   }
 
+  // Link that flips ONE degree (every position of that note) in x's picks.
+  // Turning it off also drops exact fret / key picks on that note; every
+  // other pick — including exact ones elsewhere — is left untouched.
+  function toggleDegHref(x, ab) {
+    const P = clonePicks(x._picks);
+    const t = NOTE_PC[x.k];
+    const i = DEGREES.indexOf(bToFlat(ab));
+    if (t != null && i >= 0) {
+      const pc = (t + i) % 12;
+      if (x['hl_' + ab] === 'y') dropPicksAtPc(P, pc, x); else P.pcs.add(pc);
+    }
+    return nHref(P);
+  }
+
   function highlightPillsLinkHtml(x, rowCls) {
     let h = '<div class="opt_row opt_row_highlights ' + (rowCls || '') + '">';
     // Use the section's EFFECTIVE highlight set (`x.hl`) — not the
@@ -1853,7 +1996,7 @@
       } else {
         next = cur.filter(function (d) { return d !== ab; }).concat([ab]);
       }
-      const href = buildHlHref(next);
+      const href = toggleDegHref(x, ab);
       const cls = 'hl_pill' + (on ? ' hl_pill_on' : '');
       let style = '';
       if (on) {
@@ -1890,7 +2033,7 @@
       let next;
       if (on) next = cur.filter(function (d) { return d !== ab; });
       else    next = cur.filter(function (d) { return d !== ab; }).concat([ab]);
-      const href = buildHlHref(next);
+      const href = toggleDegHref(x, ab);
       const cls = 'combo_pill' + (on ? ' combo_pill_on' : '');
       let style = '';
       if (on) {
@@ -1954,7 +2097,7 @@
       } else {
         next = cur;
       }
-      const href = buildHlHref(next);
+      const href = ab ? toggleDegHref(x, ab) : nHref(x._picks || emptyPicks());
       const cls = 'note_pill' + (on ? ' note_pill_on' : '');
       // Inline styling on the on-state mirrors the degree's pill color so
       // the two rows agree visually when the same item is engaged.
@@ -2136,9 +2279,9 @@
     const lhOn = (x.lh === 'y');
     // data-any-hl flips to "y" whenever any degree is highlighted so
     // CSS can fade non-chosen cells and make the picks stand out.
-    const anyHlActive = DEGREES.some(function (d) {
-      return x['hl_' + d.replace('♭', 'b')] === 'y';
-    });
+    // The strip's own picks (pitch-class + cell picks); key-only picks
+    // highlight the keyboard, not the fretboard, so they don't fade it.
+    const anyHlActive = ((x._picks ? x._picks.pcs.size + x._picks.cells.size : 0) > 0);
     h += '<table id="' + cfg.tableId + '"'
       +    ' data-lh="' + (lhOn ? 'y' : 'n') + '"'
       +    ' data-any-hl="' + (anyHlActive ? 'y' : 'n') + '">';
@@ -2214,7 +2357,7 @@
       return out;
     })();
 
-    const fbPicks = boardPicks(x, 'fb');
+    const P = x._picks || emptyPicks();
 
     // String-direction toggle (y) flips the row order on the fretboard. y=y
     // walks the strings high-index-first; y=n walks 1..N. The tuning data
@@ -2224,9 +2367,9 @@
       const strizzle = str[a];
       const c = KEYS.indexOf(strizzle.toUpperCase());
       let nutDeg = findKey(x._notedegrees, strizzle.toUpperCase());
-      let nutBg = (x['hl_' + flatToB(nutDeg)] === 'y' && (!fbPicks || fbPicks.has(a + '-0')))
-                ? flatToB(nutDeg) : 'no_highlight';
       const nutNote = strizzle.toUpperCase();
+      let nutBg = (nutDeg && (P.pcs.has(notePc(nutNote)) || P.cells.has(cellTok(a, 0))))
+                ? flatToB(nutDeg) : 'no_highlight';
       // pk yellow-ring picks have been retired — clicks now toggle hl,
       // chord ID reads from hl, and the note_pk class is no longer applied.
       const nutPkCls = '';
@@ -2236,17 +2379,17 @@
       // Custom is retired; the cell now just labels the string number.
       h += '<td class="fb_string_num" id="f_cyo_dark">' + a + '</td>';
       const _openMidi = _midiByStr[a];
-      h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" data-cell="' + a + '-0" data-midi="' + _openMidi + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
+      h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" data-cell="' + cellTok(a, 0) + '" data-midi="' + _openMidi + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
 
       for (let b = 1; b <= 12; b++) {
         const cb = c + b;
         const noteAtFret = KEYS[cb];
         let degAtFret = findKey(x._notedegrees, noteAtFret);
-        let fbId = (x['hl_' + flatToB(degAtFret)] === 'y' && (!fbPicks || fbPicks.has(a + '-' + b)))
+        let fbId = (degAtFret && (P.pcs.has(notePc(noteAtFret)) || P.cells.has(cellTok(a, b))))
                  ? flatToB(degAtFret) : 'no_highlight';
         const cls = (b === 1) ? 'nut1' : 'fb_td';
         const cellPkCls = '';
-        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-cell="' + a + '-' + b + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">'
+        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-cell="' + cellTok(a, b) + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">'
            + '<span class="disp_note">' + escHtml(noteAtFret) + '</span>'
            + '<span class="disp_deg">(' + escHtml(degAtFret || '') + ')</span>'
            + '</td>';
@@ -4643,6 +4786,52 @@
     });
   }
 
+  // Share: copy a link to exactly what's on screen. The address bar is
+  // already the full state (key, tuning, picks, per-board overrides), but
+  // display preferences left at their default are omitted from it, and a
+  // receiver's own saved preferences would then fill them in. Spell every
+  // view-affecting preference out so the link reproduces this view as-is.
+  function buildShareUrl() {
+    const p = new URLSearchParams(window.location.search);
+    if (window.SF_X && window.SF_X.k) p.set('k', urlNote(window.SF_X.k));
+    ['display_mode', 'extras', 'inkey', 'compact', 'chord_id', 'instrument', 'section_order', 'qp_closed']
+      .forEach(function (name) {
+        const v = getSetting(name);
+        let s;
+        if (typeof v === 'boolean') s = v ? '1' : '0';
+        else if (v === Infinity)    s = 'all';
+        else if (Array.isArray(v))  s = v.join(',');
+        else                        s = String(v);
+        p.set(SETTINGS[name].url, s);
+      });
+    const closed = [];
+    document.querySelectorAll('details.collapsible').forEach(function (d) {
+      if (!d.open) closed.push(d.id.replace('section_', ''));
+    });
+    p.set('c', closed.join(','));
+    return window.location.origin + window.location.pathname + '?' + canonicalQS(p);
+  }
+  function bindShareButton() {
+    const btn = document.getElementById('site_share');
+    if (!btn || btn._shareBound) return;
+    btn._shareBound = true;
+    btn.addEventListener('click', function () {
+      const url = buildShareUrl();
+      const done = function () {
+        const old = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = old; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function () {
+          window.prompt('Copy this link:', url);
+        });
+      } else {
+        window.prompt('Copy this link:', url);
+      }
+    });
+  }
+
   // ---------- auto-submit on any control change ----------
   function gatherAndNavigate() {
     // Flush collapse state to URL synchronously. Without this, a
@@ -4694,16 +4883,9 @@
       if (v === 'y') parts.push(name + '=y');
     });
 
-    // Highlight pills are link-driven; carry whatever's currently in the URL
-    // so other form controls don't drop the active highlights. Emit as a
-    // single comma-separated `hl=` value (parseState accepts the legacy
-    // multi-key form too).
-    const hlList = readHlParam(new URLSearchParams(window.location.search));
-    if (hlList.length) parts.push('hl=' + hlList.join(','));
-
-    // Click-to-pick chord identifier set (pk) — carry as-is.
-    const pkList = readPkParam(new URLSearchParams(window.location.search));
-    if (pkList.length) parts.push('pk=' + pkList.join(','));
+    // Highlight picks are absolute (n=), so a key or tuning change carries
+    // them through untouched — only the degree labels change.
+    if (_curParams.has('n')) parts.push('n=' + encodeURIComponent(_curParams.get('n')));
 
     // Progression state (prog, pmode, tempo) — carry whatever the URL
     // currently has so changing the key (or any other form control)
@@ -4772,15 +4954,13 @@
       }
     }
 
-    // Preserve unlinked-mode metadata so a tuning / chord-form change
-    // doesn't accidentally re-link everything: keep the u flag and
-    // every section-namespaced override (s<num>_k, s<num>_hl, ...).
-    if (_unlinkedNow) {
-      if (_curParams.get('u') === '1') parts.push('u=1');
-      _curParams.forEach(function (v, k) {
-        if (/^s\d+_/.test(k)) parts.push(k + '=' + encodeURIComponent(v));
-      });
-    }
+    // Section unlocks (ul) and every section-namespaced override (s<num>_k,
+    // s<num>_n, ...) survive a global key / tuning change — an unlocked
+    // section ignores the global value for exactly the fields it owns.
+    if (_curParams.has('ul')) parts.push('ul=' + encodeURIComponent(_curParams.get('ul')));
+    _curParams.forEach(function (v, k) {
+      if (/^s\d+_/.test(k)) parts.push(k + '=' + encodeURIComponent(v));
+    });
 
     navigateTo('?' + parts.join('&'));
   }
@@ -4790,6 +4970,11 @@
     let _norm = search;
     try {
       const _p = new URLSearchParams(String(search || '').replace(/^\?/, ''));
+      // Links still speak degrees (hl=, relative to their own k); the
+      // address bar only ever stores absolute picks (n=). An empty global
+      // n= is just "no picks", so it's dropped to keep URLs short.
+      absolutizeHl(_p, window.SF_X && window.SF_X.k);
+      if (_p.get('n') === '') _p.delete('n');
       // BEFORE canonicalising, override the c= param (collapsed
       // sections) with what's currently in the DOM. This is the last
       // line of defense against stale collapse state: the <details>
@@ -4968,29 +5153,25 @@
       const k = 's' + sNum + '_' + f;
       if (link.has(f)) {
         const linkVal   = link.get(f);
-        const curGlobal = cur.get(f);
+        // An absent global param means its default (canonicalQS never emits
+        // defaults), so compare against that rather than null.
+        const curGlobal = cur.has(f) ? cur.get(f) : (DEF_X[f] != null ? String(DEF_X[f]) : null);
         if (linkVal !== curGlobal) cur.set(k, linkVal);
       }
     });
-    ['hl', 'pk'].forEach(f => {
-      const k = 's' + sNum + '_' + f;
-      if (!link.has(f)) return;            // click didn't touch this field
-      const linkAll = link.getAll(f).join(',');
-      const curAll  = cur.getAll(f).join(',');
-      // Skip ONLY when both link and current global carry the same
-      // non-empty value — that's a preserve-pass-through click. An
-      // explicit empty link value (`hl=` from the None pill) MUST be
-      // projected to the section so a locked-view-matches-empty case
-      // doesn't swallow the clear.
-      if (linkAll === curAll && linkAll !== '') return;
-      const arr = link.getAll(f).filter(function (v) { return v.length; });
-      if (arr.length) cur.set(k, arr.join(','));
-      else            cur.set(k, '');
-    });
-
-    // Any link that rewrites the section's hl invalidates its exact-cell
-    // picks (the single-note click handler re-adds s<n>_pn afterwards).
-    if (link.has('hl')) cur.delete('s' + sNum + '_pn');
+    // Highlights: a link's hl= (degrees) is converted to absolute picks
+    // using the link's own key (falling back to this section's effective
+    // key); a link's n= is already absolute. Either one REPLACES the
+    // section's picks — always projected, even when it happens to equal the
+    // global value or is empty, so a stale section override can't survive.
+    const _gx = window.SF_X;
+    const _secKey = _gx ? (stateForSection(sectionId, _gx) || {}).k : null;
+    absolutizeHl(link, _secKey, true);
+    if (link.has('n')) {
+      cur.set('s' + sNum + '_n', link.get('n'));
+      cur.delete('s' + sNum + '_hl');
+      cur.delete('s' + sNum + '_pk');
+    }
 
     // `idn` is a GLOBAL chord-engaged marker (not section-namespaced),
     // but a chord chip's link URL carries it. Without carrying it over
@@ -4998,10 +5179,7 @@
     // would drop idn, which in turn means the chip renders disengaged
     // and a second click fails to toggle off.
     if (link.has('idn')) cur.set('idn', link.get('idn'));
-    // Make sure the unlinked flag stays on; otherwise on next render
-    // we'd parse the s<n>_* params as junk.
-    cur.set('u', '1');
-    const qs = cur.toString();
+    const qs = canonicalQS(cur);
     return qs ? ('?' + qs) : '?';
   }
 
@@ -5036,7 +5214,7 @@
   }
   // Build a URL that toggles the given section's unlock state. Locking
   // strips all s<n>_* params for that section (returns it to global
-  // state). Unlocking seeds s<n>_k + s<n>_hl from the current global
+  // state). Unlocking seeds s<n>_k + s<n>_n from the current global
   // state so the section stays visually anchored while the user is
   // free to drift the global key without affecting this section.
   function toggleSectionLockHref(sectionId) {
@@ -5069,17 +5247,13 @@
       // notes I had before" semantic works.
       if (!hasOwnState) {
         const x = window.SF_X || {};
-        if (x.k) p.set('s' + sNum + '_k', String(x.k));
-        const hlRaw = String(x.hl || '').trim();
-        if (hlRaw && hlRaw !== 'nothing') {
-          p.set('s' + sNum + '_hl', hlRaw.replace(/\s+/g, '').replace(/♭/g, 'b'));
-          if (p.get('pn')) p.set('s' + sNum + '_pn', p.get('pn'));
-        }
+        if (x.k) p.set('s' + sNum + '_k', urlNote(x.k));
+        if (x._picksRaw) p.set('s' + sNum + '_n', x._picksRaw);
       }
     }
     if (list.length) p.set('ul', list.join(','));
     else             p.delete('ul');
-    const qs = p.toString();
+    const qs = canonicalQS(p);
     return qs ? '?' + qs : '?';
   }
   // ---- Audio toggle (♪) — Fretboard summary ----------------------
@@ -5387,31 +5561,27 @@
       const isAll  = a.classList && a.classList.contains('hl_all_pill');
       const isNone = a.classList && a.classList.contains('hl_none_pill');
       if (isAll || isNone) {
-        const curHl = (window.SF_X && window.SF_X.hl) || '';
-        const curLen = hlStrToArr(curHl).length;
+        const curN = (window.SF_X && window.SF_X._picksRaw) || '';
+        const curLen = hlStrToArr(window.SF_X && window.SF_X.hl).length;
         const inAll  = curLen === 12;
         const inNone = curLen === 0;
         let stash = null;
         try { stash = window.localStorage.getItem('sf_hl_stash'); } catch (_) {}
-        if (isAll && inAll && stash != null) {
-          // Second click of All while already in all-12 state → restore.
+        if ((isAll && inAll || isNone && inNone) && stash != null) {
+          // Second click while already in the all-12 / none state → restore
+          // the exact picks (cells, keys and all) from before the first click.
           try { window.localStorage.removeItem('sf_hl_stash'); } catch (_) {}
-          navigateTo(buildHlHref(hlStrToArr(stash)));
-          return;
-        }
-        if (isNone && inNone && stash != null) {
-          try { window.localStorage.removeItem('sf_hl_stash'); } catch (_) {}
-          navigateTo(buildHlHref(hlStrToArr(stash)));
+          navigateTo(nHref(parsePicks(stash)));
           return;
         }
         // First click (or click without a matching stash): stash the
-        // current hl string (even if empty — restore will still work).
+        // current picks (even if empty — restore will still work).
         // DON'T overwrite an existing stash: if the user already did
-        // All → stashed 1-3-5 → now presses None, we want the stash
-        // to KEEP 1-3-5 so a second None restores the original, not
+        // All → stashed C-E-G → now presses None, we want the stash
+        // to KEEP C-E-G so a second None restores the original, not
         // the intermediate all-12 state.
         if (stash == null) {
-          try { window.localStorage.setItem('sf_hl_stash', curHl); } catch (_) {}
+          try { window.localStorage.setItem('sf_hl_stash', curN); } catch (_) {}
         }
         // Fall through to the standard link-navigation path below.
       } else {
@@ -5436,7 +5606,7 @@
       // folded in fresh at click time — NOT baked into the href at
       // render time, because params like c= change every time the
       // user opens/closes a section.
-      const PRESERVE = ['c', 'disp', 'inst', 'qpc',
+      const PRESERVE = ['n', 'c', 'disp', 'inst', 'qpc',
                         'prog', 'pmode', 'tempo',
                         'sort', 'td', 'fc', 'fcp', 'ext', 'ik', 'cmp', 'ul'];
       const target = new URLSearchParams((url.search || '').replace(/^\?/, ''));
@@ -6007,9 +6177,8 @@
     // If any highlights are set, dim notes outside the set so the chosen ones pop.
     // White keys dimmed → plain white bg with text close to white (label fades).
     // Black keys dimmed → label color close to the dark cell bg (also fades).
-    const anyHighlighted = DEGREES.some(function (d) {
-      return x['hl_' + d.replace('♭', 'b')] === 'y';
-    });
+    const kbP = x._picks || emptyPicks();
+    const anyHighlighted = (kbP.pcs.size + kbP.keys.size) > 0;
     // Real piano: white keys are white, black keys are dark. Dimmed = label fades into bg.
     // Match the fretboard's light-grey "tabletop" so both reference surfaces feel the same.
     const DIM_WHITE_BG    = '#a8a8a8';
@@ -6028,15 +6197,14 @@
     const PLAIN_DEG_ON_BLACK = '#bbb';
 
     const i1 = KEYS.indexOf(x.k);
-    const kbPicks = boardPicks(x, 'kb');
     let css = '';
     for (const note in KEYBOARD_NOTE_CLASSES) {
       const noteIdx = KEYS.indexOf(note);
       const semi = ((noteIdx - i1) + 12) % 12;
       const deg = DEGREES[semi];
-      // With exact picks (single-note mode) the class-wide rules below must
-      // NOT light every octave; the per-key rules after the loop do that.
-      const inHighlightSet = anyHighlighted && !kbPicks && (x['hl_' + deg.replace('♭', 'b')] === 'y');
+      // Class-wide rules light every octave of a pitch-class pick (ALL);
+      // exact key picks get their own per-key rules after the loop.
+      const inHighlightSet = anyHighlighted && kbP.pcs.has(notePc(note));
       const def = KEYBOARD_NOTE_CLASSES[note];
       // Yellow-ring pk picks are gone; chord ID now reads from hl,
       // and clicks toggle hl directly. Keyboard cells get only the
@@ -6098,14 +6266,13 @@
     // Exact picks: colour only the chosen keys (label cell by data-midi,
     // plus the spacer cells above a white key by data-key). Attribute
     // selectors out-rank the class-wide rules above.
-    if (kbPicks) {
+    if (kbP.keys.size) {
       const sc = cfg.scopeSelector;
-      kbPicks.forEach(function (tok) {
-        const midi = parseInt(tok.slice(1), 10);
+      kbP.keys.forEach(function (midi) {
         const note = PC_TO_NOTE[midi % 12];
         const def = KEYBOARD_NOTE_CLASSES[note];
         const deg = DEGREES[((KEYS.indexOf(note) - i1) + 12) % 12];
-        if (!def || x['hl_' + deg.replace('♭', 'b')] !== 'y') return;
+        if (!def) return;
         const col = KEYBOARD_DEGREE_COLORS[deg];
         if (def.mode === 'bg') {
           css += sc + ' td[data-midi="' + midi + '"], ' + sc + ' td[data-key="' + midi + '"] '
@@ -6148,35 +6315,10 @@
     }
   }
 
-  // C-based pitch class (0-11) of a pn token, or null if it can't be
-  // resolved against state `x`'s tuning.
-  function pnTokenPc(tok, x) {
-    if (tok.charAt(0) === 'm') return parseInt(tok.slice(1), 10) % 12;
-    const m = tok.match(/^(\d+)-(\d+)$/);
-    if (!m) return null;
-    const a = +m[1], b = +m[2];
-    const open = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim().toUpperCase();
-    const c = KEYS.indexOf(open);
-    return (c < 0 || !KEYS[c + b]) ? null : notePc(KEYS[c + b]);
-  }
-
-  // Turn single-note mode on/off. Exact-cell picks only mean something
-  // inside the mode, so they are cleared from the URL on every switch.
-  function setSingleNote(on) {
-    setSetting('single_note', !!on);
-    const p = new URLSearchParams(window.location.search);
-    Array.from(p.keys()).forEach(function (k) {
-      if (k === 'pn' || /^s\d+_pn$/.test(k)) p.delete(k);
-    });
-    const qs = canonicalQS(p);
-    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
-    applyState();
-  }
-
-  // Toggle the clicked note in the pk= URL list. Suppresses default link
-  // behavior so the page stays put; uses the same history.replaceState path
-  // as the rest of the navigation (via the shared link interceptor), so the
-  // app re-renders in place.
+  // Click a fret / key to pick it. Default: only that exact cell is picked
+  // (a cell / key token in n=). With the ALL checkbox on, the note's pitch
+  // class is picked instead, lighting every position / octave. Suppresses the
+  // default link behavior and re-renders in place via history.replaceState.
   function bindNotePick() {
     function handler(e) {
       const cell = e.target.closest && e.target.closest('[data-note]');
@@ -6199,65 +6341,50 @@
         if (!isNaN(m)) playMidi(m);
       }
       const _isKb = !!e.target.closest('.ritz');
-      // Click-to-toggle writes hl. If the clicked cell is inside an
-      // unlocked section, route via mergeSectionOverrideUrl so the
-      // toggle writes s<n>_hl instead of the global hl — this is what
-      // lets Fretboard #2 / Keyboard #2 pick notes without stepping
-      // on the primary instances.
+      // If the clicked cell is inside an unlocked section, the picks are
+      // written to that section's own s<n>_n instead of the global n — this
+      // is what lets Fretboard #2 / Keyboard #2 hold different chords from
+      // the primary instances.
       const sectionEl = cell.closest('details.section, details.collapsible');
       const sectionUnlocked = !!(sectionEl && sectionEl.getAttribute('data-unlocked') === 'true');
       let xState = window.SF_X || {};
       if (sectionUnlocked && typeof stateForSection === 'function') {
         xState = stateForSection(sectionEl.id, xState);
       }
-      const key = xState.k || 'C';
-      const tonicPc = NOTE_TO_PC[key];
-      const notePc  = NOTE_TO_PC[note];
-      if (tonicPc == null || notePc == null) return;
-      const off = (notePc - tonicPc + 12) % 12;
-      const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
-      const deg = DEG_LBL[off];
-      let next, pnNext = null;
-      const pickTok = _isKb
-        ? (cell.getAttribute('data-midi') ? 'm' + cell.getAttribute('data-midi') : null)
-        : cell.getAttribute('data-cell');
-      if (singleNoteOn() && pickTok) {
-        // Single-note mode: toggle this exact cell in pn=, then derive hl
-        // from the pitch classes of every picked cell so chord ID (which
-        // reads hl) sees the same notes the user sees.
-        const base = Array.from(xState._pn || []);
-        pnNext = base.indexOf(pickTok) === -1
-          ? base.concat([pickTok])
-          : base.filter(function (t) { return t !== pickTok; });
-        const pcs = new Set();
-        pnNext.forEach(function (t) {
-          const pc = pnTokenPc(t, xState);
-          if (pc != null) pcs.add(pc);
-        });
-        next = DEG_LBL.filter(function (_d, o) { return pcs.has((tonicPc + o) % 12); });
+      const clickPc = NOTE_TO_PC[note];
+      const tok = _isKb ? parseInt(cell.getAttribute('data-midi'), 10) : cell.getAttribute('data-cell');
+      if (clickPc == null || (_isKb ? isNaN(tok) : !tok)) return;
+
+      const P = clonePicks(xState._picks);
+      if (allNotesOn()) {
+        // ALL: every position of this note.
+        if (P.pcs.has(clickPc)) P.pcs.delete(clickPc);
+        else { dropPicksAtPc(P, clickPc, xState); P.pcs.add(clickPc); }
+      } else if (P.pcs.has(clickPc)) {
+        // Lit because the whole note is picked → clicking turns that note off.
+        P.pcs.delete(clickPc);
       } else {
-        const curArr = hlStrToArr(xState.hl);
-        const i = curArr.indexOf(deg);
-        next = i === -1 ? curArr.concat([deg]) : curArr.filter(function (d) { return d !== deg; });
+        // One note: toggle just this fret / key.
+        const set = _isKb ? P.keys : P.cells;
+        if (set.has(tok)) set.delete(tok); else set.add(tok);
       }
-      // buildHlHref drops pn; re-attach the new exact-cell picks.
-      function withPn(search, sNum) {
-        const p = new URLSearchParams(String(search).replace(/^\?/, ''));
-        const k = sNum ? 's' + sNum + '_pn' : 'pn';
-        if (pnNext && pnNext.length) p.set(k, pnNext.join('.'));
-        else p.delete(k);
-        return '?' + canonicalQS(p);
-      }
+      const nVal = serializePicks(P);
+
       if (sectionUnlocked && sectionEl) {
-        const merged = mergeSectionOverrideUrl(sectionEl.id, buildHlHref(next));
-        if (merged != null) {
-          navigateTo(pnNext ? withPn(merged, _sectionNumFromId(sectionEl.id)) : merged);
-          return;
-        }
+        const cur = new URLSearchParams(window.location.search);
+        const sNum = _sectionNumFromId(sectionEl.id);
+        cur.set('s' + sNum + '_n', nVal);     // explicit, even when empty
+        cur.delete('s' + sNum + '_hl');
+        navigateTo('?' + canonicalQS(cur));
+        return;
       }
-      const href = buildHlHref(next);
-      const qs = (pnNext ? withPn(href) : href).slice(1);
-      const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
+      const np = new URLSearchParams(window.location.search);
+      np.delete('hl');
+      np.delete('pk');
+      np.delete('idn');
+      if (nVal) np.set('n', nVal); else np.delete('n');
+      const qs = canonicalQS(np);
+      const newUrl = window.location.pathname + (qs ? '?' + qs : '');
       // Anchor scroll to the clicked element so the page doesn't appear to
       // shift when the identify strip grows / shrinks above it. The fretboard
       // table is rebuilt by applyState; the keyboard table is static. Either
@@ -6288,8 +6415,16 @@
         if (e.target.closest('#fretboard, #fretboard_2, .ritz .waffle')) handler(e);
       });
     }
+    // ALL checkbox (one per chord-ID strip; the setting is global).
+    if (!document.body._allNotesBound) {
+      document.body._allNotesBound = true;
+      document.body.addEventListener('change', function (e) {
+        const cb = e.target.closest && e.target.closest('.identify_all_cb');
+        if (cb) setAllNotes(cb.checked);
+      });
+    }
     // Hovering a note bolds + rings every other cell of the same pitch
-    // class on that board, so with single-note mode (only one cell lit)
+    // class on that board, so with one-note picking (only one cell lit)
     // the user can still see where else the note lives.
     if (!document.body._notePcHoverBound) {
       document.body._notePcHoverBound = true;
@@ -6370,7 +6505,7 @@
   function buildHlHref(degArr) {
     const p = new URLSearchParams(window.location.search);
     p.delete('hl');
-    p.delete('pn');
+    p.delete('n');
     if (degArr && degArr.length) {
       // Separator-free form (same shape as the rest of the site).
       const enc = degArr.slice().sort(function (a, b) {
@@ -6558,7 +6693,6 @@
     // arrows actually move #2's highlights instead of the globals.
     if (!document.body._semiShiftBound) {
       document.body._semiShiftBound = true;
-      const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
       document.body.addEventListener('click', function (e) {
         const btn = e.target.closest && e.target.closest('.semi_shift_btn');
         if (!btn || btn.disabled) return;
@@ -6574,19 +6708,27 @@
         const xs = (sectionId && typeof stateForSection === 'function')
                    ? stateForSection(sectionId, gx)
                    : gx;
-        const cur = hlStrToArr(xs.hl);
-        const next = cur.map(function (d) {
-          const off = _DEG_OFFSET[d];
-          if (off == null) return d;
-          return DEG_LBL[(off + delta + 12) % 12];
+        // Slide every pick by `delta` semitones: pitch-class picks wrap,
+        // fretboard cells move along their string (dropped if they'd leave
+        // the 0–12 fret range), piano keys move by MIDI number.
+        const src = xs._picks || emptyPicks();
+        const moved = emptyPicks();
+        src.pcs.forEach(function (pc) { moved.pcs.add((pc + delta + 12) % 12); });
+        src.cells.forEach(function (t) {
+          const b = parseInt(t.slice(1), 10) + delta;
+          if (b >= 0 && b <= 12) moved.cells.add(t.charAt(0) + b);
         });
+        src.keys.forEach(function (m) {
+          if (m + delta >= 21 && m + delta <= 108) moved.keys.add(m + delta);
+        });
+        const nextHref = nHref(moved);
         const sectionEl = sectionId ? document.getElementById(sectionId) : null;
         const sectionUnlocked = !!(sectionEl && sectionEl.getAttribute('data-unlocked') === 'true');
         if (sectionUnlocked) {
-          const merged = mergeSectionOverrideUrl(sectionId, buildHlHref(next));
+          const merged = mergeSectionOverrideUrl(sectionId, nextHref);
           if (merged != null) { navigateTo(merged); return; }
         }
-        navigateTo(buildHlHref(next));
+        navigateTo(nextHref);
       });
     }
   }
@@ -6606,15 +6748,14 @@
     // strip renders just the readout + suggestion chips.
     function headerBtnsHtml(_showClear) { return ''; }
 
-    // Global single-note toggle, shown in every strip state.
-    const singleOn = singleNoteOn();
-    const singlePill = '<a class="identify_pill identify_pill_single'
-      + (singleOn ? ' identify_pill_on' : '')
-      + '" href="#" data-single="toggle" title="'
-      + (singleOn
-          ? 'Single-note mode ON: clicking a fret or key lights only that exact note. Click to switch to lighting every octave / position of the note.'
-          : 'Single-note mode OFF: clicking a note lights every position of it. Click to switch to lighting only the exact fret or key you click.')
-      + '">1 note</a>';
+    // ALL checkbox, shown in every strip state. Off (default): a click
+    // picks only that exact fret / key. On: a click picks the note's pitch
+    // class, lighting every position / octave of it.
+    const allOn = allNotesOn();
+    const allBox = '<label class="identify_all" title="'
+      + 'Unchecked: clicking a fret or key lights just that one note. '
+      + 'Checked: clicking lights every position / octave of that note.">'
+      + '<input type="checkbox" class="identify_all_cb"' + (allOn ? ' checked' : '') + '> ALL</label>';
 
     const hlArr = hlStrToArr(xs.hl);
     let html;
@@ -6627,7 +6768,7 @@
       // page doesn't jump when chord ID data starts arriving. Shown as
       // a hint so first-time users know what the empty strip is for.
       html = '<div class="identify_strip identify_placeholder">'
-           +   '<span class="identify_filter">' + singlePill + '</span>'
+           +   '<span class="identify_filter">' + allBox + '</span>'
            +   '<span class="identify_hint">'
            +     'Click 3+ notes on the ' + (sectionId.indexOf('kb') >= 0 || sectionId === 'section_4' || sectionId === 'section_14' ? 'keyboard' : 'fretboard')
            +     ' to see which chords those notes form.'
@@ -6635,7 +6776,7 @@
            + '</div>';
     } else if (hlArr.length > PICK_CAP) {
       html = '<div class="identify_strip identify_over">'
-           + '<span class="identify_filter">' + singlePill + '</span>'
+           + '<span class="identify_filter">' + allBox + '</span>'
            + '<div class="identify_over_msg">'
            +   'Too many notes selected (' + hlArr.length + '). '
            +   'Pick ' + PICK_CAP + ' or fewer to identify a chord.'
@@ -6754,7 +6895,7 @@
       html = ''
         + '<div class="identify_strip identify_strip_inline">'
         + headerBtnsHtml(true)
-        + '  <span class="identify_filter">' + singlePill + inKeyPill + '</span>'
+        + '  <span class="identify_filter">' + allBox + inKeyPill + '</span>'
         + '  <span class="identify_extras_toggle">' + extrasPills + '</span>'
         +    (buckets.exact.length    ? '<span class="identify_group identify_group_exact">'    + exactHtml + '</span>' : '')
         +    (buckets.subset.length   ? PFX_ALSO   + '<span class="identify_group identify_group_contains">' + contHtml  + '</span>' : '')
@@ -6867,10 +7008,6 @@
           e.stopPropagation();
           if (pill.getAttribute('data-inkey') === 'toggle') {
             setIdentifyInKey(!getIdentifyInKey());
-            return;
-          }
-          if (pill.getAttribute('data-single') === 'toggle') {
-            setSingleNote(!singleNoteOn());
             return;
           }
           const lbl = pill.getAttribute('data-extras');
@@ -7756,6 +7893,7 @@
   }
 
   function init() {
+    upgradeLegacyUrl();
     // Reflect URL-driven display preferences on the body BEFORE the
     // first render so there's no flash of the default mode while CSS
     // rules wait for bindDisplayModeButtons.
@@ -7776,6 +7914,7 @@
     bindLinkInterceptor();
     bindHelpButtons();
     bindSectionLocks();
+    bindShareButton();
     bindPrintButtons();
     bindExportButtons();
     bindSummaryExtras();

@@ -139,7 +139,7 @@ URL is the source of truth for almost everything. Bookmark = save.
 section sees the same `x`), but each fretboard / keyboard / grid
 section has a 🔒 lock button that flips the section into unlinked
 mode. Its state then lives under `s<N>_*` namespaced params
-(`s2_k`, `s13_hl`, `s14_pk`, …) which `stateForSection(id, x)`
+(`s2_k`, `s13_n`, `s14_n`, …) which `stateForSection(id, x)`
 overlays onto the global `x`. See `virtualSearchForSection`,
 `mergeSectionOverrideUrl`, and `data-unlocked`/`data-apply-all`
 in app.js.
@@ -150,8 +150,8 @@ Global params:
 | --- | --- |
 | `k=A`        | key |
 | `x=AC#EG`    | chord/scale notes (URL form) |
-| `hl=1b35`    | highlighted degrees (separator-free; `b?[1-7]` tokens) |
-| `pk=ACsE`    | picked notes for chord identifier (`[A-G][sb]?` tokens) |
+| `n=C.Cs.a3.60` | highlight picks, absolute, `.`-separated: pitch class `[A-G]s?` (every position, "ALL"), fretboard cell `<string a-l><fret 0-12>` (`a3` = string 1 fret 3), piano key by MIDI number (`60`). The key only relabels degrees; `x.hl` is DERIVED from `n` at parse time |
+| `hl=1b35`    | LEGACY / link form: degrees relative to `k`. Links still build it; `navigateTo`, `mergeSectionOverrideUrl` and `upgradeLegacyUrl` convert it to `n=` (`absolutizeHl`) |
 | `s1=A&...`   | per-string tuning notes (or `s=A.C#.E.G` packed) |
 | `y=y` `z=y`  | low/high direction, custom-tuning toggle |
 | `c=2,3`      | collapsed section IDs |
@@ -161,11 +161,13 @@ Global params:
 | `ext=2`/`all`| chord-ID "could be (+N)" extras cap |
 | `ik=1`       | chord-ID "in key" filter (only chords whose notes fit current major scale) |
 
-**URL conciseness:** `hl` and `pk` values are emitted without commas
-(`?hl=1b35` / `?pk=ACsE`). The tokenizers in `_tokenizeHl` /
-`_tokenizePk` accept all three historical forms — separator-free,
-comma-separated, and repeated-key (`?hl=1&hl=b3&hl=5`) — so old
-bookmarks keep working.
+**URL conciseness:** params equal to their default (`x` = default
+tuning, `y`/`z`/`lh` = `n`) are never emitted (`URL_DEFAULTS` in
+`canonicalQS`). Old `hl=` / `s<N>_hl=` / `pk=` / `u=` links are rewritten
+to the canonical form on load (`upgradeLegacyUrl`), so old bookmarks keep
+working. The header **Share** button (`buildShareUrl`) additionally spells
+out every display preference so a receiver's saved preferences can't alter
+the shared view.
 
 How this works in code:
 
