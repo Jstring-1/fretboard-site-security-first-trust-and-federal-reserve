@@ -1664,6 +1664,15 @@ details.collapsible > summary              { padding-left: 36px;                
                                            { outline: 2px solid rgba(0, 0, 0, 0.9);
                                              outline-offset: -2px; position: relative; z-index: 1;                     }
 
+/* Same-note hover: mousing over a fret / key bolds and thin-rings every
+   other cell of that pitch class on the same board. currentColor keeps
+   the ring visible on both the dark fretboard and the light piano keys. */
+:is(#fretboard, #fretboard_2, #keyboard, #keyboard_2) td[data-pc-hover],
+:is(#fretboard, #fretboard_2, #keyboard, #keyboard_2) td[data-pc-hover] *
+                                           { font-weight: 800;                                                         }
+:is(#fretboard, #fretboard_2, #keyboard, #keyboard_2) td[data-pc-hover]
+                                           { outline: 1px solid currentColor; outline-offset: -2px;                    }
+
 /* --- Dim All/None relative to the shift arrows -----------------------
    User feedback: All/None read visually brighter than ◀ ▶ because
    text runs full-width where the arrow glyphs don't. Trim their

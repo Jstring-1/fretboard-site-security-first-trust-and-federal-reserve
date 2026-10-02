@@ -364,7 +364,7 @@
   // emit known params in this order so shared / bookmarked URLs read
   // consistently. Unknown / legacy params (e.g. s1..s12) are appended
   // alphabetically at the end.
-  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
+  const URL_PARAM_ORDER = ['k', 'x', 's', 'hl', 'pk', 'pn', 'y', 'z', 'lh', 'c', 'f', 'fc', 'fcp', 'td', 'sort', 'id', 'idn', 'cmp', 'ext', 'ik', 'sn', 'disp', 'inst', 'qpc', 'prog', 'tempo', 'ord', 'u', 'ul'];
   function canonicalQS(params) {
     const known = new Set(URL_PARAM_ORDER);
     const out = new URLSearchParams();
@@ -433,6 +433,17 @@
       lsFmt:  function (v) { return v ? '1' : ''; },
       urlFmt: function (v) { return v ? '1' : ''; },
       def:    false,
+    },
+    // Single-note pick mode (default ON): clicking a fret / key lights
+    // only that exact cell (tracked in the pn= URL param) instead of every
+    // cell sharing its pitch class. Chord ID still reads the pitch classes
+    // from hl. Turning it off restores the classic click-a-note-class mode.
+    single_note: {
+      url:    'sn',  ls: 'sf_single_note',
+      parse:  function (v) { return v !== '0' && v !== 'off'; },
+      lsFmt:  function (v) { return v ? '' : 'off'; },
+      urlFmt: function (v) { return v ? '' : '0'; },
+      def:    true,
     },
     // Note / degree / both display mode toggle in the sticky header.
     // Drives label spans across fretboard, grids, progression bars,
@@ -549,6 +560,26 @@
   }
   function readHlParam(params) {
     return params.getAll('hl').flatMap(_tokenizeHl);
+  }
+
+  // Single-note pick tokens: "<string>-<fret>" (fretboard) or "m<midi>"
+  // (keyboard), joined by '.' in the pn= param.
+  function parsePnList(raw) {
+    return String(raw || '').split(/[.,]/).filter(function (t) {
+      return /^\d{1,2}-\d{1,2}$/.test(t) || /^m\d{1,3}$/.test(t);
+    });
+  }
+  function singleNoteOn() { return !!getSetting('single_note'); }
+  // The exact cells a board should light, or null when the board should
+  // fall back to pitch-class highlighting (mode off, or no picks of this
+  // board's kind). kind: 'fb' (fretboard) | 'kb' (keyboard).
+  function boardPicks(x, kind) {
+    if (!x || !x._pn || !x._pn.size || !singleNoteOn()) return null;
+    const out = new Set();
+    x._pn.forEach(function (t) {
+      if ((t.charAt(0) === 'm') === (kind === 'kb')) out.add(t);
+    });
+    return out.size ? out : null;
   }
 
   // Pick-set tokenizer. Each note is `[A-G]` followed by an optional
@@ -714,6 +745,11 @@
       });
       x.pk = validPk.join(' ');
     }
+
+    // Single-note picks (pn=): exact fretboard cells ("3-5" = string 3,
+    // fret 5; fret 0 = open string) and piano keys ("m60" = MIDI 60),
+    // dot-separated. Invalid tokens are dropped.
+    x._pn = new Set(parsePnList(params.get('pn')));
 
     // Apply defaults
     if (def === 'y' || !hasParams) {
@@ -1014,6 +1050,12 @@
       // hl / pk / s are multi/special — preserve their relative order
       out.append(k, v);
     });
+    // Exact-cell picks (pn) are tied to the highlight set they produced:
+    // a section with its own hl but no pn of its own must not inherit the
+    // global pn, or it would restrict itself to cells from another view.
+    if (sectionOverrides.hl !== undefined && sectionOverrides.pn === undefined) {
+      out.delete('pn');
+    }
     // Apply this section's overrides on top
     for (const [field, raw] of Object.entries(sectionOverrides)) {
       // Multi-value fields go comma-separated when prefixed; expand
@@ -2172,6 +2214,8 @@
       return out;
     })();
 
+    const fbPicks = boardPicks(x, 'fb');
+
     // String-direction toggle (y) flips the row order on the fretboard. y=y
     // walks the strings high-index-first; y=n walks 1..N. The tuning data
     // itself is untouched so the section header text stays canonical.
@@ -2180,7 +2224,8 @@
       const strizzle = str[a];
       const c = KEYS.indexOf(strizzle.toUpperCase());
       let nutDeg = findKey(x._notedegrees, strizzle.toUpperCase());
-      let nutBg = (x['hl_' + flatToB(nutDeg)] === 'y') ? flatToB(nutDeg) : 'no_highlight';
+      let nutBg = (x['hl_' + flatToB(nutDeg)] === 'y' && (!fbPicks || fbPicks.has(a + '-0')))
+                ? flatToB(nutDeg) : 'no_highlight';
       const nutNote = strizzle.toUpperCase();
       // pk yellow-ring picks have been retired — clicks now toggle hl,
       // chord ID reads from hl, and the note_pk class is no longer applied.
@@ -2191,16 +2236,17 @@
       // Custom is retired; the cell now just labels the string number.
       h += '<td class="fb_string_num" id="f_cyo_dark">' + a + '</td>';
       const _openMidi = _midiByStr[a];
-      h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" data-midi="' + _openMidi + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
+      h += '<td class="nut' + nutPkCls + '" data-note="' + escHtml(nutNote) + '" data-cell="' + a + '-0" data-midi="' + _openMidi + '" id="_' + nutBg + '_">' + escHtml(strizzle) + '(' + escHtml(nutDeg || '') + ')</td>';
 
       for (let b = 1; b <= 12; b++) {
         const cb = c + b;
         const noteAtFret = KEYS[cb];
         let degAtFret = findKey(x._notedegrees, noteAtFret);
-        let fbId = (x['hl_' + flatToB(degAtFret)] === 'y') ? flatToB(degAtFret) : 'no_highlight';
+        let fbId = (x['hl_' + flatToB(degAtFret)] === 'y' && (!fbPicks || fbPicks.has(a + '-' + b)))
+                 ? flatToB(degAtFret) : 'no_highlight';
         const cls = (b === 1) ? 'nut1' : 'fb_td';
         const cellPkCls = '';
-        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">'
+        h += '<td class="' + cls + cellPkCls + '" data-note="' + escHtml(noteAtFret) + '" data-cell="' + a + '-' + b + '" data-midi="' + (_openMidi + b) + '" id="_' + fbId + '_">'
            + '<span class="disp_note">' + escHtml(noteAtFret) + '</span>'
            + '<span class="disp_deg">(' + escHtml(degAtFret || '') + ')</span>'
            + '</td>';
@@ -4942,6 +4988,10 @@
       else            cur.set(k, '');
     });
 
+    // Any link that rewrites the section's hl invalidates its exact-cell
+    // picks (the single-note click handler re-adds s<n>_pn afterwards).
+    if (link.has('hl')) cur.delete('s' + sNum + '_pn');
+
     // `idn` is a GLOBAL chord-engaged marker (not section-namespaced),
     // but a chord chip's link URL carries it. Without carrying it over
     // to the merged result, a chord-chip click in an unlocked section
@@ -5023,6 +5073,7 @@
         const hlRaw = String(x.hl || '').trim();
         if (hlRaw && hlRaw !== 'nothing') {
           p.set('s' + sNum + '_hl', hlRaw.replace(/\s+/g, '').replace(/♭/g, 'b'));
+          if (p.get('pn')) p.set('s' + sNum + '_pn', p.get('pn'));
         }
       }
     }
@@ -5933,6 +5984,25 @@
       }
       assign(whiteRow, WHITE_OFF);
       assign(blackRow, BLACK_OFF);
+      // The un-labelled spacer cells in the black-key row sit above each
+      // white key. Tag them with that key's MIDI (data-key) so a single-
+      // note pick can colour the whole key, not just its label cell. The
+      // n-th spacer of a given class belongs to the n-th white key of that
+      // letter (same A-based cycle count the white row uses above).
+      if (blackRow) {
+        const SPACER_OFF = { s32: 0, s34: 2, s35: 3, s37: 5, s39: 7, s40: 8, s42: 10 };
+        const seen = {};
+        blackRow.querySelectorAll('td').forEach(function (cell) {
+          if (cell.hasAttribute('data-note')) return;
+          const cl = Array.prototype.find.call(cell.classList, function (c) {
+            return Object.prototype.hasOwnProperty.call(SPACER_OFF, c);
+          });
+          if (!cl) return;
+          const n = seen[cl] || 0;
+          seen[cl] = n + 1;
+          cell.setAttribute('data-key', String(21 + 12 * n + SPACER_OFF[cl]));
+        });
+      }
     })();
     // If any highlights are set, dim notes outside the set so the chosen ones pop.
     // White keys dimmed → plain white bg with text close to white (label fades).
@@ -5958,12 +6028,15 @@
     const PLAIN_DEG_ON_BLACK = '#bbb';
 
     const i1 = KEYS.indexOf(x.k);
+    const kbPicks = boardPicks(x, 'kb');
     let css = '';
     for (const note in KEYBOARD_NOTE_CLASSES) {
       const noteIdx = KEYS.indexOf(note);
       const semi = ((noteIdx - i1) + 12) % 12;
       const deg = DEGREES[semi];
-      const inHighlightSet = anyHighlighted && (x['hl_' + deg.replace('♭', 'b')] === 'y');
+      // With exact picks (single-note mode) the class-wide rules below must
+      // NOT light every octave; the per-key rules after the loop do that.
+      const inHighlightSet = anyHighlighted && !kbPicks && (x['hl_' + deg.replace('♭', 'b')] === 'y');
       const def = KEYBOARD_NOTE_CLASSES[note];
       // Yellow-ring pk picks are gone; chord ID now reads from hl,
       // and clicks toggle hl directly. Keyboard cells get only the
@@ -6022,6 +6095,29 @@
                   +  'color: ' + degColor + '; }\n';
       });
     }
+    // Exact picks: colour only the chosen keys (label cell by data-midi,
+    // plus the spacer cells above a white key by data-key). Attribute
+    // selectors out-rank the class-wide rules above.
+    if (kbPicks) {
+      const sc = cfg.scopeSelector;
+      kbPicks.forEach(function (tok) {
+        const midi = parseInt(tok.slice(1), 10);
+        const note = PC_TO_NOTE[midi % 12];
+        const def = KEYBOARD_NOTE_CLASSES[note];
+        const deg = DEGREES[((KEYS.indexOf(note) - i1) + 12) % 12];
+        if (!def || x['hl_' + deg.replace('♭', 'b')] !== 'y') return;
+        const col = KEYBOARD_DEGREE_COLORS[deg];
+        if (def.mode === 'bg') {
+          css += sc + ' td[data-midi="' + midi + '"], ' + sc + ' td[data-key="' + midi + '"] '
+               + '{ background-color: ' + col + ' !important; color: #000 !important; }\n';
+          css += sc + ' td[data-midi="' + midi + '"]::after { color: #000; }\n';
+        } else {
+          css += sc + ' td[data-midi="' + midi + '"] '
+               + '{ background-color: ' + PLAIN_BLACK_BG + ' !important; color: ' + col + ' !important; }\n';
+          css += sc + ' td[data-midi="' + midi + '"]::after { color: ' + col + '; }\n';
+        }
+      });
+    }
     style.textContent = css;
   }
 
@@ -6050,6 +6146,31 @@
       const xKB = stateForSection('section_4', window.SF_X);
       renderIdentifyStrips(xFB, xKB);
     }
+  }
+
+  // C-based pitch class (0-11) of a pn token, or null if it can't be
+  // resolved against state `x`'s tuning.
+  function pnTokenPc(tok, x) {
+    if (tok.charAt(0) === 'm') return parseInt(tok.slice(1), 10) % 12;
+    const m = tok.match(/^(\d+)-(\d+)$/);
+    if (!m) return null;
+    const a = +m[1], b = +m[2];
+    const open = String(x.z === 'y' ? x['s' + a] : x['x' + a]).trim().toUpperCase();
+    const c = KEYS.indexOf(open);
+    return (c < 0 || !KEYS[c + b]) ? null : notePc(KEYS[c + b]);
+  }
+
+  // Turn single-note mode on/off. Exact-cell picks only mean something
+  // inside the mode, so they are cleared from the URL on every switch.
+  function setSingleNote(on) {
+    setSetting('single_note', !!on);
+    const p = new URLSearchParams(window.location.search);
+    Array.from(p.keys()).forEach(function (k) {
+      if (k === 'pn' || /^s\d+_pn$/.test(k)) p.delete(k);
+    });
+    const qs = canonicalQS(p);
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+    applyState();
   }
 
   // Toggle the clicked note in the pk= URL list. Suppresses default link
@@ -6096,15 +6217,46 @@
       const off = (notePc - tonicPc + 12) % 12;
       const DEG_LBL = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
       const deg = DEG_LBL[off];
-      const curArr = hlStrToArr(xState.hl);
-      const i = curArr.indexOf(deg);
-      const next = i === -1 ? curArr.concat([deg]) : curArr.filter(function (d) { return d !== deg; });
+      let next, pnNext = null;
+      const pickTok = _isKb
+        ? (cell.getAttribute('data-midi') ? 'm' + cell.getAttribute('data-midi') : null)
+        : cell.getAttribute('data-cell');
+      if (singleNoteOn() && pickTok) {
+        // Single-note mode: toggle this exact cell in pn=, then derive hl
+        // from the pitch classes of every picked cell so chord ID (which
+        // reads hl) sees the same notes the user sees.
+        const base = Array.from(xState._pn || []);
+        pnNext = base.indexOf(pickTok) === -1
+          ? base.concat([pickTok])
+          : base.filter(function (t) { return t !== pickTok; });
+        const pcs = new Set();
+        pnNext.forEach(function (t) {
+          const pc = pnTokenPc(t, xState);
+          if (pc != null) pcs.add(pc);
+        });
+        next = DEG_LBL.filter(function (_d, o) { return pcs.has((tonicPc + o) % 12); });
+      } else {
+        const curArr = hlStrToArr(xState.hl);
+        const i = curArr.indexOf(deg);
+        next = i === -1 ? curArr.concat([deg]) : curArr.filter(function (d) { return d !== deg; });
+      }
+      // buildHlHref drops pn; re-attach the new exact-cell picks.
+      function withPn(search, sNum) {
+        const p = new URLSearchParams(String(search).replace(/^\?/, ''));
+        const k = sNum ? 's' + sNum + '_pn' : 'pn';
+        if (pnNext && pnNext.length) p.set(k, pnNext.join('.'));
+        else p.delete(k);
+        return '?' + canonicalQS(p);
+      }
       if (sectionUnlocked && sectionEl) {
         const merged = mergeSectionOverrideUrl(sectionEl.id, buildHlHref(next));
-        if (merged != null) { navigateTo(merged); return; }
+        if (merged != null) {
+          navigateTo(pnNext ? withPn(merged, _sectionNumFromId(sectionEl.id)) : merged);
+          return;
+        }
       }
       const href = buildHlHref(next);
-      const qs = href.slice(1);
+      const qs = (pnNext ? withPn(href) : href).slice(1);
       const newUrl = window.location.pathname + (qs ? '?' + canonicalQS(new URLSearchParams(qs)) : '');
       // Anchor scroll to the clicked element so the page doesn't appear to
       // shift when the identify strip grows / shrinks above it. The fretboard
@@ -6134,6 +6286,35 @@
       document.body.addEventListener('click', function (e) {
         if (!e.target.closest) return;
         if (e.target.closest('#fretboard, #fretboard_2, .ritz .waffle')) handler(e);
+      });
+    }
+    // Hovering a note bolds + rings every other cell of the same pitch
+    // class on that board, so with single-note mode (only one cell lit)
+    // the user can still see where else the note lives.
+    if (!document.body._notePcHoverBound) {
+      document.body._notePcHoverBound = true;
+      const clearPcHover = function () {
+        document.querySelectorAll('[data-pc-hover]').forEach(function (el) {
+          el.removeAttribute('data-pc-hover');
+        });
+      };
+      document.body.addEventListener('mouseover', function (e) {
+        const cell = e.target.closest && e.target.closest('[data-note]');
+        const board = cell && cell.closest('#fretboard, #fretboard_2, .ritz .waffle');
+        if (!board) return;
+        const note = cell.getAttribute('data-note');
+        clearPcHover();
+        const pc = notePc(note);
+        board.querySelectorAll('[data-note]').forEach(function (el) {
+          if (notePc(el.getAttribute('data-note')) === pc) el.setAttribute('data-pc-hover', '1');
+        });
+      });
+      document.body.addEventListener('mouseout', function (e) {
+        const cell = e.target.closest && e.target.closest('[data-note]');
+        if (!cell) return;
+        const rel = e.relatedTarget;
+        if (rel && cell.contains(rel)) return;
+        clearPcHover();
       });
     }
     document.querySelectorAll('.ritz .waffle [data-note]').forEach(function (el) {
@@ -6189,6 +6370,7 @@
   function buildHlHref(degArr) {
     const p = new URLSearchParams(window.location.search);
     p.delete('hl');
+    p.delete('pn');
     if (degArr && degArr.length) {
       // Separator-free form (same shape as the rest of the site).
       const enc = degArr.slice().sort(function (a, b) {
@@ -6424,6 +6606,16 @@
     // strip renders just the readout + suggestion chips.
     function headerBtnsHtml(_showClear) { return ''; }
 
+    // Global single-note toggle, shown in every strip state.
+    const singleOn = singleNoteOn();
+    const singlePill = '<a class="identify_pill identify_pill_single'
+      + (singleOn ? ' identify_pill_on' : '')
+      + '" href="#" data-single="toggle" title="'
+      + (singleOn
+          ? 'Single-note mode ON: clicking a fret or key lights only that exact note. Click to switch to lighting every octave / position of the note.'
+          : 'Single-note mode OFF: clicking a note lights every position of it. Click to switch to lighting only the exact fret or key you click.')
+      + '">1 note</a>';
+
     const hlArr = hlStrToArr(xs.hl);
     let html;
     // Cap: beyond 6 picked notes the Contains / Could-be lists explode
@@ -6435,6 +6627,7 @@
       // page doesn't jump when chord ID data starts arriving. Shown as
       // a hint so first-time users know what the empty strip is for.
       html = '<div class="identify_strip identify_placeholder">'
+           +   '<span class="identify_filter">' + singlePill + '</span>'
            +   '<span class="identify_hint">'
            +     'Click 3+ notes on the ' + (sectionId.indexOf('kb') >= 0 || sectionId === 'section_4' || sectionId === 'section_14' ? 'keyboard' : 'fretboard')
            +     ' to see which chords those notes form.'
@@ -6442,6 +6635,7 @@
            + '</div>';
     } else if (hlArr.length > PICK_CAP) {
       html = '<div class="identify_strip identify_over">'
+           + '<span class="identify_filter">' + singlePill + '</span>'
            + '<div class="identify_over_msg">'
            +   'Too many notes selected (' + hlArr.length + '). '
            +   'Pick ' + PICK_CAP + ' or fewer to identify a chord.'
@@ -6560,7 +6754,7 @@
       html = ''
         + '<div class="identify_strip identify_strip_inline">'
         + headerBtnsHtml(true)
-        + '  <span class="identify_filter">' + inKeyPill + '</span>'
+        + '  <span class="identify_filter">' + singlePill + inKeyPill + '</span>'
         + '  <span class="identify_extras_toggle">' + extrasPills + '</span>'
         +    (buckets.exact.length    ? '<span class="identify_group identify_group_exact">'    + exactHtml + '</span>' : '')
         +    (buckets.subset.length   ? PFX_ALSO   + '<span class="identify_group identify_group_contains">' + contHtml  + '</span>' : '')
@@ -6673,6 +6867,10 @@
           e.stopPropagation();
           if (pill.getAttribute('data-inkey') === 'toggle') {
             setIdentifyInKey(!getIdentifyInKey());
+            return;
+          }
+          if (pill.getAttribute('data-single') === 'toggle') {
+            setSingleNote(!singleNoteOn());
             return;
           }
           const lbl = pill.getAttribute('data-extras');
