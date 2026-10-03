@@ -118,6 +118,9 @@ table.sortable tbody tr:nth-child(odd)     {  background-color:#1a1a1a;         
   text-align: center;
 }
 @media print { .section_lead { display: none !important; } }
+/* Tips unchecked in the header: drop the blurbs along with the tooltips.
+   Still in the DOM, so crawlers and the default (Tips on) view keep them. */
+body[data-tips="off"] .section_lead { display: none; }
 
 /*********************************************************************************************************************
                             FONT FAMILY

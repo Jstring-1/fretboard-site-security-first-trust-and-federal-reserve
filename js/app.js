@@ -5315,6 +5315,7 @@
   }
   function applyTipsSetting() {
     const on = tipsOn();
+    document.body.setAttribute('data-tips', on ? 'on' : 'off');
     const cb = document.getElementById('site_tips_toggle');
     if (cb) cb.checked = on;
     if (on) {
