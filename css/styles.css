@@ -417,13 +417,26 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
        chrome, fits inside a landscape A4 page height. */
     body[data-print="section_3"] #chord_grid        {  font-size:0.55em; width:100% !important;
                                                        border-radius:0 !important;
+                                                       background-color:#fff !important;
                                                        border-spacing: 0 !important;                                  }
+    /* The screen grout (dark table bg) bleeds through the cells' rounded
+       corners as dark diamonds on paper — square the cells off in print. */
+    body[data-print] #chord_grid td, body[data-print] #scale_grid td
+                                                    {  border-radius:0 !important;                                    }
     body[data-print="section_3"] #chord_grid tr     {  height: 12px !important;                                       }
     body[data-print="section_3"] #chord_grid td     {  padding:0 1px !important; line-height: 1.05 !important;        }
     body[data-print="section_3"] .cg_chord_label    {  width:60px !important;                                         }
     body[data-print="section_3"] .cg_corner_label   {  font-size: 0.85em !important;                                  }
 
-    /* ===== Section 4: Keyboard ===== */
+    /* ===== Section 4: Keyboard =====
+       The on-screen card is a rounded, bordered scroll container
+       (overflow-x:auto) because the table is wider than the screen. On
+       paper that shows as a frame plus a scroll bar and clips the right
+       end, so drop the frame, make the overflow visible, and shrink the
+       whole card slightly (zoom) so the 88 keys fit the page width. */
+    body[data-print] .ritz                          {  border:0 !important; border-radius:0 !important;
+                                                       overflow:visible !important; background:none !important;
+                                                       margin:0 !important; padding:0 !important; zoom:0.88;          }
     body[data-print="section_4"] #keyboard          {  font-size:0.5em; width:100% !important;
                                                        border-radius:0 !important;                                    }
     body[data-print="section_4"] #keyboard td       {  padding:0 !important;                                          }
@@ -439,6 +452,7 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
        16 scales × ~16px row = ~256px, fits one landscape page easily. */
     body[data-print="section_6"] #scale_grid        {  font-size:0.8em; width:100% !important;
                                                        border-radius:0 !important;
+                                                       background-color:#fff !important;
                                                        border-spacing: 0 !important;                                  }
     body[data-print="section_6"] #scale_grid tr     {  height: 16px !important;                                       }
     body[data-print="section_6"] #scale_grid td     {  padding:1px 2px !important; line-height: 1.1 !important;       }
@@ -449,7 +463,8 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
        both panels fit on a single landscape page without the second
        page wrapping. */
     body[data-print="section_9"] .ks_grid           {  gap: 8px !important;                                            }
-    body[data-print="section_9"] .ks_panel          {  background: none !important; border: 1px solid #888 !important;
+    body[data-print="section_9"] .ks_panel          {  background: none !important; border: 0 !important;
+                                                       border-radius: 0 !important;
                                                        break-inside: avoid; page-break-inside: avoid;                   }
     body[data-print="section_9"] .ks_panel_title    {  background: none !important; padding: 4px 8px !important;
                                                        font-size: 0.85em !important;                                    }
@@ -462,7 +477,10 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_9"] .ks_table .ks_sig_count   {  width: 18px !important; padding-left: 4px !important;     }
     body[data-print="section_9"] .ks_table .ks_sig_staff   {  width: 36px !important;                                   }
     body[data-print="section_9"] .ks_table .ks_sig_hand    {  width: 30px !important; padding-right: 4px !important;    }
-    body[data-print="section_9"] .ks_staff          {  transform: scale(0.6) !important;                                }
+    /* zoom (not transform) so the staff's layout height shrinks too —
+       with transform the 38px box stayed, 15 rows overflowed the page and
+       the whole panel jumped to page 2 behind a blank first page. */
+    body[data-print="section_9"] .ks_staff          {  transform: none !important; zoom: 0.66;                          }
     body[data-print="section_9"] .ks_hand           {  width: 14px !important; height: 14px !important;
                                                        background-size: 70px 14px !important;                           }
     body[data-print="section_9"] .ks_hand_1         {  background-position:    0 0 !important;                           }
@@ -497,18 +515,18 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
        the chord grid + diatonic chart fit on one landscape page. */
     body[data-print="section_3"] #section_11        {  display: none !important;                                        }
     body[data-print="section_3"] .dia_chart         {  padding: 4px 12px !important; background: none !important;
-                                                       border-top: 1px solid #888 !important;                            }
+                                                       border: 0 !important;                                             }
     body[data-print="section_3"] .dia_head          {  margin-bottom: 4px !important;                                  }
     body[data-print="section_3"] .dia_row           {  gap: 4px !important; margin-bottom: 4px !important;             }
     body[data-print="section_3"] .dia_cell          {  padding: 4px 2px !important;
-                                                       background: none !important; border-color: #aaa !important;     }
+                                                       background: none !important; border-color: transparent !important; }
 
     /* Section 6 scale grid: keep modes visible but compact. */
     body[data-print="section_6"] .modes_panel       {  padding: 4px 12px !important; background: none !important;
-                                                       border-top: 1px solid #888 !important;                            }
+                                                       border: 0 !important;                                             }
     body[data-print="section_6"] .modes_grid        {  gap: 4px !important;                                             }
     body[data-print="section_6"] .mode_cell         {  padding: 4px 2px !important;
-                                                       background: none !important; border-color: #aaa !important;     }
+                                                       background: none !important; border-color: transparent !important; }
 
     /* Section 9 key signatures: hide the new key-extras (intervals +
        contains + cadences) so the staff table and Circle of Fifths
@@ -516,6 +534,7 @@ table.sortable th.no-sort { padding-top:0.35em; }table.sortable th button { padd
     body[data-print="section_9"] #key_extras_root   {  display: none !important;                                        }
 
     /* Hide all-section nav cruft on every print. */
+    body[data-print] .section_lead,
     body[data-print] #seo_lede,
     body[data-print] #auth_widget,
     body[data-print] #mobile_hint,
@@ -1963,7 +1982,8 @@ table.sortable th[aria-sort] button        { color: var(--accent-hi);           
     .hl_pill                               { background: none !important; border: none !important;                  }
     /* Force the fretboard contents to print whether or not the section is open */
     details#section_2 > *                  { display: block !important;                                              }
-    details#section_2 > summary            { display: none !important;                                               }
+    details#section_2 > summary,
+    details#section_2 > .section_lead      { display: none !important;                                               }
 }
 
 /* ============================================================
@@ -2977,4 +2997,34 @@ body[data-features~="sheetmusic"] .feature_sheetmusic
 
 @media print {
   #section_13, #section_14                  { display: none !important;                                                }
+}
+
+/* ---------- Print cleanup (per-section prints) ----------
+   The screen theme is light-on-dark; these keep paper output readable and
+   free of decorative frames. Scoped to body[data-print] so they only apply
+   when a section's own Print button was used. */
+@media print {
+  /* Diatonic / modes chips use pale text meant for a dark card. */
+  body[data-print] .dia_chart, body[data-print] .dia_chart *,
+  body[data-print] .modes_panel, body[data-print] .modes_panel *
+                                            { color: #222 !important;                                                  }
+
+  /* Key signatures: the table and the Circle of Fifths card are dark UI.
+     Invert them for paper (hue-rotate keeps the colour coding), and
+     re-invert the hand-signal sprites so they stay natural. */
+  body[data-print="section_9"] .ks_table,
+  body[data-print="section_9"] .ks_side     { filter: invert(1) hue-rotate(180deg);
+                                              border: 0 !important; border-radius: 0 !important;                       }
+  body[data-print="section_9"] .ks_hand     { filter: invert(1) hue-rotate(180deg);                                    }
+
+  /* Keyboard table: its dark screen background peeks out as an outline. */
+  body[data-print] .ritz .waffle            { background-color: #fff !important; border: 0 !important;                  }
+  body[data-print="section_9"] .ks_side     { background: none !important;                                             }
+
+  /* Progressions: the nested section carries its own dark gradient (an ID
+     rule) and the custom-layout bars have no print styling of their own. */
+  body[data-print="section_11"] #section_11 { background: none !important; border: 0 !important;
+                                              box-shadow: none !important;                                             }
+  body[data-print="section_11"] .prog_bar   { background: #fff !important; color: #000 !important;
+                                              border: 1px solid #000 !important; border-radius: 4px !important;        }
 }
